@@ -31,7 +31,7 @@ const SidebarItem = ({ icon, label, to }) => (
   </NavLink>
 );
 
-const Sidebar = ({ onLogout }) => {
+const Sidebar = ({ onLogout, isOpen, onClose }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
@@ -47,18 +47,12 @@ const Sidebar = ({ onLogout }) => {
   }, []);
 
   return (
-    <aside style={{
-      width: '260px',
-      height: '100vh',
-      background: 'var(--bg-dark)',
-      borderRight: '1px solid rgba(255,255,255,0.05)',
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      zIndex: 100
-    }}>
+    <>
+      <div 
+        className={`sidebar-overlay ${isOpen ? 'visible' : ''}`} 
+        onClick={onClose}
+      />
+      <aside className={`sidebar-container ${isOpen ? 'open' : ''}`}>
       <div style={{ padding: '2rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <div style={{
           width: '36px', height: '36px',
@@ -189,6 +183,7 @@ const Sidebar = ({ onLogout }) => {
         </div>
       </div>
     </aside>
+    </>
   );
 };
 

@@ -133,40 +133,42 @@ const Feedbacks = () => {
           ) : filteredFeedbacks.length === 0 ? (
             <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '3rem' }}>No feedbacks found matching your filters.</div>
           ) : (
-            <table className="data-table" style={{ borderCollapse: 'collapse', width: '100%' }}>
-              <thead style={{ position: 'sticky', top: 0, background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
-                <tr>
-                  <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Customer</th>
-                  <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', width: '35%' }}>Feedback</th>
-                  <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</th>
-                  <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sentiment</th>
-                  <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Severity</th>
-                  <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Source</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredFeedbacks.map((item, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', transition: 'background 0.2s ease' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
-                    <td style={{ padding: '1.25rem 1.5rem' }}>
-                      <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>@{item.author || `user_${idx}`}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{new Date(item.timestamp).toLocaleDateString()}</div>
-                    </td>
-                    <td style={{ padding: '1.25rem 1.5rem' }}>
-                      <div style={{ fontSize: '0.9rem', lineHeight: '1.5', color: 'var(--text-primary)' }}>{item.originalText}</div>
-                      {item.aiSummary && (
-                        <div style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', marginTop: '0.5rem', fontStyle: 'italic' }}>
-                          ↳ AI Note: {item.aiSummary}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '1.25rem 1.5rem' }}><span className="cat-badge">{item.category}</span></td>
-                    <td style={{ padding: '1.25rem 1.5rem' }}>{getSentimentBadge(item.sentiment)}</td>
-                    <td style={{ padding: '1.25rem 1.5rem' }}>{getSeverityBadge(item.severity)}</td>
-                    <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{item.source}</td>
+            <div className="table-responsive">
+              <table className="data-table" style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <thead style={{ position: 'sticky', top: 0, background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
+                  <tr>
+                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Customer</th>
+                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', width: '35%' }}>Feedback</th>
+                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</th>
+                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sentiment</th>
+                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Severity</th>
+                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Source</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredFeedbacks.map((item, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', transition: 'background 0.2s ease' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                      <td style={{ padding: '1.25rem 1.5rem' }}>
+                        <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>@{item.author || `user_${idx}`}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{new Date(item.timestamp).toLocaleDateString()}</div>
+                      </td>
+                      <td style={{ padding: '1.25rem 1.5rem' }}>
+                        <div style={{ fontSize: '0.9rem', lineHeight: '1.5', color: 'var(--text-primary)' }}>{item.originalText}</div>
+                        {item.aiSummary && (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                            ↳ AI Note: {item.aiSummary}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: '1.25rem 1.5rem' }}><span className="cat-badge">{item.category}</span></td>
+                      <td style={{ padding: '1.25rem 1.5rem' }}>{getSentimentBadge(item.sentiment)}</td>
+                      <td style={{ padding: '1.25rem 1.5rem' }}>{getSeverityBadge(item.severity)}</td>
+                      <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{item.source}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
         

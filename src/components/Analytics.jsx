@@ -68,7 +68,7 @@ const Analytics = () => {
   const renderSkeleton = () => (
     <div className="dashboard-grid">
       <div className="col-span-8 glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div className="flex-wrap-mobile" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <Skeleton style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
           <Skeleton style={{ width: '200px', height: '28px', borderRadius: '4px' }} />
         </div>
@@ -88,7 +88,7 @@ const Analytics = () => {
 
   return (
     <>
-      <header style={{ 
+      <header className="flex-wrap-mobile" style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
@@ -144,7 +144,7 @@ const Analytics = () => {
         <div className="dashboard-grid animate-fade-in">
           
           <div className="col-span-8 glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="flex-wrap-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div style={{ 
                   width: '40px', height: '40px', borderRadius: '10px', 

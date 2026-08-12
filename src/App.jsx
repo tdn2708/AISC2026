@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
@@ -26,18 +27,42 @@ const ProtectedRoute = ({ isAuthenticated, children }) => {
 };
 
 const MainLayout = ({ children, onLogout }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  // Close sidebar when route changes on mobile
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)' }}>
-      <Sidebar onLogout={onLogout} />
-      <main style={{ 
-        flex: 1, 
-        marginLeft: '260px', 
-        padding: '2rem 3rem',
-        height: '100vh',
-        overflowY: 'auto'
-      }}>
-        {children}
-      </main>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-dark)' }}>
+      {/* Mobile Header */}
+      <div className="mobile-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
+            CX
+          </div>
+          <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Customer<span className="text-gradient">Radar</span></div>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(true)}
+          style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem' }}
+        >
+          <Menu size={24} />
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
+        <Sidebar 
+          onLogout={onLogout} 
+          isOpen={isMobileMenuOpen} 
+          onClose={() => setIsMobileMenuOpen(false)} 
+        />
+        <main className="main-content">
+          {children}
+        </main>
+      </div>
       <AiChatWidget />
     </div>
   );
