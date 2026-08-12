@@ -27,24 +27,9 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      width: '100vw',
-      display: 'flex', 
-      background: 'var(--bg-dark)',
-      overflow: 'hidden'
-    }}>
+    <div className="login-container">
       {/* Left Side - Marketing/Branding */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '4rem',
-        position: 'relative',
-        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
-        borderRight: '1px solid rgba(255,255,255,0.05)'
-      }}>
+      <div className="login-left">
         {/* Decorative Blur Circles */}
         <div style={{ position: 'absolute', top: '20%', left: '10%', width: '300px', height: '300px', background: 'rgba(59, 130, 246, 0.2)', borderRadius: '50%', filter: 'blur(100px)' }}></div>
         <div style={{ position: 'absolute', bottom: '20%', right: '10%', width: '300px', height: '300px', background: 'rgba(139, 92, 246, 0.2)', borderRadius: '50%', filter: 'blur(100px)' }}></div>
@@ -87,16 +72,7 @@ const Login = ({ onLogin }) => {
       </div>
 
       {/* Right Side - Login Form */}
-      <div style={{
-        width: '500px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '4rem',
-        background: 'var(--bg-dark)',
-        position: 'relative',
-        zIndex: 20
-      }}>
+      <div className="login-right">
         <div style={{ marginBottom: '2.5rem' }}>
           <h3 style={{ fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>Welcome Back</h3>
           <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Please enter your credentials to access the dashboard.</p>
