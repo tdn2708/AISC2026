@@ -89,6 +89,16 @@ const DataSources = () => {
     ));
   };
 
+  const handleClearHistory = () => {
+    if (window.confirm('Are you sure you want to clear the sync history log? (The actual synced data in the database will NOT be deleted)')) {
+      setSyncHistory([]);
+    }
+  };
+
+  const handleDeleteHistoryItem = (id) => {
+    setSyncHistory(prev => prev.filter(item => item.id !== id));
+  };
+
   const handleSync = async (e) => {
     e.preventDefault();
     if (!url) return;
@@ -377,8 +387,21 @@ const DataSources = () => {
         {/* TAB 3: Sync History */}
         {activeTab === 'history' && (
           <div className="glass-panel" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Sync & Pipeline History</h3>
+              {syncHistory.length > 0 && (
+                <button 
+                  onClick={handleClearHistory}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.1)', color: 'var(--risk-critical)', border: '1px solid rgba(239, 68, 68, 0.2)',
+                    padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                >
+                  <Trash2 size={16} /> Clear Log
+                </button>
+              )}
             </div>
             <div className="table-responsive">
               <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -388,11 +411,12 @@ const DataSources = () => {
                     <th style={{ padding: '1rem 1.5rem', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase' }}>Status</th>
                     <th style={{ padding: '1rem 1.5rem', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase' }}>Items Extracted</th>
                     <th style={{ padding: '1rem 1.5rem', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase' }}>Time</th>
+                    <th style={{ padding: '1rem 1.5rem', textAlign: 'right', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Array.isArray(syncHistory) && syncHistory.map((record) => (
-                    <tr key={record?.id || Math.random()} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                    <tr key={record?.id || Math.random()} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                       <td style={{ padding: '1.25rem 1.5rem' }}>
                         <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{record?.source || 'Unknown'}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -408,6 +432,17 @@ const DataSources = () => {
                       </td>
                       <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
                         {record?.time || ''}
+                      </td>
+                      <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
+                        <button 
+                          onClick={() => handleDeleteHistoryItem(record.id)}
+                          title="Remove from log"
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.4rem', borderRadius: '4px', transition: 'all 0.2s' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = 'var(--risk-critical)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </td>
                     </tr>
                   ))}
