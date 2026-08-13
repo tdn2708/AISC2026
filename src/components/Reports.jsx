@@ -3,7 +3,7 @@ import { Download, FileText, FileSpreadsheet, Calendar, Filter, Zap, CheckCircle
 import axios from 'axios';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, Cell, PieChart, Pie, Legend } from 'recharts';
 import FilterBar from './FilterBar';
 
 // Mock data for the PDF to ensure it generates even if backend fails
@@ -274,45 +274,45 @@ const Reports = () => {
         <div 
           ref={pdfTemplateRef} 
           style={{
-            width: '800px', // Fixed width for A4 aspect ratio control
+            width: '1000px', // Wider width to match dashboard feel
             padding: '40px',
-            background: '#ffffff', // White background for PDF
-            color: '#1e293b', // Dark text
+            background: '#0f172a', // Dark theme background matching Dashboard
+            color: '#f8fafc', // Light text
             fontFamily: 'Inter, sans-serif'
           }}
         >
           {/* Header */}
-          <div style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '20px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '20px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
-              <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>CUSTOMER EXPERIENCE REPORT</h1>
-              <p style={{ color: '#64748b', fontSize: '14px', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>Executive Summary</p>
+              <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#f8fafc', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>CX ANALYTICS DASHBOARD</h1>
+              <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>Executive Summary Report</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ color: '#0f172a', fontWeight: 600, margin: '0 0 4px 0' }}>Generated Date: {new Date().toLocaleDateString()}</p>
-              <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>Filter: {timeFilter === 'All' ? 'All Time' : timeFilter} | Source: {sourceFilter}</p>
+              <p style={{ color: '#f8fafc', fontWeight: 600, margin: '0 0 4px 0' }}>Generated Date: {new Date().toLocaleDateString()}</p>
+              <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>Filter: {timeFilter === 'All' ? 'All Time' : timeFilter} | Source: {sourceFilter}</p>
             </div>
           </div>
 
           {/* AI Summary Section */}
-          <div style={{ background: '#f8fafc', borderLeft: '4px solid #8b5cf6', padding: '20px', borderRadius: '0 8px 8px 0', marginBottom: '30px' }}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#0f172a', fontSize: '16px' }}>AI Insights & Recommendations</h3>
-            <p style={{ margin: 0, color: '#475569', fontSize: '13px', lineHeight: 1.6 }}>
+          <div style={{ background: 'rgba(139, 92, 246, 0.1)', borderLeft: '4px solid #8b5cf6', padding: '20px', borderRadius: '0 8px 8px 0', marginBottom: '30px' }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#f8fafc', fontSize: '16px' }}>AI Insights & Recommendations</h3>
+            <p style={{ margin: 0, color: '#cbd5e1', fontSize: '13px', lineHeight: 1.6 }}>
               Overall sentiment has been highly positive over the last 30 days. However, recent data indicates a slight uptick in complaints related to "Delivery Delays" in the Shopee channel. It is recommended to follow up with logistics partners to mitigate risk. Product Quality remains our strongest asset, consistently scoring above industry benchmarks.
             </p>
           </div>
 
           {/* Top Metrics Row */}
           <div style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
-            <div style={{ flex: 1, background: '#f1f5f9', padding: '20px', borderRadius: '12px' }}>
-              <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Feedbacks</p>
-              <h2 style={{ margin: 0, fontSize: '28px', color: '#0f172a' }}>{pdfData?.stats?.totalComplaints || 0}</h2>
+            <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Feedbacks</p>
+              <h2 style={{ margin: 0, fontSize: '28px', color: '#f8fafc' }}>{pdfData?.stats?.totalComplaints || 0}</h2>
             </div>
-            <div style={{ flex: 1, background: '#f1f5f9', padding: '20px', borderRadius: '12px' }}>
-              <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Complaint Rate</p>
+            <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Complaint Rate</p>
               <h2 style={{ margin: 0, fontSize: '28px', color: '#ef4444' }}>{pdfData?.stats?.complaintRate || "0%"}</h2>
             </div>
-            <div style={{ flex: 1, background: '#f1f5f9', padding: '20px', borderRadius: '12px' }}>
-              <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Avg Resolution</p>
+            <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Avg Resolution</p>
               <h2 style={{ margin: 0, fontSize: '28px', color: '#10b981' }}>{pdfData?.stats?.avgResolutionTime || "0 hrs"}</h2>
             </div>
           </div>
@@ -320,18 +320,30 @@ const Reports = () => {
           {/* Charts Row */}
           <div style={{ display: 'flex', gap: '20px' }}>
             {/* Trend Chart */}
-            <div style={{ flex: 1.5, border: '1px solid #e2e8f0', padding: '20px', borderRadius: '12px' }}>
-              <h3 style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#0f172a' }}>Sentiment Trend</h3>
-              <div style={{ height: '200px' }}>
+            <div style={{ flex: 1.5, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#f8fafc' }}>Trend Analytics</h3>
+              <p style={{ color: '#94a3b8', fontSize: '12px', margin: '0 0 20px 0' }}>Timeline of Negative vs Positive feedback</p>
+              <div style={{ height: '250px' }}>
                 {pdfData?.trend && (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={pdfData.trend} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <defs>
+                        <linearGradient id="colorComplaintsPdf" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorSatisfactionPdf" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="satisfaction" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.2} isAnimationActive={false} />
-                      <Area type="monotone" dataKey="complaints" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} isAnimationActive={false} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '12px', color: '#94a3b8' }} />
+                      <Area name="Complaints" type="monotone" dataKey="complaints" stackId="2" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorComplaintsPdf)" isAnimationActive={false} />
+                      <Area name="Satisfaction" type="monotone" dataKey="satisfaction" stackId="1" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorSatisfactionPdf)" isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 )}
@@ -339,29 +351,38 @@ const Reports = () => {
             </div>
 
             {/* Category Chart */}
-            <div style={{ flex: 1, border: '1px solid #e2e8f0', padding: '20px', borderRadius: '12px' }}>
-              <h3 style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#0f172a' }}>Issue Categories</h3>
-              <div style={{ height: '200px' }}>
+            <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '14px', color: '#f8fafc' }}>Issue Categories</h3>
+              <p style={{ color: '#94a3b8', fontSize: '12px', margin: '0 0 20px 0' }}>Distribution by topic</p>
+              <div style={{ height: '250px' }}>
                 {pdfData?.categories && (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={pdfData.categories} layout="vertical" margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                      <XAxis type="number" hide />
-                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11 }} width={60} />
-                      <Tooltip />
-                      <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+                    <PieChart>
+                      <Pie
+                        data={pdfData.categories}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={90}
+                        paddingAngle={5}
+                        dataKey="value"
+                        stroke="none"
+                        isAnimationActive={false}
+                      >
                         {pdfData.categories.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill || '#3b82f6'} />
                         ))}
-                      </Bar>
-                    </BarChart>
+                      </Pie>
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: '#94a3b8' }}/>
+                    </PieChart>
                   </ResponsiveContainer>
                 )}
               </div>
             </div>
           </div>
           
-          <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #e2e8f0', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>
+          <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', color: '#64748b', fontSize: '11px' }}>
             Generated by AISC2026 Enterprise Platform. Confidential and Proprietary.
           </div>
         </div>
