@@ -3,7 +3,7 @@ import { Download, FileText, FileSpreadsheet, Calendar, Filter, Zap, CheckCircle
 import axios from 'axios';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, Cell } from 'recharts';
 
 // Mock data for the PDF to ensure it generates even if backend fails
 const mockTrend = [
@@ -24,6 +24,7 @@ const Reports = () => {
   const [downloadingCsv, setDownloadingCsv] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showToast, setShowToast] = useState('');
+  const [pdfData, setPdfData] = useState(null);
   
   const pdfTemplateRef = useRef(null);
 
@@ -74,8 +75,21 @@ const Reports = () => {
     try {
       setGeneratingPdf(true);
       
-      // Give React 100ms to ensure the hidden component is fully mounted/rendered
-      await new Promise(r => setTimeout(r, 100));
+      // Fetch real data from backend
+      const [statsRes, trendRes, catRes] = await Promise.all([
+        axios.get('/stats'),
+        axios.get('/trend'),
+        axios.get('/categories')
+      ]);
+      
+      setPdfData({
+        stats: statsRes.data,
+        trend: trendRes.data,
+        categories: catRes.data.slice(0, 5) // top 5 categories
+      });
+
+      // Give React time to render the new data in the hidden component
+      await new Promise(r => setTimeout(r, 500));
 
       const canvas = await html2canvas(pdfTemplateRef.current, {
         scale: 2, // High resolution
@@ -279,15 +293,15 @@ const Reports = () => {
           <div style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
             <div style={{ flex: 1, background: '#f1f5f9', padding: '20px', borderRadius: '12px' }}>
               <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Feedbacks</p>
-              <h2 style={{ margin: 0, fontSize: '28px', color: '#0f172a' }}>1,245</h2>
+              <h2 style={{ margin: 0, fontSize: '28px', color: '#0f172a' }}>{pdfData?.stats?.totalComplaints || 0}</h2>
             </div>
             <div style={{ flex: 1, background: '#f1f5f9', padding: '20px', borderRadius: '12px' }}>
               <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Complaint Rate</p>
-              <h2 style={{ margin: 0, fontSize: '28px', color: '#ef4444' }}>1.2%</h2>
+              <h2 style={{ margin: 0, fontSize: '28px', color: '#ef4444' }}>{pdfData?.stats?.complaintRate || "0%"}</h2>
             </div>
             <div style={{ flex: 1, background: '#f1f5f9', padding: '20px', borderRadius: '12px' }}>
               <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Avg Resolution</p>
-              <h2 style={{ margin: 0, fontSize: '28px', color: '#10b981' }}>2.4 hrs</h2>
+              <h2 style={{ margin: 0, fontSize: '28px', color: '#10b981' }}>{pdfData?.stats?.avgResolutionTime || "0 hrs"}</h2>
             </div>
           </div>
 
@@ -297,17 +311,18 @@ const Reports = () => {
             <div style={{ flex: 1.5, border: '1px solid #e2e8f0', padding: '20px', borderRadius: '12px' }}>
               <h3 style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#0f172a' }}>Sentiment Trend</h3>
               <div style={{ height: '200px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={mockTrend} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                    <Tooltip />
-                    {/* isAnimationActive={false} is critical for html2canvas capturing */}
-                    <Area type="monotone" dataKey="satisfaction" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.2} isAnimationActive={false} />
-                    <Area type="monotone" dataKey="complaints" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} isAnimationActive={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {pdfData?.trend && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={pdfData.trend} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                      <Tooltip />
+                      <Area type="monotone" dataKey="satisfaction" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.2} isAnimationActive={false} />
+                      <Area type="monotone" dataKey="complaints" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.2} isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 
@@ -315,20 +330,21 @@ const Reports = () => {
             <div style={{ flex: 1, border: '1px solid #e2e8f0', padding: '20px', borderRadius: '12px' }}>
               <h3 style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#0f172a' }}>Issue Categories</h3>
               <div style={{ height: '200px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={mockCategories} layout="vertical" margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11 }} width={60} />
-                    <Tooltip />
-                    {/* isAnimationActive={false} ensures immediate render for html2canvas */}
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false}>
-                      {mockCategories.map((entry, index) => (
-                        <cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {pdfData?.categories && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={pdfData.categories} layout="vertical" margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11 }} width={60} />
+                      <Tooltip />
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+                        {pdfData.categories.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill || '#3b82f6'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
           </div>
