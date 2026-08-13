@@ -10,10 +10,30 @@ const buildFilterQuery = (req) => {
   if (time && time !== 'All') {
     const now = new Date();
     let startDate;
-    if (time === 'Today') startDate = new Date(now.setHours(0,0,0,0));
-    else if (time === 'This Week') { startDate = new Date(); startDate.setDate(now.getDate() - 7); }
-    else if (time === 'This Month') { startDate = new Date(); startDate.setMonth(now.getMonth() - 1); }
-    if (startDate) query.timestamp = { $gte: startDate };
+    let endDate;
+    
+    if (time.startsWith('Custom:')) {
+      const parts = time.split(':');
+      if (parts.length === 3) {
+        startDate = new Date(parts[1]);
+        startDate.setHours(0,0,0,0);
+        endDate = new Date(parts[2]);
+        endDate.setHours(23,59,59,999);
+      }
+    } else if (time === 'Today') {
+      startDate = new Date(now.setHours(0,0,0,0));
+    } else if (time === 'This Week') { 
+      startDate = new Date(); startDate.setDate(now.getDate() - 7); 
+    } else if (time === 'This Month') { 
+      startDate = new Date(); startDate.setMonth(now.getMonth() - 1); 
+    }
+    
+    if (startDate) {
+      query.timestamp = { $gte: startDate };
+      if (endDate) {
+        query.timestamp.$lte = endDate;
+      }
+    }
   }
   return query;
 };
