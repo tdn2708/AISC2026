@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Database, Link as LinkIcon, RefreshCw, CheckCircle, Clock, Search, Smartphone, ShoppingBag, Store, Activity, Box, Settings2, Plus } from 'lucide-react';
+import { Database, Link as LinkIcon, RefreshCw, CheckCircle, Clock, Search, Smartphone, ShoppingBag, Store, Activity, Box, Settings2, Plus, Trash2, X, Globe } from 'lucide-react';
 
 const DataSources = () => {
   const [activeTab, setActiveTab] = useState('shops'); // 'shops', 'products', 'history'
   const [url, setUrl] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
+  
+  // Sync History State
   const [syncHistory, setSyncHistory] = useState(() => {
     try {
       const saved = localStorage.getItem('syncHistory');
@@ -18,21 +20,79 @@ const DataSources = () => {
     }
     return [
       { id: 1, source: 'Shopee URL', url: 'https://shopee.vn/iphone-15-pro-max', status: 'Success', items: 15, time: '2 mins ago' },
-      { id: 2, source: 'Demo Source', url: 'dummy', status: 'Success', items: 15, time: '1 hour ago' },
-      { id: 3, source: 'Facebook Page', url: 'https://facebook.com/apple', status: 'Failed', items: 0, time: '5 hours ago', error: 'Rate limit exceeded' },
+      { id: 2, source: 'Demo Source', url: 'dummy', status: 'Success', items: 15, time: '1 hour ago' }
     ];
   });
 
+  // Connected Shops State
+  const [connectedShops, setConnectedShops] = useState(() => {
+    try {
+      const saved = localStorage.getItem('connectedShops');
+      if (saved && saved !== 'undefined') {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error('Error parsing connectedShops', e);
+    }
+    return [
+      { id: 'shp1', name: 'Shopee Official Flagship', platform: 'Shopee', shopId: 'SHP-982341', productsCount: 120, autoSync: true, status: 'Active' },
+      { id: 'tik1', name: 'TikTok Shop Global', platform: 'TikTok', shopId: 'TIK-44122', productsCount: 22, autoSync: false, status: 'Active' }
+    ];
+  });
+
+  // Modal State
+  const [showAddShopModal, setShowAddShopModal] = useState(false);
+  const [newShopForm, setNewShopForm] = useState({ platform: 'Shopee', name: '', shopId: '' });
+
+  // Effects for Persistence
   useEffect(() => {
     localStorage.setItem('syncHistory', JSON.stringify(syncHistory));
   }, [syncHistory]);
 
+  useEffect(() => {
+    localStorage.setItem('connectedShops', JSON.stringify(connectedShops));
+  }, [connectedShops]);
+
+  // Derived Metrics
+  const totalProducts = connectedShops.reduce((sum, shop) => sum + shop.productsCount, 0);
+
+  // Handlers
+  const handleAddShop = (e) => {
+    e.preventDefault();
+    if (!newShopForm.name || !newShopForm.shopId) return;
+    
+    const newShop = {
+      id: Date.now().toString(),
+      name: newShopForm.name,
+      platform: newShopForm.platform,
+      shopId: newShopForm.shopId,
+      productsCount: Math.floor(Math.random() * 50) + 10, // Mock random product count
+      autoSync: true,
+      status: 'Active'
+    };
+    
+    setConnectedShops(prev => [newShop, ...prev]);
+    setShowAddShopModal(false);
+    setNewShopForm({ platform: 'Shopee', name: '', shopId: '' });
+  };
+
+  const handleDeleteShop = (id) => {
+    if(window.confirm('Are you sure you want to disconnect this shop?')) {
+      setConnectedShops(prev => prev.filter(shop => shop.id !== id));
+    }
+  };
+
+  const handleToggleSync = (id) => {
+    setConnectedShops(prev => prev.map(shop => 
+      shop.id === id ? { ...shop, autoSync: !shop.autoSync } : shop
+    ));
+  };
+
   const handleSync = async (e) => {
     e.preventDefault();
     if (!url) return;
-
     setIsSyncing(true);
-    
     const newRecordId = Date.now();
     setSyncHistory(prev => [{
       id: newRecordId,
@@ -46,16 +106,12 @@ const DataSources = () => {
     try {
       const res = await axios.post('/scrape', { url });
       setSyncHistory(prev => prev.map(record => 
-        record.id === newRecordId 
-          ? { ...record, status: 'Success', items: res.data.data?.length || 15 } 
-          : record
+        record.id === newRecordId ? { ...record, status: 'Success', items: res.data.data?.length || 15 } : record
       ));
       setUrl('');
     } catch (err) {
       setSyncHistory(prev => prev.map(record => 
-        record.id === newRecordId 
-          ? { ...record, status: 'Failed', error: 'API Error or Timeout' } 
-          : record
+        record.id === newRecordId ? { ...record, status: 'Failed', error: 'API Error or Timeout' } : record
       ));
     } finally {
       setIsSyncing(false);
@@ -71,8 +127,24 @@ const DataSources = () => {
     }
   };
 
+  const getPlatformIcon = (platform, size = 28) => {
+    switch(platform) {
+      case 'Shopee': return <ShoppingBag size={size} />;
+      case 'TikTok': return <Smartphone size={size} />;
+      default: return <Globe size={size} />;
+    }
+  };
+
+  const getPlatformColor = (platform) => {
+    switch(platform) {
+      case 'Shopee': return '249, 115, 22'; // Orange
+      case 'TikTok': return '236, 72, 153'; // Pink
+      default: return '6, 182, 212'; // Cyan
+    }
+  };
+
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '2rem' }}>
+    <div className="animate-fade-in" style={{ paddingBottom: '2rem', position: 'relative' }}>
       
       {/* Header */}
       <div style={{ marginBottom: '2rem' }}>
@@ -91,7 +163,7 @@ const DataSources = () => {
           </div>
           <div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Connected Shops</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>2 <span style={{ fontSize: '0.9rem', fontWeight: 400, color: 'var(--text-muted)' }}>/ 5 allowed</span></div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{connectedShops.length} <span style={{ fontSize: '0.9rem', fontWeight: 400, color: 'var(--text-muted)' }}>/ 10 allowed</span></div>
           </div>
         </div>
         <div className="col-span-4 glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
@@ -100,7 +172,7 @@ const DataSources = () => {
           </div>
           <div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Products Tracked</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>142</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{totalProducts}</div>
           </div>
         </div>
         <div className="col-span-4 glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
@@ -110,7 +182,7 @@ const DataSources = () => {
           <div>
             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Pipelines</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              3 <span className="badge badge-low" style={{ fontSize: '0.7rem' }}>Healthy</span>
+              {connectedShops.filter(s => s.autoSync).length} <span className="badge badge-low" style={{ fontSize: '0.7rem' }}>Healthy</span>
             </div>
           </div>
         </div>
@@ -164,64 +236,68 @@ const DataSources = () => {
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>Connected Workspaces</h2>
                 <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.9rem' }}>Connect entire stores to auto-sync reviews for all products daily.</p>
               </div>
-              <button style={{ 
-                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white',
-                padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-sm)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer'
-              }}>
+              <button 
+                onClick={() => setShowAddShopModal(true)}
+                style={{ 
+                  background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white',
+                  padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-sm)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'background 0.2s'
+                }}
+                onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.15)'}
+                onMouseLeave={e => e.target.style.background = 'rgba(255,255,255,0.1)'}
+              >
                 <Plus size={18} /> Connect New Shop
               </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* Mockup Shop 1 */}
-              <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                  <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(249, 115, 22, 0.1)', color: 'rgb(249, 115, 22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <ShoppingBag size={28} />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Shopee Official Flagship</h3>
-                      <span className="badge badge-low" style={{ fontSize: '0.7rem', padding: '0.1rem 0.5rem' }}>Active</span>
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>ID: SHP-982341 • 120 Products Tracked</div>
-                  </div>
+              {connectedShops.length === 0 ? (
+                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <Store size={48} style={{ margin: '0 auto 1rem auto', opacity: 0.5 }} />
+                  <p>No shops connected yet.</p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Auto-Sync</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-cyan)', fontSize: '0.85rem' }}>
-                      <CheckCircle size={14} /> Enabled (Daily)
+              ) : (
+                connectedShops.map((shop) => (
+                  <div key={shop.id} className="animate-fade-in" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                      <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: `rgba(${getPlatformColor(shop.platform)}, 0.1)`, color: `rgb(${getPlatformColor(shop.platform)})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {getPlatformIcon(shop.platform)}
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+                          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{shop.name}</h3>
+                          <span className="badge badge-low" style={{ fontSize: '0.7rem', padding: '0.1rem 0.5rem' }}>{shop.status}</span>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>ID: {shop.shopId} • {shop.productsCount} Products Tracked</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Auto-Sync</div>
+                        <button 
+                          onClick={() => handleToggleSync(shop.id)}
+                          style={{ 
+                            background: 'transparent', border: 'none', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem',
+                            color: shop.autoSync ? 'var(--accent-cyan)' : 'var(--text-secondary)', padding: 0
+                          }}
+                        >
+                          {shop.autoSync ? <CheckCircle size={14} /> : <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)' }}></span>}
+                          {shop.autoSync ? 'Enabled (Daily)' : 'Paused'}
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button 
+                          title="Delete Shop"
+                          onClick={() => handleDeleteShop(shop.id)}
+                          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.5rem', color: 'var(--risk-critical)', cursor: 'pointer', transition: 'all 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        ><Trash2 size={18} /></button>
+                      </div>
                     </div>
                   </div>
-                  <button style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.5rem', color: 'var(--text-muted)', cursor: 'pointer' }}><Settings2 size={18} /></button>
-                </div>
-              </div>
-
-              {/* Mockup Shop 2 */}
-              <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                  <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'rgba(236, 72, 153, 0.1)', color: 'rgb(236, 72, 153)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Smartphone size={28} />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>TikTok Shop Global</h3>
-                      <span className="badge badge-low" style={{ fontSize: '0.7rem', padding: '0.1rem 0.5rem' }}>Active</span>
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>ID: TIK-44122 • 22 Products Tracked</div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Auto-Sync</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                      <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)' }}></span> Paused
-                    </div>
-                  </div>
-                  <button style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.5rem', color: 'var(--text-muted)', cursor: 'pointer' }}><Settings2 size={18} /></button>
-                </div>
-              </div>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -342,6 +418,91 @@ const DataSources = () => {
         )}
 
       </div>
+
+      {/* Add Shop Modal */}
+      {showAddShopModal && (
+        <div style={{ 
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem', position: 'relative' }}>
+            <button 
+              onClick={() => setShowAddShopModal(false)}
+              style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+            >
+              <X size={24} />
+            </button>
+            
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: '0 0 1.5rem 0' }}>Connect New Shop</h2>
+            
+            <form onSubmit={handleAddShop} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Platform</label>
+                <select 
+                  value={newShopForm.platform}
+                  onChange={(e) => setNewShopForm({...newShopForm, platform: e.target.value})}
+                  style={{
+                    width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px', color: 'white', fontSize: '1rem', outline: 'none'
+                  }}
+                >
+                  <option value="Shopee">Shopee</option>
+                  <option value="TikTok">TikTok Shop</option>
+                  <option value="Web">Custom Website</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Shop Name</label>
+                <input 
+                  type="text" 
+                  value={newShopForm.name}
+                  onChange={(e) => setNewShopForm({...newShopForm, name: e.target.value})}
+                  placeholder="e.g. Apple Official Store"
+                  required
+                  style={{
+                    width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px', color: 'white', fontSize: '1rem', outline: 'none', boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Shop ID / URL</label>
+                <input 
+                  type="text" 
+                  value={newShopForm.shopId}
+                  onChange={(e) => setNewShopForm({...newShopForm, shopId: e.target.value})}
+                  placeholder="e.g. SHP-12345 or https://..."
+                  required
+                  style={{
+                    width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px', color: 'white', fontSize: '1rem', outline: 'none', boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddShopModal(false)}
+                  style={{ padding: '0.75rem 1.5rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-cyan)', border: 'none', color: '#000', fontWeight: 600, borderRadius: '8px', cursor: 'pointer' }}
+                >
+                  Connect Shop
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
