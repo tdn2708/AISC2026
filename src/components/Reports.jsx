@@ -4,6 +4,7 @@ import axios from 'axios';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, Cell } from 'recharts';
+import FilterBar from './FilterBar';
 
 // Mock data for the PDF to ensure it generates even if backend fails
 const mockTrend = [
@@ -26,12 +27,16 @@ const Reports = () => {
   const [showToast, setShowToast] = useState('');
   const [pdfData, setPdfData] = useState(null);
   
+  const [timeFilter, setTimeFilter] = useState('All');
+  const [sourceFilter, setSourceFilter] = useState('All');
+  
   const pdfTemplateRef = useRef(null);
 
   const handleExportCSV = async () => {
     try {
       setDownloadingCsv(true);
-      const res = await axios.get('/feedbacks');
+      const queryParams = `?time=${encodeURIComponent(timeFilter)}&source=${encodeURIComponent(sourceFilter)}`;
+      const res = await axios.get(`/feedbacks${queryParams}`);
       const data = res.data;
       
       const headers = ['Date', 'Source', 'Author', 'Category', 'Sentiment', 'Severity', 'Original Text', 'AI Summary'];
@@ -76,10 +81,11 @@ const Reports = () => {
       setGeneratingPdf(true);
       
       // Fetch real data from backend
+      const queryParams = `?time=${encodeURIComponent(timeFilter)}&source=${encodeURIComponent(sourceFilter)}`;
       const [statsRes, trendRes, catRes] = await Promise.all([
-        axios.get('/stats'),
-        axios.get('/trend'),
-        axios.get('/categories')
+        axios.get(`/stats${queryParams}`),
+        axios.get(`/trend${queryParams}`),
+        axios.get(`/categories${queryParams}`)
       ]);
       
       setPdfData({
@@ -132,6 +138,12 @@ const Reports = () => {
           Generate, download, and manage your CX data reports.
         </p>
       </header>
+
+      <FilterBar 
+        timeFilter={timeFilter} setTimeFilter={setTimeFilter}
+        sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
+        hideExportButton={true}
+      />
 
       <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
         {/* CSV Export */}
@@ -276,8 +288,8 @@ const Reports = () => {
               <p style={{ color: '#64748b', fontSize: '14px', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>Executive Summary</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ color: '#0f172a', fontWeight: 600, margin: '0 0 4px 0' }}>Generated Date</p>
-              <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>{new Date().toLocaleDateString()}</p>
+              <p style={{ color: '#0f172a', fontWeight: 600, margin: '0 0 4px 0' }}>Generated Date: {new Date().toLocaleDateString()}</p>
+              <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>Filter: {timeFilter === 'All' ? 'All Time' : timeFilter} | Source: {sourceFilter}</p>
             </div>
           </div>
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Filter, ChevronDown, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter }) => {
+const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, hideExportButton = false }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -170,24 +170,26 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter })
         </div>
       </div>
       
-      <div>
-        <button 
-          onClick={() => navigate('/reports')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.1)',
-            padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)',
-            color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}
-        >
-          <Download size={16} />
-          Export Report
-        </button>
-      </div>
+      {!hideExportButton && (
+        <div>
+          <button 
+            onClick={() => navigate('/reports')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.1)',
+              padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)',
+              color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}
+          >
+            <Download size={16} />
+            Export Report
+          </button>
+        </div>
+      )}
     </div>
   );
 };
