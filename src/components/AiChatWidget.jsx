@@ -1,16 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User, Loader2 } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, User, Loader2, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 
 const AiChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    { role: 'ai', content: 'Xin chào, tôi là **CustomerRadar AI**, Chuyên gia Phân tích Trải nghiệm Khách hàng (CX). Bạn cần tôi phân tích số liệu hay đưa ra chiến lược gì hôm nay?' }
-  ]);
+  
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem('aiChatHistory');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return [{ role: 'ai', content: 'Xin chào, tôi là **CustomerRadar AI**, Chuyên gia Phân tích Trải nghiệm Khách hàng (CX). Bạn cần tôi phân tích số liệu hay đưa ra chiến lược gì hôm nay?' }];
+  });
+  
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    localStorage.setItem('aiChatHistory', JSON.stringify(messages));
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -51,21 +63,39 @@ const AiChatWidget = () => {
           width: '60px',
           height: '60px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-indigo))',
-          border: 'none',
+          background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, rgba(6,182,212,0.1) 100%)',
+          border: '1px solid rgba(59, 130, 246, 0.4)',
           color: 'white',
           display: isOpen ? 'none' : 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 8px 30px rgba(139, 92, 246, 0.4)',
+          boxShadow: '0 8px 30px rgba(139, 92, 246, 0.3), inset 0 0 15px rgba(168,85,247,0.2)',
           cursor: 'pointer',
           zIndex: 1000,
           transition: 'transform 0.2s ease',
+          overflow: 'hidden'
         }}
         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
         onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
       >
-        <Bot size={28} />
+        <div style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.15)' }}></div>
+        <div style={{ position: 'absolute', width: '60%', height: '60%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.15)' }}></div>
+        <div style={{ position: 'absolute', width: '1px', height: '100%', background: 'rgba(255,255,255,0.15)' }}></div>
+        <div style={{ position: 'absolute', width: '100%', height: '1px', background: 'rgba(255,255,255,0.15)' }}></div>
+        <span style={{ 
+          fontFamily: "'Dancing Script', cursive", 
+          fontSize: '1.8rem', 
+          fontWeight: 700,
+          background: 'linear-gradient(135deg, #22d3ee, #c084fc)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          position: 'relative',
+          zIndex: 2,
+          lineHeight: 1,
+          marginLeft: '2px'
+        }}>
+          CR
+        </span>
       </button>
 
       {/* Chat Window */}
@@ -74,8 +104,8 @@ const AiChatWidget = () => {
           position: 'fixed',
           bottom: '2rem',
           right: '2rem',
-          width: '380px',
-          height: '600px',
+          width: '340px',
+          height: '520px',
           maxHeight: '80vh',
           background: 'rgba(15, 23, 42, 0.85)',
           backdropFilter: 'blur(16px)',
@@ -100,22 +130,55 @@ const AiChatWidget = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{ 
-                width: '32px', height: '32px', borderRadius: '50%', 
-                background: 'var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                position: 'relative',
+                width: '36px', height: '36px', borderRadius: '50%', 
+                background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, rgba(6,182,212,0.1) 100%)', 
+                border: '1px solid rgba(59, 130, 246, 0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', flexShrink: 0
               }}>
-                <Bot size={18} color="white" />
+                <div style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }}></div>
+                <div style={{ position: 'absolute', width: '60%', height: '60%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }}></div>
+                <div style={{ position: 'absolute', width: '1px', height: '100%', background: 'rgba(255,255,255,0.1)' }}></div>
+                <div style={{ position: 'absolute', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+                <span style={{ 
+                  fontFamily: "'Dancing Script', cursive", 
+                  fontSize: '1.2rem', 
+                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #22d3ee, #c084fc)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  position: 'relative',
+                  zIndex: 2,
+                  lineHeight: 1,
+                  marginLeft: '2px'
+                }}>
+                  CR
+                </span>
               </div>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>CustomerRadar AI</h3>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--accent-cyan)' }}>CX Intelligence</p>
               </div>
             </div>
-            <button 
-              onClick={() => setIsOpen(false)}
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
-            >
-              <X size={20} />
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button 
+                onClick={() => {
+                  setMessages([{ role: 'ai', content: 'Xin chào, tôi là **CustomerRadar AI**, Chuyên gia Phân tích Trải nghiệm Khách hàng (CX). Bạn cần tôi phân tích số liệu hay đưa ra chiến lược gì hôm nay?' }]);
+                  localStorage.removeItem('aiChatHistory');
+                }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', display: 'flex' }}
+                title="Xóa lịch sử trò chuyện"
+              >
+                <Trash2 size={18} />
+              </button>
+              <button 
+                onClick={() => setIsOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', display: 'flex' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Messages Area */}

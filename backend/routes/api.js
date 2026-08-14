@@ -384,8 +384,8 @@ router.post('/chat', async (req, res) => {
     }
 
     const { chatWithData } = require('../services/ai_analyzer');
-    // Fetch up to 50 latest feedbacks to provide context
-    const feedbacks = await req.db.collection('feedbacks').find().sort({ timestamp: -1 }).limit(50).toArray();
+    // Fetch all feedbacks from the database to give the AI complete global knowledge
+    const feedbacks = await req.db.collection('feedbacks').find({}).sort({ timestamp: -1 }).toArray();
     
     const aiResponse = await chatWithData(message, feedbacks);
 

@@ -37,20 +37,50 @@ const Login = ({ onLogin }) => {
         <div style={{ position: 'relative', zIndex: 10, maxWidth: '600px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
             <div style={{
-              width: '48px', height: '48px',
-              background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
-              borderRadius: '12px',
+              position: 'relative',
+              width: '64px', height: '64px', minWidth: '64px',
+              borderRadius: '50%',
+              border: '2px solid rgba(59, 130, 246, 0.4)',
+              background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, rgba(6,182,212,0.05) 100%)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 'bold', fontSize: '1.5rem',
-              boxShadow: '0 10px 25px rgba(59, 130, 246, 0.5)'
+              boxShadow: '0 0 20px rgba(6,182,212,0.3)',
+              overflow: 'hidden'
             }}>
-              CX
+              {/* Radar Lines */}
+              <div style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }}></div>
+              <div style={{ position: 'absolute', width: '60%', height: '60%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }}></div>
+              <div style={{ position: 'absolute', width: '1px', height: '100%', background: 'rgba(255,255,255,0.1)' }}></div>
+              <div style={{ position: 'absolute', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+              
+              <span style={{ 
+                fontFamily: "'Dancing Script', cursive", 
+                fontSize: '2.5rem', 
+                fontWeight: 700,
+                background: 'linear-gradient(135deg, #22d3ee, #c084fc)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                position: 'relative',
+                zIndex: 2,
+                lineHeight: 1,
+                marginLeft: '2px'
+              }}>
+                CR
+              </span>
             </div>
             <div>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '0.5px', margin: 0, color: 'var(--text-primary)' }}>
-                Customer<span className="text-gradient">Radar</span>
+              <h1 style={{ 
+                fontFamily: "'Dancing Script', cursive", 
+                fontSize: '3rem', 
+                fontWeight: 700,
+                background: 'linear-gradient(135deg, #22d3ee, #c084fc)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                lineHeight: 1,
+                margin: '0 0 -5px 0'
+              }}>
+                CustomerRadar
               </h1>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '2px' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '3px', fontWeight: 600 }}>
                 Enterprise Edition
               </div>
             </div>

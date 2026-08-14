@@ -81,22 +81,56 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollaps
         />
 
         {/* Logo */}
-        <div style={{ padding: collapsed ? '2rem 0' : '2rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'center', whiteSpace: 'nowrap', overflow: 'hidden', flexShrink: 0 }}>
+        <div style={{ padding: collapsed ? '2rem 0' : '2rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'center', whiteSpace: 'nowrap', overflow: 'hidden', flexShrink: 0 }}>
           <div style={{
-            width: '36px', height: '36px', minWidth: '36px',
-            background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
-            borderRadius: '10px',
+            position: 'relative',
+            width: '46px', height: '46px', minWidth: '46px',
+            borderRadius: '50%',
+            border: '1px solid rgba(59, 130, 246, 0.4)',
+            background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, rgba(6,182,212,0.05) 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 'bold', fontSize: '1.2rem',
+            boxShadow: '0 0 15px rgba(6,182,212,0.2), inset 0 0 10px rgba(168,85,247,0.2)',
+            overflow: 'hidden'
           }}>
-            CX
+            {/* Radar Lines */}
+            <div style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }}></div>
+            <div style={{ position: 'absolute', width: '60%', height: '60%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }}></div>
+            <div style={{ position: 'absolute', width: '1px', height: '100%', background: 'rgba(255,255,255,0.1)' }}></div>
+            <div style={{ position: 'absolute', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+            
+            {/* CR Text */}
+            <span style={{ 
+              fontFamily: "'Dancing Script', cursive", 
+              fontSize: '1.8rem', 
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #22d3ee, #c084fc)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              position: 'relative',
+              zIndex: 2,
+              lineHeight: 1,
+              marginLeft: '2px'
+            }}>
+              CR
+            </span>
           </div>
+          
           {!collapsed && (
-            <div>
-              <h1 style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '0.5px', margin: 0 }}>
-                Customer<span className="text-gradient">Radar</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <h1 style={{ 
+                fontFamily: "'Dancing Script', cursive", 
+                fontSize: '2rem', 
+                fontWeight: 700, 
+                margin: '0 0 -2px 0',
+                background: 'linear-gradient(135deg, #22d3ee, #c084fc)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                lineHeight: 1,
+                paddingRight: '10px'
+              }}>
+                CustomerRadar
               </h1>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 600 }}>
                 Enterprise Edition
               </div>
             </div>

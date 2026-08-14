@@ -139,10 +139,11 @@ async function chatWithData(userMessage, feedbacks) {
   const prompt = `
   Ngươi là "CustomerRadar AI", Chuyên gia Phân tích CXO.
   Xưng hô: "Tôi" và "Bạn". Trả lời NGẮN GỌN bằng Markdown.
+  LƯU Ý QUAN TRỌNG: Bạn đang được cung cấp một mảng chứa TẤT CẢ ${feedbacks.length} phản hồi từ hệ thống. Nếu người dùng hỏi có bao nhiêu phản hồi, HÃY TRẢ LỜI LÀ ${feedbacks.length}.
   
   Câu hỏi: "${userMessage}"
   
-  Dữ liệu:
+  Dữ liệu (${feedbacks.length} phản hồi):
   ${JSON.stringify(feedbacks.map(f => ({text: f.originalText, sentiment: f.sentiment, category: f.category})), null, 2)}
   `;
 

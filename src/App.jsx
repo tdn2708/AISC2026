@@ -47,10 +47,51 @@ const MainLayout = ({ children, onLogout }) => {
       {/* Mobile Header */}
       <div className="mobile-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '1rem' }}>
-            CX
+          <div style={{
+            position: 'relative',
+            width: '32px', height: '32px', minWidth: '32px',
+            borderRadius: '50%',
+            border: '1px solid rgba(59, 130, 246, 0.4)',
+            background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, rgba(6,182,212,0.05) 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 10px rgba(6,182,212,0.2)',
+            overflow: 'hidden'
+          }}>
+            {/* Radar Lines */}
+            <div style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }}></div>
+            <div style={{ position: 'absolute', width: '60%', height: '60%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }}></div>
+            <div style={{ position: 'absolute', width: '1px', height: '100%', background: 'rgba(255,255,255,0.1)' }}></div>
+            <div style={{ position: 'absolute', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+            
+            <span style={{ 
+              fontFamily: "'Dancing Script', cursive", 
+              fontSize: '1.2rem', 
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #22d3ee, #c084fc)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              position: 'relative',
+              zIndex: 2,
+              lineHeight: 1,
+              marginLeft: '1px'
+            }}>
+              CR
+            </span>
           </div>
-          <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Customer<span className="text-gradient">Radar</span></div>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ 
+              fontFamily: "'Dancing Script', cursive", 
+              fontSize: '1.5rem', 
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #22d3ee, #c084fc)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              lineHeight: 1,
+              margin: '0 0 -2px 0'
+            }}>
+              CustomerRadar
+            </div>
+          </div>
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(true)}
