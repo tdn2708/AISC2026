@@ -12,13 +12,15 @@ import axios from 'axios';
 const Dashboard = () => {
   const [timeFilter, setTimeFilter] = useState(localStorage.getItem('timeFilter') || 'All');
   const [sourceFilter, setSourceFilter] = useState(localStorage.getItem('sourceFilter') || 'All');
+  const [productFilter, setProductFilter] = useState(localStorage.getItem('productFilter') || 'All');
 
   useEffect(() => {
     localStorage.setItem('timeFilter', timeFilter);
     localStorage.setItem('sourceFilter', sourceFilter);
-  }, [timeFilter, sourceFilter]);
+    localStorage.setItem('productFilter', productFilter);
+  }, [timeFilter, sourceFilter, productFilter]);
   
-  const { stats, categories, sentiments, risks, trend, loading, error } = useDashboardData(timeFilter, sourceFilter);
+  const { stats, categories, sentiments, risks, trend, loading, error } = useDashboardData(timeFilter, sourceFilter, productFilter);
   const [isScraping, setIsScraping] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
@@ -139,7 +141,7 @@ const Dashboard = () => {
             {showNotifications && (
               <div className="glass-panel animate-fade-in" style={{
                 position: 'absolute', top: '120%', right: '0',
-                width: '320px', padding: '0', zIndex: 50,
+                width: '320px', padding: '0', zIndex: 200,
                 boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
                 overflow: 'hidden'
               }}>
@@ -193,6 +195,7 @@ const Dashboard = () => {
       <FilterBar 
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}
         sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
+        productFilter={productFilter} setProductFilter={setProductFilter}
       />
       
       <KPICards stats={stats} />
@@ -208,7 +211,7 @@ const Dashboard = () => {
 
       <div className="dashboard-grid">
         <div className="col-span-8">
-          <FeedbackTable timeFilter={timeFilter} sourceFilter={sourceFilter} />
+          <FeedbackTable timeFilter={timeFilter} sourceFilter={sourceFilter} productFilter={productFilter} />
         </div>
         <div className="col-span-4">
           <RiskAlerts risks={risks} />

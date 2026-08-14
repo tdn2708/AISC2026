@@ -1,25 +1,10 @@
-import React, { useState, useRef } from 'react';
-import { Download, FileText, FileSpreadsheet, Calendar, Filter, Zap, CheckCircle, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Download, FileText, FileSpreadsheet, Calendar, Filter, Zap, CheckCircle, Loader2, Trash2, ChevronDown } from 'lucide-react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, Cell, PieChart, Pie, Legend } from 'recharts';
 import FilterBar from './FilterBar';
-
-// Mock data for the PDF to ensure it generates even if backend fails
-const mockTrend = [
-  { name: '10/08', complaints: 4, satisfaction: 12 },
-  { name: '11/08', complaints: 3, satisfaction: 15 },
-  { name: '12/08', complaints: 7, satisfaction: 10 },
-  { name: '13/08', complaints: 2, satisfaction: 18 }
-];
-
-const mockCategories = [
-  { name: 'Delivery', value: 35, fill: '#3b82f6' },
-  { name: 'Quality', value: 25, fill: '#a855f7' },
-  { name: 'Service', value: 20, fill: '#06b6d4' },
-  { name: 'Payment', value: 10, fill: '#6366f1' }
-];
 
 const Reports = () => {
   const [downloadingCsv, setDownloadingCsv] = useState(false);
@@ -29,13 +14,63 @@ const Reports = () => {
   
   const [timeFilter, setTimeFilter] = useState('All');
   const [sourceFilter, setSourceFilter] = useState('All');
+  const [productFilter, setProductFilter] = useState('All');
+  
+  // Report History
+  const [reportHistory, setReportHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('reportHistory');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [historyFilter, setHistoryFilter] = useState('All'); // 'All', 'PDF', 'CSV'
+  const [showHistoryFilter, setShowHistoryFilter] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('reportHistory', JSON.stringify(reportHistory));
+  }, [reportHistory]);
   
   const pdfTemplateRef = useRef(null);
 
+  const addToHistory = (name, type, size) => {
+    const entry = {
+      id: Date.now(),
+      name,
+      type,
+      date: new Date().toISOString().split('T')[0],
+      size
+    };
+    setReportHistory(prev => [entry, ...prev]);
+  };
+
+  const deleteFromHistory = (id) => {
+    setReportHistory(prev => prev.filter(r => r.id !== id));
+  };
+
+  const clearAllHistory = () => {
+    if (window.confirm('Bạn có chắc muốn xóa toàn bộ lịch sử báo cáo?')) {
+      setReportHistory([]);
+    }
+  };
+
+  const filteredHistory = historyFilter === 'All' 
+    ? reportHistory 
+    : reportHistory.filter(r => r.type === historyFilter);
+
   const handleExportCSV = async () => {
+    // Prompt user for custom filename
+    const userFilename = window.prompt('Đặt tên file CSV:', `CX_Report_${new Date().toISOString().split('T')[0]}`);
+    if (userFilename === null) return; // User cancelled
+    const filename = (userFilename.trim() || 'CX_Report') + '.csv';
+
     try {
       setDownloadingCsv(true);
-      const queryParams = `?time=${encodeURIComponent(timeFilter)}&source=${encodeURIComponent(sourceFilter)}`;
+      const params = new URLSearchParams();
+      if (timeFilter !== 'All') params.append('time', timeFilter);
+      if (sourceFilter !== 'All') params.append('source', sourceFilter);
+      if (productFilter !== 'All') params.append('product', productFilter);
+      const queryParams = params.toString() ? `?${params.toString()}` : '';
+
       const res = await axios.get(`/feedbacks${queryParams}`);
       const data = res.data;
       
@@ -61,10 +96,14 @@ const Reports = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `CX_Report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Add to history
+      const sizeKB = Math.round(blob.size / 1024);
+      addToHistory(filename.replace('.csv', ''), 'CSV', sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`);
       
       setShowToast('CSV');
       setTimeout(() => setShowToast(''), 3000);
@@ -77,11 +116,22 @@ const Reports = () => {
 
   const handleExportPDF = async () => {
     if (!pdfTemplateRef.current) return;
+
+    // Prompt user for custom filename
+    const userFilename = window.prompt('Đặt tên file PDF:', `Executive_Report_${new Date().toISOString().split('T')[0]}`);
+    if (userFilename === null) return; // User cancelled
+    const filename = (userFilename.trim() || 'Executive_Report') + '.pdf';
+
     try {
       setGeneratingPdf(true);
       
       // Fetch real data from backend
-      const queryParams = `?time=${encodeURIComponent(timeFilter)}&source=${encodeURIComponent(sourceFilter)}`;
+      const params = new URLSearchParams();
+      if (timeFilter !== 'All') params.append('time', timeFilter);
+      if (sourceFilter !== 'All') params.append('source', sourceFilter);
+      if (productFilter !== 'All') params.append('product', productFilter);
+      const queryParams = params.toString() ? `?${params.toString()}` : '';
+
       const [statsRes, trendRes, catRes] = await Promise.all([
         axios.get(`/stats${queryParams}`),
         axios.get(`/trend${queryParams}`),
@@ -112,7 +162,10 @@ const Reports = () => {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Executive_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+      pdf.save(filename);
+
+      // Add to history (estimate ~500KB per page)
+      addToHistory(filename.replace('.pdf', ''), 'PDF', `${(pdfHeight / 297 * 0.5).toFixed(1)} MB`);
       
       setShowToast('PDF');
       setTimeout(() => setShowToast(''), 3000);
@@ -123,12 +176,6 @@ const Reports = () => {
       setGeneratingPdf(false);
     }
   };
-
-  const recentReports = [
-    { id: 1, name: "Q3 2026 Customer Experience Summary", type: "PDF", date: "2026-08-01", size: "2.4 MB" },
-    { id: 2, name: "July Escalation Logs", type: "CSV", date: "2026-07-31", size: "1.1 MB" },
-    { id: 3, name: "Product Quality Sentiment Analysis", type: "PDF", date: "2026-07-15", size: "3.8 MB" }
-  ];
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '2rem', position: 'relative' }}>
@@ -142,6 +189,7 @@ const Reports = () => {
       <FilterBar 
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}
         sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
+        productFilter={productFilter} setProductFilter={setProductFilter}
         hideExportButton={true}
       />
 
@@ -205,57 +253,125 @@ const Reports = () => {
         </div>
       </div>
 
+      {/* Report History */}
       <div className="glass-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>Report History</h3>
-          <button style={{ 
-            background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)',
-            padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '0.4rem',
-            fontSize: '0.85rem', cursor: 'pointer'
-          }}>
-            <Filter size={14} /> Filter
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {/* Filter Dropdown */}
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setShowHistoryFilter(!showHistoryFilter)}
+                style={{ 
+                  background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)',
+                  padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <Filter size={14} /> {historyFilter === 'All' ? 'All Types' : historyFilter}
+                <ChevronDown size={12} />
+              </button>
+              {showHistoryFilter && (
+                <div className="glass-panel animate-fade-in" style={{
+                  position: 'absolute', top: '110%', right: 0, width: '140px',
+                  padding: '0.4rem', zIndex: 20,
+                  background: 'rgba(15, 23, 42, 0.95)',
+                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                  border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                  {['All', 'PDF', 'CSV'].map(opt => (
+                    <div key={opt}
+                      onClick={() => { setHistoryFilter(opt); setShowHistoryFilter(false); }}
+                      style={{
+                        padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)',
+                        background: historyFilter === opt ? 'rgba(255,255,255,0.1)' : 'transparent',
+                        cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
+                      onMouseLeave={(e) => e.target.style.background = historyFilter === opt ? 'rgba(255,255,255,0.1)' : 'transparent'}
+                    >
+                      {opt === 'All' ? 'All Types' : opt}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Clear All button */}
+            {reportHistory.length > 0 && (
+              <button 
+                onClick={clearAllHistory}
+                style={{ 
+                  background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--risk-critical)',
+                  padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'}
+              >
+                <Trash2 size={14} /> Xóa tất cả
+              </button>
+            )}
+          </div>
         </div>
         
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'left' }}>
-              <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Report Name</th>
-              <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Type</th>
-              <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Generated Date</th>
-              <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Size</th>
-              <th style={{ padding: '1rem 0.5rem', fontWeight: 500, textAlign: 'right' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentReports.map(report => (
-              <tr key={report.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '1rem 0.5rem', fontSize: '0.95rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    {report.type === 'PDF' ? <FileText size={16} color="var(--accent-purple)" /> : <FileSpreadsheet size={16} color="var(--accent-blue)" />}
-                    {report.name}
-                  </div>
-                </td>
-                <td style={{ padding: '1rem 0.5rem' }}>
-                  <span className="badge badge-medium" style={{ background: report.type === 'PDF' ? 'rgba(168, 85, 247, 0.1)' : 'rgba(56, 189, 248, 0.1)', color: report.type === 'PDF' ? 'var(--accent-purple)' : 'var(--accent-blue)' }}>
-                    {report.type}
-                  </span>
-                </td>
-                <td style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Calendar size={14} /> {report.date}
-                  </div>
-                </td>
-                <td style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{report.size}</td>
-                <td style={{ padding: '1rem 0.5rem', textAlign: 'right' }}>
-                  <button style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '0.25rem' }}>
-                    <Download size={16} />
-                  </button>
-                </td>
+        {filteredHistory.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+            <FileText size={40} style={{ marginBottom: '1rem', opacity: 0.3 }} />
+            <p style={{ margin: 0, fontSize: '0.95rem' }}>
+              {reportHistory.length === 0 ? 'Chưa có báo cáo nào. Hãy tải CSV hoặc PDF để bắt đầu!' : `Không có báo cáo loại "${historyFilter}".`}
+            </p>
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'left' }}>
+                <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Report Name</th>
+                <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Type</th>
+                <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Generated Date</th>
+                <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Size</th>
+                <th style={{ padding: '1rem 0.5rem', fontWeight: 500, textAlign: 'right' }}>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredHistory.map(report => (
+                <tr key={report.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <td style={{ padding: '1rem 0.5rem', fontSize: '0.95rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      {report.type === 'PDF' ? <FileText size={16} color="var(--accent-purple)" /> : <FileSpreadsheet size={16} color="var(--accent-blue)" />}
+                      {report.name}
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem 0.5rem' }}>
+                    <span className="badge badge-medium" style={{ background: report.type === 'PDF' ? 'rgba(168, 85, 247, 0.1)' : 'rgba(56, 189, 248, 0.1)', color: report.type === 'PDF' ? 'var(--accent-purple)' : 'var(--accent-blue)' }}>
+                      {report.type}
+                    </span>
+                  </td>
+                  <td style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Calendar size={14} /> {report.date}
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{report.size}</td>
+                  <td style={{ padding: '1rem 0.5rem', textAlign: 'right' }}>
+                    <button 
+                      onClick={() => deleteFromHistory(report.id)}
+                      title="Xóa khỏi lịch sử"
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem', transition: 'color 0.2s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--risk-critical)'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {showToast && (
@@ -274,17 +390,17 @@ const Reports = () => {
         <div 
           ref={pdfTemplateRef} 
           style={{
-            width: '1000px', // Wider width to match dashboard feel
-            minHeight: '1414px', // Exact A4 aspect ratio (1000 * 1.414)
-            padding: '60px', // More breathing room
-            background: '#0f172a', // Dark theme background matching Dashboard
-            color: '#f8fafc', // Light text
+            width: '1000px',
+            minHeight: '1414px',
+            padding: '60px',
+            background: '#0f172a',
+            color: '#f8fafc',
             fontFamily: 'Inter, sans-serif',
             display: 'flex',
             flexDirection: 'column'
           }}
         >
-          {/* Main Content Wrapper (pushes footer down) */}
+          {/* Main Content Wrapper */}
           <div style={{ flex: 1 }}>
             {/* Header */}
           <div style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '20px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -294,7 +410,7 @@ const Reports = () => {
             </div>
             <div style={{ textAlign: 'right' }}>
               <p style={{ color: '#f8fafc', fontWeight: 600, margin: '0 0 4px 0' }}>Generated Date: {new Date().toLocaleDateString()}</p>
-              <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>Filter: {timeFilter === 'All' ? 'All Time' : timeFilter} | Source: {sourceFilter}</p>
+              <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>Filter: {timeFilter === 'All' ? 'All Time' : timeFilter} | Source: {sourceFilter} | Product: {productFilter}</p>
             </div>
           </div>
 

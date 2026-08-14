@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const FeedbackTable = ({ timeFilter, sourceFilter }) => {
+const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
   const [feedbacks, setFeedbacks] = useState([]);
   const [showAll, setShowAll] = useState(false);
 
@@ -11,6 +11,7 @@ const FeedbackTable = ({ timeFilter, sourceFilter }) => {
         const params = new URLSearchParams();
         if (timeFilter && timeFilter !== 'All') params.append('time', timeFilter);
         if (sourceFilter && sourceFilter !== 'All') params.append('source', sourceFilter);
+        if (productFilter && productFilter !== 'All') params.append('product', productFilter);
         const q = params.toString() ? `?${params.toString()}` : '';
         
         const response = await axios.get(`/feedbacks${q}`);
@@ -20,7 +21,7 @@ const FeedbackTable = ({ timeFilter, sourceFilter }) => {
       }
     };
     loadFeedbacks();
-  }, [timeFilter, sourceFilter]);
+  }, [timeFilter, sourceFilter, productFilter]);
 
   const getSentimentBadge = (sentiment) => {
     switch (sentiment) {

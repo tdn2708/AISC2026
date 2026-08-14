@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
-import { Calendar, Filter, ChevronDown, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar, Filter, ChevronDown, Download, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, hideExportButton = false }) => {
+const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, productFilter, setProductFilter, hideExportButton = false }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [productOptions, setProductOptions] = useState(['All']);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await axios.get('/products');
+        setProductOptions(['All', ...res.data]);
+      } catch (e) {
+        console.error('Failed to load products:', e);
+      }
+    };
+    if (setProductFilter) fetchProducts();
+  }, [setProductFilter]);
 
   const timeOptions = ['All', 'Today', 'This Week', 'This Month', 'Custom Date...'];
   const sourceOptions = ['All', 'Shopee', 'Facebook', 'TikTok', 'Web'];
@@ -168,6 +182,51 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, h
             </div>
           )}
         </div>
+
+        {/* Product Filter - only show if setProductFilter is provided */}
+        {setProductFilter && (
+          <div style={{ position: 'relative' }}>
+            <button 
+              onClick={() => setOpenDropdown(openDropdown === 'product' ? null : 'product')}
+              style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: productFilter && productFilter !== 'All' ? 'rgba(168, 85, 247, 0.1)' : 'rgba(255,255,255,0.05)',
+              border: productFilter && productFilter !== 'All' ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(255,255,255,0.1)',
+              padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)',
+              color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem'
+            }}>
+              <Package size={16} />
+              {productFilter === 'All' || !productFilter ? 'All Products' : (productFilter.length > 20 ? productFilter.substring(0, 20) + '...' : productFilter)}
+              <ChevronDown size={14} color="var(--text-secondary)" />
+            </button>
+
+            {openDropdown === 'product' && (
+              <div className="glass-panel animate-fade-in" style={{
+                position: 'absolute', top: '110%', left: 0, width: '220px', maxHeight: '250px', overflowY: 'auto',
+                padding: '0.5rem', zIndex: 20,
+                background: 'rgba(15, 23, 42, 0.95)',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                {productOptions.map(opt => (
+                  <div key={opt} 
+                    onClick={() => { setProductFilter(opt); setOpenDropdown(null); }}
+                    style={{
+                      padding: '0.5rem', borderRadius: 'var(--radius-sm)',
+                      background: productFilter === opt ? 'rgba(255,255,255,0.1)' : 'transparent',
+                      cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
+                    onMouseLeave={(e) => e.target.style.background = productFilter === opt ? 'rgba(255,255,255,0.1)' : 'transparent'}
+                  >
+                    {opt === 'All' ? 'All Products' : opt}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       
       {!hideExportButton && (

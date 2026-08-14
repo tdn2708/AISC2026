@@ -28,12 +28,19 @@ const ProtectedRoute = ({ isAuthenticated, children }) => {
 
 const MainLayout = ({ children, onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebarCollapsed') === 'true';
+  });
   const location = useLocation();
 
   // Close sidebar when route changes on mobile
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+  }, [sidebarCollapsed]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-dark)' }}>
@@ -57,9 +64,11 @@ const MainLayout = ({ children, onLogout }) => {
         <Sidebar 
           onLogout={onLogout} 
           isOpen={isMobileMenuOpen} 
-          onClose={() => setIsMobileMenuOpen(false)} 
+          onClose={() => setIsMobileMenuOpen(false)}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
-        <main className="main-content">
+        <main className="main-content" style={{ marginLeft: sidebarCollapsed ? '72px' : undefined, transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
           {children}
         </main>
       </div>

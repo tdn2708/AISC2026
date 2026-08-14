@@ -4,9 +4,10 @@ const { scrapeShopeeReviews } = require('../services/scraper');
 const { analyzeFeedbackBatch } = require('../services/ai_analyzer');
 
 const buildFilterQuery = (req) => {
-  const { source, time } = req.query;
+  const { source, time, product } = req.query;
   let query = {};
   if (source && source !== 'All') query.source = source;
+  if (product && product !== 'All') query.productName = product;
   if (time && time !== 'All') {
     const now = new Date();
     let startDate;
@@ -263,6 +264,7 @@ router.post('/scrape', async (req, res) => {
       originalText: review.rawText,
       author: review.author,
       timestamp: review.timestamp,
+      productName: review.productName || url.split('/').pop()?.split('?')[0]?.replace(/-/g, ' ') || 'Unknown Product',
       ...(aiResults[index] || {}) // Merge category, sentiment, severity, riskFlag, aiSummary
     }));
 
@@ -290,14 +292,27 @@ router.post('/seed', async (req, res) => {
     await col.deleteMany({});
     
     const sampleData = [
-      { source: 'Facebook', originalText: 'Giao hàng quá chậm, bưu kiện bị móp méo', category: 'Delivery', subCategory: 'Late Delivery', sentiment: 'Negative', severity: 'High', riskFlag: true, aiSummary: 'Khách hàng phàn nàn về tốc độ giao hàng và chất lượng đóng gói.', timestamp: new Date() },
-      { source: 'TikTok', originalText: 'Sản phẩm dùng tốt, nhưng app thỉnh thoảng bị lỗi thanh toán', category: 'Payment', subCategory: 'App Error', sentiment: 'Neutral', severity: 'Medium', riskFlag: false, aiSummary: 'Lỗi thanh toán trên ứng dụng.', timestamp: new Date() },
-      { source: 'Other', originalText: 'Sản phẩm tuyệt vời, sẽ mua lại', category: 'Product Quality', subCategory: 'Good Quality', sentiment: 'Positive', severity: 'Low', riskFlag: false, aiSummary: 'Khen ngợi chất lượng sản phẩm.', timestamp: new Date() },
-      { source: 'Facebook', originalText: 'Hàng bị vỡ khi mở hộp, yêu cầu hoàn tiền gấp!', category: 'Product Quality', subCategory: 'Damaged', sentiment: 'Negative', severity: 'Critical', riskFlag: true, aiSummary: 'Hàng hỏng hóc nghiêm trọng, khách đòi hoàn tiền.', timestamp: new Date() },
+      { source: 'Facebook', productName: 'iPhone 15 Pro Max', originalText: 'Giao hàng quá chậm, bưu kiện bị móp méo', category: 'Delivery', subCategory: 'Late Delivery', sentiment: 'Negative', severity: 'High', riskFlag: true, aiSummary: 'Khách hàng phàn nàn về tốc độ giao hàng và chất lượng đóng gói.', timestamp: new Date() },
+      { source: 'TikTok', productName: 'Samsung Galaxy S24', originalText: 'Sản phẩm dùng tốt, nhưng app thỉnh thoảng bị lỗi thanh toán', category: 'Payment', subCategory: 'App Error', sentiment: 'Neutral', severity: 'Medium', riskFlag: false, aiSummary: 'Lỗi thanh toán trên ứng dụng.', timestamp: new Date() },
+      { source: 'Other', productName: 'iPhone 15 Pro Max', originalText: 'Sản phẩm tuyệt vời, sẽ mua lại', category: 'Product Quality', subCategory: 'Good Quality', sentiment: 'Positive', severity: 'Low', riskFlag: false, aiSummary: 'Khen ngợi chất lượng sản phẩm.', timestamp: new Date() },
+      { source: 'Facebook', productName: 'Samsung Galaxy S24', originalText: 'Hàng bị vỡ khi mở hộp, yêu cầu hoàn tiền gấp!', category: 'Product Quality', subCategory: 'Damaged', sentiment: 'Negative', severity: 'Critical', riskFlag: true, aiSummary: 'Hàng hỏng hóc nghiêm trọng, khách đòi hoàn tiền.', timestamp: new Date() },
     ];
     
     await col.insertMany(sampleData);
     res.json({ message: "Seed data thành công bằng Native Driver!" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+// ==========================================
+// GET DISTINCT PRODUCTS
+// ==========================================
+router.get('/products', async (req, res) => {
+  try {
+    const products = await req.db.collection('feedbacks').distinct('productName');
+    // Filter out null/undefined/empty
+    const filtered = products.filter(p => p && p.trim());
+    res.json(filtered.sort());
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
