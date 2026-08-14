@@ -10,11 +10,13 @@ const Skeleton = ({ className, style }) => (
 const Analytics = () => {
   const [timeFilter, setTimeFilter] = useState(localStorage.getItem('timeFilter') || 'All');
   const [sourceFilter, setSourceFilter] = useState(localStorage.getItem('sourceFilter') || 'All');
+  const [productFilter, setProductFilter] = useState(localStorage.getItem('productFilter') || 'All');
 
   useEffect(() => {
     localStorage.setItem('timeFilter', timeFilter);
     localStorage.setItem('sourceFilter', sourceFilter);
-  }, [timeFilter, sourceFilter]);
+    localStorage.setItem('productFilter', productFilter);
+  }, [timeFilter, sourceFilter, productFilter]);
 
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +28,8 @@ const Analytics = () => {
       if (!isAuto) setRefreshing(true);
       const res = await axios.post('/predict/refresh', {
         time: timeFilter,
-        source: sourceFilter
+        source: sourceFilter,
+        product: productFilter
       });
       setPrediction(res.data.data);
     } catch (err) {
@@ -45,6 +48,7 @@ const Analytics = () => {
       const params = new URLSearchParams();
       if (timeFilter !== 'All') params.append('time', timeFilter);
       if (sourceFilter !== 'All') params.append('source', sourceFilter);
+      if (productFilter !== 'All') params.append('product', productFilter);
       const q = params.toString() ? `?${params.toString()}` : '';
 
       const res = await axios.get(`/predict${q}`);
@@ -63,7 +67,7 @@ const Analytics = () => {
 
   useEffect(() => {
     fetchPrediction();
-  }, [timeFilter, sourceFilter]);
+  }, [timeFilter, sourceFilter, productFilter]);
 
   const renderSkeleton = () => (
     <div className="dashboard-grid">
@@ -128,6 +132,7 @@ const Analytics = () => {
       <FilterBar 
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}
         sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
+        productFilter={productFilter} setProductFilter={setProductFilter}
       />
 
       {error ? (

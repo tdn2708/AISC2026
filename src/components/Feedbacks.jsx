@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Search, Filter, Loader2, AlertCircle } from 'lucide-react';
+import FilterBar from './FilterBar';
 
 const Feedbacks = () => {
   const [feedbacks, setFeedbacks] = useState([]);
@@ -12,11 +13,29 @@ const Feedbacks = () => {
   const [filterSentiment, setFilterSentiment] = useState('All');
   const [filterSeverity, setFilterSeverity] = useState('All');
 
+  // Global Filters
+  const [timeFilter, setTimeFilter] = useState(localStorage.getItem('timeFilter') || 'All');
+  const [sourceFilter, setSourceFilter] = useState(localStorage.getItem('sourceFilter') || 'All');
+  const [productFilter, setProductFilter] = useState(localStorage.getItem('productFilter') || 'All');
+
+  // Sync to localStorage
+  useEffect(() => {
+    localStorage.setItem('timeFilter', timeFilter);
+    localStorage.setItem('sourceFilter', sourceFilter);
+    localStorage.setItem('productFilter', productFilter);
+  }, [timeFilter, sourceFilter, productFilter]);
+
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
         setLoading(true);
-        const res = await axios.get('/feedbacks');
+        const params = new URLSearchParams();
+        if (timeFilter !== 'All') params.append('time', timeFilter);
+        if (sourceFilter !== 'All') params.append('source', sourceFilter);
+        if (productFilter !== 'All') params.append('product', productFilter);
+        
+        const q = params.toString() ? `?${params.toString()}` : '';
+        const res = await axios.get(`/feedbacks${q}`);
         setFeedbacks(res.data);
       } catch (err) {
         setError('Failed to fetch feedbacks. Please try again later.');
@@ -25,7 +44,7 @@ const Feedbacks = () => {
       }
     };
     fetchFeedbacks();
-  }, []);
+  }, [timeFilter, sourceFilter, productFilter]);
 
   const getSentimentBadge = (sentiment) => {
     switch (sentiment) {
@@ -61,7 +80,14 @@ const Feedbacks = () => {
         <p style={{ color: 'var(--text-secondary)', margin: 0 }}>View, search, and filter all customer feedbacks analyzed by AI.</p>
       </div>
 
-      <div className="glass-panel" style={{ padding: '0', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 160px)' }}>
+      <FilterBar 
+        timeFilter={timeFilter} setTimeFilter={setTimeFilter}
+        sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
+        productFilter={productFilter} setProductFilter={setProductFilter}
+        hideExportButton={true}
+      />
+
+      <div className="glass-panel" style={{ padding: '0', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 250px)' }}>
         {/* Toolbar */}
         <div style={{ 
           padding: '1.25rem 1.5rem', 
@@ -175,7 +201,7 @@ const Feedbacks = () => {
         {/* Footer */}
         {!loading && !error && filteredFeedbacks.length > 0 && (
           <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            <span>Showing {filteredFeedbacks.length} of {feedbacks.length} feedbacks</span>
+            <span>{filteredFeedbacks.length} / {feedbacks.length}</span>
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { scrapeShopeeReviews } = require('../services/scraper');
-const { analyzeFeedbackBatch } = require('../services/ai_analyzer');
+const { analyzeFeedbackBatch, generateRiskAlertsBatch } = require('../services/ai_analyzer');
 
 const buildFilterQuery = (req) => {
   const { source, time, product } = req.query;
@@ -234,14 +234,7 @@ router.get('/risks', async (req, res) => {
        return res.json([]); 
     }
     
-    const alerts = highRisks.map(risk => ({
-      id: risk._id,
-      issue: risk.category + (risk.subCategory ? ` - ${risk.subCategory}` : ''),
-      increase: "Tăng đột biến", 
-      riskLevel: risk.severity.toUpperCase(),
-      insight: risk.aiSummary || `Phát hiện vấn đề nghiêm trọng từ nguồn: ${risk.source}`,
-      recommendations: ["Chuyển tiếp báo cáo cho bộ phận liên quan để xử lý ngay lập tức."]
-    }));
+    const alerts = await generateRiskAlertsBatch(highRisks);
     
     res.json(alerts);
   } catch (error) {
@@ -325,10 +318,10 @@ router.get('/products', async (req, res) => {
 // Lấy dự đoán đã lưu sẵn (Độ trễ 0s)
 router.get('/predict', async (req, res) => {
   try {
-    const { source = 'All', time = 'All' } = req.query;
+    const { source = 'All', time = 'All', product = 'All' } = req.query;
     
     const cachedPrediction = await req.db.collection('predictions').findOne(
-      { source, time }, 
+      { source, time, product }, 
       { sort: { timestamp: -1 } }
     );
     
@@ -347,10 +340,10 @@ router.get('/predict', async (req, res) => {
 // Chạy AI phân tích dữ liệu mới và lưu lại
 router.post('/predict/refresh', async (req, res) => {
   try {
-    const { source = 'All', time = 'All' } = req.body;
+    const { source = 'All', time = 'All', product = 'All' } = req.body;
     
     // Tạo giả lập req.query để tái sử dụng buildFilterQuery
-    const mockReq = { query: { source, time } };
+    const mockReq = { query: { source, time, product } };
     const query = buildFilterQuery(mockReq);
 
     const { generatePrediction } = require('../services/ai_analyzer');
@@ -361,13 +354,14 @@ router.post('/predict/refresh', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Chưa có dữ liệu để phân tích cho bộ lọc này.' });
     }
 
-    const prediction = await generatePrediction(feedbacks, time);
+    const prediction = await generatePrediction(feedbacks, time, product);
 
     // Xóa cache cũ cho đúng bộ lọc này và lưu cache mới
-    await req.db.collection('predictions').deleteMany({ source, time });
+    await req.db.collection('predictions').deleteMany({ source, time, product });
     await req.db.collection('predictions').insertOne({
       source,
       time,
+      product,
       timestamp: new Date(),
       data: prediction
     });

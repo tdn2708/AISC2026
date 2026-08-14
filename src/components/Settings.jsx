@@ -101,10 +101,10 @@ const Settings = () => {
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Timezone</label>
                   <select style={{ 
                     padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'rgba(0,0,0,0.1)', color: 'var(--text-primary)', outline: 'none'
+                    background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none'
                   }}>
-                    <option value="Asia/Ho_Chi_Minh">(GMT+07:00) Indochina Time (ICT)</option>
-                    <option value="UTC">UTC / GMT</option>
+                    <option value="Asia/Ho_Chi_Minh" style={{ background: 'var(--bg-card)' }}>(GMT+07:00) Indochina Time (ICT)</option>
+                    <option value="UTC" style={{ background: 'var(--bg-card)' }}>UTC / GMT</option>
                   </select>
                 </div>
               </div>
@@ -160,36 +160,49 @@ const Settings = () => {
           {activeTab === 'ai' && (
             <div className="animate-fade-in">
               <h3 style={{ fontSize: '1.25rem', margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Cpu size={20} color="var(--accent-cyan)" /> AI Configuration
+                <Cpu size={20} color="var(--accent-cyan)" /> AI Architecture (Tri-API Load Balancing)
               </h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>AI Model Engine</label>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Primary Analysis Engine (Batch Processing)</label>
                   <select style={{ 
                     padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'rgba(0,0,0,0.1)', color: 'var(--text-primary)', outline: 'none', width: '50%'
+                    background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', width: '100%', maxWidth: '500px'
                   }}>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fast & Efficient - Recommended)</option>
-                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Deep Reasoning - Slower)</option>
+                    <option value="groq" style={{ background: 'var(--bg-card)' }}>Groq - LLaMA 3.3 70B (Ultra-fast)</option>
+                    <option value="gemini" style={{ background: 'var(--bg-card)' }}>Gemini 1.5 Flash (Standard)</option>
                   </select>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Custom Gemini API Key</label>
-                  <input type="password" placeholder="AIzaSy..." style={{ 
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Predictive & Strategic Engine (Analytics)</label>
+                  <select style={{ 
                     padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'rgba(0,0,0,0.1)', color: 'var(--text-primary)', outline: 'none'
-                  }} />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Leave blank to use the system default API Key.</span>
+                    background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', width: '100%', maxWidth: '500px'
+                  }}>
+                    <option value="openrouter" style={{ background: 'var(--bg-card)' }}>OpenRouter - GPT-4o-mini (High Accuracy)</option>
+                    <option value="groq" style={{ background: 'var(--bg-card)' }}>Groq - LLaMA 3.3 70B (Fast Fallback)</option>
+                  </select>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Conversational Assistant (ChatWidget)</label>
+                  <select style={{ 
+                    padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
+                    background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', width: '100%', maxWidth: '500px'
+                  }}>
+                    <option value="gemini" style={{ background: 'var(--bg-card)' }}>Gemini 2.5 Flash (Large Context Window)</option>
+                    <option value="openrouter" style={{ background: 'var(--bg-card)' }}>OpenRouter - Claude 3.5 Sonnet</option>
+                  </select>
                 </div>
 
-                <div style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
                     <input type="checkbox" defaultChecked /> 
                     <div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Enable Fallback Mode</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>Automatically switch to mathematical statistics if AI API limit is reached.</div>
+                      <div style={{ fontWeight: 600, color: 'var(--risk-low)' }}>Enable Tri-API Failover (Self-Healing)</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>Automatically route traffic between Groq, OpenRouter, and Gemini if one provider goes down.</div>
                     </div>
                   </label>
                 </div>
@@ -276,21 +289,21 @@ const Settings = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Auto-Sync Interval</label>
-                  <select style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.1)', color: 'var(--text-primary)', outline: 'none', width: '50%' }}>
-                    <option value="realtime">Real-time (WebSockets)</option>
-                    <option value="5m">Every 5 minutes</option>
-                    <option value="1h">Every 1 hour</option>
-                    <option value="manual">Manual Sync Only</option>
+                  <select style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', width: '50%' }}>
+                    <option value="realtime" style={{ background: 'var(--bg-card)' }}>Real-time (WebSockets)</option>
+                    <option value="5m" style={{ background: 'var(--bg-card)' }}>Every 5 minutes</option>
+                    <option value="1h" style={{ background: 'var(--bg-card)' }}>Every 1 hour</option>
+                    <option value="manual" style={{ background: 'var(--bg-card)' }}>Manual Sync Only</option>
                   </select>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Data Retention</label>
-                  <select style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.1)', color: 'var(--text-primary)', outline: 'none', width: '50%' }}>
-                    <option value="30">30 Days</option>
-                    <option value="90">90 Days</option>
-                    <option value="365">1 Year</option>
-                    <option value="forever">Indefinitely</option>
+                  <select style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', width: '50%' }}>
+                    <option value="30" style={{ background: 'var(--bg-card)' }}>30 Days</option>
+                    <option value="90" style={{ background: 'var(--bg-card)' }}>90 Days</option>
+                    <option value="365" style={{ background: 'var(--bg-card)' }}>1 Year</option>
+                    <option value="forever" style={{ background: 'var(--bg-card)' }}>Indefinitely</option>
                   </select>
                 </div>
 

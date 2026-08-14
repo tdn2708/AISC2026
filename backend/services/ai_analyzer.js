@@ -1,60 +1,57 @@
+const Groq = require('groq-sdk');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const axios = require('axios');
 
-// Only use the first key because the 3 new keys are blocked by Google (403/404 for new users).
-const apiKeys = [
-  process.env.GEMINI_API_KEY
-].filter(Boolean);
+// Initialize API Clients
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const getRandomAI = () => {
-  const key = apiKeys[0]; // Chỉ dùng key chính
-  return new GoogleGenerativeAI(key);
-};
+// Models Configuration
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+const OPENROUTER_MODEL = "openai/gpt-4o-mini"; // Powerful, fast, supports JSON
+const GEMINI_MODEL = "gemini-2.5-flash";
 
+// 1. analyzeFeedbackBatch -> Routed to GROQ (Extremely fast JSON processing)
 const analyzeFeedbackBatch = async (reviewsArray) => {
   const prompt = `
-Bạn là một chuyên gia phân tích dữ liệu khách hàng.
-Hãy phân tích mảng các đoạn bình luận (feedback) sau và trả về kết quả dưới dạng một MẢNG JSON (JSON Array).
-Tuyệt đối chỉ trả về mảng JSON, không có markdown, không có \`\`\`json.
+Bạn là chuyên gia phân tích dữ liệu khách hàng.
+Phân tích mảng bình luận sau và trả về MẢNG JSON (JSON Array) tuyệt đối không có markdown.
 
-Dữ liệu đầu vào:
+Dữ liệu:
 ${JSON.stringify(reviewsArray)}
 
-Yêu cầu đầu ra cho mỗi bình luận trong mảng (phải giữ nguyên thứ tự):
+Output format cho mỗi item:
 {
-  "category": (String) Phân loại chính (Delivery, Product Quality, Customer Service, Payment, Technical Issue, Refund, Other),
-  "subCategory": (String) Vấn đề chi tiết ngắn gọn (VD: "Late Delivery", "Damaged"),
-  "sentiment": (String) Cảm xúc (Positive, Neutral, Negative),
-  "severity": (String) Mức độ nghiêm trọng (Low, Medium, High, Critical),
-  "riskFlag": (Boolean) true nếu severity là High hoặc Critical, ngược lại false,
-  "aiSummary": (String) Tóm tắt insight từ bình luận trong 1 câu ngắn gọn
+  "category": (String),
+  "subCategory": (String),
+  "sentiment": (String Positive/Neutral/Negative),
+  "severity": (String Low/Medium/High/Critical),
+  "riskFlag": (Boolean true nếu High/Critical),
+  "aiSummary": (String 1 câu)
 }
 `;
 
   try {
-    const ai = getRandomAI();
-    const model = ai.getGenerativeModel({ model: "gemini-3.5-flash" });
-    const result = await model.generateContent(prompt);
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: GROQ_MODEL,
+    });
     
-    let textOutput = result.response.text();
-    if (textOutput.startsWith('```json')) {
-      textOutput = textOutput.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
-    } else if (textOutput.startsWith('\`\`\`')) {
-      textOutput = textOutput.replace(/\`\`\`/g, '');
-    }
+    let textOutput = completion.choices[0].message.content;
+    if (textOutput.startsWith('```json')) textOutput = textOutput.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
+    else if (textOutput.startsWith('\`\`\`')) textOutput = textOutput.replace(/\`\`\`/g, '');
     
     return JSON.parse(textOutput.trim());
   } catch (error) {
-    console.error('Lỗi khi gọi Gemini API:', error);
-    // Trả về mảng Mock Data xịn xò để Dashboard vẫn đẹp khi AI lỗi
+    console.error('[GROQ] Lỗi analyzeFeedbackBatch:', error.message);
+    // Fallback Mock
     const categories = ['Delivery', 'Product Quality', 'Customer Service', 'Payment', 'Refund'];
     const sentiments = ['Positive', 'Neutral', 'Negative'];
     const severities = ['Low', 'Medium', 'High', 'Critical'];
     
     return reviewsArray.map((_, index) => {
-      // Randomize data for a lively dashboard
       const isNegative = index % 3 === 0;
       const severity = isNegative ? severities[Math.floor(Math.random() * 2) + 2] : severities[Math.floor(Math.random() * 2)];
-      
       return {
         category: categories[index % categories.length],
         subCategory: 'Vấn đề phát sinh',
@@ -67,102 +64,174 @@ Yêu cầu đầu ra cho mỗi bình luận trong mảng (phải giữ nguyên t
   }
 };
 
-module.exports = { analyzeFeedbackBatch, generatePrediction, chatWithData };
+// 2. generatePrediction -> Routed to OPENROUTER (Strategic Reasoning) -> Fallback GROQ
+async function generatePrediction(feedbacks, timeFilter = 'All', productFilter = 'All') {
+  let timeContext = "30 ngày tới";
+  if (timeFilter === 'Today') timeContext = "7 ngày tới";
+  else if (timeFilter === 'This Week') timeContext = "tháng tới (4 tuần tiếp theo)";
+  else if (timeFilter === 'This Month') timeContext = "Quý tới (3 tháng tiếp theo)";
+  
+  let productContext = productFilter !== 'All' ? `về sản phẩm (${productFilter})` : 'về tất cả sản phẩm';
 
-async function chatWithData(userMessage, feedbacks) {
+  const prompt = `
+  Bạn là chuyên gia AI Phân tích Dữ liệu CXM.
+  Khách hàng ${productContext}. Thời gian: ${timeFilter}.
+  Dự đoán xu hướng trong ${timeContext}.
+  Output JSON format:
+  {
+    "aiReport": "Đoạn văn 3-4 câu phân tích sâu tình hình và rủi ro.",
+    "actionableSteps": ["Bước 1...", "Bước 2...", "Bước 3..."],
+    "topRisks": [
+      {"name": "Rủi ro A", "probability": "Cao"},
+      {"name": "Rủi ro B", "probability": "Trung bình"}
+    ]
+  }
+  
+  Dữ liệu:
+  ${JSON.stringify(feedbacks.map(f => ({text: f.originalText, sentiment: f.sentiment, category: f.category})), null, 2)}
+  `;
+
   try {
-    const prompt = `
-    Ngươi là "CustomerRadar AI", Chuyên gia Phân tích Trải nghiệm Khách hàng (CXO) cấp cao.
-    Dưới đây là dữ liệu khiếu nại gần đây của khách hàng (dạng JSON).
-    
-    Yêu cầu:
-    - Xưng hô: "Tôi" và "Bạn".
-    - Văn phong: Chuyên nghiệp, khách quan, mang tính phân tích. Không quá cứng nhắc nhưng vẫn giữ được phong thái của một chuyên gia.
-    - Trả lời NGẮN GỌN, đi thẳng vào số liệu, cung cấp insight và đề xuất hành động.
-    - Dùng Markdown để trình bày (in đậm, danh sách) cho rõ ràng.
+    // Primary: OpenRouter
+    const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      model: OPENROUTER_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" }
+    }, {
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'http://localhost:3000',
+        'Content-Type': 'application/json'
+      }
+    });
 
-    Câu hỏi của lãnh đạo: "${userMessage}"
-    
-    Dữ liệu khách hàng hiện tại:
-    ${JSON.stringify(feedbacks.map(f => ({text: f.originalText, sentiment: f.sentiment, category: f.category, severity: f.severity})), null, 2)}
-    `;
+    let jsonText = response.data.choices[0].message.content.trim();
+    return JSON.parse(jsonText);
 
-    const ai = getRandomAI();
-    const model = ai.getGenerativeModel({ model: "gemini-3.5-flash" });
+  } catch (error) {
+    console.warn("[OPENROUTER] Lỗi generatePrediction, chuyển sang GROQ fallback:", error.message);
+    try {
+      // Fallback 1: Groq
+      const completion = await groq.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        model: GROQ_MODEL,
+        response_format: { type: "json_object" }
+      });
+      let jsonText = completion.choices[0].message.content.trim();
+      return JSON.parse(jsonText);
+
+    } catch (fallbackError) {
+      console.error("[GROQ] Lỗi fallback generatePrediction:", fallbackError.message);
+      // Fallback 2: Mock
+      const total = feedbacks.length;
+      const negativeCount = feedbacks.filter(f => f.sentiment === 'Negative').length;
+      return {
+        aiReport: `(Chế độ Dự phòng) Hệ thống ghi nhận ${negativeCount} khiếu nại tiêu cực trên tổng ${total} phản hồi. Cần chú ý theo dõi biến động.`,
+        actionableSteps: ["Kiểm tra lại toàn bộ quy trình", "Liên hệ với khách hàng có trải nghiệm xấu", "Tối ưu hóa thời gian phản hồi"],
+        topRisks: [{ name: "Rủi ro chung", probability: "Trung bình" }]
+      };
+    }
+  }
+}
+
+// 3. chatWithData -> Routed to GEMINI (Conversational Context) -> Fallback OPENROUTER
+async function chatWithData(userMessage, feedbacks) {
+  const prompt = `
+  Ngươi là "CustomerRadar AI", Chuyên gia Phân tích CXO.
+  Xưng hô: "Tôi" và "Bạn". Trả lời NGẮN GỌN bằng Markdown.
+  
+  Câu hỏi: "${userMessage}"
+  
+  Dữ liệu:
+  ${JSON.stringify(feedbacks.map(f => ({text: f.originalText, sentiment: f.sentiment, category: f.category})), null, 2)}
+  `;
+
+  try {
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
     const result = await model.generateContent(prompt);
     return result.response.text().trim();
   } catch (error) {
-    console.error("Lỗi khi Chat AI:", error);
-    return "Xin lỗi, hệ thống AI đang bận hoặc quá tải. Vui lòng thử lại sau giây lát.";
+    console.warn("[GEMINI] Lỗi chatWithData, chuyển sang OPENROUTER fallback:", error.message);
+    try {
+      const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+        model: OPENROUTER_MODEL,
+        messages: [{ role: "user", content: prompt }]
+      }, {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      return response.data.choices[0].message.content.trim();
+    } catch (fallbackError) {
+      return "Xin lỗi, tất cả hệ thống AI đều đang quá tải. Vui lòng thử lại sau.";
+    }
   }
-}
+};
 
-async function generatePrediction(feedbacks, timeFilter = 'All') {
+const generateRiskAlertsBatch = async (highRisks) => {
+  if (!highRisks || highRisks.length === 0) return [];
+  
+  const prompt = `
+Bạn là chuyên gia quản trị rủi ro (Risk Manager).
+Hãy phân tích danh sách các rủi ro (feedback tiêu cực/nghiêm trọng) sau đây và trả về MẢNG JSON (JSON Array) tuyệt đối không có markdown (\`\`\`json).
+
+Dữ liệu đầu vào:
+${JSON.stringify(highRisks.map(r => ({id: r._id, text: r.originalText, category: r.category, severity: r.severity})), null, 2)}
+
+Yêu cầu Output JSON Array format cho mỗi item:
+[
+  {
+    "id": "String (phải giữ nguyên id từ dữ liệu đầu vào)",
+    "issue": "String (tóm tắt ngắn gọn vấn đề, vd: 'Lỗi phần cứng diện rộng')",
+    "riskLevel": "String (CRITICAL hoặc HIGH)",
+    "insight": "String (1-2 câu giải thích tại sao đây là rủi ro và tác động của nó)",
+    "recommendations": ["String (Hành động 1)", "String (Hành động 2)"]
+  }
+]
+`;
+
   try {
-    let timeContext = "30 ngày tới";
-    if (timeFilter === 'Today') timeContext = "7 ngày tới";
-    else if (timeFilter === 'This Week') timeContext = "tháng tới (4 tuần tiếp theo)";
-    else if (timeFilter === 'This Month') timeContext = "Quý tới (3 tháng tiếp theo)";
-
-    const prompt = `
-    Bạn là một chuyên gia AI Phân tích Dữ liệu Trải nghiệm Khách hàng (CXM).
-    Dưới đây là một danh sách các phản hồi/khiếu nại gần đây của khách hàng về sản phẩm (iPhone 15 Pro Max). Dữ liệu này được thu thập theo mốc thời gian: ${timeFilter}.
-    Dựa trên dữ liệu này, hãy đưa ra DỰ ĐOÁN XU HƯỚNG trong ${timeContext}.
-    Trình bày dưới dạng JSON nghiêm ngặt với cấu trúc sau:
-    {
-      "aiReport": "Đoạn văn 3-4 câu phân tích sâu về tình hình hiện tại và những rủi ro đang tiềm ẩn.",
-      "actionableSteps": ["Bước 1...", "Bước 2...", "Bước 3..."],
-      "topRisks": [
-        {"name": "Lỗi phần cứng xyz", "probability": "Cao"},
-        {"name": "Trễ hàng do vận chuyển", "probability": "Trung bình"}
-      ]
-    }
-    
-    Dữ liệu lịch sử:
-    ${JSON.stringify(feedbacks.map(f => ({text: f.originalText, sentiment: f.sentiment, category: f.category})), null, 2)}
-    `;
-
-    const ai = getRandomAI();
-    const model = ai.getGenerativeModel({ model: "gemini-3.5-flash" });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
-    
-    let jsonText = text;
-    if (jsonText.startsWith('```json')) {
-      jsonText = jsonText.replace(/^```json/, '').replace(/```$/, '').trim();
-    } else if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/^```/, '').replace(/```$/, '').trim();
-    }
-    
-    return JSON.parse(jsonText);
-  } catch (error) {
-    console.error("Lỗi khi dự đoán AI:", error);
-    // Nếu hết Quota API (429) hoặc lỗi mạng, trả về dữ liệu Mock để Demo không bị sập
-    console.log("=> Đang trả về dữ liệu Dự phòng (Mock Data) do lỗi API.");
-    
-    // Tạo báo cáo dự phòng động dựa trên dữ liệu thực tế để không bị trùng lặp
-    const total = feedbacks.length;
-    const negativeCount = feedbacks.filter(f => f.sentiment === 'Negative').length;
-    
-    // Đếm category phổ biến nhất
-    const catCounts = {};
-    feedbacks.forEach(f => {
-      catCounts[f.category] = (catCounts[f.category] || 0) + 1;
+    const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      model: OPENROUTER_MODEL,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" } // While array is requested, some providers need object. We will parse it carefully.
+    }, {
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'http://localhost:3000',
+        'Content-Type': 'application/json'
+      }
     });
-    const topCat = Object.keys(catCounts).sort((a,b) => catCounts[b] - catCounts[a])[0] || 'Vận hành chung';
 
-    return {
-      aiReport: `(Chế độ AI Dự phòng do quá tải API)\nDựa trên tập dữ liệu gồm ${total} phản hồi của bộ lọc hiện tại, hệ thống ghi nhận có ${negativeCount} khiếu nại tiêu cực.\nVấn đề nóng nhất hiện nay đang tập trung vào mảng "${topCat}". Cần đặc biệt chú ý theo dõi biến động trong những ngày tới để ngăn chặn hiệu ứng domino trên mạng xã hội.`,
-      actionableSteps: [
-        `Rà soát khẩn cấp toàn bộ quy trình liên quan đến [${topCat}].`,
-        `Phân công nhân sự CSKH tiếp cận ngay ${negativeCount} khách hàng đang có trải nghiệm xấu.`,
-        "Cân nhắc thiết lập thêm kịch bản bồi thường tự động (Auto-refund) cho các lỗi phổ biến."
-      ],
-      topRisks: [
-        { name: `Rủi ro bùng nổ khiếu nại về ${topCat}`, probability: negativeCount > total/2 ? "Cao" : "Trung bình" },
-        { name: "Khách hàng rời bỏ thương hiệu (Churn Rate)", probability: negativeCount > 0 ? "Trung bình" : "Thấp" },
-        { name: "Khủng hoảng truyền thông mạng xã hội", probability: "Thấp" }
-      ]
-    };
+    let textOutput = response.data.choices[0].message.content.trim();
+    if (textOutput.startsWith('```json')) textOutput = textOutput.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '');
+    else if (textOutput.startsWith('```')) textOutput = textOutput.replace(/\`\`\`/g, '');
+    
+    // Parse the output. Sometimes it returns an object { "alerts": [...] } or just [...]
+    const parsed = JSON.parse(textOutput);
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed.alerts && Array.isArray(parsed.alerts)) return parsed.alerts;
+    
+    // Fallback if parsing fails structurally but doesn't throw
+    return Object.values(parsed).find(val => Array.isArray(val)) || [];
+
+  } catch (error) {
+    console.error("[OPENROUTER] Lỗi generateRiskAlertsBatch:", error.message);
+    // Fallback: Return manual mapping if AI fails
+    return highRisks.map(risk => ({
+      id: risk._id,
+      issue: risk.category + (risk.subCategory ? ` - ${risk.subCategory}` : ''),
+      riskLevel: risk.severity.toUpperCase(),
+      insight: risk.aiSummary || `Phát hiện vấn đề nghiêm trọng từ nguồn: ${risk.source}`,
+      recommendations: ["Chuyển tiếp báo cáo cho bộ phận liên quan để xử lý ngay lập tức."]
+    }));
   }
-}
+};
+
+module.exports = {
+  analyzeFeedbackBatch,
+  generatePrediction,
+  chatWithData,
+  generateRiskAlertsBatch
+};

@@ -52,7 +52,8 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
           <thead>
             <tr>
               <th>Customer</th>
-              <th style={{ width: '40%' }}>Feedback</th>
+              <th style={{ width: '35%' }}>Feedback</th>
+              <th>Product</th>
               <th>Category</th>
               <th>Sentiment</th>
               <th>Severity</th>
@@ -74,6 +75,7 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
                   <td>
                     <div style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>{item.originalText}</div>
                   </td>
+                  <td><div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{item.productName || 'N/A'}</div></td>
                   <td><span className="cat-badge">{item.category}</span></td>
                   <td>{getSentimentBadge(item.sentiment)}</td>
                   <td>{getSeverityBadge(item.severity)}</td>
