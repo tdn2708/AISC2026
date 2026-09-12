@@ -157,7 +157,7 @@ const RiskCenter = () => {
             const isEscalated = escalatedIds.has(idx);
             
             return (
-              <div key={idx} className="glass-panel" style={{ padding: '1.5rem', borderLeft: `4px solid ${isCritical ? 'var(--risk-critical)' : 'var(--risk-high)'}`, border: isEscalated ? '1px solid var(--accent-purple)' : undefined, background: isEscalated ? 'rgba(168, 85, 247, 0.05)' : undefined }}>
+              <div key={idx} className="glass-panel" style={{ padding: '1.5rem', borderLeft: `4px solid ${isCritical ? 'var(--risk-critical)' : 'var(--risk-high)'}`, border: isEscalated ? '1px solid var(--accent-purple)' : undefined, background: isEscalated ? 'var(--accent-dim)' : undefined }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '2rem' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -169,7 +169,7 @@ const RiskCenter = () => {
                         {risk.riskLevel}
                       </span>
                       {isEscalated && (
-                        <span className="cat-badge" style={{ color: '#a855f7', borderColor: 'rgba(168,85,247,0.3)', background: 'rgba(168,85,247,0.1)' }}>
+                        <span className="cat-badge" style={{ color: '#a855f7', borderColor: 'var(--accent-dim)', background: 'var(--accent-dim)' }}>
                           ESCALATED TO MANAGEMENT
                         </span>
                       )}
@@ -213,14 +213,14 @@ const RiskCenter = () => {
                     <button 
                       onClick={() => handleEscalate(idx)}
                       style={{ 
-                        background: isEscalated ? 'rgba(168,85,247,0.2)' : 'transparent', 
+                        background: isEscalated ? 'var(--accent-dim)' : 'transparent', 
                         color: isEscalated ? '#c084fc' : 'var(--text-secondary)', 
-                        border: isEscalated ? '1px solid rgba(168,85,247,0.3)' : '1px solid rgba(255,255,255,0.1)', 
+                        border: isEscalated ? '1px solid var(--accent-dim)' : '1px solid rgba(255,255,255,0.1)', 
                         padding: '0.75rem 1rem', 
                         borderRadius: '8px', 
                         cursor: 'pointer',
                         fontWeight: 500,
-                        transition: 'all 0.2s'
+                        transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out'
                       }}
                       onMouseOver={(e) => { if (!isEscalated) e.target.style.background = 'rgba(255,255,255,0.05)' }}
                       onMouseOut={(e) => { if (!isEscalated) e.target.style.background = 'transparent' }}

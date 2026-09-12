@@ -35,9 +35,13 @@ const DataSources = () => {
     } catch (e) {
       console.error('Error parsing connectedShops', e);
     }
+    // Gian hàng mẫu để minh họa giao diện. Bản trước gán sẵn
+    // productsCount 120 và 22 — hai con số không có nguồn nào, nhưng lại
+    // được cộng vào thẻ chỉ số "Sản phẩm theo dõi" như thể đã đo được.
+    // Nay để null và đánh dấu isDemo, số sản phẩm thật lấy từ API.
     return [
-      { id: 'shp1', name: 'Shopee Official Flagship', platform: 'Shopee', shopId: 'SHP-982341', productsCount: 120, autoSync: true, status: 'Active' },
-      { id: 'tik1', name: 'TikTok Shop Global', platform: 'TikTok', shopId: 'TIK-44122', productsCount: 22, autoSync: false, status: 'Active' }
+      { id: 'shp1', name: 'Gian hàng mẫu Shopee', platform: 'Shopee', shopId: 'SHP-982341', productsCount: null, autoSync: true, status: 'Active', isDemo: true },
+      { id: 'tik1', name: 'Gian hàng mẫu TikTok Shop', platform: 'TikTok', shopId: 'TIK-44122', productsCount: null, autoSync: false, status: 'Active', isDemo: true }
     ];
   });
 
@@ -55,7 +59,14 @@ const DataSources = () => {
   }, [connectedShops]);
 
   // Derived Metrics
-  const totalProducts = connectedShops.reduce((sum, shop) => sum + shop.productsCount, 0);
+  // Số sản phẩm THẬT, đếm từ dữ liệu phản hồi đã thu thập được, thay vì
+  // cộng các con số gán sẵn trong mã nguồn.
+  const [trackedProducts, setTrackedProducts] = useState(null);
+  useEffect(() => {
+    axios.get('/products')
+      .then((res) => setTrackedProducts(Array.isArray(res.data) ? res.data.length : 0))
+      .catch(() => setTrackedProducts(null));
+  }, []);
 
   // Handlers
   const handleAddShop = (e) => {
@@ -67,7 +78,7 @@ const DataSources = () => {
       name: newShopForm.name,
       platform: newShopForm.platform,
       shopId: newShopForm.shopId,
-      productsCount: Math.floor(Math.random() * 50) + 10, // Mock random product count
+      productsCount: 0, // chưa đồng bộ lần nào nên chưa theo dõi sản phẩm nào
       autoSync: true,
       status: 'Active'
     };
@@ -115,13 +126,26 @@ const DataSources = () => {
 
     try {
       const res = await axios.post('/scrape', { url });
-      setSyncHistory(prev => prev.map(record => 
-        record.id === newRecordId ? { ...record, status: 'Success', items: res.data.data?.length || 15 } : record
+      // Dùng đúng số bản ghi máy chủ báo về. Bản trước ghi `|| 15`, tức là
+      // khi không có dữ liệu thì bịa ra con số 15 và hiển thị như thật.
+      setSyncHistory(prev => prev.map(record =>
+        record.id === newRecordId
+          ? { ...record, status: 'Success', items: res.data.count ?? 0 }
+          : record
       ));
       setUrl('');
     } catch (err) {
-      setSyncHistory(prev => prev.map(record => 
-        record.id === newRecordId ? { ...record, status: 'Failed', error: 'API Error or Timeout' } : record
+      // Máy chủ trả 422 khi trang chặn truy cập hoặc không có bình luận nào.
+      // Đó là kết quả hợp lệ, không phải lỗi hệ thống, nên phải nói rõ lý do
+      // thay vì gộp chung thành "API Error or Timeout".
+      const status = err.response?.status;
+      const reason = status === 422
+        ? (err.response?.data?.hint || 'Trang không có bình luận công khai nào')
+        : 'Không kết nối được máy chủ hoặc quá thời gian chờ';
+      setSyncHistory(prev => prev.map(record =>
+        record.id === newRecordId
+          ? { ...record, status: status === 422 ? 'Empty' : 'Failed', items: 0, error: reason }
+          : record
       ));
     } finally {
       setIsSyncing(false);
@@ -132,7 +156,7 @@ const DataSources = () => {
     switch(status) {
       case 'Success': return <span className="badge badge-low">{status}</span>;
       case 'Failed': return <span className="badge badge-critical">{status}</span>;
-      case 'Syncing...': return <span className="badge" style={{ color: 'var(--accent-blue)', background: 'rgba(59,130,246,0.1)', borderColor: 'rgba(59,130,246,0.3)' }}><RefreshCw size={12} className="animate-spin" style={{ marginRight: '4px' }}/> {status}</span>;
+      case 'Syncing...': return <span className="badge" style={{ color: 'var(--accent-blue)', background: 'var(--accent-dim)', borderColor: 'var(--accent-dim)' }}><RefreshCw size={12} className="animate-spin" style={{ marginRight: '4px' }}/> {status}</span>;
       default: return <span className="badge badge-medium">{status}</span>;
     }
   };
@@ -172,17 +196,17 @@ const DataSources = () => {
             <Store size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Connected Shops</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gian hàng đã kết nối</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{connectedShops.length} <span style={{ fontSize: '0.9rem', fontWeight: 400, color: 'var(--text-muted)' }}>/ 10 allowed</span></div>
           </div>
         </div>
         <div className="col-span-4 glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--accent-dim)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Box size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Products Tracked</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{totalProducts}</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sản phẩm đang theo dõi</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{trackedProducts ?? '—'}</div>
           </div>
         </div>
         <div className="col-span-4 glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
@@ -190,7 +214,7 @@ const DataSources = () => {
             <Activity size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Pipelines</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Luồng đang chạy</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               {connectedShops.filter(s => s.autoSync).length} <span className="badge badge-low" style={{ fontSize: '0.7rem' }}>Healthy</span>
             </div>
@@ -206,7 +230,7 @@ const DataSources = () => {
             background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', fontWeight: 500,
             color: activeTab === 'shops' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
             borderBottom: activeTab === 'shops' ? '2px solid var(--accent-cyan)' : '2px solid transparent',
-            marginRight: '1.5rem', transition: 'all 0.2s', whiteSpace: 'nowrap'
+            marginRight: '1.5rem', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out', whiteSpace: 'nowrap'
           }}
         >
           Workspaces & Shops
@@ -217,7 +241,7 @@ const DataSources = () => {
             background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', fontWeight: 500,
             color: activeTab === 'products' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
             borderBottom: activeTab === 'products' ? '2px solid var(--accent-cyan)' : '2px solid transparent',
-            marginRight: '1.5rem', transition: 'all 0.2s', whiteSpace: 'nowrap'
+            marginRight: '1.5rem', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out', whiteSpace: 'nowrap'
           }}
         >
           Individual Products
@@ -228,7 +252,7 @@ const DataSources = () => {
             background: 'transparent', border: 'none', padding: '1rem 0', cursor: 'pointer', fontSize: '1rem', fontWeight: 500,
             color: activeTab === 'history' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
             borderBottom: activeTab === 'history' ? '2px solid var(--accent-cyan)' : '2px solid transparent',
-            transition: 'all 0.2s', whiteSpace: 'nowrap'
+            transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out', whiteSpace: 'nowrap'
           }}
         >
           Sync History
@@ -243,7 +267,7 @@ const DataSources = () => {
           <div className="glass-panel" style={{ padding: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>Connected Workspaces</h2>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>Không gian đã kết nối</h2>
                 <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.9rem' }}>Connect entire stores to auto-sync reviews for all products daily.</p>
               </div>
               <button 
@@ -267,7 +291,7 @@ const DataSources = () => {
                 </div>
               ) : (
                 connectedShops.map((shop) => (
-                  <div key={shop.id} className="animate-fade-in" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
+                  <div key={shop.id} className="animate-fade-in" style={{ background: 'var(--bg-dark)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                       <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: `rgba(${getPlatformColor(shop.platform)}, 0.1)`, color: `rgb(${getPlatformColor(shop.platform)})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {getPlatformIcon(shop.platform)}
@@ -277,7 +301,12 @@ const DataSources = () => {
                           <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{shop.name}</h3>
                           <span className="badge badge-low" style={{ fontSize: '0.7rem', padding: '0.1rem 0.5rem' }}>{shop.status}</span>
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>ID: {shop.shopId} • {shop.productsCount} Products Tracked</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          ID: {shop.shopId}
+                          {shop.isDemo
+                            ? ' • gian hàng mẫu, chưa kết nối thật'
+                            : ` • ${shop.productsCount ?? 0} sản phẩm đã đồng bộ`}
+                        </div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
@@ -299,7 +328,7 @@ const DataSources = () => {
                         <button 
                           title="Delete Shop"
                           onClick={() => handleDeleteShop(shop.id)}
-                          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.5rem', color: 'var(--risk-critical)', cursor: 'pointer', transition: 'all 0.2s' }}
+                          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '0.5rem', color: 'var(--risk-critical)', cursor: 'pointer', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out' }}
                           onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         ><Trash2 size={18} /></button>
@@ -334,7 +363,7 @@ const DataSources = () => {
                     style={{
                       width: '100%',
                       padding: '1rem 1rem 1rem 3rem',
-                      background: 'rgba(15, 23, 42, 0.6)',
+                      background: 'var(--bg-card)',
                       border: '1px solid rgba(255,255,255,0.1)',
                       borderRadius: '12px',
                       color: 'white',
@@ -394,7 +423,7 @@ const DataSources = () => {
                   onClick={handleClearHistory}
                   style={{
                     background: 'rgba(239, 68, 68, 0.1)', color: 'var(--risk-critical)', border: '1px solid rgba(239, 68, 68, 0.2)',
-                    padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s'
+                    padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out'
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
@@ -409,7 +438,7 @@ const DataSources = () => {
                   <tr>
                     <th style={{ padding: '1rem 1.5rem', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase' }}>Source</th>
                     <th style={{ padding: '1rem 1.5rem', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase' }}>Status</th>
-                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase' }}>Items Extracted</th>
+                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase' }}>Bản ghi đã trích</th>
                     <th style={{ padding: '1rem 1.5rem', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase' }}>Time</th>
                     <th style={{ padding: '1rem 1.5rem', textAlign: 'right', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase' }}>Action</th>
                   </tr>
@@ -437,7 +466,7 @@ const DataSources = () => {
                         <button 
                           onClick={() => handleDeleteHistoryItem(record.id)}
                           title="Remove from log"
-                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.4rem', borderRadius: '4px', transition: 'all 0.2s' }}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.4rem', borderRadius: '4px', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out' }}
                           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = 'var(--risk-critical)' }}
                           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}
                         >
@@ -458,8 +487,7 @@ const DataSources = () => {
       {showAddShopModal && (
         <div style={{ 
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+          background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
           <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem', position: 'relative' }}>
             <button 
@@ -478,18 +506,18 @@ const DataSources = () => {
                   value={newShopForm.platform}
                   onChange={(e) => setNewShopForm({...newShopForm, platform: e.target.value})}
                   style={{
-                    width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                    width: '100%', padding: '0.75rem', background: 'var(--bg-dark)', border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '8px', color: 'white', fontSize: '1rem', outline: 'none'
                   }}
                 >
                   <option value="Shopee">Shopee</option>
                   <option value="TikTok">TikTok Shop</option>
-                  <option value="Web">Custom Website</option>
+                  <option value="Web">Website tự nhập</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Shop Name</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Tên gian hàng</label>
                 <input 
                   type="text" 
                   value={newShopForm.name}
@@ -497,7 +525,7 @@ const DataSources = () => {
                   placeholder="e.g. Apple Official Store"
                   required
                   style={{
-                    width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                    width: '100%', padding: '0.75rem', background: 'var(--bg-dark)', border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '8px', color: 'white', fontSize: '1rem', outline: 'none', boxSizing: 'border-box'
                   }}
                 />
@@ -512,7 +540,7 @@ const DataSources = () => {
                   placeholder="e.g. SHP-12345 or https://..."
                   required
                   style={{
-                    width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                    width: '100%', padding: '0.75rem', background: 'var(--bg-dark)', border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '8px', color: 'white', fontSize: '1rem', outline: 'none', boxSizing: 'border-box'
                   }}
                 />

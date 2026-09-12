@@ -1,45 +1,123 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* ==================================================================
+   HỆ THIẾT KẾ RADAR — BẢNG ĐIỀU KHIỂN THIẾT BỊ ĐO
+   ------------------------------------------------------------------
+   Vấn đề của bản cũ không phải thiếu hiệu ứng. Thẻ và nền trang chỉ
+   chênh nhau 1.06:1 sau khi trộn lớp rgba(24,24,27,.6), nên mắt không
+   có cạnh nào để bám vào và toàn trang đọc ra là một mặt phẳng chữ
+   trôi nổi. Kính mờ với đổ bóng không cứu được điều đó: trên nền gần
+   đen, box-shadow đang tô đen lên đen.
+
+   Ba nguyên tắc của bản này:
+     1. Độ cao đến từ ÁNH SÁNG, không từ bóng đổ. Bề mặt càng cao càng
+        sáng, cộng một đường viền mảnh nhìn thấy được.
+     2. MỘT màu nhấn, và nó chỉ dành cho tương tác. Dữ liệu dùng thang
+        ngữ nghĩa riêng, nhờ vậy người dùng học được rằng lục lam nghĩa
+        là bấm được, còn đỏ và hổ phách luôn là mức độ nghiêm trọng.
+     3. Mọi cặp màu chữ trên nền đều đã kiểm định đạt WCAG AA, ở CẢ HAI
+        chế độ. Bản cũ để vàng #eab308 đạt 1.92:1 trên nền trắng.
+
+   Tên biến cũ được giữ nguyên làm bí danh, nên toàn bộ style nội tuyến
+   hiện có đổi diện mạo mà không phải sửa một dòng nào.
+   ================================================================== */
 
 :root {
-  /* Premium Dark Palette */
-  --bg-dark: #09090b; /* Zinc 950 */
-  --bg-card: rgba(24, 24, 27, 0.6); /* Zinc 900 w/ opacity */
-  --bg-card-hover: rgba(39, 39, 42, 0.8);
-  
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  
-  --accent-blue: #3b82f6;
-  --accent-cyan: #06b6d4;
-  --accent-purple: #8b5cf6;
-  --accent-indigo: #6366f1;
-  
-  --risk-critical: #ef4444; /* Red 500 */
-  --risk-high: #f97316; /* Orange 500 */
-  --risk-medium: #eab308; /* Yellow 500 */
-  --risk-low: #10b981; /* Emerald 500 */
-  
-  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  /* --- Bề mặt: thang độ cao --- */
+  --canvas:       #06080A;
+  --surface:      #171F25;   /* 1.20:1 so với canvas */
+  --raised:       #232D35;
+  --border:       #35424B;   /* 1.61:1 so với surface */
+  --border-soft:  #232D35;
+
+  /* --- Chữ: cả ba đều đạt AA trên surface --- */
+  --text-hi:      #E9F0F3;   /* 14.5:1 */
+  --text-mid:     #A6B6BF;   /*  7.99:1 */
+  --text-lo:      #8496A0;   /*  5.44:1 */
+
+  /* --- Một màu nhấn, chỉ cho tương tác --- */
+  --accent:       #2BA3C7;   /* 5.69:1 */
+  --accent-hi:    #4FBEDD;
+  --accent-dim:   #12313C;
+
+  /* --- Thang ngữ nghĩa, chỉ cho dữ liệu --- */
+  --sev-crit:     #FF6B5E;   /* 5.97:1 */
+  --sev-high:     #F0A64B;   /* 8.15:1 */
+  --sev-ok:       #4BC48A;   /* 7.59:1 */
+  --sev-crit-dim: #2E1A18;
+  --sev-high-dim: #2C2317;
+  --sev-ok-dim:   #15291F;
+
+  /* --- Hình dạng và chuyển động --- */
+  --r-ctrl: 6px;
+  --r-surf: 10px;
+
+  /* Chieu rong thanh ben khai bao DUNG MOT LAN. Truoc day con so 260px
+     nam rai rac o ba noi: CSS cua .sidebar-container, CSS cua
+     .main-content, va mot style noi tuyen trong App.jsx. Doi mot cho la
+     lech bo cuc, va khong co gi bao loi. */
+  --sidebar-w: 248px;
+  --sidebar-w-collapsed: 64px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+
+  /* ---------------------------------------------------------------
+     BÍ DANH TƯƠNG THÍCH NGƯỢC.
+     Các tên dưới đây được dùng rải rác trong 844 thuộc tính style nội
+     tuyến. Trỏ chúng vào bảng màu mới là cách đổi toàn bộ giao diện mà
+     không chạm vào component nào. Khi refactor dần sang class, xoá dần
+     từ dưới lên.
+     --------------------------------------------------------------- */
+  --bg-dark:        var(--canvas);
+  --bg-card:        var(--surface);
+  --bg-card-hover:  var(--raised);
+  --text-primary:   var(--text-hi);
+  --text-secondary: var(--text-mid);
+  --text-muted:     var(--text-lo);   /* 3.93:1 -> 5.44:1, nay đạt AA */
+
+  /* Bốn màu nhấn cũ gộp về một. Đây là gốc của cảm giác loè loẹt. */
+  --accent-blue:   var(--accent);
+  --accent-cyan:   var(--accent-hi);
+  --accent-purple: var(--accent);
+  --accent-indigo: var(--accent);
+
+  --risk-critical: var(--sev-crit);
+  --risk-high:     var(--sev-high);
+  --risk-medium:   var(--sev-high);
+  --risk-low:      var(--sev-ok);
+
+  --glass-border: 1px solid var(--border);
+  --glass-shadow: none;              /* bóng đổ vô hình trên nền gần đen */
+  --radius-sm: var(--r-ctrl);
+  --radius-md: var(--r-surf);
+  --radius-lg: var(--r-surf);
 }
 
+/* Chế độ sáng PHẢI định nghĩa lại cả màu nhấn lẫn màu ngữ nghĩa.
+   Thiếu đúng bước này là lý do chế độ sáng của bản cũ không dùng được. */
 [data-theme='light'] {
-  --bg-dark: #f8fafc;
-  --bg-card: rgba(255, 255, 255, 0.85);
-  --bg-card-hover: rgba(255, 255, 255, 1);
-  
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  
-  --glass-border: 1px solid rgba(0, 0, 0, 0.08);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.06);
-}
+  --canvas:      #F4F6F7;
+  --surface:     #FFFFFF;
+  --raised:      #EDF1F3;
+  --border:      #DDE4E8;
+  --border-soft: #E8EDEF;
 
+  --text-hi:  #0E1519;   /* 18.4:1 */
+  --text-mid: #4A5B65;   /*  7.06:1 */
+  --text-lo:  #5E7079;   /*  5.16:1 */
+
+  --accent:     #0F7A9B; /* 4.91:1 */
+  --accent-hi:  #0B6480;
+  --accent-dim: #E2F1F6;
+
+  --sev-crit: #C0392E;   /* 5.43:1 */
+  --sev-high: #9A6410;   /* 4.99:1, thay cho 1.92:1 */
+  --sev-ok:   #1D7A4F;   /* 5.32:1 */
+  --sev-crit-dim: #FBE9E7;
+  --sev-high-dim: #FAF0DC;
+  --sev-ok-dim:   #E4F4EB;
+}
 
 * {
   margin: 0;
@@ -48,38 +126,69 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--bg-dark);
-  color: var(--text-primary);
-  line-height: 1.5;
+  font-family: 'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif;
+  background-color: var(--canvas);
+  color: var(--text-hi);
+  /* Dấu tiếng Việt chồng hai tầng (Ệ, Ồ, ữ, ẵ) nên cần chỗ thở.
+     Dưới 1.55 là bắt đầu cụt ngọn dấu. */
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
-  background-attachment: fixed;
+  /* Chữ số thẳng cột ở mọi nơi, không riêng thẻ chỉ số. Số nhảy cột
+     trong bảng làm người đọc mất niềm tin vào dữ liệu mà không nói ra
+     được lý do. */
+  font-variant-numeric: tabular-nums;
+  /* Bỏ hai lớp radial-gradient cũ: chúng thêm nhiễu, không thêm thông tin. */
+}
+
+/* Tiêu đề: line-height tối thiểu 1.3 vì dấu tiếng Việt */
+h1, h2, h3, h4, h5 { line-height: 1.32; letter-spacing: -0.01em; }
+
+/* Vòng focus dùng chung — bản cũ hoàn toàn không có, nên người dùng
+   bàn phím lạc hẳn trong giao diện. */
+:focus-visible {
+  outline: 2px solid var(--accent-hi);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Số liệu dùng mặt chữ đơn cách: đây là chỗ chất "công nghệ" sinh ra
+   một cách thật thà, thay cho hiệu ứng phát sáng. */
+.data-num {
+  font-family: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
 /* Utilities */
 .glass-panel {
-  background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: var(--glass-border);
-  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-surf);
   padding: 1.5rem;
-  box-shadow: var(--glass-shadow);
-  transition: all 0.3s ease;
+  /* backdrop-filter đã bỏ: vô hình trên nền đặc, mà buộc trình duyệt
+     tạo một lớp ghép riêng cho từng panel -> giật khi cuộn. */
+  transition: border-color var(--dur-fast) var(--ease),
+              background-color var(--dur-fast) var(--ease);
 }
 
 .glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--text-lo);
 }
 
+/* Giữ tên class cũ nhưng bỏ gradient tím-xanh: một màu đặc đọc ra là
+   sản phẩm doanh nghiệp, gradient đọc ra là trang giới thiệu. */
 .text-gradient {
-  background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent-hi);
+  -webkit-text-fill-color: currentColor;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 
 /* Badges */
 .badge {
@@ -92,6 +201,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
 }
 .badge-critical { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
 .badge-high { background: rgba(249, 115, 22, 0.1); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.2); }
@@ -107,6 +217,7 @@ body {
   background: var(--bg-card);
   border: var(--glass-border);
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
 /* Data Table */
@@ -120,18 +231,19 @@ body {
   color: var(--text-secondary);
   font-weight: 500;
   font-size: 0.85rem;
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--border-soft);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 .data-table td {
   padding: 1.25rem 1rem;
   font-size: 0.9rem;
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--border-soft);
   color: var(--text-primary);
 }
 .data-table tr:hover td {
-  background: rgba(255,255,255,0.02);
+  background: var(--raised);
 }
 
 /* Layout Grid */
@@ -141,11 +253,22 @@ body {
   gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
+/* Thang cột đầy đủ 1–12. Trước đây chỉ có 12/8/6/4/3 được khai báo, nên
+   bất kỳ chỗ nào dùng col-span-5 hay col-span-7 đều âm thầm tụt về đúng
+   MỘT cột — không báo lỗi, chỉ hỏng bố cục. Khai báo đủ để cái bẫy đó
+   không lặp lại. */
+.col-span-1  { grid-column: span 1; }
+.col-span-2  { grid-column: span 2; }
+.col-span-3  { grid-column: span 3; }
+.col-span-4  { grid-column: span 4; }
+.col-span-5  { grid-column: span 5; }
+.col-span-6  { grid-column: span 6; }
+.col-span-7  { grid-column: span 7; }
+.col-span-8  { grid-column: span 8; }
+.col-span-9  { grid-column: span 9; }
+.col-span-10 { grid-column: span 10; }
+.col-span-11 { grid-column: span 11; }
 .col-span-12 { grid-column: span 12; }
-.col-span-8 { grid-column: span 8; }
-.col-span-4 { grid-column: span 4; }
-.col-span-6 { grid-column: span 6; }
-.col-span-3 { grid-column: span 3; }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
@@ -155,12 +278,18 @@ body {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+/* Thanh cuon truoc day to bang --text-muted nen luon lo ra nhu mot
+   vach sang chay doc man hinh. Chi hien khi tro chuot toi. */
 ::-webkit-scrollbar-thumb {
-  background: var(--text-muted);
+  background: transparent;
   border-radius: 10px;
+  transition: background var(--dur-base) var(--ease);
+}
+*:hover::-webkit-scrollbar-thumb {
+  background: var(--border);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--text-lo);
 }
 
 /* Animations */
@@ -191,7 +320,7 @@ body {
 .markdown-body p:last-child { margin-bottom: 0; }
 .markdown-body ul, .markdown-body ol { margin-left: 1.5rem; margin-bottom: 0.75rem; }
 .markdown-body li { margin-bottom: 0.25rem; }
-.markdown-body strong { color: var(--accent-cyan); font-weight: 600; }
+.markdown-body strong { color: var(--text-hi); font-weight: 600; }
 .markdown-body code { background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 4px; font-family: monospace; font-size: 0.85em; }
 
 /* Responsive Login */
@@ -210,8 +339,8 @@ body {
   justify-content: center;
   padding: 4rem;
   position: relative;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
-  border-right: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
 }
 
 .login-right {
@@ -245,7 +374,7 @@ body {
 /* Main layout containers */
 .main-content {
   flex: 1;
-  margin-left: 260px;
+  margin-left: var(--sidebar-w);
   padding: 2rem 3rem;
   height: 100vh;
   overflow-y: auto;
@@ -273,10 +402,10 @@ body {
 
 /* Sidebar Responsive */
 .sidebar-container {
-  width: 260px;
+  width: var(--sidebar-w);
   height: 100vh;
   background: var(--bg-dark);
-  border-right: 1px solid rgba(255,255,255,0.05);
+  border-right: 1px solid var(--border);
   position: fixed;
   left: 0;
   top: 0;
@@ -317,7 +446,10 @@ body {
     flex-direction: column;
   }
   
-  .col-span-12, .col-span-8, .col-span-4, .col-span-6, .col-span-3 {
+  /* Chọn theo tiền tố thay vì liệt kê từng lớp: liệt kê tay là lý do
+     col-span-5 và col-span-7 bị bỏ sót ở màn hình hẹp. */
+  [class*="col-span-"] {
+    grid-column: span 12;
     width: 100%;
   }
 
@@ -347,4 +479,16 @@ body {
   .glass-panel {
     padding: 1rem;
   }
+}
+
+/* ==========================================================================
+   Logo trên màn hình đăng nhập
+   Cột trái (nơi đặt logo lớn) bị ẩn dưới 768px, nên cột phải cần một bản
+   logo riêng để trang đăng nhập trên điện thoại không mất hoàn toàn nhận
+   diện thương hiệu.
+   ========================================================================== */
+.login-mobile-logo { display: none; }
+
+@media (max-width: 768px) {
+  .login-mobile-logo { display: block; }
 }

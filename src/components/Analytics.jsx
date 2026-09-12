@@ -19,6 +19,9 @@ const Analytics = () => {
   }, [timeFilter, sourceFilter, productFilter]);
 
   const [prediction, setPrediction] = useState(null);
+  // So phan hoi hop le ma du bao dua tren. Day la con so THAT do API
+  // tra ve, dung de thay cho "92% diem tin cay" von duoc viet cung.
+  const [basedOn, setBasedOn] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -32,6 +35,7 @@ const Analytics = () => {
         product: productFilter
       });
       setPrediction(res.data.data);
+      setBasedOn(res.data.basedOnValidFeedbacks ?? null);
     } catch (err) {
       console.error(err);
       if (!isAuto) alert("Lỗi khi Refresh AI: " + err.message);
@@ -54,6 +58,7 @@ const Analytics = () => {
       const res = await axios.get(`/predict${q}`);
       if (res.data.data) {
         setPrediction(res.data.data);
+        setBasedOn(res.data.basedOnValidFeedbacks ?? null);
         setLoading(false);
       } else {
         // Auto-generate if no cache
@@ -100,14 +105,14 @@ const Analytics = () => {
       }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <h2 style={{ fontSize: '1.875rem', fontWeight: 700, margin: 0 }}>Strategic Analytics</h2>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 700, margin: 0 }}>Phân tích chiến lược</h2>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               {sourceFilter !== 'All' && <span className="badge badge-medium">{sourceFilter}</span>}
               {timeFilter !== 'All' && <span className="badge badge-medium">{timeFilter}</span>}
             </div>
           </div>
           <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.9rem' }}>
-            AI-Powered Forecasts & Recommendations {sourceFilter !== 'All' || timeFilter !== 'All' ? 'based on current dashboard filters' : ''}
+            Dự báo và khuyến nghị do mô hình sinh{sourceFilter !== 'All' || timeFilter !== 'All' ? ', theo đúng bộ lọc đang áp dụng' : ''}
           </p>
         </div>
         
@@ -116,16 +121,16 @@ const Analytics = () => {
           disabled={refreshing}
           style={{
             display: 'flex', alignItems: 'center', gap: '0.5rem',
-            background: 'rgba(139, 92, 246, 0.1)',
-            color: 'var(--accent-purple)', border: '1px solid rgba(139, 92, 246, 0.3)',
+            background: 'var(--accent-dim)',
+            color: 'var(--accent-purple)', border: '1px solid var(--accent-dim)',
             padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-sm)',
             fontWeight: 600, cursor: refreshing ? 'not-allowed' : 'pointer',
             fontSize: '0.85rem',
-            transition: 'all 0.2s ease'
+            transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out'
           }}
         >
           <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-          {refreshing ? 'AI is analyzing...' : 'Refresh Forecast'}
+          {refreshing ? 'Đang phân tích…' : 'Chạy lại dự báo'}
         </button>
       </header>
 
@@ -152,47 +157,61 @@ const Analytics = () => {
             <div className="flex-wrap-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div style={{ 
-                  width: '40px', height: '40px', borderRadius: '10px', 
-                  background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-indigo))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                  width: '36px', height: '36px', borderRadius: 'var(--r-ctrl)',
+                  background: 'var(--raised)', border: '1px solid var(--border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
-                  <Brain size={20} color="white" />
+                  <Brain size={17} color="var(--accent-hi)" />
                 </div>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>Executive Summary</h3>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>Tóm tắt điều hành</h3>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--risk-low)', lineHeight: 1 }}>92%</div>
-                <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Confidence Score</div>
+              {/* Bản cũ hiển thị "92% Điểm tin cậy" viết cứng trong mã —
+                  không có nguồn dữ liệu nào phía sau. Số minh hoạ trình bày
+                  như số đo là kiểu sai nguy hiểm nhất trên một dashboard phân
+                  tích. Thay bằng số phản hồi thật mà dự báo dựa trên. */}
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div className="data-num" style={{
+                  fontSize: '1.35rem', fontWeight: 600, color: 'var(--text-hi)', lineHeight: 1
+                }}>
+                  {basedOn != null ? basedOn.toLocaleString('vi-VN') : '—'}
+                </div>
+                <div style={{
+                  fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase',
+                  letterSpacing: '0.1em', color: 'var(--text-lo)', marginTop: '3px'
+                }}>
+                  Phản hồi hợp lệ làm cơ sở
+                </div>
               </div>
             </div>
             
-            <div style={{ 
-              background: 'rgba(255, 255, 255, 0.02)', 
-              border: '1px solid rgba(255, 255, 255, 0.05)', 
-              padding: '1.5rem', 
-              borderRadius: 'var(--radius-md)',
-              lineHeight: 1.6,
-              fontSize: '0.95rem',
-              color: 'var(--text-primary)'
+            <div style={{
+              background: 'var(--canvas)',
+              border: '1px solid var(--border)',
+              borderLeft: '2px solid var(--accent)',
+              padding: '1.25rem 1.35rem',
+              borderRadius: '0 var(--r-ctrl) var(--r-ctrl) 0',
+              lineHeight: 1.7,
+              fontSize: '0.92rem',
+              color: 'var(--text-mid)'
             }}>
               {prediction.aiReport.split('\n').map((line, i) => (
                 <p key={i} style={{ marginBottom: '0.5rem' }}>{line}</p>
               ))}
             </div>
 
-            <h4 style={{ margin: '1rem 0 0 0', fontSize: '1.1rem', fontWeight: 600 }}>Recommended Action Plan</h4>
+            <h4 style={{ margin: '0.5rem 0 0 0', fontSize: '0.95rem', fontWeight: 600 }}>Kế hoạch hành động đề xuất</h4>
             <div style={{ position: 'relative', paddingLeft: '1.5rem' }}>
-              <div style={{ position: 'absolute', top: '10px', bottom: '10px', left: '7px', width: '2px', background: 'rgba(255,255,255,0.1)' }}></div>
+              <div style={{ position: 'absolute', top: '10px', bottom: '10px', left: '7px', width: '1px', background: 'var(--border)' }}></div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {prediction.actionableSteps.map((step, idx) => (
                   <div key={idx} style={{ position: 'relative' }}>
-                    <div style={{ position: 'absolute', left: '-1.5rem', top: '4px', width: '16px', height: '16px', borderRadius: '50%', background: 'var(--bg-dark)', border: '2px solid var(--accent-cyan)', zIndex: 2 }}></div>
+                    <div style={{ position: 'absolute', left: '-1.5rem', top: '5px', width: '14px', height: '14px', borderRadius: '50%', background: 'var(--canvas)', border: '2px solid var(--accent)', zIndex: 2 }}></div>
                     <div style={{ 
-                      background: 'rgba(6, 182, 212, 0.05)', border: '1px solid rgba(6, 182, 212, 0.15)',
-                      padding: '1rem', borderRadius: 'var(--radius-sm)'
+                      background: 'var(--raised)', border: '1px solid var(--border)',
+                      padding: '0.85rem 1rem', borderRadius: 'var(--r-ctrl)'
                     }}>
-                      <strong style={{ display: 'block', marginBottom: '4px', color: 'var(--accent-cyan)', fontSize: '0.85rem', textTransform: 'uppercase' }}>Phase {idx + 1}</strong>
-                      <span style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{step}</span>
+                      <strong className="data-num" style={{ display: 'block', marginBottom: '5px', color: 'var(--accent-hi)', fontSize: '0.68rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Bước {idx + 1}</strong>
+                      <span style={{ fontSize: '0.9rem', color: 'var(--text-hi)', lineHeight: 1.6 }}>{step}</span>
                     </div>
                   </div>
                 ))}
@@ -201,11 +220,14 @@ const Analytics = () => {
           </div>
 
           <div className="col-span-4" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div className="glass-panel" style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                <AlertTriangle size={24} color="var(--risk-high)" />
+            {/* Bản cũ đặt flex:1 lên panel này nên nó bị kéo cao bằng cột
+                trái và để lại một khoảng trống lớn phía dưới. Nay panel ôm
+                đúng nội dung của nó. */}
+            <div className="glass-panel">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: '1.25rem' }}>
+                <AlertTriangle size={18} color="var(--sev-high)" style={{ flexShrink: 0 }} />
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
-                  Risk Matrix ({timeFilter === 'Today' ? '7 Days' : timeFilter === 'This Week' ? '4 Weeks' : timeFilter === 'This Month' ? '1 Quarter' : '30 Days'})
+                  Ma trận rủi ro · {timeFilter === 'Today' ? '7 ngày' : timeFilter === 'This Week' ? '4 tuần' : timeFilter === 'This Month' ? '1 quý' : '30 ngày'}
                 </h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -222,13 +244,38 @@ const Analytics = () => {
                         <span>{risk.name}</span>
                         <span style={{ color }}>{risk.probability}</span>
                       </div>
-                      <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '99px', overflow: 'hidden' }}>
-                        <div style={{ width: `${progress}%`, height: '100%', background: color, borderRadius: '99px' }}></div>
+                      <div style={{ width: '100%', height: '6px', background: 'var(--raised)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: `${progress}%`, height: '100%', background: color, borderRadius: '3px', transition: 'width 420ms var(--ease)' }}></div>
                       </div>
                     </div>
                   )
                 })}
               </div>
+            </div>
+
+            {/* Ranh giới giữa "số đo" và "dự báo" phải nói thành lời.
+                Người đọc cần biết phần nào là dữ liệu và phần nào là suy
+                đoán của mô hình, nếu không họ sẽ ra quyết định trên một
+                câu văn được sinh ra. */}
+            <div className="glass-panel">
+              <h3 style={{ margin: '0 0 0.75rem', fontSize: '0.95rem', fontWeight: 600 }}>Đọc trang này thế nào</h3>
+              <ul style={{ margin: 0, paddingLeft: '1.1rem', color: 'var(--text-mid)', fontSize: '0.82rem', lineHeight: 1.65 }}>
+                <li style={{ marginBottom: '0.5rem' }}>
+                  Toàn bộ nội dung ở đây là <strong style={{ color: 'var(--text-hi)' }}>dự báo do mô hình sinh</strong>,
+                  không phải số đo. Số đo nằm ở màn hình Tổng quan và Trung tâm cảnh báo.
+                </li>
+                <li style={{ marginBottom: '0.5rem' }}>
+                  Dự báo dựa trên{' '}
+                  <span className="data-num" style={{ color: 'var(--text-hi)' }}>
+                    {basedOn != null ? basedOn.toLocaleString('vi-VN') : '—'}
+                  </span>{' '}
+                  phản hồi đã qua tầng kiểm soát tin cậy, theo đúng bộ lọc đang áp dụng.
+                </li>
+                <li>
+                  Hệ thống không tự thực thi bất kỳ bước nào trong kế hoạch. Mọi hành động
+                  đều cần người có thẩm quyền phê duyệt.
+                </li>
+              </ul>
             </div>
           </div>
 

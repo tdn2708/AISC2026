@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Filter, ChevronDown, Download, Package } from 'lucide-react';
+import { Calendar, Filter, ChevronDown, Download, Package, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, productFilter, setProductFilter, hideExportButton = false }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
+
+  const activeCount =
+    (timeFilter && timeFilter !== 'All' ? 1 : 0) +
+    (sourceFilter && sourceFilter !== 'All' ? 1 : 0) +
+    (productFilter && productFilter !== 'All' ? 1 : 0);
+
+  const clearAll = () => {
+    setTimeFilter('All');
+    setSourceFilter('All');
+    if (setProductFilter) setProductFilter('All');
+    setOpenDropdown(null);
+  };
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [productOptions, setProductOptions] = useState(['All']);
@@ -14,13 +26,18 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
     const fetchProducts = async () => {
       try {
         const res = await axios.get('/products');
-        setProductOptions(['All', ...res.data]);
+        const availableProducts = ['All', ...res.data];
+        setProductOptions(availableProducts);
+        
+        if (productFilter && !availableProducts.includes(productFilter)) {
+          setProductFilter('All');
+        }
       } catch (e) {
         console.error('Failed to load products:', e);
       }
     };
     if (setProductFilter) fetchProducts();
-  }, [setProductFilter]);
+  }, [setProductFilter, productFilter]);
 
   const timeOptions = ['All', 'Today', 'This Week', 'This Month', 'Custom Date...'];
   const sourceOptions = ['All', 'Shopee', 'Facebook', 'TikTok', 'Web'];
@@ -32,7 +49,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
         return `${new Date(parts[1]).toLocaleDateString('vi-VN')} - ${new Date(parts[2]).toLocaleDateString('vi-VN')}`;
       }
     }
-    return timeFilter === 'All' ? 'All Time' : timeFilter;
+    return timeFilter === 'All' ? 'Toàn thời gian' : timeFilter;
   };
 
   const handleApplyCustomDate = () => {
@@ -50,11 +67,12 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
       justifyContent: 'space-between',
       alignItems: 'center',
       padding: '1rem 1.5rem',
-      background: 'var(--bg-card)',
-      backdropFilter: 'blur(16px)',
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
       marginBottom: '1.5rem',
-      borderRadius: 'var(--radius-lg)',
+      borderRadius: 'var(--r-surf)',
+      flexWrap: 'wrap',
+      gap: '0.75rem',
       position: 'relative',
       zIndex: 100
     }}>
@@ -65,10 +83,11 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
             onClick={() => setOpenDropdown(openDropdown === 'time' ? null : 'time')}
             style={{
             display: 'flex', alignItems: 'center', gap: '0.5rem',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)',
-            color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem'
+            background: 'var(--raised)',
+            border: '1px solid var(--border)',
+            padding: '0.5rem 0.9rem', borderRadius: 'var(--r-ctrl)',
+            color: 'var(--text-hi)', cursor: 'pointer', fontSize: '0.84rem',
+            transition: 'border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease)'
           }}>
             <Calendar size={16} />
             {getDisplayTimeFilter()}
@@ -79,9 +98,9 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
             <div className="glass-panel animate-fade-in" style={{
               position: 'absolute', top: '110%', left: 0, width: '220px',
               padding: '0.5rem', zIndex: 20,
-              background: 'rgba(15, 23, 42, 0.95)',
-              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-              border: '1px solid rgba(255,255,255,0.1)'
+              background: 'var(--bg-dark)',
+              boxShadow: 'var(--glass-shadow)',
+              border: 'var(--glass-border)'
             }}>
               {timeOptions.map(opt => (
                 <div key={opt} 
@@ -99,7 +118,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
                   onMouseEnter={(e) => { if (opt !== 'Custom Date...') e.target.style.background = 'rgba(255,255,255,0.1)'}}
                   onMouseLeave={(e) => { if (opt !== 'Custom Date...') e.target.style.background = timeFilter === opt ? 'rgba(255,255,255,0.1)' : 'transparent'}}
                 >
-                  {opt === 'All' ? 'All Time' : opt}
+                  {opt === 'All' ? 'Toàn thời gian' : opt}
                   
                   {opt === 'Custom Date...' && (
                     <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -108,7 +127,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
                         value={customStart}
                         onChange={(e) => setCustomStart(e.target.value)}
                         style={{
-                          background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)',
+                          background: 'var(--bg-dark)', border: 'var(--glass-border)',
                           color: 'var(--text-primary)', padding: '0.4rem', borderRadius: '4px',
                           fontSize: '0.8rem', width: '100%', colorScheme: 'dark'
                         }}
@@ -118,7 +137,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
                         value={customEnd}
                         onChange={(e) => setCustomEnd(e.target.value)}
                         style={{
-                          background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)',
+                          background: 'var(--bg-dark)', border: 'var(--glass-border)',
                           color: 'var(--text-primary)', padding: '0.4rem', borderRadius: '4px',
                           fontSize: '0.8rem', width: '100%', colorScheme: 'dark'
                         }}
@@ -147,13 +166,14 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
             onClick={() => setOpenDropdown(openDropdown === 'source' ? null : 'source')}
             style={{
             display: 'flex', alignItems: 'center', gap: '0.5rem',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)',
-            color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem'
+            background: 'var(--raised)',
+            border: '1px solid var(--border)',
+            padding: '0.5rem 0.9rem', borderRadius: 'var(--r-ctrl)',
+            color: 'var(--text-hi)', cursor: 'pointer', fontSize: '0.84rem',
+            transition: 'border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease)'
           }}>
             <Filter size={16} />
-            Source: {sourceFilter}
+            Nguồn: {sourceFilter === 'All' ? 'Tất cả' : sourceFilter}
             <ChevronDown size={14} color="var(--text-secondary)" />
           </button>
 
@@ -161,9 +181,9 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
             <div className="glass-panel animate-fade-in" style={{
               position: 'absolute', top: '110%', left: 0, width: '150px',
               padding: '0.5rem', zIndex: 20,
-              background: 'rgba(15, 23, 42, 0.95)',
-              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-              border: '1px solid rgba(255,255,255,0.1)'
+              background: 'var(--bg-dark)',
+              boxShadow: 'var(--glass-shadow)',
+              border: 'var(--glass-border)'
             }}>
               {sourceOptions.map(opt => (
                 <div key={opt} 
@@ -190,13 +210,25 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
               onClick={() => setOpenDropdown(openDropdown === 'product' ? null : 'product')}
               style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem',
-              background: productFilter && productFilter !== 'All' ? 'rgba(168, 85, 247, 0.1)' : 'rgba(255,255,255,0.05)',
-              border: productFilter && productFilter !== 'All' ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(255,255,255,0.1)',
-              padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)',
-              color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem'
+              /* Bản cũ tô tím riêng cho bộ lọc sản phẩm trong khi hai
+                 bộ lọc còn lại màu tối — ba điều khiển cùng loại mà ba
+                 kiểu trạng thái khác nhau. Nay dùng chung một quy ước. */
+              background: productFilter && productFilter !== 'All' ? 'var(--accent-dim)' : 'var(--raised)',
+              border: productFilter && productFilter !== 'All' ? '1px solid var(--accent)' : '1px solid var(--border)',
+              padding: '0.5rem 0.9rem', borderRadius: 'var(--r-ctrl)',
+              color: productFilter && productFilter !== 'All' ? 'var(--accent-hi)' : 'var(--text-hi)',
+              cursor: 'pointer', fontSize: '0.84rem', maxWidth: '260px',
+              transition: 'border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease)'
             }}>
-              <Package size={16} />
-              {productFilter === 'All' || !productFilter ? 'All Products' : (productFilter.length > 20 ? productFilter.substring(0, 20) + '...' : productFilter)}
+              <Package size={16} style={{ flexShrink: 0 }} />
+              {/* Mọi chỗ cắt chữ đều phải kèm title, nếu không người dùng
+                  không có cách nào biết giá trị đầy đủ là gì. */}
+              <span
+                title={productFilter === 'All' || !productFilter ? 'Tất cả sản phẩm' : productFilter}
+                style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              >
+                {productFilter === 'All' || !productFilter ? 'Tất cả sản phẩm' : productFilter}
+              </span>
               <ChevronDown size={14} color="var(--text-secondary)" />
             </button>
 
@@ -204,9 +236,9 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
               <div className="glass-panel animate-fade-in" style={{
                 position: 'absolute', top: '110%', left: 0, width: '220px', maxHeight: '250px', overflowY: 'auto',
                 padding: '0.5rem', zIndex: 20,
-                background: 'rgba(15, 23, 42, 0.95)',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                border: '1px solid rgba(255,255,255,0.1)'
+                background: 'var(--bg-dark)',
+                boxShadow: 'var(--glass-shadow)',
+                border: 'var(--glass-border)'
               }}>
                 {productOptions.map(opt => (
                   <div key={opt} 
@@ -220,12 +252,36 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
                     onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
                     onMouseLeave={(e) => e.target.style.background = productFilter === opt ? 'rgba(255,255,255,0.1)' : 'transparent'}
                   >
-                    {opt === 'All' ? 'All Products' : opt}
+                    {opt === 'All' ? 'Tất cả sản phẩm' : opt}
                   </div>
                 ))}
               </div>
             )}
           </div>
+        )}
+
+        {/* BỘ ĐẾM ĐIỀU KIỆN VÀ NÚT XOÁ TẤT CẢ.
+            Ba hộp thả xuống của bản cũ không cho biết đang lọc mấy điều
+            kiện, cũng không có cách nào gỡ nhanh. Người dùng nhìn một
+            con số nhỏ bất thường mà không biết là do dữ liệu hay do bộ
+            lọc còn sót từ phiên trước — bộ lọc lại được lưu vào
+            localStorage nên nó SỐNG QUA CẢ LẦN TẢI TRANG. */}
+        {activeCount > 0 && (
+          <button
+            onClick={clearAll}
+            title="Gỡ toàn bộ điều kiện lọc"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.45rem',
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: 'var(--text-lo)', fontSize: '0.8rem', padding: '0.5rem 0.25rem',
+              transition: 'color 120ms ease-out'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--sev-crit)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-lo)'}
+          >
+            <X size={13} />
+            <span className="data-num">{activeCount}</span> điều kiện · xoá tất cả
+          </button>
         )}
       </div>
       
@@ -239,13 +295,13 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
               border: '1px solid rgba(255,255,255,0.1)',
               padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)',
               color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem',
-              transition: 'all 0.2s'
+              transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out'
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}
           >
             <Download size={16} />
-            Export Report
+            Xuất báo cáo
           </button>
         </div>
       )}

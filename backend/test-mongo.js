@@ -1,5 +1,7 @@
 const { MongoClient } = require('mongodb');
-const uri = "mongodb+srv://nthanhdung2708dn_db_user:lb1ciCFNb03FryXb@cluster0.bezprjg.mongodb.net/customer_radar?retryWrites=true&w=majority";
+require('dotenv').config();
+// Chuoi ket noi CHI doc tu bien moi truong.
+const uri = process.env.MONGODB_URI;
 
 async function run() {
   const client = new MongoClient(uri);

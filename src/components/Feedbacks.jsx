@@ -54,13 +54,19 @@ const Feedbacks = () => {
     }
   };
 
-  const getSeverityBadge = (severity) => {
-    switch (severity) {
-      case 'Critical': return <span className="cat-badge" style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }}>Critical</span>;
-      case 'High': return <span className="cat-badge" style={{ color: '#f97316', borderColor: 'rgba(249,115,22,0.3)' }}>High</span>;
-      case 'Medium': return <span className="cat-badge" style={{ color: '#eab308', borderColor: 'rgba(234,179,8,0.3)' }}>Medium</span>;
-      default: return <span className="cat-badge" style={{ color: '#10b981', borderColor: 'rgba(16,185,129,0.3)' }}>Low</span>;
-    }
+  /** Hạng nguồn thay cho "severity" — xem ghi chú trong FeedbackTable.jsx */
+  const getSeverityBadge = (trust) => {
+    if (!trust) return <span className="cat-badge">—</span>;
+    const color =
+      trust.tierWeight >= 0.9 ? '#10b981' :
+      trust.tierWeight >= 0.6 ? '#eab308' :
+      trust.tierWeight >= 0.4 ? '#f97316' : '#ef4444';
+    return (
+      <span className="cat-badge" style={{ color, borderColor: color + '4d' }}
+            title={`Trọng số tin cậy ${trust.weight}`}>
+        {trust.tier}
+      </span>
+    );
   };
 
   const filteredFeedbacks = feedbacks.filter((fb) => {
@@ -68,7 +74,7 @@ const Feedbacks = () => {
                           (fb.author && fb.author.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesSentiment = filterSentiment === 'All' || fb.sentiment === filterSentiment;
-    const matchesSeverity = filterSeverity === 'All' || fb.severity === filterSeverity;
+    const matchesSeverity = filterSeverity === 'All' || (fb.trust && fb.trust.tier === filterSeverity);
 
     return matchesSearch && matchesSentiment && matchesSeverity;
   });
@@ -76,7 +82,7 @@ const Feedbacks = () => {
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '2rem' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.75rem', fontWeight: 600 }}>Feedback Management</h1>
+        <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.75rem', fontWeight: 600 }}>Quản lý phản hồi</h1>
         <p style={{ color: 'var(--text-secondary)', margin: 0 }}>View, search, and filter all customer feedbacks analyzed by AI.</p>
       </div>
 
@@ -123,7 +129,7 @@ const Feedbacks = () => {
                 onChange={(e) => setFilterSentiment(e.target.value)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem', padding: '0.25rem', cursor: 'pointer' }}
               >
-                <option value="All" style={{ background: 'var(--bg-dark)' }}>All Sentiments</option>
+                <option value="All" style={{ background: 'var(--bg-dark)' }}>Mọi sắc thái</option>
                 <option value="Positive" style={{ background: 'var(--bg-dark)' }}>Positive</option>
                 <option value="Neutral" style={{ background: 'var(--bg-dark)' }}>Neutral</option>
                 <option value="Negative" style={{ background: 'var(--bg-dark)' }}>Negative</option>
@@ -137,7 +143,7 @@ const Feedbacks = () => {
                 onChange={(e) => setFilterSeverity(e.target.value)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem', padding: '0.25rem', cursor: 'pointer' }}
               >
-                <option value="All" style={{ background: 'var(--bg-dark)' }}>All Severities</option>
+                <option value="All" style={{ background: 'var(--bg-dark)' }}>Mọi mức độ</option>
                 <option value="Critical" style={{ background: 'var(--bg-dark)' }}>Critical</option>
                 <option value="High" style={{ background: 'var(--bg-dark)' }}>High</option>
                 <option value="Medium" style={{ background: 'var(--bg-dark)' }}>Medium</option>
@@ -161,13 +167,13 @@ const Feedbacks = () => {
           ) : (
             <div className="table-responsive">
               <table className="data-table" style={{ borderCollapse: 'collapse', width: '100%' }}>
-                <thead style={{ position: 'sticky', top: 0, background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
+                <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 10 }}>
                   <tr>
                     <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Customer</th>
                     <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', width: '35%' }}>Feedback</th>
                     <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</th>
                     <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sentiment</th>
-                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Severity</th>
+                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Độ tin cậy</th>
                     <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Source</th>
                   </tr>
                 </thead>
@@ -188,7 +194,7 @@ const Feedbacks = () => {
                       </td>
                       <td style={{ padding: '1.25rem 1.5rem' }}><span className="cat-badge">{item.category}</span></td>
                       <td style={{ padding: '1.25rem 1.5rem' }}>{getSentimentBadge(item.sentiment)}</td>
-                      <td style={{ padding: '1.25rem 1.5rem' }}>{getSeverityBadge(item.severity)}</td>
+                      <td style={{ padding: '1.25rem 1.5rem' }}>{getSeverityBadge(item.trust)}</td>
                       <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{item.source}</td>
                     </tr>
                   ))}

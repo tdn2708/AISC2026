@@ -1,14 +1,25 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "customer-radar-backend",
+  "version": "2.0.0",
+  "description": "Customer Radar API — phân tích phản hồi khách hàng đa kênh có tầng kiểm soát tin cậy dữ liệu",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node --watch server.js",
+    "seed": "node seed_realistic_data.js",
+    "test": "node test/run_tests.js",
+    "eval": "node evaluation/run_evaluation.js",
+    "check": "node test/requirements_check.js",
+    "verify": "node data/verify_detection.js",
+    "demo:rec": "node test/recommender_demo.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "cxm",
+    "absa",
+    "trust-layer",
+    "vietnamese-nlp"
+  ],
+  "author": "Đội LDS — Trường Đại học Công nghệ Thông tin",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

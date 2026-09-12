@@ -1,43 +1,140 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, BarChart2, MessageSquare, AlertTriangle, Settings, Users, Database, FileText, LogOut, User, ChevronUp } from 'lucide-react';
+import axios from 'axios';
+import {
+  Home, BarChart2, MessageSquare, AlertTriangle, Settings, Users, Database,
+  FileText, LogOut, User, ChevronUp, ShieldCheck, FlaskConical,
+  PanelLeftClose, PanelLeftOpen
+} from 'lucide-react';
+import Logo, { LogoMark } from './Logo';
 
-const SidebarItem = ({ icon, label, to, collapsed }) => (
-  <NavLink 
-    to={to} 
-    title={collapsed ? label : undefined}
-    style={({ isActive }) => ({
-      display: 'flex',
-      alignItems: 'center',
-      gap: collapsed ? '0' : '1rem',
-      padding: collapsed ? '0.875rem 0' : '0.875rem 1.25rem',
-      justifyContent: collapsed ? 'center' : 'flex-start',
-      cursor: 'pointer',
-      color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-      background: isActive ? 'linear-gradient(90deg, rgba(59, 130, 246, 0.15), transparent)' : 'transparent',
-      borderLeft: isActive ? '3px solid var(--accent-blue)' : '3px solid transparent',
-      transition: 'all 0.2s ease',
-      fontSize: '0.95rem',
-      fontWeight: isActive ? 600 : 400,
-      textDecoration: 'none',
-      whiteSpace: 'nowrap',
-      overflow: 'hidden'
-    })}
-  >
-    {({ isActive }) => (
-      <>
-        <div style={{ color: isActive ? 'var(--accent-blue)' : 'inherit', flexShrink: 0 }}>
-          {icon}
-        </div>
-        <span style={{ opacity: collapsed ? 0 : 1, transition: 'opacity 0.2s', overflow: 'hidden' }}>{label}</span>
-      </>
-    )}
-  </NavLink>
-);
+/**
+ * THANH ĐIỀU HƯỚNG
+ * ==================================================================
+ * Bản cũ hỏng ở hai chỗ, và chỗ thứ hai mới là chỗ đáng nói.
+ *
+ * ------------------------------------------------------------------
+ * 1. NÓ TRÀN KHỎI MÀN HÌNH TRÊN PHẦN LỚN LAPTOP.
+ *
+ * Đo trên chính bản cũ: phần điều hướng cần 669px chiều cao, trong khi
+ * màn hình 800px chỉ chừa cho nó 596px. Tràn 73px. Ở màn 720px thì tràn
+ * 153px, tức khoảng ba mục cuối bị cắt mất — đúng hiện tượng "Báo cáo"
+ * bị che trong ảnh chụp.
+ *
+ * Nguyên nhân: mỗi mục cao 52px (padding 0.875rem trên dưới, chữ
+ * 0.95rem, icon 20px), nhân 10 mục là 520px, cộng 97px khối logo và
+ * 91px khối người dùng. Gần 190px chiều cao chỉ để trang trí hai đầu.
+ *
+ * Bản này hạ mục xuống 34px và nén hai đầu, tổng còn khoảng 570px —
+ * vừa mọi laptop mà không cần cuộn.
+ *
+ * ------------------------------------------------------------------
+ * 2. 260px CHIỀU RỘNG KHÔNG MANG MỘT THÔNG TIN NÀO.
+ *
+ * Đây mới là vấn đề kiến trúc. Thanh bên cũ chỉ là một danh sách liên
+ * kết: nó chiếm một phần năm màn hình và nói với người dùng đúng bằng
+ * không. Trong một sản phẩm giám sát, thanh điều hướng nên đồng thời là
+ * MỘT MẶT ĐỒNG HỒ — mở máy lên là biết ngay có bao nhiêu cảnh báo đang
+ * chờ, hàng đợi kiểm duyệt còn bao nhiêu, dữ liệu tươi tới đâu.
+ *
+ * Cảm giác "tech" đến từ chỗ đó, không đến từ hiệu ứng phát sáng.
+ *
+ * Số liệu lấy từ /api/nav/status — một endpoint riêng rất nhẹ, cố ý
+ * không gọi thẳng /alerts hay /trust/queue vì hai endpoint đó trả về
+ * toàn bộ nội dung kèm bằng chứng, trong khi ở đây chỉ cần con số đếm.
+ */
+
+/** Chu kỳ làm tươi trạng thái. Đủ chậm để không tạo tải, đủ nhanh để không nói dối. */
+const STATUS_POLL_MS = 60000;
+
+const SidebarItem = ({ icon, label, to, collapsed, badge, badgeTone = 'accent' }) => {
+  const tones = {
+    accent: { bg: 'var(--accent-dim)', fg: 'var(--accent-hi)' },
+    crit: { bg: 'var(--sev-crit-dim)', fg: 'var(--sev-crit)' },
+    muted: { bg: 'var(--raised)', fg: 'var(--text-lo)' }
+  }[badgeTone];
+
+  return (
+    <NavLink
+      to={to}
+      title={collapsed ? label + (badge ? ` (${badge})` : '') : undefined}
+      style={({ isActive }) => ({
+        display: 'flex',
+        alignItems: 'center',
+        gap: collapsed ? '0' : '0.7rem',
+        /* 52px -> 34px. Đây là thay đổi gỡ được toàn bộ hiện tượng tràn. */
+        padding: collapsed ? '0.5rem 0' : '0.45rem 0.75rem',
+        justifyContent: collapsed ? 'center' : 'flex-start',
+        cursor: 'pointer',
+        color: isActive ? 'var(--accent-hi)' : 'var(--text-mid)',
+        background: isActive ? 'var(--accent-dim)' : 'transparent',
+        borderLeft: isActive ? '2px solid var(--accent-hi)' : '2px solid transparent',
+        borderRadius: collapsed ? '0' : '0 var(--r-ctrl) var(--r-ctrl) 0',
+        marginRight: collapsed ? 0 : '0.6rem',
+        fontSize: '0.85rem',
+        fontWeight: isActive ? 600 : 450,
+        textDecoration: 'none',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        transition:
+          'background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease)'
+      })}
+    >
+      <span style={{ color: 'inherit', flexShrink: 0, display: 'flex' }}>{icon}</span>
+      {!collapsed && (
+        <>
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+          {/* Con số ngay trên mục điều hướng: người dùng biết có việc cần
+              làm mà không phải bấm vào mới thấy. */}
+          {badge ? (
+            <span
+              className="data-num"
+              style={{
+                flexShrink: 0, fontSize: '0.68rem', fontWeight: 600,
+                padding: '1px 6px', borderRadius: 99,
+                background: tones.bg, color: tones.fg, lineHeight: 1.6
+              }}
+            >
+              {badge}
+            </span>
+          ) : null}
+        </>
+      )}
+      {/* Ở trạng thái thu gọn, badge rút thành một chấm để không mất tín hiệu */}
+      {collapsed && badge ? (
+        <span style={{
+          position: 'absolute', marginLeft: 18, marginTop: -14,
+          width: 6, height: 6, borderRadius: 99, background: tones.fg
+        }} />
+      ) : null}
+    </NavLink>
+  );
+};
+
+/** Nhãn nhóm, kèm một đường kẻ mảnh để mắt bám vào cấu trúc */
+const GroupLabel = ({ children, collapsed, first }) => {
+  if (collapsed) {
+    return <div style={{ margin: '0.6rem 0.9rem', borderTop: '1px solid var(--border-soft)' }} />;
+  }
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '0.6rem',
+      padding: '0 0.9rem', marginTop: first ? '0.25rem' : '1.1rem', marginBottom: '0.35rem'
+    }}>
+      <span style={{
+        fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase',
+        letterSpacing: '0.13em', color: 'var(--text-lo)', whiteSpace: 'nowrap'
+      }}>
+        {children}
+      </span>
+      <span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
+    </div>
+  );
+};
 
 const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollapse }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [edgeHover, setEdgeHover] = useState(false);
+  const [status, setStatus] = useState(null);
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
@@ -51,219 +148,256 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollaps
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const res = await axios.get('/nav/status');
+        if (alive) setStatus(res.data);
+      } catch {
+        // Không lấy được trạng thái thì thanh bên vẫn phải điều hướng
+        // được. Im lặng bỏ qua, và dải trạng thái tự chuyển sang "không
+        // rõ" thay vì hiển thị một con số cũ như thể nó còn đúng.
+        if (alive) setStatus(null);
+      }
+    };
+    load();
+    const id = setInterval(load, STATUS_POLL_MS);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
+
+  const health = status?.dataHealth;
+  const healthTone =
+    health == null ? 'var(--text-lo)'
+      : health >= 75 ? 'var(--sev-ok)'
+        : health >= 50 ? 'var(--sev-high)'
+          : 'var(--sev-crit)';
+
+  const updatedAt = status?.computedAt
+    ? new Date(status.computedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+    : null;
+
+  const menuBtn = {
+    width: '100%', display: 'flex', alignItems: 'center', gap: '0.65rem',
+    padding: '0.55rem 0.75rem', borderRadius: 'var(--r-ctrl)',
+    background: 'transparent', color: 'var(--text-hi)', fontFamily: 'inherit',
+    border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '0.84rem',
+    transition: 'background-color var(--dur-fast) var(--ease)'
+  };
+
   return (
     <>
-      <div 
-        className={`sidebar-overlay ${isOpen ? 'visible' : ''}`} 
-        onClick={onClose}
-      />
-      <aside 
-        className={`sidebar-container ${isOpen ? 'open' : ''}`} 
-        style={{ width: collapsed ? '72px' : '260px' }}
+      <div className={`sidebar-overlay ${isOpen ? 'visible' : ''}`} onClick={onClose} />
+
+      <aside
+        className={`sidebar-container ${isOpen ? 'open' : ''}`}
+        style={{ width: collapsed ? 'var(--sidebar-w-collapsed)' : 'var(--sidebar-w)' }}
       >
-        {/* Full-height edge drag strip */}
+        {/* Khối thương hiệu, kèm nút thu gọn NHÌN THẤY ĐƯỢC.
+            Bản cũ giấu chức năng này sau một dải kéo rộng 6px trong suốt
+            ở mép phải — không ai tìm ra một điều khiển vô hình. */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          padding: collapsed ? '0.9rem 0' : '0.9rem 0.75rem 0.9rem 1rem',
+          justifyContent: collapsed ? 'center' : 'space-between',
+          borderBottom: '1px solid var(--border-soft)',
+          flexShrink: 0, overflow: 'hidden'
+        }}>
+          {collapsed ? <LogoMark size={30} /> : <Logo size="sm" />}
+          {!collapsed && (
+            <button
+              onClick={onToggleCollapse}
+              title="Thu gọn thanh bên"
+              aria-label="Thu gọn thanh bên"
+              style={{
+                display: 'grid', placeItems: 'center', width: 26, height: 26, flexShrink: 0,
+                background: 'transparent', border: '1px solid transparent', borderRadius: 'var(--r-ctrl)',
+                color: 'var(--text-lo)', cursor: 'pointer',
+                transition: 'background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--raised)';
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.color = 'var(--text-hi)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.borderColor = 'transparent';
+                e.currentTarget.style.color = 'var(--text-lo)';
+              }}
+            >
+              <PanelLeftClose size={15} />
+            </button>
+          )}
+        </div>
+
+        {collapsed && (
+          <button
+            onClick={onToggleCollapse}
+            title="Mở rộng thanh bên"
+            aria-label="Mở rộng thanh bên"
+            style={{
+              margin: '0.6rem auto 0', display: 'grid', placeItems: 'center',
+              width: 28, height: 28, background: 'transparent',
+              border: '1px solid var(--border)', borderRadius: 'var(--r-ctrl)',
+              color: 'var(--text-lo)', cursor: 'pointer', flexShrink: 0
+            }}
+          >
+            <PanelLeftOpen size={15} />
+          </button>
+        )}
+
+        {/* Điều hướng */}
+        <nav style={{ padding: '0.6rem 0 0.6rem', flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
+          <GroupLabel collapsed={collapsed} first>Tổng quan</GroupLabel>
+          <SidebarItem to="/dashboard" icon={<Home size={16} />} label="Tổng quan" collapsed={collapsed} />
+          <SidebarItem to="/analytics" icon={<BarChart2 size={16} />} label="Phân tích" collapsed={collapsed} />
+          <SidebarItem to="/lab" icon={<FlaskConical size={16} />} label="Phòng thí nghiệm" collapsed={collapsed} />
+
+          <GroupLabel collapsed={collapsed}>Dữ liệu khách hàng</GroupLabel>
+          <SidebarItem to="/feedbacks" icon={<MessageSquare size={16} />} label="Phản hồi" collapsed={collapsed} />
+          <SidebarItem
+            to="/trust" icon={<ShieldCheck size={16} />} label="Tin cậy dữ liệu" collapsed={collapsed}
+            badge={status?.reviewQueue || null} badgeTone="muted"
+          />
+          <SidebarItem to="/segments" icon={<Users size={16} />} label="Phân khúc" collapsed={collapsed} />
+          <SidebarItem
+            to="/risk" icon={<AlertTriangle size={16} />} label="Trung tâm cảnh báo" collapsed={collapsed}
+            badge={status?.openAlerts || null}
+            badgeTone={status?.criticalAlerts > 0 ? 'crit' : 'accent'}
+          />
+
+          <GroupLabel collapsed={collapsed}>Hệ thống</GroupLabel>
+          <SidebarItem to="/data" icon={<Database size={16} />} label="Nguồn dữ liệu" collapsed={collapsed} />
+          <SidebarItem to="/reports" icon={<FileText size={16} />} label="Báo cáo" collapsed={collapsed} />
+          <SidebarItem to="/settings" icon={<Settings size={16} />} label="Cài đặt" collapsed={collapsed} />
+        </nav>
+
+        {/* DẢI TRẠNG THÁI HỆ THỐNG.
+            Giống thanh trạng thái của một IDE hay một terminal: luôn ở
+            đó, chiếm rất ít chỗ, và trả lời câu hỏi "hệ thống có đang
+            khoẻ không" mà không cần rời màn hình đang xem. */}
         <div
-          onClick={onToggleCollapse}
-          onMouseEnter={() => setEdgeHover(true)}
-          onMouseLeave={() => setEdgeHover(false)}
+          title={
+            health != null
+              ? `Sức khoẻ dữ liệu ${health}/100 · ${status?.validFeedbacks?.toLocaleString('vi-VN')} phản hồi hợp lệ${updatedAt ? ' · cập nhật ' + updatedAt : ''}`
+              : 'Chưa lấy được trạng thái hệ thống'
+          }
           style={{
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            width: '6px',
-            height: '100%',
-            cursor: 'col-resize',
-            zIndex: 1002,
-            background: edgeHover ? 'rgba(128, 128, 128, 0.35)' : 'transparent',
-            transition: 'background 0.2s ease',
-            boxShadow: edgeHover ? '0 0 6px rgba(128, 128, 128, 0.2)' : 'none',
+            display: 'flex', alignItems: 'center',
+            justifyContent: collapsed ? 'center' : 'space-between',
+            gap: '0.5rem', flexShrink: 0,
+            padding: collapsed ? '0.5rem 0' : '0.5rem 0.9rem',
+            borderTop: '1px solid var(--border-soft)',
+            fontSize: '0.7rem', color: 'var(--text-lo)'
           }}
-        />
-
-        {/* Logo */}
-        <div style={{ padding: collapsed ? '2rem 0' : '2rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'center', whiteSpace: 'nowrap', overflow: 'hidden', flexShrink: 0 }}>
-          <div style={{
-            position: 'relative',
-            width: '46px', height: '46px', minWidth: '46px',
-            borderRadius: '50%',
-            border: '1px solid rgba(59, 130, 246, 0.4)',
-            background: 'radial-gradient(circle, rgba(168,85,247,0.1) 0%, rgba(6,182,212,0.05) 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 15px rgba(6,182,212,0.2), inset 0 0 10px rgba(168,85,247,0.2)',
-            overflow: 'hidden'
-          }}>
-            {/* Radar Lines */}
-            <div style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }}></div>
-            <div style={{ position: 'absolute', width: '60%', height: '60%', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)' }}></div>
-            <div style={{ position: 'absolute', width: '1px', height: '100%', background: 'rgba(255,255,255,0.1)' }}></div>
-            <div style={{ position: 'absolute', width: '100%', height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
-            
-            {/* CR Text */}
-            <span style={{ 
-              fontFamily: "'Dancing Script', cursive", 
-              fontSize: '1.8rem', 
-              fontWeight: 700,
-              background: 'linear-gradient(135deg, #22d3ee, #c084fc)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              position: 'relative',
-              zIndex: 2,
-              lineHeight: 1,
-              marginLeft: '2px'
-            }}>
-              CR
-            </span>
-          </div>
-          
-          {!collapsed && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <h1 style={{ 
-                fontFamily: "'Dancing Script', cursive", 
-                fontSize: '2rem', 
-                fontWeight: 700, 
-                margin: '0 0 -2px 0',
-                background: 'linear-gradient(135deg, #22d3ee, #c084fc)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                lineHeight: 1,
-                paddingRight: '10px'
-              }}>
-                CustomerRadar
-              </h1>
-              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 600 }}>
-                Enterprise Edition
-              </div>
-            </div>
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: 99, background: healthTone, flexShrink: 0,
+              transition: 'background-color var(--dur-base) var(--ease)'
+            }} />
+            {!collapsed && (
+              <span style={{ whiteSpace: 'nowrap' }}>
+                Sức khoẻ <span className="data-num" style={{ color: healthTone }}>{health != null ? health : '—'}</span>
+              </span>
+            )}
+          </span>
+          {!collapsed && updatedAt && (
+            <span className="data-num" style={{ whiteSpace: 'nowrap' }}>{updatedAt}</span>
           )}
         </div>
 
-        {/* Nav Items */}
-        <div style={{ padding: '0 0.5rem', marginTop: '1rem', flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-          {!collapsed && (
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', padding: '0 1.25rem', marginBottom: '0.5rem' }}>
-              Overview
-            </div>
-          )}
-          {collapsed && <div style={{ margin: '0.5rem 0' }} />}
-          <SidebarItem to="/dashboard" icon={<Home size={20} />} label="Dashboard" collapsed={collapsed} />
-          <SidebarItem to="/analytics" icon={<BarChart2 size={20} />} label="Analytics" collapsed={collapsed} />
-          
-          {!collapsed ? (
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', padding: '0 1.25rem', marginBottom: '0.5rem', marginTop: '2rem' }}>
-              Customer Data
-            </div>
-          ) : (
-            <div style={{ margin: '1rem 0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)' }} />
-          )}
-          <SidebarItem to="/feedbacks" icon={<MessageSquare size={20} />} label="Feedbacks" collapsed={collapsed} />
-          <SidebarItem to="/segments" icon={<Users size={20} />} label="Segments" collapsed={collapsed} />
-          <SidebarItem to="/risk" icon={<AlertTriangle size={20} />} label="Risk Center" collapsed={collapsed} />
-          
-          {!collapsed ? (
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', padding: '0 1.25rem', marginBottom: '0.5rem', marginTop: '2rem' }}>
-              System
-            </div>
-          ) : (
-            <div style={{ margin: '1rem 0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)' }} />
-          )}
-          <SidebarItem to="/data" icon={<Database size={20} />} label="Data Sources" collapsed={collapsed} />
-          <SidebarItem to="/reports" icon={<FileText size={20} />} label="Reports & Exports" collapsed={collapsed} />
-          <SidebarItem to="/settings" icon={<Settings size={20} />} label="Settings" collapsed={collapsed} />
-        </div>
-      
-        {/* User Profile Section */}
-        <div style={{ padding: collapsed ? '1rem 0' : '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', position: 'relative', flexShrink: 0 }} ref={menuRef}>
-          
-          {/* Popup Menu - positioned to the right when collapsed */}
+        {/* Khối người dùng — nén còn một hàng */}
+        <div
+          style={{
+            padding: collapsed ? '0.6rem 0' : '0.6rem 0.75rem',
+            borderTop: '1px solid var(--border-soft)', position: 'relative', flexShrink: 0
+          }}
+          ref={menuRef}
+        >
           {showUserMenu && (
-            <div className="glass-panel animate-fade-in" style={{
-              position: 'fixed', 
-              bottom: '16px',
-              left: collapsed ? '80px' : '16px',
-              width: '220px',
-              padding: '0.5rem', zIndex: 9999,
-              boxShadow: '0 -10px 30px rgba(0,0,0,0.5)',
-              border: '1px solid rgba(255,255,255,0.1)'
+            <div className="glass-panel" style={{
+              position: 'fixed', bottom: '14px', left: collapsed ? '72px' : '14px',
+              width: '216px', padding: '0.4rem', zIndex: 9999
             }}>
-              <div style={{ padding: '0.5rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '0.5rem' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Signed in as</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>admin@company.com</div>
+              <div style={{ padding: '0.45rem 0.75rem', borderBottom: '1px solid var(--border-soft)', marginBottom: '0.35rem' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-lo)' }}>Đang đăng nhập</div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-hi)' }}>admin@company.com</div>
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => { navigate('/settings'); setShowUserMenu(false); }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                  padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)',
-                  background: 'transparent', color: 'var(--text-primary)',
-                  border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '0.85rem',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                style={menuBtn}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--raised)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
-                <User size={16} color="var(--text-secondary)" /> Profile
+                <User size={15} color="var(--text-lo)" /> Hồ sơ
               </button>
-              
-              <button 
+
+              <button
                 onClick={() => { navigate('/settings'); setShowUserMenu(false); }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                  padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)',
-                  background: 'transparent', color: 'var(--text-primary)',
-                  border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '0.85rem',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                style={menuBtn}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--raised)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
-                <Settings size={16} color="var(--text-secondary)" /> Settings
+                <Settings size={15} color="var(--text-lo)" /> Cài đặt
               </button>
 
               {onLogout && (
-                <button 
+                <button
                   onClick={onLogout}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                    padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', marginTop: '0.5rem',
-                    background: 'rgba(239, 68, 68, 0.05)', color: 'var(--risk-critical)',
-                    border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '0.85rem',
-                    transition: 'background 0.2s', fontWeight: 500
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'}
+                  style={{ ...menuBtn, color: 'var(--sev-crit)', marginTop: '0.25rem', fontWeight: 500 }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--sev-crit-dim)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <LogOut size={16} /> Sign out
+                  <LogOut size={15} /> Đăng xuất
                 </button>
               )}
             </div>
           )}
 
-          <div 
+          <button
             onClick={() => setShowUserMenu(!showUserMenu)}
             title={collapsed ? 'Admin User' : undefined}
-            style={{ 
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: '0.5rem', margin: collapsed ? '0' : '-0.5rem', borderRadius: 'var(--radius-md)',
-              cursor: 'pointer', transition: 'background 0.2s',
-              background: showUserMenu ? 'rgba(255,255,255,0.05)' : 'transparent'
+            aria-expanded={showUserMenu}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem',
+              padding: '0.35rem 0.4rem', borderRadius: 'var(--r-ctrl)',
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              background: showUserMenu ? 'var(--raised)' : 'transparent',
+              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              transition: 'background-color var(--dur-fast) var(--ease)'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = showUserMenu ? 'rgba(255,255,255,0.05)' : 'transparent'}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--raised)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = showUserMenu ? 'var(--raised)' : 'transparent')}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden', flex: 1, justifyContent: collapsed ? 'center' : 'flex-start' }}>
-              <div style={{ width: '36px', height: '36px', minWidth: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Users size={18} color="var(--text-secondary)" />
-              </div>
-              {!collapsed && (
-                <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-primary)' }}>Admin User</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>admin@company.com</div>
-                </div>
-              )}
-            </div>
-            {!collapsed && <ChevronUp size={16} color="var(--text-secondary)" style={{ flexShrink: 0, transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />}
-          </div>
+            <span style={{
+              width: 28, height: 28, minWidth: 28, borderRadius: 99, display: 'grid', placeItems: 'center',
+              background: 'var(--raised)', border: '1px solid var(--border)', color: 'var(--text-lo)'
+            }}>
+              <User size={14} />
+            </span>
+            {!collapsed && (
+              <>
+                <span style={{
+                  flex: 1, minWidth: 0, textAlign: 'left', fontSize: '0.82rem', fontWeight: 500,
+                  color: 'var(--text-hi)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                }}>
+                  Admin User
+                </span>
+                <ChevronUp
+                  size={14}
+                  color="var(--text-lo)"
+                  style={{
+                    flexShrink: 0,
+                    transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0)',
+                    transition: 'transform var(--dur-base) var(--ease)'
+                  }}
+                />
+              </>
+            )}
+          </button>
         </div>
       </aside>
     </>

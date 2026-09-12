@@ -1,0 +1,1278 @@
+{
+  "generatedAt": "2026-09-11T09:03:16.702Z",
+  "dataset": {
+    "aspectSamples": 80,
+    "trustSamples": 19,
+    "annotators": 1,
+    "doubleAnnotated": false,
+    "cohensKappa": null,
+    "kappaNote": "Chưa tính được: cần tối thiểu hai người gán độc lập trên cùng tập. Quy trình gán đôi và phân xử bất đồng nằm ở mục A.2 của kế hoạch thực nghiệm.",
+    "guidelineNote": "Câu trong tập được soạn độc lập với danh sách từ khóa của bộ phân loại luật, để phép đo không bị vòng tròn.",
+    "isPublishedBenchmark": false,
+    "benchmarkNote": "Tập tự soạn để kiểm chứng pipeline; chưa thay thế được UIT-ViSFD"
+  },
+  "targets": {
+    "categoryMacroF1": 0.82,
+    "causeMacroF1": 0.7,
+    "sentimentMacroF1": 0.78,
+    "spamPrecision": 0.95,
+    "inauthenticPrecision": 0.75,
+    "falseRejectRate": 0.02
+  },
+  "leakageAudit": {
+    "clean": true,
+    "totalKeywords": 195,
+    "firedOnDev": 47,
+    "firedOnTest": 3,
+    "leaked": [],
+    "leakedCount": 0,
+    "verdict": "Không phát hiện rò rỉ: mọi từ khóa khớp trên tập kiểm tra đều đã được chứng minh bởi tập phát triển."
+  },
+  "models": [
+    {
+      "id": "B1",
+      "name": "Từ điển cảm xúc + luật",
+      "role": "Nền cơ sở thấp nhất",
+      "available": true,
+      "canDetectAspect": true,
+      "categoryMacroF1": 0.1611,
+      "causeMacroF1": 0.1164,
+      "sentimentMacroF1": 0.4387,
+      "categoryAccuracy": 0.3333,
+      "categoryAccuracyCI": {
+        "point": 0.3333,
+        "low": 0.2168,
+        "high": 0.4746,
+        "total": 48
+      },
+      "detail": {
+        "category": {
+          "perClass": {
+            "Delivery": {
+              "precision": 1,
+              "recall": 0.0833,
+              "f1": 0.1538,
+              "support": 12,
+              "tp": 1,
+              "fp": 0,
+              "fn": 11
+            },
+            "ProductQuality": {
+              "precision": 1,
+              "recall": 0.375,
+              "f1": 0.5455,
+              "support": 8,
+              "tp": 3,
+              "fp": 0,
+              "fn": 5
+            },
+            "CustomerService": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 7,
+              "tp": 0,
+              "fp": 0,
+              "fn": 7
+            },
+            "Payment": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 3,
+              "tp": 0,
+              "fp": 0,
+              "fn": 3
+            },
+            "TechnicalApp": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 3,
+              "tp": 0,
+              "fp": 0,
+              "fn": 3
+            },
+            "ReturnRefund": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 3,
+              "tp": 0,
+              "fp": 0,
+              "fn": 3
+            },
+            "PricePromotion": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "NONE": {
+              "precision": 0.2727,
+              "recall": 1,
+              "f1": 0.4286,
+              "support": 12,
+              "tp": 12,
+              "fp": 32,
+              "fn": 0
+            }
+          },
+          "macroPrecision": 0.3247,
+          "macroRecall": 0.2083,
+          "macroF1": 0.1611,
+          "microPrecision": 0.3333,
+          "microRecall": 0.3333,
+          "microF1": 0.3333,
+          "accuracy": 0.3333,
+          "sampleSize": 48,
+          "labelsEvaluated": 7
+        },
+        "cause": {
+          "perClass": {
+            "LateDelivery": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 5,
+              "tp": 0,
+              "fp": 0,
+              "fn": 5
+            },
+            "DamagedInTransit": {
+              "precision": 1,
+              "recall": 0.3333,
+              "f1": 0.5,
+              "support": 3,
+              "tp": 1,
+              "fp": 0,
+              "fn": 2
+            },
+            "LostPackage": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "CourierAttitude": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "TechnicalDefect": {
+              "precision": 0.5,
+              "recall": 0.3333,
+              "f1": 0.4,
+              "support": 3,
+              "tp": 1,
+              "fp": 1,
+              "fn": 2
+            },
+            "NotAsDescribed": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "MissingAccessory": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "support": 1,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "SuspectedCounterfeit": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "SlowResponse": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "BadAttitude": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "WrongInformation": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "UnresolvedCase": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "DoubleCharge": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "WrongPromotion": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "AppSlowOrCrash": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "LoginError": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "SlowRefund": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "ReturnRejected": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "ComplexProcess": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "NONE": {
+              "precision": 0.2727,
+              "recall": 1,
+              "f1": 0.4286,
+              "support": 12,
+              "tp": 12,
+              "fp": 32,
+              "fn": 0
+            }
+          },
+          "macroPrecision": 0.1386,
+          "macroRecall": 0.1333,
+          "macroF1": 0.1164,
+          "microPrecision": 0.3125,
+          "microRecall": 0.3125,
+          "microF1": 0.3125,
+          "accuracy": 0.3125,
+          "sampleSize": 48,
+          "labelsEvaluated": 20
+        },
+        "sentiment": {
+          "perClass": {
+            "Positive": {
+              "precision": 0.4444,
+              "recall": 0.5714,
+              "f1": 0.5,
+              "support": 7,
+              "tp": 4,
+              "fp": 5,
+              "fn": 3
+            },
+            "Negative": {
+              "precision": 0.88,
+              "recall": 0.5789,
+              "f1": 0.6984,
+              "support": 38,
+              "tp": 22,
+              "fp": 3,
+              "fn": 16
+            },
+            "Neutral": {
+              "precision": 0.0714,
+              "recall": 0.3333,
+              "f1": 0.1176,
+              "support": 3,
+              "tp": 1,
+              "fp": 13,
+              "fn": 2
+            }
+          },
+          "macroPrecision": 0.4653,
+          "macroRecall": 0.4946,
+          "macroF1": 0.4387,
+          "microPrecision": 0.5625,
+          "microRecall": 0.5625,
+          "microF1": 0.5625,
+          "accuracy": 0.5625,
+          "sampleSize": 48,
+          "labelsEvaluated": 3
+        },
+        "categoryAccuracyCI": {
+          "point": 0.3333,
+          "low": 0.2168,
+          "high": 0.4746,
+          "total": 48
+        },
+        "confusion": {
+          "labels": [
+            "Delivery",
+            "ProductQuality",
+            "CustomerService",
+            "Payment",
+            "TechnicalApp",
+            "ReturnRefund",
+            "PricePromotion",
+            "NONE"
+          ],
+          "matrix": [
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              11
+            ],
+            [
+              0,
+              3,
+              0,
+              0,
+              0,
+              0,
+              0,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12
+            ]
+          ]
+        }
+      },
+      "devCategoryMacroF1": 0.9731,
+      "errors": {
+        "total": 32,
+        "samples": [
+          {
+            "text": "Dự kiến 3 ngày mà thực tế mất gần 2 tuần mới tới tay",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Mua quà sinh nhật mà tới nơi thì tiệc tan lâu rồi",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "giao lâu ghê lun mn ơi, đợi mòn mỏi",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Ly thủy tinh vỡ tan trong kiện, bọc mỗi lớp giấy mỏng dính",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Hệ thống báo đã giao thành công nhưng tôi có nhận được gì đâu",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Positive"
+          },
+          {
+            "text": "Kiện hàng biến mất ở kho trung chuyển, tra mãi không ra",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Anh giao hàng quăng gói đồ trước cổng rồi phóng đi luôn",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Positive"
+          },
+          {
+            "text": "Bạn giao hàng nói năng trống không, gọi mà cứ như quát vào mặt",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Xài được đúng ba hôm là màn hình tối thui không lên nữa",
+            "goldCategory": "Chất lượng sản phẩm",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Nút bấm bị liệt một bên ngay từ lúc mở seal",
+            "goldCategory": "Chất lượng sản phẩm",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Trên hình thì xanh ngọc mà nhận về thành xanh lá đậm",
+            "goldCategory": "Chất lượng sản phẩm",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Neutral"
+          },
+          {
+            "text": "Tem mác in lem nhem, nghi là đồ dựng chứ không phải chính hãng",
+            "goldCategory": "Chất lượng sản phẩm",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          }
+        ]
+      }
+    },
+    {
+      "id": "B2",
+      "name": "Phân loại cảm xúc toàn câu",
+      "role": "Đại diện cách làm của CRM hiện tại",
+      "available": true,
+      "canDetectAspect": false,
+      "categoryMacroF1": 0.0571,
+      "causeMacroF1": 0.02,
+      "sentimentMacroF1": 0.4387,
+      "categoryAccuracy": 0.25,
+      "categoryAccuracyCI": {
+        "point": 0.25,
+        "low": 0.1492,
+        "high": 0.3878,
+        "total": 48
+      },
+      "detail": {
+        "category": {
+          "perClass": {
+            "Delivery": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 12,
+              "tp": 0,
+              "fp": 0,
+              "fn": 12
+            },
+            "ProductQuality": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 8,
+              "tp": 0,
+              "fp": 0,
+              "fn": 8
+            },
+            "CustomerService": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 7,
+              "tp": 0,
+              "fp": 0,
+              "fn": 7
+            },
+            "Payment": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 3,
+              "tp": 0,
+              "fp": 0,
+              "fn": 3
+            },
+            "TechnicalApp": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 3,
+              "tp": 0,
+              "fp": 0,
+              "fn": 3
+            },
+            "ReturnRefund": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 3,
+              "tp": 0,
+              "fp": 0,
+              "fn": 3
+            },
+            "PricePromotion": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "NONE": {
+              "precision": 0.25,
+              "recall": 1,
+              "f1": 0.4,
+              "support": 12,
+              "tp": 12,
+              "fp": 36,
+              "fn": 0
+            }
+          },
+          "macroPrecision": 0.0357,
+          "macroRecall": 0.1429,
+          "macroF1": 0.0571,
+          "microPrecision": 0.25,
+          "microRecall": 0.25,
+          "microF1": 0.25,
+          "accuracy": 0.25,
+          "sampleSize": 48,
+          "labelsEvaluated": 7
+        },
+        "cause": {
+          "perClass": {
+            "LateDelivery": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 5,
+              "tp": 0,
+              "fp": 0,
+              "fn": 5
+            },
+            "DamagedInTransit": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 3,
+              "tp": 0,
+              "fp": 0,
+              "fn": 3
+            },
+            "LostPackage": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "CourierAttitude": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "TechnicalDefect": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 3,
+              "tp": 0,
+              "fp": 0,
+              "fn": 3
+            },
+            "NotAsDescribed": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "MissingAccessory": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "SuspectedCounterfeit": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "SlowResponse": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "BadAttitude": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "WrongInformation": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "UnresolvedCase": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "DoubleCharge": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "WrongPromotion": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "AppSlowOrCrash": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2
+            },
+            "LoginError": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "SlowRefund": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "ReturnRejected": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "ComplexProcess": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "NONE": {
+              "precision": 0.25,
+              "recall": 1,
+              "f1": 0.4,
+              "support": 12,
+              "tp": 12,
+              "fp": 36,
+              "fn": 0
+            }
+          },
+          "macroPrecision": 0.0125,
+          "macroRecall": 0.05,
+          "macroF1": 0.02,
+          "microPrecision": 0.25,
+          "microRecall": 0.25,
+          "microF1": 0.25,
+          "accuracy": 0.25,
+          "sampleSize": 48,
+          "labelsEvaluated": 20
+        },
+        "sentiment": {
+          "perClass": {
+            "Positive": {
+              "precision": 0.4444,
+              "recall": 0.5714,
+              "f1": 0.5,
+              "support": 7,
+              "tp": 4,
+              "fp": 5,
+              "fn": 3
+            },
+            "Negative": {
+              "precision": 0.88,
+              "recall": 0.5789,
+              "f1": 0.6984,
+              "support": 38,
+              "tp": 22,
+              "fp": 3,
+              "fn": 16
+            },
+            "Neutral": {
+              "precision": 0.0714,
+              "recall": 0.3333,
+              "f1": 0.1176,
+              "support": 3,
+              "tp": 1,
+              "fp": 13,
+              "fn": 2
+            }
+          },
+          "macroPrecision": 0.4653,
+          "macroRecall": 0.4946,
+          "macroF1": 0.4387,
+          "microPrecision": 0.5625,
+          "microRecall": 0.5625,
+          "microF1": 0.5625,
+          "accuracy": 0.5625,
+          "sampleSize": 48,
+          "labelsEvaluated": 3
+        },
+        "categoryAccuracyCI": {
+          "point": 0.25,
+          "low": 0.1492,
+          "high": 0.3878,
+          "total": 48
+        },
+        "confusion": {
+          "labels": [
+            "Delivery",
+            "ProductQuality",
+            "CustomerService",
+            "Payment",
+            "TechnicalApp",
+            "ReturnRefund",
+            "PricePromotion",
+            "NONE"
+          ],
+          "matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              8
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              12
+            ]
+          ]
+        }
+      },
+      "devCategoryMacroF1": 0.0451,
+      "errors": {
+        "total": 36,
+        "samples": [
+          {
+            "text": "Dự kiến 3 ngày mà thực tế mất gần 2 tuần mới tới tay",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Mua quà sinh nhật mà tới nơi thì tiệc tan lâu rồi",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "giao lâu ghê lun mn ơi, đợi mòn mỏi",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Ly thủy tinh vỡ tan trong kiện, bọc mỗi lớp giấy mỏng dính",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Hệ thống báo đã giao thành công nhưng tôi có nhận được gì đâu",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Positive"
+          },
+          {
+            "text": "Kiện hàng biến mất ở kho trung chuyển, tra mãi không ra",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Anh giao hàng quăng gói đồ trước cổng rồi phóng đi luôn",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Positive"
+          },
+          {
+            "text": "Bạn giao hàng nói năng trống không, gọi mà cứ như quát vào mặt",
+            "goldCategory": "Giao hàng",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Xài được đúng ba hôm là màn hình tối thui không lên nữa",
+            "goldCategory": "Chất lượng sản phẩm",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Nút bấm bị liệt một bên ngay từ lúc mở seal",
+            "goldCategory": "Chất lượng sản phẩm",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Trên hình thì xanh ngọc mà nhận về thành xanh lá đậm",
+            "goldCategory": "Chất lượng sản phẩm",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Neutral"
+          },
+          {
+            "text": "Quảng cáo bảo chống nước mà dính chút mưa đã hỏng",
+            "goldCategory": "Chất lượng sản phẩm",
+            "predCategory": "Không phải khiếu nại",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          }
+        ]
+      }
+    },
+    {
+      "id": "B3",
+      "name": "Mô hình ngôn ngữ lớn, zero-shot",
+      "role": "Đại diện phương án \"chỉ cần gọi API\"",
+      "available": false,
+      "reason": "Chưa chạy. Bật bằng: npm run eval -- --llm (cần khóa API, có phát sinh chi phí)"
+    },
+    {
+      "id": "M",
+      "name": "PhoBERT tinh chỉnh cho ABSA + phân loại phân cấp",
+      "role": "Mô hình đề xuất",
+      "available": false,
+      "reason": "Chưa có trọng số mô hình PhoBERT đã tinh chỉnh trong kho mã",
+      "nextSteps": [
+        "Tải bộ dữ liệu chuẩn UIT-ViSFD để đối chuẩn ABSA",
+        "Gán nhãn tập chuyên ngành theo taxonomy 7 danh mục x 27 nguyên nhân",
+        "Tinh chỉnh PhoBERT cho bài toán ABSA và phân loại phân cấp",
+        "Cài hàm predict() trong baselines.js rồi chạy lại npm run eval"
+      ]
+    }
+  ],
+  "trustLayer": {
+    "report": {
+      "perClass": {
+        "spam": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "support": 8,
+          "tp": 8,
+          "fp": 0,
+          "fn": 0
+        },
+        "inauthentic": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "support": 12,
+          "tp": 12,
+          "fp": 0,
+          "fn": 0
+        }
+      }
+    },
+    "spamReport": {
+      "perClass": {
+        "spam": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "support": 8,
+          "tp": 8,
+          "fp": 0,
+          "fn": 0
+        },
+        "not_spam": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "support": 11,
+          "tp": 11,
+          "fp": 0,
+          "fn": 0
+        }
+      },
+      "macroPrecision": 1,
+      "macroRecall": 1,
+      "macroF1": 1,
+      "microPrecision": 1,
+      "microRecall": 1,
+      "microF1": 1,
+      "accuracy": 1,
+      "sampleSize": 19,
+      "labelsEvaluated": 2
+    },
+    "authenticity": {
+      "populationSize": 82,
+      "plantedCampaignSize": 12,
+      "caught": 12,
+      "perClass": {
+        "precision": 1,
+        "recall": 1,
+        "f1": 1,
+        "support": 12,
+        "tp": 12,
+        "fp": 0,
+        "fn": 0
+      },
+      "recall": 1,
+      "precision": 1,
+      "precisionCI": {
+        "point": 1,
+        "low": 0.7575,
+        "high": 1,
+        "total": 12
+      },
+      "macroF1": 1,
+      "note": "Đo trong quần thể 82 phản hồi, trong đó 12 phản hồi thuộc một chiến dịch đánh giá thuê được cài vào có chủ đích."
+    },
+    "falseRejectRate": 0,
+    "falseRejectCI": {
+      "point": 0,
+      "low": 0,
+      "high": 0.3244,
+      "total": 8
+    },
+    "wronglyRejected": 0,
+    "validTotal": 8,
+    "confusion": {
+      "labels": [
+        "spam",
+        "not_spam"
+      ],
+      "matrix": [
+        [
+          8,
+          0
+        ],
+        [
+          0,
+          11
+        ]
+      ]
+    },
+    "methodNote": "Lọc rác đo trên từng câu; tính xác thực đo trong ngữ cảnh quần thể. Đo tính xác thực trên câu rời rạc là phép đo sai về mặt phương pháp, vì bốn trong năm nhóm tín hiệu cần nhìn nhiều phản hồi cùng lúc.",
+    "note": "Nhãn \"không xác thực\" là phán đoán của người gán dựa trên dấu hiệu quan sát được, không phải sự thật đã xác minh. Do đó các chỉ số ở đây được diễn giải là MỨC ĐỘ ĐỒNG THUẬN VỚI ĐÁNH GIÁ CỦA CON NGƯỜI, không phải độ chính xác tuyệt đối."
+  },
+  "ablations": {
+    "slangNormalization": {
+      "description": "Tắt bước chuẩn hóa teencode / tiếng lóng tiếng Việt",
+      "categoryMacroF1_on": 0.9731,
+      "categoryMacroF1_off": 0.9336,
+      "delta": 0.0395,
+      "sentimentMacroF1_on": 0.4363,
+      "sentimentMacroF1_off": 0.4841,
+      "onSlangSubset": {
+        "sampleSize": 3,
+        "correctWithNormalization": 3,
+        "correctWithoutNormalization": 2,
+        "note": "Chỉ tính trên các câu thực sự chứa teencode hoặc tiếng lóng"
+      }
+    },
+    "trustLayer": {
+      "description": "Tắt Trust Layer: mọi phản hồi được đếm đủ 1 điểm",
+      "datasetSize": 1803,
+      "alertsWithTrustLayer": 8,
+      "alertsWithoutTrustLayer": 5,
+      "phantomAlerts": 1,
+      "phantomExamples": [
+        {
+          "category": "Chất lượng sản phẩm",
+          "cause": "Không đúng mô tả",
+          "severity": "High"
+        }
+      ],
+      "wcrWithTrustLayer": "4.42%",
+      "wcrWithoutTrustLayer": "11.21%",
+      "excludedFeedbacks": 165,
+      "funnel": {
+        "rawCollected": 1803,
+        "spamRemoved": {
+          "count": 96,
+          "pct": 5.3
+        },
+        "inauthenticFlagged": {
+          "count": 69,
+          "pct": 3.8,
+          "duplicateClusters": 7
+        },
+        "pendingReview": {
+          "count": 1,
+          "pct": 0.1
+        },
+        "validForAnalysis": 1637,
+        "effectiveWeight": 797.67,
+        "channelCoverage": {
+          "covered": 5,
+          "expected": 5
+        },
+        "reconciliationRate": 48.8,
+        "medianAgeDays": 14.6,
+        "ingestionLagMinutes": 0,
+        "dataHealthScore": 86,
+        "components": {
+          "passRate": 90.8,
+          "channelCoverage": 100,
+          "freshness": 100,
+          "reconciliation": 48.8
+        }
+      }
+    }
+  }
+}

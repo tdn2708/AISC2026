@@ -36,7 +36,7 @@ const Settings = () => {
             background: saved ? 'var(--risk-low)' : 'var(--accent-blue)',
             color: 'white', border: 'none', padding: '0.6rem 1.25rem',
             borderRadius: 'var(--radius-md)', fontWeight: 600, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s'
+            display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out'
           }}
         >
           {saved ? <Check size={18} /> : <Save size={18} />}
@@ -54,11 +54,11 @@ const Settings = () => {
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.75rem',
                 padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)',
-                background: activeTab === tab.id ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                background: activeTab === tab.id ? 'var(--accent-dim)' : 'transparent',
                 color: activeTab === tab.id ? 'var(--accent-blue)' : 'var(--text-secondary)',
                 border: 'none', cursor: 'pointer', textAlign: 'left',
                 fontWeight: activeTab === tab.id ? 600 : 500,
-                transition: 'all 0.2s'
+                transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out'
               }}
             >
               {tab.icon}
@@ -80,14 +80,14 @@ const Settings = () => {
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Full Name</label>
                   <input type="text" defaultValue="Admin User" style={{ 
                     padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'rgba(0,0,0,0.1)', color: 'var(--text-primary)', outline: 'none'
+                    background: 'var(--bg-dark)', color: 'var(--text-primary)', outline: 'none'
                   }} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Email Address</label>
                   <input type="email" defaultValue="admin@company.com" style={{ 
                     padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'rgba(0,0,0,0.1)', color: 'var(--text-primary)', outline: 'none'
+                    background: 'var(--bg-dark)', color: 'var(--text-primary)', outline: 'none'
                   }} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -116,7 +116,7 @@ const Settings = () => {
               <h3 style={{ fontSize: '1.25rem', margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Monitor size={20} color="var(--accent-purple)" /> Appearance
               </h3>
-              <div style={{ background: 'rgba(0,0,0,0.1)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' }}>
+              <div style={{ background: 'var(--bg-dark)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <h4 style={{ margin: '0 0 0.25rem 0', fontWeight: 600 }}>Theme Mode</h4>
@@ -132,7 +132,7 @@ const Settings = () => {
                         padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-sm)',
                         background: theme === 'light' ? 'var(--bg-card)' : 'transparent',
                         color: theme === 'light' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                        border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                        border: 'none', cursor: 'pointer', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out',
                         boxShadow: theme === 'light' ? 'var(--glass-shadow)' : 'none', fontWeight: 500
                       }}
                     >
@@ -145,7 +145,7 @@ const Settings = () => {
                         padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-sm)',
                         background: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'transparent',
                         color: theme === 'dark' ? 'white' : 'var(--text-secondary)',
-                        border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                        border: 'none', cursor: 'pointer', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out',
                         boxShadow: theme === 'dark' ? 'var(--glass-shadow)' : 'none', fontWeight: 500
                       }}
                     >
@@ -217,7 +217,7 @@ const Settings = () => {
               </h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <Mail size={24} color="var(--text-secondary)" />
                     <div>
@@ -228,7 +228,7 @@ const Settings = () => {
                   <input type="checkbox" className="toggle-switch" defaultChecked style={{ transform: 'scale(1.2)' }} />
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <Hash size={24} color="var(--text-secondary)" />
                     <div>
@@ -239,7 +239,7 @@ const Settings = () => {
                   <input type="checkbox" className="toggle-switch" style={{ transform: 'scale(1.2)' }} />
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(0,0,0,0.1)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <Smartphone size={24} color="var(--text-secondary)" />
                     <div>
@@ -262,8 +262,8 @@ const Settings = () => {
                 <div>
                   <h4 style={{ margin: '0 0 0.5rem 0' }}>Change Password</h4>
                   <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input type="password" placeholder="Current Password" style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.1)', color: 'var(--text-primary)', outline: 'none' }} />
-                    <input type="password" placeholder="New Password" style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.1)', color: 'var(--text-primary)', outline: 'none' }} />
+                    <input type="password" placeholder="Current Password" style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--bg-dark)', color: 'var(--text-primary)', outline: 'none' }} />
+                    <input type="password" placeholder="New Password" style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--bg-dark)', color: 'var(--text-primary)', outline: 'none' }} />
                     <button style={{ background: 'var(--bg-dark)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', padding: '0 1.5rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>Update</button>
                   </div>
                 </div>
