@@ -536,6 +536,7 @@ h1, h2, h3, h4, h5 { line-height: 1.32; letter-spacing: -0.01em; }
   padding: 2rem 3rem;
   height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
   transition: margin-left 0.3s ease, padding 0.3s ease;
 }
 

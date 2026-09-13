@@ -61,7 +61,7 @@ const Dashboard = () => {
     <div className="relative isolate">
       {/* Ánh sáng môi trường: thứ để lớp kính phía trên có cái mà làm mờ.
           Không có lớp này thì backdrop-filter trên nền đặc là vô hình. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -left-40 -top-48 h-[30rem] w-[30rem] rounded-full bg-accent/15 blur-[120px]" />
         <div className="absolute -right-32 top-80 h-[28rem] w-[28rem] rounded-full bg-crit/10 blur-[140px]" />
         <div className="absolute bottom-40 left-1/4 h-[24rem] w-[24rem] rounded-full bg-pos/10 blur-[130px]" />

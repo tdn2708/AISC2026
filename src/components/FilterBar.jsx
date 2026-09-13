@@ -3,7 +3,20 @@ import { Calendar, Filter, ChevronDown, Download, Package, X } from 'lucide-reac
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, productFilter, setProductFilter, hideExportButton = false }) => {
+// variant="pill": nút bo tròn kính mờ, không khung bao, hoà vào nền trang.
+// Mặc định giữ kiểu thanh cũ cho các trang chưa chuyển sang giao diện kính.
+const pillTrigger = (active) => ({
+  background: active ? 'color-mix(in oklab, var(--accent) 14%, transparent)' : 'var(--glass-bg)',
+  border: `1px solid ${active ? 'color-mix(in oklab, var(--accent) 45%, transparent)' : 'var(--glass-line)'}`,
+  color: active ? 'var(--accent-hi)' : 'var(--text-hi)',
+  borderRadius: '9999px',
+  padding: '0.45rem 1rem',
+  backdropFilter: 'blur(14px)',
+  WebkitBackdropFilter: 'blur(14px)'
+});
+
+const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, productFilter, setProductFilter, hideExportButton = false, variant = 'bar' }) => {
+  const pill = variant === 'pill';
   const [openDropdown, setOpenDropdown] = useState(null);
 
   const activeCount =
@@ -74,7 +87,8 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
       flexWrap: 'wrap',
       gap: '0.75rem',
       position: 'relative',
-      zIndex: 100
+      zIndex: 100,
+      ...(pill && { padding: 0, background: 'transparent', border: 'none' })
     }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1rem' }}>
         {/* Time Filter */}
@@ -87,7 +101,8 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
             border: '1px solid var(--border)',
             padding: '0.5rem 0.9rem', borderRadius: 'var(--r-ctrl)',
             color: 'var(--text-hi)', cursor: 'pointer', fontSize: '0.84rem',
-            transition: 'border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease)'
+            transition: 'border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease)',
+            ...(pill && pillTrigger(timeFilter !== 'All'))
           }}>
             <Calendar size={16} />
             {getDisplayTimeFilter()}
@@ -170,7 +185,8 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
             border: '1px solid var(--border)',
             padding: '0.5rem 0.9rem', borderRadius: 'var(--r-ctrl)',
             color: 'var(--text-hi)', cursor: 'pointer', fontSize: '0.84rem',
-            transition: 'border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease)'
+            transition: 'border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease)',
+            ...(pill && pillTrigger(sourceFilter !== 'All'))
           }}>
             <Filter size={16} />
             Nguồn: {sourceFilter === 'All' ? 'Tất cả' : sourceFilter}
@@ -218,7 +234,8 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
               padding: '0.5rem 0.9rem', borderRadius: 'var(--r-ctrl)',
               color: productFilter && productFilter !== 'All' ? 'var(--accent-hi)' : 'var(--text-hi)',
               cursor: 'pointer', fontSize: '0.84rem', maxWidth: '260px',
-              transition: 'border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease)'
+              transition: 'border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease)',
+              ...(pill && pillTrigger(productFilter && productFilter !== 'All'))
             }}>
               <Package size={16} style={{ flexShrink: 0 }} />
               {/* Mọi chỗ cắt chữ đều phải kèm title, nếu không người dùng
@@ -295,7 +312,8 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
               border: '1px solid rgba(255,255,255,0.1)',
               padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)',
               color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem',
-              transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out'
+              transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out',
+              ...(pill && { borderRadius: '9999px', border: '1px solid var(--glass-line)' })
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}
