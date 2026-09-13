@@ -76,7 +76,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
       position: 'relative',
       zIndex: 100
     }}>
-      <div style={{ display: 'flex', gap: '1rem' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1rem' }}>
         {/* Time Filter */}
         <div style={{ position: 'relative' }}>
           <button 

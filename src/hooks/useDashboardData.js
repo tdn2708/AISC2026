@@ -9,6 +9,7 @@ export const useDashboardData = (timeFilter = 'All', sourceFilter = 'All', produ
   const [sentiments, setSentiments] = useState([]);
   const [risks, setRisks] = useState([]);
   const [trend, setTrend] = useState([]);
+  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -22,12 +23,14 @@ export const useDashboardData = (timeFilter = 'All', sourceFilter = 'All', produ
         if (productFilter !== 'All') params.append('product', productFilter);
         const q = params.toString() ? `?${params.toString()}` : '';
 
-        const [statsRes, catRes, sentRes, risksRes, trendRes] = await Promise.all([
+        const [statsRes, catRes, sentRes, risksRes, trendRes, alertsRes] = await Promise.all([
           axios.get(`${API_URL}/stats${q}`),
           axios.get(`${API_URL}/categories${q}`),
           axios.get(`${API_URL}/sentiment${q}`),
           axios.get(`${API_URL}/risks${q}`),
-          axios.get(`${API_URL}/trend${q}`)
+          axios.get(`${API_URL}/trend${q}`),
+          // Cảnh báo đầy đủ kèm khuyến nghị (độ tin cậy, người duyệt, công sức) cho Trung tâm hành động
+          axios.get(`${API_URL}/alerts${q}`)
         ]);
 
         setStats(statsRes.data);
@@ -35,6 +38,7 @@ export const useDashboardData = (timeFilter = 'All', sourceFilter = 'All', produ
         setSentiments(sentRes.data);
         setRisks(risksRes.data);
         setTrend(trendRes.data);
+        setAlerts(alertsRes.data?.alerts || []);
         setError(null);
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -47,5 +51,5 @@ export const useDashboardData = (timeFilter = 'All', sourceFilter = 'All', produ
     fetchData();
   }, [timeFilter, sourceFilter, productFilter]);
 
-  return { stats, categories, sentiments, risks, trend, loading, error };
+  return { stats, categories, sentiments, risks, alerts, trend, loading, error };
 };

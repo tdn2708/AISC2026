@@ -1,0 +1,103 @@
+/* ==================================================================
+   TAILWIND CHO DASHBOARD
+   ------------------------------------------------------------------
+   Chỉ nạp theme + utilities, KHÔNG nạp preflight: các trang cũ viết
+   bằng style nội tuyến dựa vào mặc định của trình duyệt (viền nút,
+   ô nhập), preflight sẽ xoá chúng mà không báo lỗi.
+
+   utilities được import KHÔNG qua @layer. index.css có reset
+   `* { padding: 0 }` không nằm trong layer nào, và CSS ngoài layer
+   luôn thắng CSS trong layer bất kể độ đặc hiệu — nếu để utilities
+   trong layer thì mọi lớp p-4, m-2 đều bị reset đè mất.
+   ================================================================== */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css";
+@source "../";
+
+/* Token bổ sung. Màu mức độ và màu nền đã có trong index.css, ở đây chỉ
+   thêm những gì dashboard cần mà hệ cũ chưa có. */
+:root {
+  --sev-med: #E2C15A;
+  --sev-low: #8496A0;
+
+  /* Cảm xúc là thang CÓ THỨ TỰ nên dùng cặp phân kỳ nóng/lạnh với xám
+     trung tính ở giữa. Không dùng đỏ/lục: cặp đó hỏng với người mù màu
+     đỏ-lục. Đã kiểm định trên nền #10161a: ΔE CVD 19,2, tương phản ≥ 3:1. */
+  --viz-neg: #E66767;
+  --viz-neu: #6B7780;
+  --viz-pos: #3987E5;
+  --viz-grid: #1F282F;
+
+  --glass-bg: rgb(23 31 37 / 0.58);
+  --glass-line: rgb(255 255 255 / 0.08);
+  --glass-hi: rgb(255 255 255 / 0.045);
+}
+
+[data-theme='light'] {
+  --sev-med: #8A6D00;
+  --sev-low: #5E7079;
+  --viz-neg: #E34948;
+  --viz-neu: #9AA5AB;
+  --viz-pos: #2A78D6;
+  --viz-grid: #E8EDEF;
+  --glass-bg: rgb(255 255 255 / 0.72);
+  --glass-line: rgb(14 21 25 / 0.08);
+  --glass-hi: rgb(255 255 255 / 0.6);
+}
+
+/* `inline`: utility trỏ thẳng vào biến CSS, nên đổi data-theme là đổi
+   màu ngay, không cần build lại. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--border);
+  --color-ink-hi: var(--text-hi);
+  --color-ink-mid: var(--text-mid);
+  --color-ink-lo: var(--text-lo);
+  --color-accent: var(--accent);
+  --color-accent-hi: var(--accent-hi);
+  --color-crit: var(--sev-crit);
+  --color-high: var(--sev-high);
+  --color-med: var(--sev-med);
+  --color-ok: var(--sev-ok);
+  --color-neg: var(--viz-neg);
+  --color-neu: var(--viz-neu);
+  --color-pos: var(--viz-pos);
+}
+
+/* Kính mờ. Chỉ có tác dụng khi phía sau có thứ để làm mờ — đó là lý do
+   Dashboard đặt các đốm sáng môi trường phía sau lưới. */
+@utility glass {
+  background: linear-gradient(180deg, var(--glass-hi), transparent 45%), var(--glass-bg);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--glass-line);
+  box-shadow: inset 0 1px 0 0 var(--glass-hi);
+}
+
+/* Ánh sáng dạ quang CHỈ dành cho luồng khẩn cấp. Dùng cho mọi thứ thì
+   nó thôi báo hiệu điều gì. */
+@utility glow-crit {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--sev-crit) 50%, transparent),
+    0 0 32px -6px color-mix(in oklab, var(--sev-crit) 55%, transparent),
+    inset 0 1px 0 0 var(--glass-hi);
+}
+
+@utility glow-high {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--sev-high) 38%, transparent),
+    0 0 26px -8px color-mix(in oklab, var(--sev-high) 45%, transparent),
+    inset 0 1px 0 0 var(--glass-hi);
+}
+
+/* Nút trong vùng dashboard mới bỏ kiểu mặc định của trình duyệt.
+   :where() giữ độ đặc hiệu bằng 0 để mọi utility vẫn thắng. */
+:where(.cx) button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}

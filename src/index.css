@@ -217,7 +217,13 @@ h1, h2, h3, h4, h5 { line-height: 1.32; letter-spacing: -0.01em; }
   background: var(--bg-card);
   border: var(--glass-border);
   color: var(--text-primary);
-  white-space: nowrap;
+  text-align: center;
+  max-width: 100px;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
 }
 
 /* Data Table */
@@ -241,10 +247,159 @@ h1, h2, h3, h4, h5 { line-height: 1.32; letter-spacing: -0.01em; }
   font-size: 0.9rem;
   border-bottom: 1px solid var(--border-soft);
   color: var(--text-primary);
+  vertical-align: middle;
 }
 .data-table tr:hover td {
   background: var(--raised);
 }
+
+/* Bảng "Phản hồi gần đây" ở trang tổng quan.
+   Mọi cột căn trái để mắt đọc theo một trục; nhãn trạng thái dùng chấm màu
+   + chữ thường thay cho viên thuốc viết hoa, nên màu chỉ còn là tín hiệu
+   chứ không tranh chỗ với nội dung. */
+.fb-panel-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+.fb-panel-head h3 { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--text-hi); }
+.fb-panel-head p  { margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--text-lo); }
+.fb-count { font-size: 0.8rem; color: var(--text-lo); white-space: nowrap; }
+.fb-count b { color: var(--text-hi); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.fb-table { width: 100%; min-width: 980px; border-collapse: collapse; table-layout: fixed; }
+.fb-table th {
+  padding: 0.7rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--text-lo);
+  background: color-mix(in srgb, var(--raised) 45%, transparent);
+  border-bottom: 1px solid var(--border-soft);
+  white-space: nowrap;
+}
+.fb-table th:first-child, .fb-table td:first-child { padding-left: 1.5rem; }
+.fb-table th:last-child,  .fb-table td:last-child  { padding-right: 1.5rem; }
+.fb-table td {
+  padding: 0.9rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text-hi);
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: middle;
+}
+.fb-table tbody tr:last-child td { border-bottom: none; }
+.fb-table tbody tr { transition: background-color var(--dur-fast) var(--ease); }
+.fb-table tbody tr:hover { background: var(--raised); }
+
+.fb-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.45;
+}
+
+.fb-user { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+.fb-avatar {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 0.72rem; font-weight: 600;
+  color: var(--accent-hi);
+  background: var(--accent-dim);
+}
+.fb-user-text { min-width: 0; }
+.fb-user-name {
+  font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fb-meta {
+  margin-top: 2px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--text-lo);
+  font-variant-numeric: tabular-nums;
+}
+.fb-product { color: var(--text-mid); font-size: 0.82rem; }
+
+.fb-chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 3px 8px;
+  border-radius: var(--r-ctrl);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-mid);
+  background: var(--raised);
+  border: 1px solid var(--border-soft);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.fb-status {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-size: 0.82rem; font-weight: 500;
+  white-space: nowrap;
+}
+.fb-status::before {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent);
+}
+.fb-pos { color: var(--sev-ok); }
+.fb-neg { color: var(--sev-crit); }
+.fb-neu { color: var(--text-mid); }
+
+.fb-trust { display: flex; align-items: center; gap: 0.55rem; }
+.fb-trust-tier {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.75rem; font-weight: 600;
+  min-width: 1.6rem;
+}
+.fb-trust-bar {
+  width: 44px; height: 4px;
+  border-radius: 2px;
+  background: var(--border-soft);
+  overflow: hidden;
+}
+.fb-trust-bar > span { display: block; height: 100%; border-radius: 2px; background: currentColor; }
+
+.fb-source { color: var(--text-mid); font-size: 0.82rem; white-space: nowrap; }
+
+.fb-empty { text-align: center; padding: 2.5rem 1rem !important; color: var(--text-lo) !important; }
+
+.fb-pager {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem; flex-wrap: wrap;
+  padding: 0.85rem 1.5rem;
+  border-top: 1px solid var(--border-soft);
+}
+.fb-pager-info { font-size: 0.8rem; color: var(--text-lo); font-variant-numeric: tabular-nums; }
+.fb-pager-btns { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
+.fb-page-btn {
+  min-width: 32px; height: 32px;
+  padding: 0 0.65rem;
+  border-radius: var(--r-ctrl);
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text-mid);
+  font: inherit; font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.fb-page-btn:hover:not(:disabled) { background: var(--raised); color: var(--text-hi); }
+.fb-page-btn:disabled { color: var(--text-lo); opacity: 0.55; cursor: not-allowed; }
+.fb-page-btn.is-active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent-hi); }
+.fb-page-gap { color: var(--text-lo); padding: 0 0.25rem; font-size: 0.8rem; }
 
 /* Layout Grid */
 .dashboard-grid {
@@ -374,6 +529,9 @@ h1, h2, h3, h4, h5 { line-height: 1.32; letter-spacing: -0.01em; }
 /* Main layout containers */
 .main-content {
   flex: 1;
+  /* Phần tử flex mặc định min-width:auto, nên một hàng không xuống dòng
+     bên trong đẩy cả vùng nội dung rộng quá màn hình điện thoại. */
+  min-width: 0;
   margin-left: var(--sidebar-w);
   padding: 2rem 3rem;
   height: 100vh;
