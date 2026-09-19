@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T04:30:30.908Z",
+  "generatedAt": "2026-09-19T16:26:04.315Z",
   "dataset": {
     "aspectSamples": 80,
     "trustSamples": 19,
@@ -1110,14 +1110,14 @@
       "role": "Mô hình đề xuất",
       "available": true,
       "canDetectAspect": true,
-      "categoryMacroF1": 0.7976,
-      "causeMacroF1": 0.7016,
-      "sentimentMacroF1": 0.5915,
-      "categoryAccuracy": 0.8542,
+      "categoryMacroF1": 0.859,
+      "causeMacroF1": 0.6163,
+      "sentimentMacroF1": 0.5135,
+      "categoryAccuracy": 0.875,
       "categoryAccuracyCI": {
-        "point": 0.8542,
-        "low": 0.7283,
-        "high": 0.9275,
+        "point": 0.875,
+        "low": 0.753,
+        "high": 0.9414,
         "total": 48
       },
       "detail": {
@@ -1133,49 +1133,49 @@
               "fn": 0
             },
             "ProductQuality": {
-              "precision": 0.7,
+              "precision": 0.7778,
               "recall": 0.875,
-              "f1": 0.7778,
+              "f1": 0.8235,
               "support": 8,
               "tp": 7,
-              "fp": 3,
+              "fp": 2,
               "fn": 1
             },
             "CustomerService": {
               "precision": 1,
-              "recall": 0.8571,
-              "f1": 0.9231,
+              "recall": 0.7143,
+              "f1": 0.8333,
               "support": 7,
-              "tp": 6,
+              "tp": 5,
               "fp": 0,
-              "fn": 1
+              "fn": 2
             },
             "Payment": {
               "precision": 1,
-              "recall": 0.6667,
-              "f1": 0.8,
-              "support": 3,
-              "tp": 2,
-              "fp": 0,
-              "fn": 1
-            },
-            "TechnicalApp": {
-              "precision": 0.6,
               "recall": 1,
-              "f1": 0.75,
+              "f1": 1,
               "support": 3,
               "tp": 3,
-              "fp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "TechnicalApp": {
+              "precision": 0.75,
+              "recall": 1,
+              "f1": 0.8571,
+              "support": 3,
+              "tp": 3,
+              "fp": 1,
               "fn": 0
             },
             "ReturnRefund": {
-              "precision": 1,
-              "recall": 0.3333,
-              "f1": 0.5,
+              "precision": 0.6667,
+              "recall": 0.6667,
+              "f1": 0.6667,
               "support": 3,
-              "tp": 1,
-              "fp": 0,
-              "fn": 2
+              "tp": 2,
+              "fp": 1,
+              "fn": 1
             },
             "PricePromotion": {
               "precision": 0,
@@ -1196,13 +1196,13 @@
               "fn": 2
             }
           },
-          "macroPrecision": 0.8796,
-          "macroRecall": 0.7951,
-          "macroF1": 0.7976,
-          "microPrecision": 0.8542,
-          "microRecall": 0.8542,
-          "microF1": 0.8542,
-          "accuracy": 0.8542,
+          "macroPrecision": 0.8645,
+          "macroRecall": 0.8699,
+          "macroF1": 0.859,
+          "microPrecision": 0.875,
+          "microRecall": 0.875,
+          "microF1": 0.875,
+          "accuracy": 0.875,
           "sampleSize": 48,
           "labelsEvaluated": 7
         },
@@ -1218,12 +1218,12 @@
               "fn": 0
             },
             "DamagedInTransit": {
-              "precision": 0.75,
+              "precision": 0.6,
               "recall": 1,
-              "f1": 0.8571,
+              "f1": 0.75,
               "support": 3,
               "tp": 3,
-              "fp": 1,
+              "fp": 2,
               "fn": 0
             },
             "LostPackage": {
@@ -1237,12 +1237,12 @@
             },
             "CourierAttitude": {
               "precision": 1,
-              "recall": 1,
-              "f1": 1,
+              "recall": 0.5,
+              "f1": 0.6667,
               "support": 2,
-              "tp": 2,
+              "tp": 1,
               "fp": 0,
-              "fn": 0
+              "fn": 1
             },
             "TechnicalDefect": {
               "precision": 0.4,
@@ -1254,22 +1254,22 @@
               "fn": 1
             },
             "NotAsDescribed": {
-              "precision": 1,
+              "precision": 0.5,
               "recall": 0.5,
-              "f1": 0.6667,
+              "f1": 0.5,
               "support": 2,
               "tp": 1,
-              "fp": 0,
+              "fp": 1,
               "fn": 1
             },
             "MissingAccessory": {
-              "precision": 0.5,
-              "recall": 1,
-              "f1": 0.6667,
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
               "support": 1,
-              "tp": 1,
-              "fp": 1,
-              "fn": 0
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
             },
             "SuspectedCounterfeit": {
               "precision": 1,
@@ -1281,13 +1281,13 @@
               "fn": 0
             },
             "SlowResponse": {
-              "precision": 0.6667,
-              "recall": 1,
-              "f1": 0.8,
+              "precision": 0.5,
+              "recall": 0.5,
+              "f1": 0.5,
               "support": 2,
-              "tp": 2,
+              "tp": 1,
               "fp": 1,
-              "fn": 0
+              "fn": 1
             },
             "BadAttitude": {
               "precision": 1,
@@ -1335,12 +1335,12 @@
               "fn": 0
             },
             "AppSlowOrCrash": {
-              "precision": 0.6667,
+              "precision": 1,
               "recall": 1,
-              "f1": 0.8,
+              "f1": 1,
               "support": 2,
               "tp": 2,
-              "fp": 1,
+              "fp": 0,
               "fn": 0
             },
             "LoginError": {
@@ -1353,12 +1353,12 @@
               "fn": 0
             },
             "SlowRefund": {
-              "precision": 1,
+              "precision": 0.5,
               "recall": 1,
-              "f1": 1,
+              "f1": 0.6667,
               "support": 1,
               "tp": 1,
-              "fp": 0,
+              "fp": 1,
               "fn": 0
             },
             "ReturnRejected": {
@@ -1367,7 +1367,7 @@
               "f1": 0,
               "support": 1,
               "tp": 0,
-              "fp": 0,
+              "fp": 1,
               "fn": 1
             },
             "ComplexProcess": {
@@ -1396,37 +1396,46 @@
               "tp": 0,
               "fp": 1,
               "fn": 0
+            },
+            "GatewayError": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 0,
+              "tp": 0,
+              "fp": 1,
+              "fn": 0
             }
           },
-          "macroPrecision": 0.7349,
-          "macroRecall": 0.725,
-          "macroF1": 0.7016,
-          "microPrecision": 0.7917,
-          "microRecall": 0.7917,
-          "microF1": 0.7917,
-          "accuracy": 0.7917,
+          "macroPrecision": 0.6607,
+          "macroRecall": 0.625,
+          "macroF1": 0.6163,
+          "microPrecision": 0.7292,
+          "microRecall": 0.7292,
+          "microF1": 0.7292,
+          "accuracy": 0.7292,
           "sampleSize": 48,
           "labelsEvaluated": 20
         },
         "sentiment": {
           "perClass": {
             "Positive": {
-              "precision": 0.75,
-              "recall": 0.8571,
-              "f1": 0.8,
+              "precision": 0.6667,
+              "recall": 0.5714,
+              "f1": 0.6154,
               "support": 7,
-              "tp": 6,
+              "tp": 4,
               "fp": 2,
-              "fn": 1
+              "fn": 3
             },
             "Negative": {
-              "precision": 0.95,
-              "recall": 1,
-              "f1": 0.9744,
+              "precision": 0.881,
+              "recall": 0.9737,
+              "f1": 0.925,
               "support": 38,
-              "tp": 38,
-              "fp": 2,
-              "fn": 0
+              "tp": 37,
+              "fp": 5,
+              "fn": 1
             },
             "Neutral": {
               "precision": 0,
@@ -1438,20 +1447,20 @@
               "fn": 3
             }
           },
-          "macroPrecision": 0.5667,
-          "macroRecall": 0.619,
-          "macroF1": 0.5915,
-          "microPrecision": 0.9167,
-          "microRecall": 0.9167,
-          "microF1": 0.9167,
-          "accuracy": 0.9167,
+          "macroPrecision": 0.5159,
+          "macroRecall": 0.515,
+          "macroF1": 0.5135,
+          "microPrecision": 0.8542,
+          "microRecall": 0.8542,
+          "microF1": 0.8542,
+          "accuracy": 0.8542,
           "sampleSize": 48,
           "labelsEvaluated": 3
         },
         "categoryAccuracyCI": {
-          "point": 0.8542,
-          "low": 0.7283,
-          "high": 0.9275,
+          "point": 0.875,
+          "low": 0.753,
+          "high": 0.9414,
           "total": 48
         },
         "confusion": {
@@ -1488,8 +1497,8 @@
             ],
             [
               0,
-              1,
-              6,
+              2,
+              5,
               0,
               0,
               0,
@@ -1500,8 +1509,8 @@
               0,
               0,
               0,
-              2,
-              1,
+              3,
+              0,
               0,
               0,
               0
@@ -1518,45 +1527,52 @@
             ],
             [
               1,
-              1,
-              0,
-              0,
-              0,
-              1,
-              0,
-              0
-            ],
-            [
               0,
               0,
               0,
               0,
-              0,
-              0,
+              2,
               0,
               0
             ],
             [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
               1,
+              0,
+              0,
+              0,
+              0,
               1,
-              0,
-              0,
-              0,
-              0,
               0,
               10
             ]
           ]
         }
       },
-      "devCategoryMacroF1": 0.8107,
+      "devCategoryMacroF1": 0.6844,
       "errors": {
-        "total": 7,
+        "total": 6,
         "samples": [
           {
             "text": "Nút bấm bị liệt một bên ngay từ lúc mở seal",
             "goldCategory": "Chất lượng sản phẩm",
             "predCategory": "Kỹ thuật / Ứng dụng",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Bấm tổng đài chờ hai mươi phút rồi tự động ngắt máy",
+            "goldCategory": "Dịch vụ khách hàng",
+            "predCategory": "Chất lượng sản phẩm",
             "goldSentiment": "Negative",
             "predSentiment": "Negative"
           },
@@ -1568,13 +1584,6 @@
             "predSentiment": "Negative"
           },
           {
-            "text": "Ngân hàng báo hai giao dịch giống hệt nhau cách nhau một phút",
-            "goldCategory": "Thanh toán",
-            "predCategory": "Kỹ thuật / Ứng dụng",
-            "goldSentiment": "Negative",
-            "predSentiment": "Negative"
-          },
-          {
             "text": "Shop viện đủ lý do để không nhận lại hàng dù còn nguyên seal",
             "goldCategory": "Đổi trả & Hoàn tiền",
             "predCategory": "Giao hàng",
@@ -1582,17 +1591,10 @@
             "predSentiment": "Negative"
           },
           {
-            "text": "Muốn đổi cái áo mà phải qua năm bước, nản luôn",
-            "goldCategory": "Đổi trả & Hoàn tiền",
-            "predCategory": "Chất lượng sản phẩm",
-            "goldSentiment": "Negative",
-            "predSentiment": "Negative"
-          },
-          {
-            "text": "Mình mua làm quà nên chưa mở ra dùng thử",
+            "text": "Shop hỗ trợ đổi size rất nhanh, không phải chờ lâu",
             "goldCategory": "Không phải khiếu nại",
-            "predCategory": "Chất lượng sản phẩm",
-            "goldSentiment": "Neutral",
+            "predCategory": "Đổi trả & Hoàn tiền",
+            "goldSentiment": "Positive",
             "predSentiment": "Negative"
           },
           {
@@ -1614,35 +1616,35 @@
           "spam": true
         },
         "trainCounts": {
-          "sentiment": 12648,
-          "spam": 8885,
-          "category": 8885,
-          "cause": 8885
+          "sentiment": 11358,
+          "spam": 7595,
+          "category": 7595,
+          "cause": 7595
         },
-        "bestEpoch": 1,
+        "bestEpoch": 2,
         "devReport": {
           "sentiment": {
             "macroF1": 0.9461,
             "n": 32
           },
           "category": {
-            "macroF1": 0.8107,
+            "macroF1": 0.6844,
             "n": 32
           },
           "categoryMulti": {
-            "microF1": 0.7925,
+            "microF1": 0.7037,
             "goldLabels": 26,
-            "predLabels": 27
+            "predLabels": 28
           },
           "cause": {
-            "macroF1": 0.573,
+            "macroF1": 0.5044,
             "n": 32
           }
         },
         "leakageGuard": true,
         "excludedTestSha256": "4b9f1fc3c50af1e8f2e5546bb83edc9b004d1d3fb14e787697eaa90d9921a1e1",
         "testOverlapRemoved": 0,
-        "trainedAt": "2026-09-18T02:59:14.669851+00:00",
+        "trainedAt": "2026-09-16T13:16:39.915344+00:00",
         "dataManifests": {
           "visfd_train.jsonl": {
             "labelProvenance": "UIT-ViSFD: nhãn cảm xúc do người gán; chỉ giữ câu mọi khía cạnh cùng cực tính",
@@ -1650,21 +1652,21 @@
           },
           "domain_train.jsonl": {
             "labelProvenance": "Nhãn theo cấu trúc sinh từ khung câu data/corpus.js, một phần câu do LLM diễn đạt lại; KHÔNG phải nhãn người gán trên phản hồi thật.",
-            "total": 8885,
+            "total": 7595,
             "leakageGuard": {
               "jaccardThreshold": 0.4,
-              "goldSentencesCompared": 105,
-              "templatesTotal": 161,
-              "templatesDropped": 70,
-              "generatedSentencesDropped": 43,
+              "goldSentencesCompared": 99,
+              "templatesTotal": 133,
+              "templatesDropped": 66,
+              "generatedSentencesDropped": 42,
               "llmSawGoldSentences": false,
               "limitation": "Chỉ lọc trùng mặt chữ; không loại trừ được trùng ý nghĩa ngẫu nhiên."
             },
             "paraphrase": {
               "enabled": true,
               "model": "openai/gpt-oss-120b",
-              "called": 5,
-              "fromCache": 86,
+              "called": 0,
+              "fromCache": 67,
               "failed": 0
             }
           }
@@ -1684,9 +1686,9 @@
       "excludingSeenSarcasm": {
         "excluded": 2,
         "n": 46,
-        "categoryMacroF1": 0.7927,
-        "causeMacroF1": 0.6916,
-        "sentimentMacroF1": 0.591
+        "categoryMacroF1": 0.8547,
+        "causeMacroF1": 0.6063,
+        "sentimentMacroF1": 0.5339
       }
     }
   ],
@@ -1761,7 +1763,7 @@
         "goldSentiment": "Negative",
         "rules": "Không phải khiếu nại",
         "rulesCorrect": false,
-        "model": "Giao hàng → Thái độ nhân viên giao hàng",
+        "model": "Giao hàng → Hư hỏng khi vận chuyển",
         "modelSentiment": "Negative",
         "modelCorrect": true
       },
@@ -1826,16 +1828,6 @@
         "modelCorrect": true
       },
       {
-        "text": "Bấm tổng đài chờ hai mươi phút rồi tự động ngắt máy",
-        "gold": "Dịch vụ khách hàng → Phản hồi chậm",
-        "goldSentiment": "Negative",
-        "rules": "Không phải khiếu nại",
-        "rulesCorrect": false,
-        "model": "Dịch vụ khách hàng → Phản hồi chậm",
-        "modelSentiment": "Negative",
-        "modelCorrect": true
-      },
-      {
         "text": "Bạn nhân viên trả lời cộc lốc như đang bị làm phiền",
         "gold": "Dịch vụ khách hàng → Thái độ phục vụ",
         "goldSentiment": "Negative",
@@ -1872,6 +1864,16 @@
         "rules": "Không phải khiếu nại",
         "rulesCorrect": false,
         "model": "Thanh toán → Trừ tiền hai lần",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Ngân hàng báo hai giao dịch giống hệt nhau cách nhau một phút",
+        "gold": "Thanh toán → Trừ tiền hai lần",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Thanh toán → Lỗi cổng thanh toán",
         "modelSentiment": "Negative",
         "modelCorrect": true
       },
@@ -1926,13 +1928,23 @@
         "modelCorrect": true
       },
       {
+        "text": "Muốn đổi cái áo mà phải qua năm bước, nản luôn",
+        "gold": "Đổi trả & Hoàn tiền → Quy trình phức tạp",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Đổi trả & Hoàn tiền → Hoàn tiền chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
         "text": "Giao hàng thần tốc ghê, có mỗi mười ngày thôi mà",
         "gold": "Giao hàng → Giao chậm",
         "goldSentiment": "Negative",
         "rules": "Không phải khiếu nại",
         "rulesCorrect": false,
         "model": "Giao hàng → Giao chậm",
-        "modelSentiment": "Negative",
+        "modelSentiment": "Positive",
         "modelCorrect": true
       },
       {
@@ -1968,12 +1980,12 @@
     ],
     "onlyRulesCorrect": [
       {
-        "text": "Mình mua làm quà nên chưa mở ra dùng thử",
+        "text": "Shop hỗ trợ đổi size rất nhanh, không phải chờ lâu",
         "gold": "Không phải khiếu nại",
-        "goldSentiment": "Neutral",
+        "goldSentiment": "Positive",
         "rules": "Không phải khiếu nại",
         "rulesCorrect": true,
-        "model": "Chất lượng sản phẩm → Thiếu phụ kiện",
+        "model": "Đổi trả & Hoàn tiền → Từ chối đổi trả",
         "modelSentiment": "Negative",
         "modelCorrect": false
       },
@@ -1988,7 +2000,7 @@
         "modelCorrect": false
       }
     ],
-    "bothWrong": 5,
+    "bothWrong": 4,
     "note": "So khớp ở mức danh mục (Level 1) trên tập kiểm tra giữ riêng"
   },
   "trustLayer": {
@@ -2114,9 +2126,9 @@
     },
     "trustLayer": {
       "description": "Tắt Trust Layer: mọi phản hồi được đếm đủ 1 điểm",
-      "datasetSize": 1776,
-      "alertsWithTrustLayer": 6,
-      "alertsWithoutTrustLayer": 5,
+      "datasetSize": 1807,
+      "alertsWithTrustLayer": 8,
+      "alertsWithoutTrustLayer": 6,
       "phantomAlerts": 1,
       "phantomExamples": [
         {
@@ -2125,39 +2137,39 @@
           "severity": "High"
         }
       ],
-      "wcrWithTrustLayer": "4,27%",
-      "wcrWithoutTrustLayer": "10,78%",
+      "wcrWithTrustLayer": "4,35%",
+      "wcrWithoutTrustLayer": "10,96%",
       "excludedFeedbacks": 165,
       "funnel": {
-        "rawCollected": 1776,
+        "rawCollected": 1807,
         "spamRemoved": {
           "count": 96,
-          "pct": 5.4
+          "pct": 5.3
         },
         "inauthenticFlagged": {
           "count": 69,
-          "pct": 3.9,
-          "duplicateClusters": 6
+          "pct": 3.8,
+          "duplicateClusters": 7
         },
         "pendingReview": {
-          "count": 1,
+          "count": 2,
           "pct": 0.1
         },
-        "validForAnalysis": 1610,
-        "effectiveWeight": 789.61,
+        "validForAnalysis": 1640,
+        "effectiveWeight": 804.47,
         "channelCoverage": {
           "covered": 5,
           "expected": 5
         },
-        "reconciliationRate": 49.1,
-        "medianAgeDays": 14.4,
+        "reconciliationRate": 48.8,
+        "medianAgeDays": 14.5,
         "ingestionLagMinutes": 0,
         "dataHealthScore": 86,
         "components": {
-          "passRate": 90.7,
+          "passRate": 90.9,
           "channelCoverage": 100,
           "freshness": 100,
-          "reconciliation": 49.1
+          "reconciliation": 48.8
         }
       }
     }

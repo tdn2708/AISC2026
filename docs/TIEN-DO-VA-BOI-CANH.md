@@ -218,6 +218,12 @@ Chạy `npm run eval` trong `backend/`. Kết quả trên **tập kiểm tra gi�
 > câu khen chứa từ vựng khiếu nại như "không phải chờ lâu"). Nhóm không tinh chỉnh dữ liệu
 > theo đúng các câu sai này để tránh rò rỉ; cần tập gán nhãn thật.
 >
+> **18/09 — thử dạy mỉa mai, không giữ.** Thêm 840 câu mỉa mai sinh từ khoảng 20 khung câu.
+> Nguyên nhân tăng lên 0.702 và cảm xúc lên 0.592, nhưng danh mục giảm còn 0.798. Câu mỉa mai
+> trên demo **vẫn sai**, và câu hai vấn đề mất một khía cạnh. Mô hình học thuộc khung câu chứ
+> không khái quát được mỉa mai. Nhóm quay về bản ngày 16/09. Chi tiết:
+> `nlp_service/README.md`, mục "Thí nghiệm dạy mỉa mai".
+>
 > **Giới hạn bắt buộc nêu kèm:** nhãn danh mục khi train lấy từ tập **sinh từ khung câu**
 > (một phần do LLM diễn đạt lại), chưa phải người gán trên phản hồi thật. Nhãn cảm xúc lấy
 > từ UIT-ViSFD. Tập kiểm tra nhỏ, một người gán. Chi tiết dữ liệu và chống rò rỉ nằm ở

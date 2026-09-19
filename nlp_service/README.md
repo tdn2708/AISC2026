@@ -143,6 +143,32 @@ Bản đa nhãn đầu tiên (không trọng số lớp) được sao lưu ở `
 danh mục 0.768, nguyên nhân 0.564, cảm xúc 0.539. Bản hiện tại tốt hơn trên cả danh mục lẫn
 nguyên nhân.
 
+### Thí nghiệm dạy mỉa mai (v3, không dùng làm bản chính)
+
+Ngày 18/09/2026 nhóm thử thêm 840 câu mỉa mai (khoảng 20 khung câu tự viết, 12 nguyên nhân,
+có LLM diễn đạt lại), cộng 450 câu khen thật dùng cùng từ cảm thán làm đối chứng. Bộ lọc
+rò rỉ so với cả tập chuẩn lẫn 6 câu demo. Checkpoint lưu ở `checkpoints/visobert-absa-sarcasm-v3`.
+
+| Tập kiểm tra | v2 (bản chính) | v3 (mỉa mai) |
+|---|---|---|
+| Macro-F1 danh mục | **0.859** | 0.798 |
+| Macro-F1 nguyên nhân | 0.616 | **0.702** |
+| Macro-F1 cảm xúc | 0.514 | **0.592** |
+| Loại 2 câu mỉa mai đã nhìn thấy: danh mục / nguyên nhân / cảm xúc | 0.855 / 0.606 / 0.534 | 0.793 / 0.692 / 0.591 |
+| Câu demo mỉa mai ("Giao nhanh ghê, đặt có nửa tháng là tới…") | sai | **vẫn sai** (99,97% "không phải khiếu nại") |
+| Câu demo hai vấn đề ("…chưa thấy đâu, nhắn shop k ai rep") | **2/2** | 1/2 |
+
+**Kết luận:** mô hình học thuộc khung câu chứ không học được khái niệm mỉa mai. Nó đoán đúng
+câu cùng cấu trúc với khung ("Bền ghê, xài 2 hôm là hỏng"), nhưng trượt câu demo, là câu mà
+bộ lọc đã cố ý giữ khác cấu trúc. Khoảng 20 khung câu tự viết không đủ đa dạng; muốn dạy mỉa
+mai cần câu mỉa mai thật do người gán nhãn. v3 không đạt mục tiêu chính lại làm hỏng câu hai
+vấn đề, nên nhóm giữ v2.
+
+Tệp `data/domain_train.jsonl` trên đĩa hiện là dữ liệu của v3. Dựng lại dữ liệu kiểu v2:
+`npm run nlp:build -- --sarcasm 0 --positive-slang 0`. Kết quả chỉ gần đúng, vì bộ lọc nay
+so thêm với câu demo. Nguồn dữ liệu chính xác của từng checkpoint được ghi trong `meta.json`
+của nó (`dataManifests`).
+
 ## 4. Chạy dịch vụ
 
 ```bash

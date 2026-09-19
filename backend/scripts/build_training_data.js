@@ -372,8 +372,9 @@ async function main() {
     // Tiêu cực, làm lớp Trung tính bị nhấn chìm (đo được F1 = 0 trên tập kiểm tra)
     __NEUTRAL: Number(args.neutral) || 1100,
     __AD: Number(args.ads) || 300,
-    sarcasm: Number(args.sarcasm) || 70,
-    positiveSlang: Number(args['positive-slang']) || 450
+    // Cho phép truyền 0 để tắt hẳn nhóm này (dựng lại dữ liệu của checkpoint v2)
+    sarcasm: args.sarcasm !== undefined ? Number(args.sarcasm) : 70,
+    positiveSlang: args['positive-slang'] !== undefined ? Number(args['positive-slang']) : 450
   };
 
   const groups = buildGroups();
