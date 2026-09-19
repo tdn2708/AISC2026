@@ -17,9 +17,14 @@ Science, 10*, e2203. https://doi.org/10.7717/peerj-cs.2203
 on machine learning applications for consumer sentiment analysis using online reviews.
 *Computer Science Review, 41*, 100413. https://doi.org/10.1016/j.cosrev.2021.100413
 
-**[3]** Nguyen, D. Q., & Nguyen, A. T. (2020). PhoBERT: Pre-trained language models for
-Vietnamese. *Findings of the ACL: EMNLP 2020*, 1037–1042.
-https://doi.org/10.18653/v1/2020.findings-emnlp.92
+**[3]** Nguyen, N., Phan, T., Nguyen, D.-V., & Nguyen, K. (2023). ViSoBERT: A pre-trained
+language model for Vietnamese social media text processing. *Proceedings of the 2023
+Conference on Empirical Methods in Natural Language Processing (EMNLP 2023)*, 5191–5207.
+https://aclanthology.org/2023.emnlp-main.315
+
+> Mô hình nền của tầng phân loại, cài trong `nlp_service/`. Thay cho PhoBERT (Nguyen &
+> Nguyen, 2020) ở bản vòng 1: ViSoBERT huấn luyện trên văn bản mạng xã hội tiếng Việt và
+> không cần bước tách từ. Nhóm đã xin phép nhóm tác giả để sử dụng.
 
 **[4]** Pontiki, M., Galanis, D., Papageorgiou, H., et al. (2016). SemEval-2016 Task 5:
 Aspect based sentiment analysis. *Proceedings of SemEval-2016*, 19–30.

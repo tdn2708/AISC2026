@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-11T09:03:16.702Z",
+  "generatedAt": "2026-09-18T04:30:30.908Z",
   "dataset": {
     "aspectSamples": 80,
     "trustSamples": 19,
@@ -554,6 +554,13 @@
             "predSentiment": "Negative"
           }
         ]
+      },
+      "excludingSeenSarcasm": {
+        "excluded": 2,
+        "n": 46,
+        "categoryMacroF1": 0.1496,
+        "causeMacroF1": 0.0968,
+        "sentimentMacroF1": 0.4515
       }
     },
     {
@@ -1081,6 +1088,13 @@
             "predSentiment": "Negative"
           }
         ]
+      },
+      "excludingSeenSarcasm": {
+        "excluded": 2,
+        "n": 46,
+        "categoryMacroF1": 0.0591,
+        "causeMacroF1": 0.0207,
+        "sentimentMacroF1": 0.4515
       }
     },
     {
@@ -1092,18 +1106,891 @@
     },
     {
       "id": "M",
-      "name": "PhoBERT tinh chỉnh cho ABSA + phân loại phân cấp",
+      "name": "ViSoBERT tinh chỉnh cho ABSA + phân loại phân cấp",
       "role": "Mô hình đề xuất",
-      "available": false,
-      "reason": "Chưa có trọng số mô hình PhoBERT đã tinh chỉnh trong kho mã",
-      "nextSteps": [
-        "Tải bộ dữ liệu chuẩn UIT-ViSFD để đối chuẩn ABSA",
-        "Gán nhãn tập chuyên ngành theo taxonomy 7 danh mục x 27 nguyên nhân",
-        "Tinh chỉnh PhoBERT cho bài toán ABSA và phân loại phân cấp",
-        "Cài hàm predict() trong baselines.js rồi chạy lại npm run eval"
-      ]
+      "available": true,
+      "canDetectAspect": true,
+      "categoryMacroF1": 0.7976,
+      "causeMacroF1": 0.7016,
+      "sentimentMacroF1": 0.5915,
+      "categoryAccuracy": 0.8542,
+      "categoryAccuracyCI": {
+        "point": 0.8542,
+        "low": 0.7283,
+        "high": 0.9275,
+        "total": 48
+      },
+      "detail": {
+        "category": {
+          "perClass": {
+            "Delivery": {
+              "precision": 0.8571,
+              "recall": 1,
+              "f1": 0.9231,
+              "support": 12,
+              "tp": 12,
+              "fp": 2,
+              "fn": 0
+            },
+            "ProductQuality": {
+              "precision": 0.7,
+              "recall": 0.875,
+              "f1": 0.7778,
+              "support": 8,
+              "tp": 7,
+              "fp": 3,
+              "fn": 1
+            },
+            "CustomerService": {
+              "precision": 1,
+              "recall": 0.8571,
+              "f1": 0.9231,
+              "support": 7,
+              "tp": 6,
+              "fp": 0,
+              "fn": 1
+            },
+            "Payment": {
+              "precision": 1,
+              "recall": 0.6667,
+              "f1": 0.8,
+              "support": 3,
+              "tp": 2,
+              "fp": 0,
+              "fn": 1
+            },
+            "TechnicalApp": {
+              "precision": 0.6,
+              "recall": 1,
+              "f1": 0.75,
+              "support": 3,
+              "tp": 3,
+              "fp": 2,
+              "fn": 0
+            },
+            "ReturnRefund": {
+              "precision": 1,
+              "recall": 0.3333,
+              "f1": 0.5,
+              "support": 3,
+              "tp": 1,
+              "fp": 0,
+              "fn": 2
+            },
+            "PricePromotion": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0
+            },
+            "NONE": {
+              "precision": 1,
+              "recall": 0.8333,
+              "f1": 0.9091,
+              "support": 12,
+              "tp": 10,
+              "fp": 0,
+              "fn": 2
+            }
+          },
+          "macroPrecision": 0.8796,
+          "macroRecall": 0.7951,
+          "macroF1": 0.7976,
+          "microPrecision": 0.8542,
+          "microRecall": 0.8542,
+          "microF1": 0.8542,
+          "accuracy": 0.8542,
+          "sampleSize": 48,
+          "labelsEvaluated": 7
+        },
+        "cause": {
+          "perClass": {
+            "LateDelivery": {
+              "precision": 0.7143,
+              "recall": 1,
+              "f1": 0.8333,
+              "support": 5,
+              "tp": 5,
+              "fp": 2,
+              "fn": 0
+            },
+            "DamagedInTransit": {
+              "precision": 0.75,
+              "recall": 1,
+              "f1": 0.8571,
+              "support": 3,
+              "tp": 3,
+              "fp": 1,
+              "fn": 0
+            },
+            "LostPackage": {
+              "precision": 1,
+              "recall": 0.5,
+              "f1": 0.6667,
+              "support": 2,
+              "tp": 1,
+              "fp": 0,
+              "fn": 1
+            },
+            "CourierAttitude": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "support": 2,
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "TechnicalDefect": {
+              "precision": 0.4,
+              "recall": 0.6667,
+              "f1": 0.5,
+              "support": 3,
+              "tp": 2,
+              "fp": 3,
+              "fn": 1
+            },
+            "NotAsDescribed": {
+              "precision": 1,
+              "recall": 0.5,
+              "f1": 0.6667,
+              "support": 2,
+              "tp": 1,
+              "fp": 0,
+              "fn": 1
+            },
+            "MissingAccessory": {
+              "precision": 0.5,
+              "recall": 1,
+              "f1": 0.6667,
+              "support": 1,
+              "tp": 1,
+              "fp": 1,
+              "fn": 0
+            },
+            "SuspectedCounterfeit": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "support": 2,
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "SlowResponse": {
+              "precision": 0.6667,
+              "recall": 1,
+              "f1": 0.8,
+              "support": 2,
+              "tp": 2,
+              "fp": 1,
+              "fn": 0
+            },
+            "BadAttitude": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "support": 2,
+              "tp": 2,
+              "fp": 0,
+              "fn": 0
+            },
+            "WrongInformation": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "UnresolvedCase": {
+              "precision": 1,
+              "recall": 0.5,
+              "f1": 0.6667,
+              "support": 2,
+              "tp": 1,
+              "fp": 0,
+              "fn": 1
+            },
+            "DoubleCharge": {
+              "precision": 1,
+              "recall": 0.5,
+              "f1": 0.6667,
+              "support": 2,
+              "tp": 1,
+              "fp": 0,
+              "fn": 1
+            },
+            "WrongPromotion": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "support": 1,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "AppSlowOrCrash": {
+              "precision": 0.6667,
+              "recall": 1,
+              "f1": 0.8,
+              "support": 2,
+              "tp": 2,
+              "fp": 1,
+              "fn": 0
+            },
+            "LoginError": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "support": 1,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "SlowRefund": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "support": 1,
+              "tp": 1,
+              "fp": 0,
+              "fn": 0
+            },
+            "ReturnRejected": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "ComplexProcess": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1
+            },
+            "NONE": {
+              "precision": 1,
+              "recall": 0.8333,
+              "f1": 0.9091,
+              "support": 12,
+              "tp": 10,
+              "fp": 0,
+              "fn": 2
+            },
+            "DisplayError": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 0,
+              "tp": 0,
+              "fp": 1,
+              "fn": 0
+            }
+          },
+          "macroPrecision": 0.7349,
+          "macroRecall": 0.725,
+          "macroF1": 0.7016,
+          "microPrecision": 0.7917,
+          "microRecall": 0.7917,
+          "microF1": 0.7917,
+          "accuracy": 0.7917,
+          "sampleSize": 48,
+          "labelsEvaluated": 20
+        },
+        "sentiment": {
+          "perClass": {
+            "Positive": {
+              "precision": 0.75,
+              "recall": 0.8571,
+              "f1": 0.8,
+              "support": 7,
+              "tp": 6,
+              "fp": 2,
+              "fn": 1
+            },
+            "Negative": {
+              "precision": 0.95,
+              "recall": 1,
+              "f1": 0.9744,
+              "support": 38,
+              "tp": 38,
+              "fp": 2,
+              "fn": 0
+            },
+            "Neutral": {
+              "precision": 0,
+              "recall": 0,
+              "f1": 0,
+              "support": 3,
+              "tp": 0,
+              "fp": 0,
+              "fn": 3
+            }
+          },
+          "macroPrecision": 0.5667,
+          "macroRecall": 0.619,
+          "macroF1": 0.5915,
+          "microPrecision": 0.9167,
+          "microRecall": 0.9167,
+          "microF1": 0.9167,
+          "accuracy": 0.9167,
+          "sampleSize": 48,
+          "labelsEvaluated": 3
+        },
+        "categoryAccuracyCI": {
+          "point": 0.8542,
+          "low": 0.7283,
+          "high": 0.9275,
+          "total": 48
+        },
+        "confusion": {
+          "labels": [
+            "Delivery",
+            "ProductQuality",
+            "CustomerService",
+            "Payment",
+            "TechnicalApp",
+            "ReturnRefund",
+            "PricePromotion",
+            "NONE"
+          ],
+          "matrix": [
+            [
+              12,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              7,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              6,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              2,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              10
+            ]
+          ]
+        }
+      },
+      "devCategoryMacroF1": 0.8107,
+      "errors": {
+        "total": 7,
+        "samples": [
+          {
+            "text": "Nút bấm bị liệt một bên ngay từ lúc mở seal",
+            "goldCategory": "Chất lượng sản phẩm",
+            "predCategory": "Kỹ thuật / Ứng dụng",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Nhân viên khẳng định máy dùng được sim hai, thực tế thì không",
+            "goldCategory": "Dịch vụ khách hàng",
+            "predCategory": "Chất lượng sản phẩm",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Ngân hàng báo hai giao dịch giống hệt nhau cách nhau một phút",
+            "goldCategory": "Thanh toán",
+            "predCategory": "Kỹ thuật / Ứng dụng",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Shop viện đủ lý do để không nhận lại hàng dù còn nguyên seal",
+            "goldCategory": "Đổi trả & Hoàn tiền",
+            "predCategory": "Giao hàng",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Muốn đổi cái áo mà phải qua năm bước, nản luôn",
+            "goldCategory": "Đổi trả & Hoàn tiền",
+            "predCategory": "Chất lượng sản phẩm",
+            "goldSentiment": "Negative",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Mình mua làm quà nên chưa mở ra dùng thử",
+            "goldCategory": "Không phải khiếu nại",
+            "predCategory": "Chất lượng sản phẩm",
+            "goldSentiment": "Neutral",
+            "predSentiment": "Negative"
+          },
+          {
+            "text": "Lo là giao chậm mà hóa ra nhanh không tưởng",
+            "goldCategory": "Không phải khiếu nại",
+            "predCategory": "Giao hàng",
+            "goldSentiment": "Positive",
+            "predSentiment": "Negative"
+          }
+        ]
+      },
+      "checkpoint": {
+        "model": "ViSoBERT đa nhiệm (sentiment + category + cause + spam)",
+        "inputMode": "masked",
+        "trainedTasks": {
+          "sentiment": true,
+          "category": true,
+          "cause": true,
+          "spam": true
+        },
+        "trainCounts": {
+          "sentiment": 12648,
+          "spam": 8885,
+          "category": 8885,
+          "cause": 8885
+        },
+        "bestEpoch": 1,
+        "devReport": {
+          "sentiment": {
+            "macroF1": 0.9461,
+            "n": 32
+          },
+          "category": {
+            "macroF1": 0.8107,
+            "n": 32
+          },
+          "categoryMulti": {
+            "microF1": 0.7925,
+            "goldLabels": 26,
+            "predLabels": 27
+          },
+          "cause": {
+            "macroF1": 0.573,
+            "n": 32
+          }
+        },
+        "leakageGuard": true,
+        "excludedTestSha256": "4b9f1fc3c50af1e8f2e5546bb83edc9b004d1d3fb14e787697eaa90d9921a1e1",
+        "testOverlapRemoved": 0,
+        "trainedAt": "2026-09-18T02:59:14.669851+00:00",
+        "dataManifests": {
+          "visfd_train.jsonl": {
+            "labelProvenance": "UIT-ViSFD: nhãn cảm xúc do người gán; chỉ giữ câu mọi khía cạnh cùng cực tính",
+            "total": 4063
+          },
+          "domain_train.jsonl": {
+            "labelProvenance": "Nhãn theo cấu trúc sinh từ khung câu data/corpus.js, một phần câu do LLM diễn đạt lại; KHÔNG phải nhãn người gán trên phản hồi thật.",
+            "total": 8885,
+            "leakageGuard": {
+              "jaccardThreshold": 0.4,
+              "goldSentencesCompared": 105,
+              "templatesTotal": 161,
+              "templatesDropped": 70,
+              "generatedSentencesDropped": 43,
+              "llmSawGoldSentences": false,
+              "limitation": "Chỉ lọc trùng mặt chữ; không loại trừ được trùng ý nghĩa ngẫu nhiên."
+            },
+            "paraphrase": {
+              "enabled": true,
+              "model": "openai/gpt-oss-120b",
+              "called": 5,
+              "fromCache": 86,
+              "failed": 0
+            }
+          }
+        },
+        "hyperparameters": {
+          "epochs": 3,
+          "batch_size": 16,
+          "lr": 0.00002,
+          "head_lr": 0.001,
+          "max_len": 96,
+          "warmup": 0.1,
+          "seed": 42,
+          "max_steps": 0
+        }
+      },
+      "devNote": "Tập phát triển đã được dùng để chọn epoch khi tinh chỉnh",
+      "excludingSeenSarcasm": {
+        "excluded": 2,
+        "n": 46,
+        "categoryMacroF1": 0.7927,
+        "causeMacroF1": 0.6916,
+        "sentimentMacroF1": 0.591
+      }
     }
   ],
+  "headToHead": {
+    "available": true,
+    "total": 48,
+    "bothCorrect": 14,
+    "onlyModelCorrect": [
+      {
+        "text": "Dự kiến 3 ngày mà thực tế mất gần 2 tuần mới tới tay",
+        "gold": "Giao hàng → Giao chậm",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Giao hàng → Giao chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Mua quà sinh nhật mà tới nơi thì tiệc tan lâu rồi",
+        "gold": "Giao hàng → Giao chậm",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Giao hàng → Giao chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "giao lâu ghê lun mn ơi, đợi mòn mỏi",
+        "gold": "Giao hàng → Giao chậm",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Giao hàng → Giao chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Ly thủy tinh vỡ tan trong kiện, bọc mỗi lớp giấy mỏng dính",
+        "gold": "Giao hàng → Hư hỏng khi vận chuyển",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Giao hàng → Hư hỏng khi vận chuyển",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Hệ thống báo đã giao thành công nhưng tôi có nhận được gì đâu",
+        "gold": "Giao hàng → Thất lạc",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Giao hàng → Thất lạc",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Kiện hàng biến mất ở kho trung chuyển, tra mãi không ra",
+        "gold": "Giao hàng → Thất lạc",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Giao hàng → Giao chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Anh giao hàng quăng gói đồ trước cổng rồi phóng đi luôn",
+        "gold": "Giao hàng → Thái độ nhân viên giao hàng",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Giao hàng → Thái độ nhân viên giao hàng",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Bạn giao hàng nói năng trống không, gọi mà cứ như quát vào mặt",
+        "gold": "Giao hàng → Thái độ nhân viên giao hàng",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Giao hàng → Thái độ nhân viên giao hàng",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Xài được đúng ba hôm là màn hình tối thui không lên nữa",
+        "gold": "Chất lượng sản phẩm → Lỗi kỹ thuật",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Chất lượng sản phẩm → Lỗi kỹ thuật",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Trên hình thì xanh ngọc mà nhận về thành xanh lá đậm",
+        "gold": "Chất lượng sản phẩm → Không đúng mô tả",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Chất lượng sản phẩm → Không đúng mô tả",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Tem mác in lem nhem, nghi là đồ dựng chứ không phải chính hãng",
+        "gold": "Chất lượng sản phẩm → Nghi ngờ hàng giả",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Chất lượng sản phẩm → Nghi ngờ hàng giả",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "So với cái mua ở cửa hàng chính thức thì cái này khác hẳn, chắc đồ nhái",
+        "gold": "Chất lượng sản phẩm → Nghi ngờ hàng giả",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Chất lượng sản phẩm → Nghi ngờ hàng giả",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Nhắn cho shop ba ngày rồi mà vẫn im lặng không một dòng",
+        "gold": "Dịch vụ khách hàng → Phản hồi chậm",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Dịch vụ khách hàng → Phản hồi chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Bấm tổng đài chờ hai mươi phút rồi tự động ngắt máy",
+        "gold": "Dịch vụ khách hàng → Phản hồi chậm",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Dịch vụ khách hàng → Phản hồi chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Bạn nhân viên trả lời cộc lốc như đang bị làm phiền",
+        "gold": "Dịch vụ khách hàng → Thái độ phục vụ",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Dịch vụ khách hàng → Thái độ phục vụ",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Bên này đẩy sang bên kia, cuối cùng chẳng ai đứng ra xử lý",
+        "gold": "Dịch vụ khách hàng → Không giải quyết dứt điểm",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Dịch vụ khách hàng → Không giải quyết dứt điểm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Hứa tuần sau trả lời, ba tuần rồi vẫn treo đó",
+        "gold": "Dịch vụ khách hàng → Không giải quyết dứt điểm",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Dịch vụ khách hàng → Phản hồi chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Tài khoản bị trừ tới hai lần cho cùng một đơn",
+        "gold": "Thanh toán → Trừ tiền hai lần",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Thanh toán → Trừ tiền hai lần",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Nhập mã giảm giá còn hạn mà hệ thống báo không hợp lệ",
+        "gold": "Thanh toán → Sai khuyến mãi",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Thanh toán → Sai khuyến mãi",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Mở ứng dụng lên là quay vòng vòng rồi thoát ra ngoài",
+        "gold": "Kỹ thuật / Ứng dụng → Ứng dụng chậm hoặc treo",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Kỹ thuật / Ứng dụng → Ứng dụng chậm hoặc treo",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Lướt vài màn hình là ứng dụng đứng hình phải tắt đi bật lại",
+        "gold": "Kỹ thuật / Ứng dụng → Ứng dụng chậm hoặc treo",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Kỹ thuật / Ứng dụng → Ứng dụng chậm hoặc treo",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Nhập đúng mật khẩu mà cứ báo sai, vào tài khoản không nổi",
+        "gold": "Kỹ thuật / Ứng dụng → Lỗi đăng nhập",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Kỹ thuật / Ứng dụng → Lỗi đăng nhập",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Gửi trả hàng từ đầu tháng, giờ cuối tháng tiền vẫn chưa về",
+        "gold": "Đổi trả & Hoàn tiền → Hoàn tiền chậm",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Đổi trả & Hoàn tiền → Hoàn tiền chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Giao hàng thần tốc ghê, có mỗi mười ngày thôi mà",
+        "gold": "Giao hàng → Giao chậm",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Giao hàng → Giao chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "Giá hợp lý, đóng gói tốt, mỗi tội nhân viên trả lời hơi khó chịu",
+        "gold": "Dịch vụ khách hàng → Thái độ phục vụ",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Dịch vụ khách hàng → Thái độ phục vụ",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "sp ok nhma giao lâu qá, ship gì mà cả tuần lận",
+        "gold": "Giao hàng → Giao chậm",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Giao hàng → Giao chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      },
+      {
+        "text": "hàng về mà bể nát hết trơn, xu cà na thật sự",
+        "gold": "Giao hàng → Hư hỏng khi vận chuyển",
+        "goldSentiment": "Negative",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": false,
+        "model": "Giao hàng → Hư hỏng khi vận chuyển",
+        "modelSentiment": "Negative",
+        "modelCorrect": true
+      }
+    ],
+    "onlyRulesCorrect": [
+      {
+        "text": "Mình mua làm quà nên chưa mở ra dùng thử",
+        "gold": "Không phải khiếu nại",
+        "goldSentiment": "Neutral",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": true,
+        "model": "Chất lượng sản phẩm → Thiếu phụ kiện",
+        "modelSentiment": "Negative",
+        "modelCorrect": false
+      },
+      {
+        "text": "Lo là giao chậm mà hóa ra nhanh không tưởng",
+        "gold": "Không phải khiếu nại",
+        "goldSentiment": "Positive",
+        "rules": "Không phải khiếu nại",
+        "rulesCorrect": true,
+        "model": "Giao hàng → Giao chậm",
+        "modelSentiment": "Negative",
+        "modelCorrect": false
+      }
+    ],
+    "bothWrong": 5,
+    "note": "So khớp ở mức danh mục (Level 1) trên tập kiểm tra giữ riêng"
+  },
   "trustLayer": {
     "report": {
       "perClass": {
@@ -1227,8 +2114,8 @@
     },
     "trustLayer": {
       "description": "Tắt Trust Layer: mọi phản hồi được đếm đủ 1 điểm",
-      "datasetSize": 1803,
-      "alertsWithTrustLayer": 8,
+      "datasetSize": 1776,
+      "alertsWithTrustLayer": 6,
       "alertsWithoutTrustLayer": 5,
       "phantomAlerts": 1,
       "phantomExamples": [
@@ -1238,39 +2125,39 @@
           "severity": "High"
         }
       ],
-      "wcrWithTrustLayer": "4.42%",
-      "wcrWithoutTrustLayer": "11.21%",
+      "wcrWithTrustLayer": "4,27%",
+      "wcrWithoutTrustLayer": "10,78%",
       "excludedFeedbacks": 165,
       "funnel": {
-        "rawCollected": 1803,
+        "rawCollected": 1776,
         "spamRemoved": {
           "count": 96,
-          "pct": 5.3
+          "pct": 5.4
         },
         "inauthenticFlagged": {
           "count": 69,
-          "pct": 3.8,
-          "duplicateClusters": 7
+          "pct": 3.9,
+          "duplicateClusters": 6
         },
         "pendingReview": {
           "count": 1,
           "pct": 0.1
         },
-        "validForAnalysis": 1637,
-        "effectiveWeight": 797.67,
+        "validForAnalysis": 1610,
+        "effectiveWeight": 789.61,
         "channelCoverage": {
           "covered": 5,
           "expected": 5
         },
-        "reconciliationRate": 48.8,
-        "medianAgeDays": 14.6,
+        "reconciliationRate": 49.1,
+        "medianAgeDays": 14.4,
         "ingestionLagMinutes": 0,
         "dataHealthScore": 86,
         "components": {
-          "passRate": 90.8,
+          "passRate": 90.7,
           "channelCoverage": 100,
           "freshness": 100,
-          "reconciliation": 48.8
+          "reconciliation": 49.1
         }
       }
     }

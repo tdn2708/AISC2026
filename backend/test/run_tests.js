@@ -902,6 +902,173 @@ test('Phản hồi bị Trust Layer loại không lọt vào bất kỳ chỉ s�
 });
 
 // ==================================================================
+console.log('\nVISOBERT (không cần dịch vụ chạy)');
+// ==================================================================
+
+const visobert = require('../services/visobert_client');
+const { buildLabels } = require('../scripts/prepare_nlp_data');
+
+test('Đầu vào mô hình luôn che PII; chế độ masked giữ nguyên teencode', () => {
+  const raw = 'Sp ok lắm, gọi 0912345678 nha';
+  const masked = visobert.prepareInput(raw, 'masked');
+  assert.ok(!masked.includes('0912345678'), 'số điện thoại lọt vào đầu vào mô hình');
+  assert.ok(masked.includes('[SĐT]'), 'thiếu token che PII');
+  assert.ok(masked.includes('Sp ok'), 'chế độ masked không được dịch teencode');
+  const normalized = visobert.prepareInput(raw, 'normalized');
+  assert.ok(!normalized.includes('0912345678'), 'số điện thoại lọt vào đầu vào mô hình');
+});
+
+test('Nhãn mô hình bị ép về taxonomy, không nhận nhãn lạ hay tổ hợp sai nhánh', () => {
+  const ok = visobert.toAnalysis({ category: 'Delivery', cause: 'LateDelivery', sentiment: 'Negative', causeConfidence: 0.8 });
+  assert.strictEqual(ok.category, 'Delivery');
+  assert.strictEqual(ok.subCategory, 'LateDelivery');
+  assert.strictEqual(ok.labelledBy, 'visobert');
+
+  const alien = visobert.toAnalysis({ category: 'Foo', cause: 'Bar', sentiment: 'Weird' });
+  assert.strictEqual(alien.category, 'Other');
+  assert.strictEqual(alien.subCategory, null);
+  assert.strictEqual(alien.sentiment, 'Neutral');
+
+  const crossBranch = visobert.toBaselinePrediction({ category: 'Delivery', cause: 'DoubleCharge', sentiment: 'Negative' });
+  assert.strictEqual(crossBranch.cause, null, 'nguyên nhân khác nhánh phải bị bỏ');
+});
+
+test('Mô hình đa nhãn trả đủ khía cạnh; nhãn lệch nhánh bị loại', () => {
+  const aspects = visobert.detectedAspects({
+    category: 'Delivery',
+    categories: [
+      { category: 'Delivery', p: 0.99, cause: 'LateDelivery', causeConfidence: 0.9 },
+      { category: 'CustomerService', p: 0.83, cause: 'SlowResponse', causeConfidence: 0.7 },
+      { category: 'KhongCoThat', p: 0.6, cause: 'Bịa', causeConfidence: 0.5 }
+    ]
+  });
+  assert.strictEqual(aspects.length, 2, 'danh mục ngoài taxonomy phải bị loại');
+  assert.deepStrictEqual(aspects.map((a) => a.category), ['Delivery', 'CustomerService']);
+  assert.strictEqual(aspects[1].causeLabel, 'Phản hồi chậm');
+  assert.strictEqual(aspects[0].owner, taxonomy.categoryOwner('Delivery'));
+
+  const crossBranch = visobert.detectedAspects({
+    categories: [{ category: 'Delivery', p: 0.9, cause: 'DoubleCharge', causeConfidence: 0.8 }]
+  });
+  assert.strictEqual(crossBranch[0].cause, null, 'nguyên nhân khác nhánh phải bị bỏ');
+});
+
+test('Checkpoint một nhãn đời cũ vẫn dựng được danh sách khía cạnh', () => {
+  const analysis = visobert.toAnalysis({
+    category: 'ProductQuality', cause: 'TechnicalDefect', sentiment: 'Negative',
+    categoryConfidence: 0.95, causeConfidence: 0.9
+  });
+  assert.strictEqual(analysis.aspects.length, 1);
+  assert.strictEqual(analysis.category, 'ProductQuality');
+  assert.strictEqual(analysis.subCategory, 'TechnicalDefect');
+});
+
+test('Nhiều khía cạnh được tóm tắt đủ, danh mục chính giữ nguyên cho bản ghi', () => {
+  const analysis = visobert.toAnalysis({
+    category: 'Delivery', cause: 'LateDelivery', sentiment: 'Negative',
+    categories: [
+      { category: 'Delivery', p: 0.99, cause: 'LateDelivery', causeConfidence: 0.9 },
+      { category: 'CustomerService', p: 0.8, cause: 'SlowResponse', causeConfidence: 0.6 }
+    ]
+  });
+  assert.strictEqual(analysis.category, 'Delivery', 'bản ghi vẫn cần một danh mục chính');
+  assert.strictEqual(analysis.aspects.length, 2);
+  assert.ok(analysis.aiSummary.includes('Giao hàng') && analysis.aiSummary.includes('Dịch vụ khách hàng'),
+    'tóm tắt phải nêu cả hai vấn đề');
+});
+
+test('Không gian nhãn cho Python sinh đúng từ taxonomy', () => {
+  const labels = buildLabels();
+  assert.strictEqual(labels.category.length, taxonomy.CATEGORY_KEYS.length + 1, 'thiếu lớp NONE');
+  assert.strictEqual(labels.cause.length, taxonomy.CAUSE_COUNT + 1);
+  assert.ok(labels.cause.includes('Delivery.DamagedInTransit'));
+});
+
+test('Điểm rác của mô hình không một mình chặn được khiếu nại thật', () => {
+  const complaint = 'Giao hàng trễ cả tuần, gọi tổng đài không ai bắt máy, quá thất vọng';
+  const r = trust.runSpamFilter({ originalText: complaint }, normalizer.normalize(complaint), 0.99);
+  assert.strictEqual(r.isSpam, false, 'khiếu nại không có dấu hiệu thương mại bị chặn vì điểm mô hình');
+  assert.strictEqual(r.modelScore, 0.99);
+});
+
+test('Điểm rác cao của mô hình nâng dấu hiệu yếu thành bằng chứng đủ chặn', () => {
+  const text = 'Hàng về rồi nha mọi người, ai cần thì ib mình tư vấn thêm nhé';
+  const norm = normalizer.normalize(text);
+  assert.strictEqual(trust.runSpamFilter({ originalText: text }, norm).isSpam, false, 'lớp luật một mình không được chặn câu này');
+  assert.strictEqual(trust.runSpamFilter({ originalText: text }, norm, 0.5).isSpam, false, 'điểm thấp không được chặn');
+  const high = trust.runSpamFilter({ originalText: text }, norm, 0.99);
+  assert.strictEqual(high.isSpam, true, 'điểm cao kèm "ib" phải chặn');
+  assert.ok(high.reasons.some((x) => x.includes('ViSoBERT')), 'lý do phải nêu rõ là do mô hình');
+});
+
+function paraphraseCampaign(embeddingFor) {
+  const base = new Date('2026-09-01T08:00:00Z').getTime();
+  const texts = [
+    'sản phẩm tuyệt vời shop tư vấn nhiệt tình',
+    'đồ xịn đóng gói kỹ càng rất đáng mua',
+    'chất lượng vượt mong đợi sẽ quay lại ủng hộ',
+    'hàng đẹp y hình giao siêu tốc luôn',
+    'mua lần hai vẫn ưng như lần đầu',
+    'giá hợp lý chất liệu mịn đường may chắc'
+  ];
+  return texts.map((t, i) => ({
+    _normalized: t,
+    productName: 'Sản phẩm A',
+    timestamp: new Date(base + i * 5 * 60000),
+    _embedding: embeddingFor(i)
+  }));
+}
+
+test('Kênh vector nhúng bổ sung được cặp mà vector token bỏ sót', () => {
+  // Kiểm tra CƠ CHẾ bằng vector giả lập; vector nhúng gốc thật không tách được câu viết lại (xem README hiệu chỉnh)
+  const same = paraphraseCampaign(() => Float32Array.from([1, 0, 0]));
+  const noEmb = same.map((it) => ({ ...it, _embedding: null }));
+  assert.strictEqual(trust.detectNearDuplicateClusters(noEmb).clusters.length, 0, 'vector token không được gom các câu khác chữ');
+  const withEmb = trust.detectNearDuplicateClusters(same);
+  assert.strictEqual(withEmb.clusters.length, 1, 'vector nhúng vượt ngưỡng phải gom thành cụm');
+  assert.strictEqual(withEmb.clusters[0].size, 6);
+});
+
+test('Bật vector nhúng không làm mất cụm mà vector token đã bắt được', () => {
+  const copies = paraphraseCampaign((i) => {
+    const v = new Float32Array(6);
+    v[i] = 1; // vector nhúng trực giao: kênh nhúng không kích hoạt
+    return v;
+  }).map((it) => ({ ...it, _normalized: 'sản phẩm rất tốt shop giao hàng nhanh đóng gói đẹp' }));
+  const r = trust.detectNearDuplicateClusters(copies);
+  assert.strictEqual(r.clusters.length, 1, 'cụm chép nguyên văn bị mất khi có vector nhúng');
+  assert.strictEqual(r.clusters[0].size, 6);
+});
+
+test('Vector nhúng khác nhau không bị gom cụm, ràng buộc thời gian vẫn giữ nguyên', () => {
+  const orthogonal = paraphraseCampaign((i) => {
+    const v = new Float32Array(6);
+    v[i] = 1;
+    return v;
+  });
+  assert.strictEqual(trust.detectNearDuplicateClusters(orthogonal).clusters.length, 0);
+
+  const spread = paraphraseCampaign(() => Float32Array.from([1, 0, 0])).map((it, i) => ({
+    ...it,
+    timestamp: new Date(new Date('2026-09-01T08:00:00Z').getTime() + i * 24 * 3600000)
+  }));
+  assert.strictEqual(trust.detectNearDuplicateClusters(spread).clusters.length, 0, 'cụm rải nhiều ngày không phải chiến dịch');
+});
+
+test('Trust Layer dùng tín hiệu mô hình rồi gỡ vector nhúng khỏi kết quả', () => {
+  const fbs = paraphraseCampaign(() => null).map((it, i) => ({
+    _id: 'v' + i, originalText: it._normalized, author: 'u' + i, source: 'Shopee',
+    productName: it.productName, timestamp: it.timestamp, accountAgeDays: 200
+  }));
+  const signals = fbs.map(() => ({ embedding: Float32Array.from([0, 1, 0]), spamScore: 0.1 }));
+  const out = trust.runTrustLayer(fbs, { orders: [], modelSignals: signals, now: new Date('2026-09-02T00:00:00Z') });
+  assert.strictEqual(out.modelSignals.embeddingsUsed, fbs.length);
+  assert.strictEqual(out.modelSignals.spamScoresUsed, fbs.length);
+  assert.ok(out.items.every((it) => !('_embedding' in it)), 'vector nhúng lọt ra kết quả');
+  assert.strictEqual(out.clusters.length, 1, 'tín hiệu vector nhúng phải được dùng trong T2');
+});
+
+// ==================================================================
 console.log(`\n${'='.repeat(52)}`);
 console.log(`Kết quả: ${passed} đạt, ${failed} lỗi`);
 console.log('='.repeat(52));

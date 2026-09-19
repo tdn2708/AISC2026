@@ -83,7 +83,7 @@ const Feedbacks = () => {
     <div className="animate-fade-in" style={{ paddingBottom: '2rem' }}>
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.75rem', fontWeight: 600 }}>Quản lý phản hồi</h1>
-        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>View, search, and filter all customer feedbacks analyzed by AI.</p>
+
       </div>
 
       <FilterBar 

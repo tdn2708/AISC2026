@@ -324,9 +324,7 @@ const Reports = () => {
     <div className="animate-fade-in" style={{ paddingBottom: '2rem', position: 'relative' }}>
       <header style={{ marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.875rem', fontWeight: 700, margin: '0 0 0.25rem 0' }}>Báo cáo và xuất dữ liệu</h2>
-        <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.9rem' }}>
-          Tạo, tải về và quản lý báo cáo phân tích phản hồi khách hàng.
-        </p>
+
       </header>
 
       <FilterBar 

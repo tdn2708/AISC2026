@@ -178,8 +178,8 @@ function categoryOwner(key) {
 /**
  * Phân loại bằng luật từ khóa.
  * Đây là baseline B1 trong khung thực nghiệm, đồng thời là lưới an toàn
- * khi LLM lỗi hoặc trả về nhãn nằm ngoài taxonomy. Mô hình PhoBERT tinh
- * chỉnh sẽ thay lớp này ở bản chính; giữ luật lại để đối chứng baseline.
+ * khi LLM lỗi hoặc trả về nhãn nằm ngoài taxonomy. Mô hình ViSoBERT tinh
+ * chỉnh thay lớp này khi dịch vụ nlp_service sẵn sàng; giữ luật lại để đối chứng baseline.
  */
 /**
  * DẤU HIỆU PHỦ ĐỊNH VÀ GIẢ ĐỊNH.
@@ -245,14 +245,20 @@ function classifyByRules(normalizedText) {
   for (const catKey of CATEGORY_KEYS) {
     for (const [causeKey, cause] of Object.entries(TAXONOMY[catKey].causes)) {
       let hits = 0;
+      const matchedKeywords = [];
       for (const kw of cause.keywords) {
-        if (keywordHit(kw, text)) hits += 1;
+        if (keywordHit(kw, text)) {
+          hits += 1;
+          matchedKeywords.push(kw instanceof RegExp ? kw.source : kw);
+        }
       }
       if (hits > 0) {
         matches.push({
           category: catKey,
           cause: causeKey,
-          confidence: Math.min(0.5 + hits * 0.15, 0.95)
+          confidence: Math.min(0.5 + hits * 0.15, 0.95),
+          // Truy vết: nhãn luật nào cũng chỉ ra được từ khóa đã sinh ra nó
+          keywords: matchedKeywords
         });
       }
     }

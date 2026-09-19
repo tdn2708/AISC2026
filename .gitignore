@@ -23,6 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 
+# Mo hinh ViSoBERT (~390MB) va checkpoint tinh chinh - tai lai tu HuggingFace / train lai
+visobert/
+nlp_service/.venv/
+nlp_service/checkpoints/
+nlp_service/data/
+__pycache__/
+
 # Bien moi truong - KHONG BAO GIO commit khoa API hay chuoi ket noi
 .env
 .env.*

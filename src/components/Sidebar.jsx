@@ -4,7 +4,7 @@ import axios from 'axios';
 import {
   Home, BarChart2, MessageSquare, AlertTriangle, Settings, Users, Database,
   FileText, LogOut, User, ChevronUp, ShieldCheck, FlaskConical,
-  PanelLeftClose, PanelLeftOpen
+  PanelLeftClose, PanelLeftOpen, Cpu
 } from 'lucide-react';
 import Logo, { LogoMark } from './Logo';
 
@@ -135,6 +135,8 @@ const GroupLabel = ({ children, collapsed, first }) => {
 const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollapse }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [status, setStatus] = useState(null);
+  // undefined = đang kiểm tra lần đầu; null = không lấy được trạng thái
+  const [nlp, setNlp] = useState(undefined);
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
@@ -151,15 +153,20 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollaps
   useEffect(() => {
     let alive = true;
     const load = async () => {
-      try {
-        const res = await axios.get('/nav/status');
-        if (alive) setStatus(res.data);
-      } catch {
-        // Không lấy được trạng thái thì thanh bên vẫn phải điều hướng
-        // được. Im lặng bỏ qua, và dải trạng thái tự chuyển sang "không
-        // rõ" thay vì hiển thị một con số cũ như thể nó còn đúng.
-        if (alive) setStatus(null);
-      }
+      // Hai yêu cầu chạy song song: /nav/status phải chạy Trust Layer trên cả
+      // kho dữ liệu nên chậm, không được bắt trạng thái mô hình chờ theo nó
+      const navReq = axios.get('/nav/status')
+        .then((res) => { if (alive) setStatus(res.data); })
+        .catch(() => {
+          // Không lấy được trạng thái thì thanh bên vẫn phải điều hướng
+          // được. Im lặng bỏ qua, và dải trạng thái tự chuyển sang "không
+          // rõ" thay vì hiển thị một con số cũ như thể nó còn đúng.
+          if (alive) setStatus(null);
+        });
+      const nlpReq = axios.get('/nlp/status')
+        .then((res) => { if (alive) setNlp(res.data); })
+        .catch(() => { if (alive) setNlp(null); });
+      await Promise.all([navReq, nlpReq]);
     };
     load();
     const id = setInterval(load, STATUS_POLL_MS);
@@ -172,6 +179,18 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollaps
       : health >= 75 ? 'var(--sev-ok)'
         : health >= 50 ? 'var(--sev-high)'
           : 'var(--sev-crit)';
+
+  // Trạng thái mô hình ngôn ngữ: nói thẳng tầng phân loại đang chạy bằng gì
+  const nlpView = nlp === undefined
+    ? { tone: 'var(--text-lo)', label: 'Đang kiểm tra ViSoBERT…', title: 'Đang hỏi trạng thái dịch vụ mô hình' }
+    : !nlp || !nlp.reachable
+    ? { tone: 'var(--text-lo)', label: 'ViSoBERT tắt · dùng luật', title: nlp?.reason || 'Chưa kết nối dịch vụ ViSoBERT' }
+    : nlp.canLabel
+      ? {
+          tone: 'var(--sev-ok)', label: 'ViSoBERT đang gán nhãn',
+          title: `Checkpoint train lúc ${nlp.checkpoint?.trainedAt ? new Date(nlp.checkpoint.trainedAt).toLocaleString('vi-VN') : '—'} · đầu vào ${nlp.inputMode}`
+        }
+      : { tone: 'var(--sev-high)', label: 'ViSoBERT chưa tinh chỉnh', title: nlp.reason };
 
   const updatedAt = status?.computedAt
     ? new Date(status.computedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
@@ -306,6 +325,20 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollaps
           {!collapsed && updatedAt && (
             <span className="data-num" style={{ whiteSpace: 'nowrap' }}>{updatedAt}</span>
           )}
+        </div>
+
+        <div
+          title={nlpView.title}
+          onClick={() => navigate('/lab')}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+            gap: '0.45rem', flexShrink: 0, cursor: 'pointer',
+            padding: collapsed ? '0.45rem 0' : '0.45rem 0.9rem',
+            borderTop: '1px solid var(--border-soft)', fontSize: '0.7rem', color: 'var(--text-lo)'
+          }}
+        >
+          <Cpu size={12} color={nlpView.tone} style={{ flexShrink: 0 }} />
+          {!collapsed && <span style={{ whiteSpace: 'nowrap', color: nlpView.tone }}>{nlpView.label}</span>}
         </div>
 
         {/* Khối người dùng — nén còn một hàng */}

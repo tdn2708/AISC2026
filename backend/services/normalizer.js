@@ -248,6 +248,8 @@ function replaceEmoji(text) {
 function translateSlang(text) {
   let out = ` ${String(text || '').toLowerCase()} `;
   let hits = 0;
+  // Danh sách từng cặp đã thay, để giao diện trình diễn cho thấy bước này làm gì
+  const replacements = [];
 
   const multiWord = Object.keys(SLANG_DICTIONARY)
     .filter((k) => k.includes(' '))
@@ -257,6 +259,7 @@ function translateSlang(text) {
     const re = new RegExp(`\\s${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s`, 'gi');
     if (re.test(out)) {
       hits += 1;
+      replacements.push({ from: phrase, to: SLANG_DICTIONARY[phrase] });
       out = out.replace(re, ` ${SLANG_DICTIONARY[phrase]} `);
     }
   }
@@ -268,13 +271,14 @@ function translateSlang(text) {
       const key = Object.prototype.hasOwnProperty.call(SLANG_DICTIONARY, clean) ? clean : null;
       if (key && !key.includes(' ')) {
         hits += 1;
+        replacements.push({ from: clean, to: SLANG_DICTIONARY[key] });
         return SLANG_DICTIONARY[key];
       }
       return token;
     })
     .join(' ');
 
-  return { text: out.replace(/\s+/g, ' ').trim(), hits };
+  return { text: out.replace(/\s+/g, ' ').trim(), hits, replacements };
 }
 
 /**
@@ -298,10 +302,12 @@ function normalize(raw, opts = {}) {
 
   // 3) Dịch teencode / tiếng lóng (có thể tắt để đo ablation)
   let slangHits = 0;
+  let slangReplacements = [];
   if (!opts.skipSlang) {
     const translated = translateSlang(text);
     text = translated.text;
     slangHits = translated.hits;
+    slangReplacements = translated.replacements;
   } else {
     text = text.toLowerCase();
   }
@@ -313,6 +319,7 @@ function normalize(raw, opts = {}) {
     piiTypes,
     piiMasked: piiTypes.length > 0,
     slangHits,
+    slangReplacements,
     // Số âm tiết xấp xỉ: tiếng Việt tách âm tiết theo khoảng trắng
     syllables: text ? text.split(/\s+/).filter(Boolean).length : 0
   };

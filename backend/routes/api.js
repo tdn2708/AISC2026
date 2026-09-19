@@ -11,6 +11,7 @@ const playbook = require('../services/playbook');
 const recommender = require('../services/recommender');
 const taxonomy = require('../services/taxonomy');
 const normalizer = require('../services/normalizer');
+const visobert = require('../services/visobert_client');
 
 /** Bọc handler async để lỗi không làm treo request */
 const wrap = (fn) => (req, res) => {
@@ -362,21 +363,74 @@ router.get('/taxonomy', wrap(async (req, res) => {
   });
 }));
 
+/** Đồng hồ mili-giây độ phân giải cao, để mỗi bước trong trace có thời gian thật */
+const nowMs = () => Number(process.hrtime.bigint()) / 1e6;
+const since = (t0) => Number((nowMs() - t0).toFixed(1));
+
+/** Nhãn tiếng Việt cho phân bố xác suất của mô hình */
+function labelDistribution(rows, kind, category) {
+  if (!Array.isArray(rows)) return rows;
+  return rows.map((r) => ({
+    ...r,
+    labelVi: kind === 'category'
+      ? (r.label === 'NONE' ? 'Không phải khiếu nại' : taxonomy.categoryLabel(r.label))
+      : kind === 'cause'
+        ? taxonomy.causeLabel(category, r.label) || r.label
+        : ({ Positive: 'Tích cực', Negative: 'Tiêu cực', Neutral: 'Trung tính' }[r.label] || r.label)
+  }));
+}
+
 /**
- * Phân tích trực tiếp một câu — màn hình mở đầu của kịch bản demo.
- * Cho thấy trong 30 giây: pipeline chạy thật, xử lý được teencode, và
- * tách được nhiều khía cạnh trái dấu trong cùng một câu.
+ * Phân tích trực tiếp một câu — màn hình trình diễn xử lý ngôn ngữ.
+ *
+ * Ngoài kết quả, route trả `trace`: dữ liệu TRUNG GIAN thật của từng bước
+ * (văn bản sau che PII, từng cặp teencode đã dịch, tín hiệu rác, token mô
+ * hình nhìn thấy, phân bố xác suất, mức ảnh hưởng từng từ) kèm thời gian
+ * đo được. Giao diện chỉ hiển thị lại những gì có trong trace, không vẽ sẵn.
  */
 router.post('/analyze', wrap(async (req, res) => {
   const { text } = req.body;
   if (!text || !String(text).trim()) {
     return res.status(400).json({ error: 'Cần trường text' });
   }
+  const tStart = nowMs();
 
+  let t0 = nowMs();
+  const { text: maskedOnly, piiTypes } = normalizer.maskPII(normalizer.stripHtml(text));
+  const piiMs = since(t0);
+
+  t0 = nowMs();
   const normalized = normalizer.normalize(text);
   const withoutSlang = normalizer.normalize(text, { skipSlang: true });
+  const normalizeMs = since(t0);
+
+  t0 = nowMs();
   const matches = taxonomy.classifyByRules(normalized.normalized);
-  const spam = trustLayer.runSpamFilter({ originalText: text }, normalized);
+  const rulesMs = since(t0);
+
+  // Mô hình chạy SONG SONG với luật, không thay thế trên màn hình này: người
+  // xem thấy được cả hai kết quả cạnh nhau, đúng tinh thần giữ luật để đối chứng
+  const nlpStatus = await visobert.status();
+  let model = { name: 'ViSoBERT', available: false, reason: nlpStatus.reason };
+  let modelSpamScore = null;
+  let explained = null;
+  if (nlpStatus.finetuned) {
+    explained = await visobert.explain(text);
+    const p = explained && explained.prediction;
+    if (p) {
+      modelSpamScore = Number.isFinite(p.spamProbability) ? p.spamProbability : null;
+      model = nlpStatus.canLabel
+        ? { name: 'ViSoBERT', available: true, inputMode: nlpStatus.inputMode, ...visobert.toAnalysis(p), spamProbability: modelSpamScore }
+        : { name: 'ViSoBERT', available: false, reason: nlpStatus.reason, spamProbability: modelSpamScore };
+    } else {
+      explained = null;
+      model.reason = 'Dịch vụ ViSoBERT không trả kết quả cho câu này';
+    }
+  }
+
+  t0 = nowMs();
+  const spam = trustLayer.runSpamFilter({ originalText: text }, normalized, modelSpamScore);
+  const spamMs = since(t0);
 
   const aspects = matches.slice(0, 5).map((m) => ({
     category: m.category,
@@ -390,6 +444,108 @@ router.post('/analyze', wrap(async (req, res) => {
     polarity: 'Negative'
   }));
 
+  // Bản ghi cuối: ViSoBERT nếu gán nhãn được, ngược lại luật từ khóa
+  const top = matches[0] || null;
+  const useModel = model.available;
+  const finalCategory = useModel ? (model.category === 'Other' ? null : model.category) : (top ? top.category : null);
+  const finalCause = useModel ? model.subCategory : (top ? top.cause : null);
+  const rulesSentiment = top ? 'Negative' : 'Neutral';
+
+  const modelTrace = explained && model.available
+    ? {
+        available: true,
+        inputMode: explained.inputMode,
+        modelInput: explained.modelInput,
+        tokens: explained.tokens,
+        tokenCount: explained.tokenCount,
+        maxLength: explained.maxLength,
+        truncated: explained.truncated,
+        device: explained.device,
+        timings: explained.timings,
+        words: explained.words,
+        distributions: {
+          sentiment: labelDistribution(explained.distributions.sentiment, 'sentiment'),
+          category: labelDistribution(explained.distributions.category, 'category'),
+          cause: labelDistribution(explained.distributions.cause, 'cause', model.category),
+          spam: explained.distributions.spam ?? null
+        },
+        importance: explained.importance
+          ? Object.fromEntries(Object.entries(explained.importance).map(([k, v]) => [k, {
+              ...v,
+              targetVi: labelDistribution([{ label: v.target }], k)[0].labelVi
+            }]))
+          : null,
+        // Đa nhãn: mọi khía cạnh vượt ngưỡng, không chỉ danh mục mạnh nhất
+        multiLabel: Boolean(explained.multiLabel),
+        thresholds: explained.thresholds || null,
+        detected: visobert.detectedAspects(explained.prediction),
+        checkpointTrainedAt: explained.checkpoint?.trainedAt || null
+      }
+    : { available: false, reason: model.reason || nlpStatus.reason };
+
+  const trace = {
+    totalMs: since(tStart),
+    input: {
+      text,
+      chars: text.length,
+      words: text.trim().split(/\s+/).length,
+      hasDigits: /\d/.test(text),
+      hasEmoji: /\p{Extended_Pictographic}/u.test(text)
+    },
+    pii: { ms: piiMs, masked: maskedOnly, types: piiTypes },
+    normalize: {
+      ms: normalizeMs,
+      normalized: normalized.normalized,
+      replacements: normalized.slangReplacements,
+      syllables: normalized.syllables
+    },
+    spam: {
+      ms: spamMs,
+      isSpam: spam.isSpam,
+      reasons: spam.reasons,
+      signals: spam.signals,
+      modelScore: spam.modelScore,
+      threshold: trustLayer.SPAM_MODEL_THRESHOLD
+    },
+    rules: {
+      ms: rulesMs,
+      matches: matches.slice(0, 5).map((m) => ({
+        category: m.category,
+        categoryLabel: taxonomy.categoryLabel(m.category),
+        cause: m.cause,
+        causeLabel: taxonomy.causeLabel(m.category, m.cause),
+        confidence: Number(m.confidence.toFixed(2)),
+        keywords: m.keywords || []
+      }))
+    },
+    model: modelTrace,
+    final: {
+      source: useModel ? 'visobert' : 'rules',
+      // Danh sách đầy đủ khía cạnh: một phản hồi có thể nêu nhiều vấn đề
+      aspects: useModel
+        ? visobert.detectedAspects(explained.prediction)
+        : matches.slice(0, 5).map((m) => ({
+            category: m.category,
+            categoryLabel: taxonomy.categoryLabel(m.category),
+            cause: m.cause,
+            causeLabel: taxonomy.causeLabel(m.category, m.cause),
+            owner: taxonomy.categoryOwner(m.category),
+            confidence: Number(m.confidence.toFixed(2))
+          })),
+      category: finalCategory,
+      categoryLabel: finalCategory ? taxonomy.categoryLabel(finalCategory) : 'Không phải khiếu nại',
+      cause: finalCause,
+      causeLabel: finalCategory ? taxonomy.causeLabel(finalCategory, finalCause) : null,
+      sentiment: useModel ? model.sentiment : rulesSentiment,
+      owner: finalCategory ? taxonomy.categoryOwner(finalCategory) : null,
+      blocked: spam.isSpam,
+      agreeWithRules: useModel ? (top ? top.category : null) === finalCategory : null,
+      note: useModel
+        ? 'Tín hiệu xác thực (trùng lặp, đột biến, hành vi tài khoản) cần nhìn cả quần thể phản hồi nên không tính trên một câu — xem trang Tin cậy dữ liệu.'
+        : 'Dịch vụ ViSoBERT không sẵn sàng nên bản ghi dùng luật từ khóa. Cảm xúc theo luật chỉ suy ra từ việc có khớp khiếu nại hay không.'
+    }
+  };
+
   res.json({
     original: text,
     masked: normalized.masked,
@@ -400,10 +556,20 @@ router.post('/analyze', wrap(async (req, res) => {
     piiTypes: normalized.piiTypes,
     syllables: normalized.syllables,
     aspects,
-    spam: { isSpam: spam.isSpam, reasons: spam.reasons },
-    note:
-      'Phân loại theo luật từ khóa (baseline B1). Mô hình PhoBERT tinh chỉnh thay thế lớp này ở bản chính; luật được giữ để đối chứng baseline.'
+    spam: { isSpam: spam.isSpam, reasons: spam.reasons, modelScore: spam.modelScore },
+    model,
+    trace,
+    note: model.available
+      ? 'Khía cạnh ở trên theo luật từ khóa (baseline B1); trường "model" là kết quả ViSoBERT tinh chỉnh để đối chiếu.'
+      : 'Phân loại theo luật từ khóa (baseline B1). ViSoBERT tinh chỉnh thay lớp này khi dịch vụ nlp_service có checkpoint; luật được giữ để đối chứng.'
   });
+}));
+
+/** Trạng thái dịch vụ ViSoBERT: có chạy không, đã tinh chỉnh chưa, học những đầu ra nào */
+router.get('/nlp/status', wrap(async (req, res) => {
+  const s = await visobert.status({ fresh: true });
+  const cfg = visobert.config();
+  res.json({ ...s, trustSignalsEnabled: cfg.trustSignals, configuredInputMode: cfg.inputMode });
 }));
 
 // ==================================================================
@@ -688,7 +854,10 @@ router.post('/scrape', wrap(async (req, res) => {
       subCategory: taxonomy.normalizeCause(category, ai.subCategory),
       sentiment: ai.sentiment || 'Neutral',
       aiSummary: ai.aiSummary || null,
-      entities: ai.entities || null
+      entities: ai.entities || null,
+      // Giữ đủ khía cạnh: mô hình đa nhãn có thể nêu nhiều vấn đề trong một phản hồi,
+      // `category` chỉ là danh mục chính dùng để đếm chỉ số
+      aspects: Array.isArray(ai.aspects) ? ai.aspects : []
     };
   });
 

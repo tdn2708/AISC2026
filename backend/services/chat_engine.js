@@ -97,7 +97,7 @@ const INTENTS = [
   {
     id: 'model_performance',
     keywords: ['f1', 'độ chính xác', 'chính xác bao nhiêu', 'mô hình', 'đánh giá mô hình',
-      'thực nghiệm', 'baseline', 'phobert', 'accuracy', 'precision', 'recall'],
+      'thực nghiệm', 'baseline', 'phobert', 'visobert', 'accuracy', 'precision', 'recall'],
     tools: ['evaluation_results'],
     focus: 'Báo cáo kết quả đo được, kèm giới hạn của phép đo'
   },

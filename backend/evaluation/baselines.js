@@ -12,11 +12,12 @@
  *   B1  Từ điển cảm xúc + luật          — nền cơ sở thấp nhất
  *   B2  Phân loại cảm xúc toàn câu      — đại diện cách làm của CRM hiện tại
  *   B3  Mô hình ngôn ngữ lớn, zero-shot — đại diện phương án "chỉ cần gọi API"
- *   M   PhoBERT tinh chỉnh + phân cấp   — mô hình đề xuất
+ *   M   ViSoBERT tinh chỉnh + phân cấp  — mô hình đề xuất
  */
 
 const taxonomy = require('../services/taxonomy');
 const { normalize } = require('../services/normalizer');
+const visobert = require('../services/visobert_client');
 
 const NEGATIVE_LEXICON = [
   'chậm', 'trễ', 'lâu', 'hỏng', 'lỗi', 'tệ', 'xấu', 'kém', 'mất', 'thiếu',
@@ -101,31 +102,54 @@ async function B3_zeroShotLLM(texts) {
 }
 
 /**
- * M — MÔ HÌNH ĐỀ XUẤT: PhoBERT tinh chỉnh cho ABSA + phân loại phân cấp.
+ * M — MÔ HÌNH ĐỀ XUẤT: ViSoBERT tinh chỉnh cho ABSA + phân loại phân cấp.
  *
- * ============ TRẠNG THÁI THẬT: CHƯA ĐƯỢC HUẤN LUYỆN ============
+ * Mô hình chạy trong dịch vụ `nlp_service/`. Dòng M CHỈ có số khi dịch vụ
+ * đang chạy VÀ đã nạp một checkpoint tinh chỉnh có học cả đầu ra cảm xúc
+ * lẫn danh mục. Trọng số gốc uitnlp/visobert là mô hình điền từ bị che,
+ * chưa hề học nhãn nào; báo F1 cho nó là bịa số.
  *
- * Không có trọng số mô hình nào trong kho mã này. Báo cáo một con số F1
- * cho M lúc này là bịa số — nên hàm trả về `available: false`, và bảng
- * kết quả sẽ ghi rõ "chưa huấn luyện" ở dòng M thay vì để trống hoặc
- * điền đại.
- *
- * Việc cần làm để dòng M có số thật (mục A.1–A.3 của kế hoạch thực nghiệm):
- *   1. Tải UIT-ViSFD (11.122 bình luận có nhãn ABSA, 10 khía cạnh)
- *   2. Gán nhãn tập chuyên ngành 3.000 đánh giá theo taxonomy 7x27
- *   3. Tinh chỉnh PhoBERT, xuất trọng số
- *   4. Cài `predict()` ở đây rồi chạy lại `npm run eval`
+ * Việc cần làm để dòng M có số thật:
+ *   1. npm run nlp:prepare  (sinh labels.json và tập gold đã tiền xử lý)
+ *   2. Chuẩn bị tập huấn luyện: UIT-ViSFD cho cảm xúc + tập tự gán nhãn
+ *      theo taxonomy 7x27 cho danh mục/nguyên nhân
+ *   3. python train.py --train ...   (tự loại câu trùng tập kiểm tra)
+ *   4. python service.py, rồi npm run eval
  */
 const M_proposed = {
-  available: false,
-  reason: 'Chưa có trọng số mô hình PhoBERT đã tinh chỉnh trong kho mã',
+  id: 'M',
+  name: 'ViSoBERT tinh chỉnh cho ABSA + phân loại phân cấp',
   nextSteps: [
-    'Tải bộ dữ liệu chuẩn UIT-ViSFD để đối chuẩn ABSA',
-    'Gán nhãn tập chuyên ngành theo taxonomy 7 danh mục x 27 nguyên nhân',
-    'Tinh chỉnh PhoBERT cho bài toán ABSA và phân loại phân cấp',
-    'Cài hàm predict() trong baselines.js rồi chạy lại npm run eval'
+    'Chạy npm run nlp:prepare để sinh nhãn và tập chuẩn đã tiền xử lý',
+    'Chuẩn bị tập huấn luyện: UIT-ViSFD (cảm xúc) + tập tự gán nhãn theo taxonomy 7 danh mục x 27 nguyên nhân',
+    'Tinh chỉnh ViSoBERT bằng nlp_service/train.py',
+    'Khởi động nlp_service/service.py rồi chạy lại npm run eval'
   ],
-  predict: null
+
+  /** Kiểm tra trạng thái thật của dịch vụ, không giả định */
+  async availability() {
+    const s = await visobert.status({ fresh: true });
+    if (!s.reachable || !s.finetuned) {
+      return { available: false, reason: s.reason };
+    }
+    if (!s.canLabel) {
+      return { available: false, reason: s.reason, checkpoint: s.checkpoint };
+    }
+    if (!s.checkpoint?.leakageGuard) {
+      return {
+        available: false,
+        reason: 'Checkpoint không ghi nhận đã chạy kiểm tra rò rỉ tập kiểm tra — không báo số cho nó',
+        checkpoint: s.checkpoint
+      };
+    }
+    return { available: true, checkpoint: s.checkpoint };
+  },
+
+  async predictBatch(texts) {
+    const preds = await visobert.predict(texts);
+    if (!preds) throw new Error('Dịch vụ ViSoBERT không trả kết quả dự đoán');
+    return preds.map(visobert.toBaselinePrediction);
+  }
 };
 
 const SYNC_BASELINES = [

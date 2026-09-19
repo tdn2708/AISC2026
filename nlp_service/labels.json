@@ -1,0 +1,52 @@
+{
+  "sentiment": [
+    "Positive",
+    "Negative",
+    "Neutral"
+  ],
+  "category": [
+    "Delivery",
+    "ProductQuality",
+    "CustomerService",
+    "Payment",
+    "TechnicalApp",
+    "ReturnRefund",
+    "PricePromotion",
+    "NONE"
+  ],
+  "cause": [
+    "NONE",
+    "Delivery.LateDelivery",
+    "Delivery.LostPackage",
+    "Delivery.DamagedInTransit",
+    "Delivery.WrongAddress",
+    "Delivery.CourierAttitude",
+    "ProductQuality.NotAsDescribed",
+    "ProductQuality.TechnicalDefect",
+    "ProductQuality.ExpiredOrStale",
+    "ProductQuality.MissingAccessory",
+    "ProductQuality.SuspectedCounterfeit",
+    "CustomerService.SlowResponse",
+    "CustomerService.BadAttitude",
+    "CustomerService.WrongInformation",
+    "CustomerService.UnresolvedCase",
+    "Payment.GatewayError",
+    "Payment.DoubleCharge",
+    "Payment.WrongPromotion",
+    "Payment.WrongInvoice",
+    "TechnicalApp.AppSlowOrCrash",
+    "TechnicalApp.LoginError",
+    "TechnicalApp.DisplayError",
+    "TechnicalApp.SearchError",
+    "ReturnRefund.SlowRefund",
+    "ReturnRefund.ReturnRejected",
+    "ReturnRefund.ComplexProcess",
+    "PricePromotion.HigherThanExpected",
+    "PricePromotion.MisleadingPromo"
+  ],
+  "spam": [
+    "not_spam",
+    "spam"
+  ],
+  "generatedFrom": "backend/services/taxonomy.js"
+}

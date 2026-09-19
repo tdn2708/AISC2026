@@ -44,6 +44,18 @@ npm install
 npm run dev
 ```
 
+**Chạy nhanh toàn bộ demo (Windows):** `pwsh -File .\start-demo.ps1` mở ViSoBERT, backend
+và giao diện trong ba cửa sổ riêng. Kịch bản trình bày: [docs/DEMO-VISOBERT.md](docs/DEMO-VISOBERT.md).
+
+**Dịch vụ ViSoBERT (tùy chọn).** Không chạy thì hệ thống lùi về lớp luật; mọi chỉ số
+thống kê không phụ thuộc vào nó. Cài đặt, huấn luyện và chạy: xem
+[nlp_service/README.md](nlp_service/README.md).
+
+```bash
+cd nlp_service
+python service.py           # http://127.0.0.1:8001 — backend tự nhận
+```
+
 Tài khoản dùng thử được in sẵn trên màn hình đăng nhập.
 
 ---
@@ -167,11 +179,19 @@ Ghi rõ để không ai hiểu nhầm mức độ trưởng thành của hệ th
   thật đã được xác minh — không có cách nào xác minh tuyệt đối một đánh giá là thật hay
   giả từ dữ liệu công khai. Do đó các chỉ số của Trust Layer được diễn giải là **mức độ
   đồng thuận với đánh giá của con người**, không phải độ chính xác tuyệt đối.
-- **Phân loại hiện chạy bằng luật từ khóa** (baseline B1) và mô hình ngôn ngữ theo lô.
-  Mô hình PhoBERT tinh chỉnh cho ABSA sẽ thay lớp này; luật được giữ lại để đối chứng.
-- **Chưa có số F1 đo trên tập kiểm tra giữ riêng.** Khung chỉ số đánh giá đã được định
-  nghĩa trong `services/statistics.js`, nhưng kết quả thực nghiệm cần tập UIT-ViSFD và
-  tập chuyên ngành tự gán nhãn.
+- **ViSoBERT đã tinh chỉnh (đa nhãn) nhưng nhãn chuyên ngành là nhãn sinh.** Trên tập kiểm
+  tra giữ riêng, Macro-F1 danh mục đạt 0.859 (luật: 0.161, đạt mục tiêu 0.82), nguyên nhân
+  0.616, nhưng cảm xúc chỉ 0.514 vì sai hết 3 câu Trung tính và một phần câu khen chứa từ
+  vựng khiếu nại. Một phản hồi nêu được nhiều vấn đề cùng lúc. Nhãn danh mục/nguyên nhân khi train lấy từ câu sinh theo
+  khung câu (một phần do LLM diễn đạt lại); nhãn cảm xúc lấy từ UIT-ViSFD. Khi dịch vụ
+  ViSoBERT tắt, phân loại lùi về luật từ khóa (baseline B1), và luật được giữ để đối chứng.
+- **Giấy phép ViSoBERT:** mặc định mô hình chỉ cấp cho nghiên cứu; nhóm đã xin phép nhóm
+  tác giả để sử dụng (ghi nhận 15/09/2026). Lưu văn bản chấp thuận cùng hồ sơ dự án.
+  UIT-ViSFD cũng chỉ miễn phí cho nghiên cứu; dùng thương mại phải liên hệ nhóm tác giả.
+- **Tập kiểm tra còn nhỏ.** 48 câu, một người gán, nên khoảng tin cậy rộng (accuracy danh
+  mục của ViSoBERT: 0.63–0.87). Con số là tín hiệu về hướng đi, chưa phải kết quả công
+  bố. Bước tiếp theo: tập chuyên ngành gán nhãn thật, có gán đôi để tính kappa, và một tập
+  kiểm tra mới có nhiều câu Trung tính và câu nhiều vấn đề hơn.
 
 ---
 
@@ -190,7 +210,13 @@ backend/
     playbook.js          Thư viện hành động, quy tắc phê duyệt
     ai_analyzer.js       Gán nhãn theo lô, dự báo, trợ lý hội thoại
     analysis_context.js  Ngữ cảnh dùng chung + bộ nhớ đệm
-  test/run_tests.js      37 kiểm thử hồi quy
+    visobert_client.js   Cầu nối tới dịch vụ ViSoBERT, suy giảm khi dịch vụ tắt
+  scripts/
+    prepare_nlp_data.js  Sinh nhãn + tiền xử lý dữ liệu huấn luyện ViSoBERT
+  test/run_tests.js      Kiểm thử hồi quy
+
+nlp_service/             Dịch vụ Python: tinh chỉnh và suy luận ViSoBERT
+visobert/                Trọng số gốc uitnlp/visobert (không commit, tải từ HuggingFace)
 
 src/components/
   Logo.jsx               Nhận diện thương hiệu dùng chung

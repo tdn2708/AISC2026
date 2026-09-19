@@ -100,7 +100,7 @@ const RiskCenter = () => {
             <ShieldAlert size={28} color="var(--risk-critical)" />
             Crisis Control Center
           </h1>
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Monitor and resolve high-severity incidents flagged by AI.</p>
+
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem 1rem', borderRadius: '99px', color: 'var(--risk-critical)', fontSize: '0.85rem', fontWeight: 500, border: '1px solid rgba(239, 68, 68, 0.2)' }}>
           <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--risk-critical)', display: 'inline-block', boxShadow: '0 0 8px var(--risk-critical)', animation: 'pulse 2s infinite' }}></span>

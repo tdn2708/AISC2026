@@ -26,9 +26,7 @@ const Settings = () => {
       <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h2 style={{ fontSize: '1.875rem', fontWeight: 700, margin: '0 0 0.25rem 0' }}>Settings</h2>
-          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.9rem' }}>
-            Manage your account preferences, system settings, and AI configurations.
-          </p>
+
         </div>
         <button 
           onClick={handleSave}

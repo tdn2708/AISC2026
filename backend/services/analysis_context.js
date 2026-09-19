@@ -13,6 +13,7 @@
 
 const { runTrustLayer } = require('./trust_layer');
 const taxonomy = require('./taxonomy');
+const visobert = require('./visobert_client');
 
 const CACHE_TTL_MS = 30 * 1000;
 let cache = { key: null, at: 0, value: null };
@@ -60,7 +61,21 @@ async function getContext(db, opts = {}) {
     ]);
 
     const feedbacks = rawFeedbacks.map(normalizeLabels);
-    const result = runTrustLayer(feedbacks, { orders: transactions });
+
+    // Tín hiệu ViSoBERT (vector nhúng cho T2, xác suất rác cho T1) nếu
+    // được bật và dịch vụ đang chạy. Lỗi ở đây không được chặn Trust
+    // Layer: không có tín hiệu mô hình thì chạy đúng như trước.
+    let nlp = null;
+    try {
+      nlp = await visobert.trustSignals(feedbacks);
+    } catch (e) {
+      console.warn('[VISOBERT] Bỏ qua tín hiệu mô hình cho Trust Layer:', e.message);
+    }
+
+    const result = runTrustLayer(feedbacks, {
+      orders: transactions,
+      modelSignals: nlp ? nlp.signals : undefined
+    });
 
     // Nhãn do người dùng kiểm duyệt GHI ĐÈ phán đoán của mô hình — đây là
     // nửa đầu của vòng lặp học chủ động: mỗi thao tác của người dùng là
@@ -96,6 +111,7 @@ async function getContext(db, opts = {}) {
       transactions,
       transactionCount: transactions.length,
       humanLabelCount: labels.length,
+      modelSignals: { ...result.modelSignals, source: nlp ? 'visobert' : null, ...(nlp ? nlp.meta : {}) },
       computedAt: new Date().toISOString()
     };
 

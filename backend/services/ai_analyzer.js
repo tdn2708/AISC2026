@@ -4,8 +4,9 @@
  * QUYẾT ĐỊNH KIẾN TRÚC (đồng thời là lập luận kinh doanh, không chỉ kỹ
  * thuật): mô hình ngôn ngữ lớn CHỈ được gọi ở tầng tổng hợp — gán nhãn
  * theo lô và diễn đạt cảnh báo — chứ không gọi cho từng phản hồi trong
- * đường chạy nóng. Phần xử lý khối lượng lớn do lớp luật và mô hình
- * PhoBERT tinh chỉnh đảm nhiệm, chạy được trên hạ tầng chi phí thấp.
+ * đường chạy nóng. Phần xử lý khối lượng lớn do mô hình ViSoBERT tinh
+ * chỉnh (xem visobert_client.js) và lớp luật đảm nhiệm, chạy được trên
+ * hạ tầng chi phí thấp.
  * Chênh lệch chi phí giữa hai cách làm này khoảng ba bậc độ lớn, và đó
  * chính là lý do mô hình giá dành cho SME khả thi.
  */
@@ -16,6 +17,7 @@ const axios = require('axios');
 
 const taxonomy = require('./taxonomy');
 const { normalize } = require('./normalizer');
+const visobert = require('./visobert_client');
 
 /**
  * KHỞI TẠO MUỘN (lazy) CÁC CLIENT MÔ HÌNH NGÔN NGỮ.
@@ -57,7 +59,9 @@ function llmAvailability() {
   };
 }
 
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+// llama-3.3-70b-versatile đã bị Groq gỡ (API trả 404), khiến nhánh Groq
+// âm thầm lùi về lớp luật. Kiểm tra lại bằng `node list_models.js` khi đổi.
+const GROQ_MODEL = 'openai/gpt-oss-120b';
 const OPENROUTER_MODEL = 'openai/gpt-4o-mini';
 const GEMINI_MODEL = 'gemini-2.5-flash';
 
@@ -167,9 +171,16 @@ function coerceResult(raw, originalText) {
  * quả của kiểm định thống kê trên cả cụm phản hồi (xem alert_engine),
  * phụ thuộc quy mô, xu hướng và tác động nghiệp vụ. Để mô hình ngôn ngữ
  * tự phán "Critical" cho một câu là gán mức nghiêm trọng bằng cảm tính.
+ *
+ * Thứ tự ưu tiên: ViSoBERT tinh chỉnh -> mô hình ngôn ngữ lớn -> lớp luật.
+ * ViSoBERT đứng đầu vì đây là đường chạy nóng: chạy cục bộ, không tốn phí
+ * theo lượt, không gửi văn bản khách hàng ra dịch vụ bên ngoài.
  */
 const analyzeFeedbackBatch = async (reviewsArray) => {
   if (!Array.isArray(reviewsArray) || reviewsArray.length === 0) return [];
+
+  const viaModel = await visobert.predictAnalysis(reviewsArray);
+  if (viaModel) return viaModel;
 
   const prompt = `Bạn là hệ thống gán nhãn phản hồi khách hàng tiếng Việt cho sàn thương mại điện tử.
 

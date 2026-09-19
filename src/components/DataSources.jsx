@@ -186,7 +186,7 @@ const DataSources = () => {
           <Database size={28} color="var(--accent-cyan)" />
           Integration Hub
         </h1>
-        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Manage enterprise data sources, workspaces, and monitor ingestion pipelines.</p>
+
       </div>
 
       {/* Top Metrics */}

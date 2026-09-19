@@ -195,7 +195,33 @@ Chạy `npm run eval` trong `backend/`. Kết quả trên **tập kiểm tra gi�
 | B1 | Từ điển cảm xúc + luật | **0.1611** | 0.9731 |
 | B2 | Phân loại cảm xúc toàn câu | không bóc tách được khía cạnh | — |
 | B3 | Mô hình ngôn ngữ zero-shot | chưa chạy (cần khóa API) | — |
-| M | PhoBERT tinh chỉnh | **chưa có số — chưa huấn luyện** | — |
+| M | ViSoBERT tinh chỉnh, đa nhãn | **0.8590** | 0.6844 (dùng để chọn epoch) |
+
+> **Cập nhật 15/09:** mô hình đề xuất chuyển từ PhoBERT sang **ViSoBERT** (uitnlp/visobert,
+> EMNLP 2023), đã tinh chỉnh và đo trên tập kiểm tra giữ riêng (48 câu):
+>
+> | Chỉ số | B1 luật | M một nhãn (15/09) | **M đa nhãn (16/09)** | Mục tiêu |
+> |---|---|---|---|---|
+> | Macro-F1 danh mục | 0.161 | 0.753 | **0.859** | 0.82, đạt |
+> | Accuracy danh mục | 0.333 | 0.771 | **0.875** (KTC 95%: 0.75–0.94) | — |
+> | Macro-F1 nguyên nhân | — | 0.563 | **0.616** | 0.70, chưa đạt |
+> | Macro-F1 cảm xúc | 0.439 | 0.828 | **0.514** | 0.78, chưa đạt |
+>
+> Đối đầu từng câu (danh mục, bản đa nhãn): cả hai đúng 14, **chỉ ViSoBERT đúng 28**, chỉ
+> luật đúng 2, cả hai sai 4.
+>
+> **16/09 — chuyển sang đa nhãn.** Bản một nhãn dùng softmax nên không thể nêu hai vấn đề
+> trong cùng một phản hồi ("giao chậm, nhắn shop không ai trả lời" chỉ ra Giao hàng). Bản
+> mới dùng sigmoid độc lập cho danh mục và nguyên nhân, train thêm 1.600 câu ghép nhiều vấn
+> đề, và ra đủ cả Giao hàng lẫn Dịch vụ khách hàng. Cái giá: **cảm xúc giảm** (0.828 → 0.514).
+> Toàn bộ mức giảm nằm ở 3 câu Trung tính và 3 câu Tích cực của tập kiểm tra (câu nêu ý định;
+> câu khen chứa từ vựng khiếu nại như "không phải chờ lâu"). Nhóm không tinh chỉnh dữ liệu
+> theo đúng các câu sai này để tránh rò rỉ; cần tập gán nhãn thật.
+>
+> **Giới hạn bắt buộc nêu kèm:** nhãn danh mục khi train lấy từ tập **sinh từ khung câu**
+> (một phần do LLM diễn đạt lại), chưa phải người gán trên phản hồi thật. Nhãn cảm xúc lấy
+> từ UIT-ViSFD. Tập kiểm tra nhỏ, một người gán. Chi tiết dữ liệu và chống rò rỉ nằm ở
+> `nlp_service/README.md`.
 
 **Khoảng cách 0.97 → 0.16 chính là phát hiện quan trọng nhất.** Cùng một bộ phân loại
 luật khớp gần như hoàn hảo trên tập đã dùng để tinh chỉnh từ khóa, nhưng sụp đổ trên câu

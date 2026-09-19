@@ -164,10 +164,7 @@ const TrustLayerPage = () => {
           <ShieldCheck size={26} color="var(--accent-cyan)" />
           Tầng Kiểm soát Tin cậy Dữ liệu
         </h1>
-        <p style={{ color: 'var(--text-secondary)', margin: 0, maxWidth: '65ch', lineHeight: 1.6 }}>
-          Tầng này không loại bỏ dữ liệu một cách nhị phân, mà gán cho mỗi phản hồi một
-          trọng số tin cậy. Mọi chỉ số phía sau được tính trên tổng trọng số thay vì đếm thô.
-        </p>
+
       </header>
 
       {/* --- Phễu dữ liệu + điểm sức khỏe --- */}

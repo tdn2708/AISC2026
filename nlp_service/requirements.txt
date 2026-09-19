@@ -1,0 +1,11 @@
+# Dịch vụ ViSoBERT. Bản CPU của torch cài riêng để khỏi kéo CUDA ~2GB:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# Máy có GPU (Colab, máy lab) thì cài torch bản thường.
+torch>=2.6
+transformers>=4.44,<5
+sentencepiece
+protobuf
+fastapi
+uvicorn[standard]
+numpy
+scikit-learn

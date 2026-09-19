@@ -79,7 +79,7 @@ const PRICING_TIERS = [
  * Quyết định kiến trúc quan trọng nhất về mặt chi phí: mô hình ngôn ngữ
  * lớn CHỈ được gọi ở tầng tổng hợp cảnh báo (vài chục lần mỗi ngày),
  * KHÔNG gọi cho từng phản hồi (hàng chục nghìn lần mỗi ngày). Phần xử
- * lý khối lượng lớn do lớp luật và mô hình PhoBERT tinh chỉnh đảm
+ * lý khối lượng lớn do lớp luật và mô hình ViSoBERT tinh chỉnh đảm
  * nhiệm, chạy được trên hạ tầng chi phí thấp.
  *
  * Chính chênh lệch này làm mô hình giá cho SME khả thi — và nó định
@@ -155,7 +155,7 @@ const COST_ASSUMPTIONS = {
   infraCostPerMonth: {
     value: 1200000,
     unit: 'đ',
-    basis: 'Máy chủ ứng dụng, cơ sở dữ liệu và suy luận PhoBERT ở quy mô nhỏ',
+    basis: 'Máy chủ ứng dụng, cơ sở dữ liệu và suy luận ViSoBERT ở quy mô nhỏ',
     confidence: CONFIDENCE.MEDIUM
   },
   customerAcquisitionCost: {

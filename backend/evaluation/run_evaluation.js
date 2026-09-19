@@ -33,6 +33,17 @@ const TARGETS = {
   falseRejectRate: 0.02
 };
 
+/**
+ * Câu kiểm tra mà nhóm ĐÃ ĐỌC khi phân tích lỗi mỉa mai, TRƯỚC khi thêm dữ
+ * liệu huấn luyện mỉa mai (16/09/2026). Dữ liệu mới không chép các câu này
+ * và đã qua bộ lọc trùng mặt chữ, nhưng việc thiết kế dữ liệu vẫn chịu ảnh
+ * hưởng từ chúng — nên mọi con số được báo KÈM một bộ số đã loại chúng ra.
+ */
+const SEEN_BEFORE_SARCASM_AUGMENTATION = [
+  'Giao hàng thần tốc ghê, có mỗi mười ngày thôi mà',
+  'Chất lượng tuyệt vời, dùng một hôm là hỏng rồi'
+];
+
 const SENTIMENT_LABELS = ['Positive', 'Negative', 'Neutral'];
 // 'NONE' đại diện cho "không phải khiếu nại thuộc taxonomy"
 const CATEGORY_LABELS = [...taxonomy.CATEGORY_KEYS, 'NONE'];
@@ -346,6 +357,48 @@ function runTrustLayerAblation() {
   };
 }
 
+/**
+ * ĐỐI ĐẦU TỪNG CÂU giữa luật từ khóa (B1) và mô hình đề xuất (M) trên tập
+ * kiểm tra. Bảng F1 nói "tốt hơn bao nhiêu"; bảng này cho thấy tốt hơn Ở
+ * ĐÂU — và quan trọng không kém, mô hình thua luật ở những câu nào. Liệt
+ * kê đủ cả hai chiều để phần demo không thành trình diễn chọn lọc.
+ */
+function buildHeadToHead(models) {
+  const b1 = models.find((m) => m.id === 'B1');
+  const m = models.find((x) => x.id === 'M');
+  if (!b1 || !m || !m.available || !m.predictionsTest || !b1.predictionsTest) {
+    return { available: false, reason: 'Cần cả B1 và M có dự đoán trên tập kiểm tra' };
+  }
+
+  const label = (cat, cause) =>
+    cat ? `${taxonomy.categoryLabel(cat)}${cause ? ' → ' + taxonomy.causeLabel(cat, cause) : ''}` : 'Không phải khiếu nại';
+
+  const rows = ASPECT_TEST.map((g, i) => {
+    const pb = b1.predictionsTest[i];
+    const pm = m.predictionsTest[i];
+    return {
+      text: g.text,
+      gold: label(g.category, g.cause),
+      goldSentiment: g.sentiment,
+      rules: label(pb.category, pb.cause),
+      rulesCorrect: asLabel(pb.category) === asLabel(g.category),
+      model: label(pm.category, pm.cause),
+      modelSentiment: pm.sentiment,
+      modelCorrect: asLabel(pm.category) === asLabel(g.category)
+    };
+  });
+
+  return {
+    available: true,
+    total: rows.length,
+    bothCorrect: rows.filter((r) => r.rulesCorrect && r.modelCorrect).length,
+    onlyModelCorrect: rows.filter((r) => !r.rulesCorrect && r.modelCorrect),
+    onlyRulesCorrect: rows.filter((r) => r.rulesCorrect && !r.modelCorrect),
+    bothWrong: rows.filter((r) => !r.rulesCorrect && !r.modelCorrect).length,
+    note: 'So khớp ở mức danh mục (Level 1) trên tập kiểm tra giữ riêng'
+  };
+}
+
 // ==================================================================
 // ĐIỀU PHỐI
 // ==================================================================
@@ -397,7 +450,8 @@ async function main() {
       categoryAccuracyCI: ev.categoryAccuracyCI,
       detail: ev,
       devCategoryMacroF1: devEv.category.macroF1,
-      errors: collectErrors(preds, ASPECT_TEST)
+      errors: collectErrors(preds, ASPECT_TEST),
+      predictionsTest: preds
     });
   }
 
@@ -441,15 +495,74 @@ async function main() {
     });
   }
 
-  // --- M: mô hình đề xuất ---
-  models.push({
-    id: 'M',
-    name: 'PhoBERT tinh chỉnh cho ABSA + phân loại phân cấp',
-    role: 'Mô hình đề xuất',
-    available: false,
-    reason: M_proposed.reason,
-    nextSteps: M_proposed.nextSteps
-  });
+  // --- M: mô hình đề xuất (ViSoBERT tinh chỉnh, qua nlp_service) ---
+  const mStatus = await M_proposed.availability();
+  if (mStatus.available) {
+    try {
+      console.log('\nĐang gọi dịch vụ ViSoBERT cho dòng M...');
+      const preds = await M_proposed.predictBatch(ASPECT_TEST.map((g) => g.text));
+      const ev = evaluateAspectModel(preds, ASPECT_TEST);
+      const devPreds = await M_proposed.predictBatch(ASPECT_DEV.map((g) => g.text));
+      const devEv = evaluateAspectModel(devPreds, ASPECT_DEV);
+      models.push({
+        id: M_proposed.id,
+        name: M_proposed.name,
+        role: 'Mô hình đề xuất',
+        available: true,
+        canDetectAspect: true,
+        categoryMacroF1: ev.category.macroF1,
+        causeMacroF1: ev.cause.macroF1,
+        sentimentMacroF1: ev.sentiment.macroF1,
+        categoryAccuracy: ev.category.accuracy,
+        categoryAccuracyCI: ev.categoryAccuracyCI,
+        detail: ev,
+        devCategoryMacroF1: devEv.category.macroF1,
+        errors: collectErrors(preds, ASPECT_TEST),
+        predictionsTest: preds,
+        checkpoint: mStatus.checkpoint,
+        // Tập dev là tập train.py dùng để chọn epoch, nên F1 dev của M không độc lập
+        devNote: 'Tập phát triển đã được dùng để chọn epoch khi tinh chỉnh'
+      });
+    } catch (e) {
+      models.push({
+        id: M_proposed.id, name: M_proposed.name, role: 'Mô hình đề xuất',
+        available: false, reason: 'Lỗi khi gọi dịch vụ ViSoBERT: ' + e.message,
+        nextSteps: M_proposed.nextSteps
+      });
+    }
+  } else {
+    models.push({
+      id: M_proposed.id,
+      name: M_proposed.name,
+      role: 'Mô hình đề xuất',
+      available: false,
+      reason: mStatus.reason,
+      nextSteps: M_proposed.nextSteps
+    });
+  }
+
+  // --- Đối đầu B1 và M trên từng câu của tập kiểm tra ---
+  const headToHead = buildHeadToHead(models);
+
+  // Bộ số phụ: loại các câu kiểm tra đã bị NHÌN THẤY trước khi thiết kế tăng
+  // cường dữ liệu mỉa mai (xem SEEN_BEFORE_SARCASM_AUGMENTATION)
+  const seenIdx = new Set(
+    ASPECT_TEST.map((g, i) => (SEEN_BEFORE_SARCASM_AUGMENTATION.includes(g.text) ? i : -1)).filter((i) => i >= 0)
+  );
+  const unseenTest = ASPECT_TEST.filter((_, i) => !seenIdx.has(i));
+  for (const m of models) {
+    if (!m.predictionsTest) continue;
+    const ev = evaluateAspectModel(m.predictionsTest.filter((_, i) => !seenIdx.has(i)), unseenTest);
+    m.excludingSeenSarcasm = {
+      excluded: seenIdx.size,
+      n: unseenTest.length,
+      categoryMacroF1: ev.category.macroF1,
+      causeMacroF1: ev.cause.macroF1,
+      sentimentMacroF1: ev.sentiment.macroF1
+    };
+  }
+  // Dự đoán thô chỉ phục vụ bảng đối đầu; không ghi vào results.json
+  for (const m of models) delete m.predictionsTest;
 
   // --- In bảng kết quả ---
   console.log('\n' + '-'.repeat(64));
@@ -489,6 +602,15 @@ async function main() {
     );
     console.log(
       '  chính là lý do cần mô hình ngôn ngữ tinh chỉnh, chứ không phải thêm từ khóa.'
+    );
+  }
+
+  for (const m of models) {
+    if (!m.excludingSeenSarcasm) continue;
+    const x = m.excludingSeenSarcasm;
+    console.log(
+      `  ${m.id}: loại ${x.excluded} câu mỉa mai đã nhìn thấy (còn ${x.n}) -> danh mục ${x.categoryMacroF1.toFixed(4)}, ` +
+      `nguyên nhân ${x.causeMacroF1.toFixed(4)}, cảm xúc ${x.sentimentMacroF1.toFixed(4)}`
     );
   }
 
@@ -545,7 +667,12 @@ async function main() {
 
   console.log('\nGhi chú bắt buộc khi trích dẫn các con số trên:');
   console.log('  - Đây là kết quả trên tập do nhóm tự gán nhãn, cỡ mẫu nhỏ, CHƯA phải UIT-ViSFD.');
-  console.log('  - Dòng M (mô hình đề xuất) chưa có số vì chưa huấn luyện PhoBERT.');
+  const mRow = models.find((m) => m.id === 'M');
+  console.log(
+    mRow && mRow.available
+      ? `  - Dòng M đo bằng checkpoint ViSoBERT train lúc ${mRow.checkpoint?.trainedAt}; F1 dev của M không độc lập vì dev dùng để chọn epoch.`
+      : `  - Dòng M (mô hình đề xuất) chưa có số: ${mRow ? mRow.reason : 'không xác định'}.`
+  );
   console.log('  - Các chỉ số chưa đạt mục tiêu được báo cáo nguyên trạng, không làm tròn có lợi.');
 
   // --- Ghi tệp kết quả ---
@@ -561,6 +688,7 @@ async function main() {
     targets: TARGETS,
     leakageAudit: leakage,
     models,
+    headToHead,
     trustLayer: trustEval,
     ablations: { ...ablations, trustLayer: trustAblation }
   };

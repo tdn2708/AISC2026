@@ -115,7 +115,14 @@ req('A3b', 'Kết quả đánh giá nêu rõ giới hạn, không tuyên bố v�
   assert.strictEqual(results.dataset.isPublishedBenchmark, false, 'phải ghi rõ chưa phải benchmark đã công bố');
   assert.strictEqual(results.dataset.cohensKappa, null, 'chưa gán đôi thì kappa phải là null');
   const m = results.models.find((x) => x.id === 'M');
-  assert.strictEqual(m.available, false, 'mô hình đề xuất chưa huấn luyện thì không được có số');
+  assert.ok(m, 'thiếu dòng M (mô hình đề xuất)');
+  if (m.available) {
+    // Có số thì phải truy vết được về một checkpoint tinh chỉnh đã qua kiểm tra rò rỉ
+    assert.ok(m.checkpoint && m.checkpoint.trainedAt, 'dòng M có số nhưng không kèm checkpoint tinh chỉnh');
+    assert.strictEqual(m.checkpoint.leakageGuard, true, 'checkpoint của dòng M chưa qua kiểm tra rò rỉ tập kiểm tra');
+  } else {
+    assert.ok(m.reason, 'dòng M chưa có số thì phải nêu lý do');
+  }
 });
 
 req('A3c', 'Có kiểm tra rò rỉ tập kiểm tra', () => {

@@ -179,12 +179,6 @@ const Analytics = () => {
 
       {/* ---------- Header ---------- */}
       <header className="mb-6">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 ring-1 ring-accent/25">
-          <Sparkles size={13} className="text-accent-hi" aria-hidden="true" />
-          <span className="data-num text-[0.66rem] font-semibold uppercase tracking-[0.18em] text-accent-hi">
-            AI Forecast Engine
-          </span>
-        </div>
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="m-0 text-[1.75rem] font-bold tracking-tight text-ink-hi">Phân tích chiến lược</h2>
           {activeChips.map((chip) => (
@@ -196,10 +190,6 @@ const Analytics = () => {
             </span>
           ))}
         </div>
-        <p className="mt-1.5 text-[0.9rem] text-ink-lo">
-          Dự báo và khuyến nghị do mô hình sinh
-          {activeChips.length > 0 || productFilter !== 'All' ? ', theo đúng bộ lọc đang áp dụng' : ''}
-        </p>
       </header>
 
       <FilterBar

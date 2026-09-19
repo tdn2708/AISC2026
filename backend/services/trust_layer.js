@@ -87,9 +87,9 @@ function assignProvenanceTier(fb) {
 // ==================================================================
 
 /**
- * Bộ lọc hai lớp. Lớp quy tắc ở đây; lớp mô hình (TF-IDF + Linear SVM
- * làm baseline, PhoBERT tinh chỉnh làm bản chính) cắm vào qua tham số
- * `modelScore` khi mô hình đã sẵn sàng.
+ * Bộ lọc hai lớp. Lớp quy tắc ở đây; lớp mô hình (đầu ra spam của
+ * ViSoBERT tinh chỉnh) cắm vào qua tham số `modelScore` — xác suất rác
+ * trong [0,1], hoặc null khi mô hình chưa sẵn sàng.
  *
  * Tiêu chí tối ưu: ưu tiên Precision >= 0.95 thay vì Recall.
  * Nguyên tắc thiết kế: bỏ sót một phản hồi rác chỉ gây nhiễu nhẹ,
@@ -99,7 +99,16 @@ function assignProvenanceTier(fb) {
  */
 const MIN_MEANINGFUL_SYLLABLES = 5;
 
-function runSpamFilter(fb, normalized) {
+/**
+ * Mô hình KHÔNG được một mình loại phản hồi. Nó chỉ nâng một dấu hiệu
+ * yếu (có liên hệ, có link, có mã, có lời chào mời — từng cái riêng lẻ
+ * lớp luật chưa đủ tin để chặn) thành bằng chứng đủ mạnh. Một khiếu nại
+ * thật viết gay gắt, không kèm dấu hiệu thương mại nào, không bao giờ bị
+ * chặn chỉ vì mô hình chấm điểm cao.
+ */
+const SPAM_MODEL_THRESHOLD = 0.95;
+
+function runSpamFilter(fb, normalized, modelScore = null) {
   const raw = fb.originalText || '';
   const sig = spamSignals(raw);
   const reasons = [];
@@ -133,10 +142,21 @@ function runSpamFilter(fb, normalized) {
     reasons.push('Tỉ lệ ký tự lặp bất thường');
   }
 
+  const hasModelScore = Number.isFinite(modelScore);
+  if (hasModelScore && modelScore >= SPAM_MODEL_THRESHOLD && reasons.length === 0) {
+    const weakSignal = sig.hasContact || sig.hasPhone || sig.hasCommerce || sig.hasUrl || sig.hasPromoCode;
+    if (weakSignal) {
+      reasons.push(
+        `Mô hình ViSoBERT chấm xác suất rác ${modelScore.toFixed(2)}, kèm dấu hiệu liên hệ hoặc chào mời`
+      );
+    }
+  }
+
   return {
     isSpam: reasons.length > 0,
     reasons,
-    signals: sig
+    signals: sig,
+    modelScore: hasModelScore ? Number(modelScore.toFixed(4)) : null
   };
 }
 
@@ -152,8 +172,21 @@ const DUPLICATE_CONFIG = {
   // Mật độ tối thiểu (phản hồi/giờ). Nội dung giống nhau rải đều nhiều
   // ngày KHÔNG phải chiến dịch — câu ngắn kiểu "giao hàng nhanh" trùng
   // nhau là chuyện bình thường. Thứ đáng ngờ là giống nhau VÀ dồn cục.
-  minDensityPerHour: 1.0
+  minDensityPerHour: 1.0,
+  // Ngưỡng riêng cho vector nhúng ViSoBERT gốc. Đo trên 3.160 cặp câu khác
+  // nhau của ASPECT_GOLD: cosine cao nhất 0.756; bản chép gần nguyên văn
+  // cho 0.86–0.97. Đặt 0.90 để giữ khoảng cách an toàn với câu không liên
+  // quan. Chi tiết và giới hạn: nlp_service/README.md, mục hiệu chỉnh.
+  embeddingSimilarityThreshold: 0.9
 };
+
+/** Tích vô hướng của hai vector đã chuẩn hóa L2 = độ tương đồng cosine */
+function dotProduct(a, b) {
+  let s = 0;
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) s += a[i] * b[i];
+  return s;
+}
 
 /** Vector tần suất token, dùng cho độ tương đồng cosine */
 function termVector(text) {
@@ -211,18 +244,30 @@ function hammingDistance(a, b) {
 /**
  * TÍN HIỆU (1): TRÙNG LẶP GẦN VỀ NỘI DUNG.
  * Đánh giá thuê thường được sinh từ vài mẫu câu. Biểu diễn mỗi phản
- * hồi bằng vector token (bản production dùng vector nhúng PhoBERT),
- * lọc thô bằng SimHash, sau đó gom cụm theo độ tương đồng cosine trong
- * cửa sổ thời gian. Cụm >= 5 phản hồi, tương đồng TB > 0.90, trong 48
- * giờ được đánh dấu là cụm nghi vấn.
+ * hồi bằng vector token, lọc thô bằng SimHash, sau đó gom cụm theo độ
+ * tương đồng cosine trong cửa sổ thời gian. Cụm >= 5 phản hồi, tương
+ * đồng TB > 0.90, trong 48 giờ được đánh dấu là cụm nghi vấn.
+ *
+ * Khi có vector nhúng ViSoBERT (`it._embedding`), nó là kênh BỔ SUNG, không
+ * thay thế: một cặp được tính là trùng lặp nếu vector token HOẶC vector nhúng
+ * vượt ngưỡng. Nhờ vậy bật mô hình không bao giờ làm mất một cụm mà vector
+ * token đã bắt được. Mọi ràng buộc thời gian và mật độ giữ nguyên.
+ *
+ * GIỚI HẠN ĐÃ ĐO: vector nhúng của trọng số gốc KHÔNG tách được câu viết lại
+ * bằng từ khác khỏi câu không liên quan (hai nhóm chồng lấn hoàn toàn ở vùng
+ * cosine 0.3–0.6). Ở ngưỡng an toàn nó chỉ bổ sung các bản chép gần nguyên
+ * văn mà vector token bỏ sót, ví dụ khi có chèn ký tự. Muốn bắt câu viết lại
+ * phải tinh chỉnh bộ mã hóa theo kiểu học tương phản trên cặp câu đồng nghĩa.
  */
 function detectNearDuplicateClusters(items, config = DUPLICATE_CONFIG) {
   const windowMs = config.windowHours * 3600 * 1000;
+  const embeddingThreshold = config.embeddingSimilarityThreshold ?? DUPLICATE_CONFIG.embeddingSimilarityThreshold;
   const prepared = items.map((it, idx) => ({
     idx,
     time: new Date(it.timestamp || Date.now()).getTime(),
     hash: simHash(it._normalized),
     vector: termVector(it._normalized),
+    embedding: it._embedding || null,
     productName: it.productName || 'unknown'
   }));
 
@@ -240,13 +285,20 @@ function detectNearDuplicateClusters(items, config = DUPLICATE_CONFIG) {
       if (assigned[j] !== -1) continue;
       const cand = prepared[j];
       if (Math.abs(cand.time - seed.time) > windowMs) continue;
-      // Lọc thô: SimHash cách nhau quá xa thì bỏ qua, khỏi tính cosine
-      if (hammingDistance(seed.hash, cand.hash) > 12) continue;
 
-      const sim = cosineSimilarity(seed.vector, cand.vector);
-      if (sim >= config.similarityThreshold) {
+      // Lọc thô: SimHash cách nhau quá xa thì bỏ qua cosine của vector token
+      const tokenSim = hammingDistance(seed.hash, cand.hash) > 12
+        ? 0
+        : cosineSimilarity(seed.vector, cand.vector);
+      const embeddingSim = seed.embedding && cand.embedding
+        ? dotProduct(seed.embedding, cand.embedding)
+        : null;
+      const tokenHit = tokenSim >= config.similarityThreshold;
+      const embeddingHit = embeddingSim !== null && embeddingSim >= embeddingThreshold;
+
+      if (tokenHit || embeddingHit) {
         members.push(j);
-        sims.push(sim);
+        sims.push(tokenHit ? tokenSim : embeddingSim);
       }
     }
 
@@ -728,7 +780,10 @@ function unifiedWeight(tierWeight, A, ageDays, halfLifeDays = DEFAULT_HALF_LIFE_
 
 /**
  * @param {Array} feedbacks danh sách phản hồi thô
- * @param {{ orders?: Array, halfLifeDays?: number, now?: Date }} options
+ * @param {{ orders?: Array, halfLifeDays?: number, now?: Date,
+ *           modelSignals?: Array<{ spamScore?: number|null, embedding?: ArrayLike<number>|null }> }} options
+ *        modelSignals căn thẳng hàng với feedbacks, lấy từ visobert_client.trustSignals().
+ *        Hàm này giữ ĐỒNG BỘ và không gọi mạng; tín hiệu mô hình được tính trước ở tầng gọi.
  * @returns {{ items: Array, clusters: Array, bursts: Array, funnel: object }}
  */
 function runTrustLayer(feedbacks, options = {}) {
@@ -746,11 +801,20 @@ function runTrustLayer(feedbacks, options = {}) {
     : 0;
 
   // --- Chuẩn hóa văn bản + T0 + T1 ---
-  const items = feedbacks.map((fb) => {
+  const modelSignals = Array.isArray(options.modelSignals) ? options.modelSignals : [];
+  const items = feedbacks.map((fb, idx) => {
     const normalized = normalize(fb.originalText);
     const provenance = assignProvenanceTier(fb);
-    const spam = runSpamFilter(fb, normalized);
-    return { ...fb, _normalized: normalized.normalized, _norm: normalized, provenance, spam };
+    const ms = modelSignals[idx] || {};
+    const spam = runSpamFilter(fb, normalized, ms.spamScore ?? null);
+    return {
+      ...fb,
+      _normalized: normalized.normalized,
+      _norm: normalized,
+      _embedding: ms.embedding || null,
+      provenance,
+      spam
+    };
   });
 
   // Nội dung rác bị loại khỏi các tín hiệu T2 — không để spam làm nhiễu
@@ -761,6 +825,11 @@ function runTrustLayer(feedbacks, options = {}) {
 
   // --- T2: năm nhóm tín hiệu ---
   const { clusters, assignment } = detectNearDuplicateClusters(clean);
+  const embeddingsUsed = clean.filter((it) => it._embedding).length;
+  // Vector 768 chiều mỗi phản hồi không được đi tiếp vào ngữ cảnh dùng
+  // chung — nó sẽ bị trả nguyên ra API ở những endpoint trả item thô
+  for (const it of items) delete it._embedding;
+
   const { burstScore, bursts } = detectBursts(clean);
   const { perItem: accountScores, perAuthor } = detectAccountAnomalies(clean);
 
@@ -879,7 +948,11 @@ function runTrustLayer(feedbacks, options = {}) {
     })),
     bursts,
     accountProfiles: perAuthor,
-    funnel
+    funnel,
+    modelSignals: {
+      embeddingsUsed,
+      spamScoresUsed: items.filter((it) => it.spam.modelScore !== null).length
+    }
   };
 }
 
@@ -1000,6 +1073,7 @@ module.exports = {
   AUTHENTICITY_MODEL,
   DEFAULT_HALF_LIFE_DAYS,
   DUPLICATE_CONFIG,
+  SPAM_MODEL_THRESHOLD,
   HEALTH_WEIGHTS,
   assignProvenanceTier,
   runSpamFilter,

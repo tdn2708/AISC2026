@@ -61,7 +61,8 @@ async function startServer() {
           'GET  /api/recommendations',
           'POST /api/recommendations/decision',
           'GET  /api/taxonomy',
-          'POST /api/analyze'
+          'POST /api/analyze',
+          'GET  /api/nlp/status'
         ]
       });
     });
