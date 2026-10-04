@@ -1,98 +1,108 @@
 /* ==================================================================
-   TAILWIND CHO DASHBOARD
+   TAILWIND
    ------------------------------------------------------------------
-   Chỉ nạp theme + utilities, KHÔNG nạp preflight: các trang cũ viết
-   bằng style nội tuyến dựa vào mặc định của trình duyệt (viền nút,
-   ô nhập), preflight sẽ xoá chúng mà không báo lỗi.
+   Chỉ nạp theme + utilities, KHÔNG nạp preflight: Lab và vài khối cũ
+   vẫn dựa vào mặc định của trình duyệt cho nút và ô nhập.
 
    utilities được import KHÔNG qua @layer. index.css có reset
-   `* { padding: 0 }` không nằm trong layer nào, và CSS ngoài layer
-   luôn thắng CSS trong layer bất kể độ đặc hiệu — nếu để utilities
-   trong layer thì mọi lớp p-4, m-2 đều bị reset đè mất.
+   `* { padding: 0 }` không nằm trong layer nào, và CSS ngoài layer luôn
+   thắng CSS trong layer bất kể độ đặc hiệu — nếu để utilities trong
+   layer thì mọi lớp p-4, m-2 đều bị reset đè mất.
+
+   Giá trị màu nằm ở index.css (:root = Mist, [data-theme=dark] = Dusk).
    ================================================================== */
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css";
 @source "../";
 
-/* Token bổ sung. Màu mức độ và màu nền đã có trong index.css, ở đây chỉ
-   thêm những gì dashboard cần mà hệ cũ chưa có. */
-:root {
-  --sev-med: #E2C15A;
-  --sev-low: #8496A0;
-
-  /* Cảm xúc là thang CÓ THỨ TỰ nên dùng cặp phân kỳ nóng/lạnh với xám
-     trung tính ở giữa. Không dùng đỏ/lục: cặp đó hỏng với người mù màu
-     đỏ-lục. Đã kiểm định trên nền #10161a: ΔE CVD 19,2, tương phản ≥ 3:1. */
-  --viz-neg: #E66767;
-  --viz-neu: #6B7780;
-  --viz-pos: #3987E5;
-  --viz-grid: #1F282F;
-
-  --glass-bg: rgb(23 31 37 / 0.58);
-  --glass-line: rgb(255 255 255 / 0.08);
-  --glass-hi: rgb(255 255 255 / 0.045);
-}
-
-[data-theme='light'] {
-  --sev-med: #8A6D00;
-  --sev-low: #5E7079;
-  --viz-neg: #E34948;
-  --viz-neu: #9AA5AB;
-  --viz-pos: #2A78D6;
-  --viz-grid: #E8EDEF;
-  --glass-bg: rgb(255 255 255 / 0.72);
-  --glass-line: rgb(14 21 25 / 0.08);
-  --glass-hi: rgb(255 255 255 / 0.6);
-}
-
-/* `inline`: utility trỏ thẳng vào biến CSS, nên đổi data-theme là đổi
-   màu ngay, không cần build lại. */
 @theme inline {
   --color-canvas: var(--canvas);
-  --color-surface: var(--surface);
+  --color-surface: var(--surface-solid);
   --color-raised: var(--raised);
   --color-line: var(--border);
+  --color-line-soft: var(--border-soft);
   --color-ink-hi: var(--text-hi);
   --color-ink-mid: var(--text-mid);
   --color-ink-lo: var(--text-lo);
   --color-accent: var(--accent);
   --color-accent-hi: var(--accent-hi);
+  --color-accent-dim: var(--accent-dim);
+  --color-on-accent: var(--on-accent);
+  --color-blush: var(--blush);
+  --color-sky: var(--sky);
   --color-crit: var(--sev-crit);
   --color-high: var(--sev-high);
   --color-med: var(--sev-med);
+  --color-low: var(--sev-low);
   --color-ok: var(--sev-ok);
   --color-neg: var(--viz-neg);
   --color-neu: var(--viz-neu);
   --color-pos: var(--viz-pos);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
-/* Kính mờ. Chỉ có tác dụng khi phía sau có thứ để làm mờ — đó là lý do
-   Dashboard đặt các đốm sáng môi trường phía sau lưới. */
+@theme {
+  --animate-fade-up: fade-up 220ms cubic-bezier(.2, .8, .2, 1) both;
+  --animate-pop-in: pop-in 180ms cubic-bezier(.2, .8, .2, 1) both;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(4px) scale(.98); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+/* Kính mờ: viền trắng mảnh + vệt sáng mép trên như UI-kit tham chiếu */
 @utility glass {
-  background: linear-gradient(180deg, var(--glass-hi), transparent 45%), var(--glass-bg);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  backdrop-filter: blur(18px) saturate(140%);
+  background: linear-gradient(180deg, var(--glass-hi), transparent 38%), var(--glass-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid var(--glass-line);
-  box-shadow: inset 0 1px 0 0 var(--glass-hi);
+  box-shadow: var(--glass-shade);
 }
 
-/* Ánh sáng dạ quang CHỈ dành cho luồng khẩn cấp. Dùng cho mọi thứ thì
-   nó thôi báo hiệu điều gì. */
+/* Kính đặc hơn cho panel chứa dữ liệu dày — chữ nhỏ phải đọc rõ */
+@utility glass-strong {
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--glass-shade);
+}
+
+/* Ánh sáng chỉ dành cho luồng khẩn cấp */
 @utility glow-crit {
   box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--sev-crit) 50%, transparent),
-    0 0 32px -6px color-mix(in oklab, var(--sev-crit) 55%, transparent),
-    inset 0 1px 0 0 var(--glass-hi);
+    0 0 0 1px color-mix(in oklab, var(--sev-crit) 45%, transparent),
+    0 0 30px -6px color-mix(in oklab, var(--sev-crit) 45%, transparent),
+    var(--glass-shade);
 }
-
 @utility glow-high {
   box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--sev-high) 38%, transparent),
-    0 0 26px -8px color-mix(in oklab, var(--sev-high) 45%, transparent),
-    inset 0 1px 0 0 var(--glass-hi);
+    0 0 0 1px color-mix(in oklab, var(--sev-high) 35%, transparent),
+    0 0 24px -8px color-mix(in oklab, var(--sev-high) 40%, transparent),
+    var(--glass-shade);
 }
 
-/* Nút trong vùng dashboard mới bỏ kiểu mặc định của trình duyệt.
+/* Nhãn khu vực kiểu kỹ thuật: "01 · CHỈ SỐ" */
+@utility eyebrow {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-lo);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .glass-strong { background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* Nút trong vùng giao diện mới bỏ kiểu mặc định của trình duyệt.
    :where() giữ độ đặc hiệu bằng 0 để mọi utility vẫn thắng. */
 :where(.cx) button {
   font: inherit;
@@ -101,3 +111,5 @@
   border: 0;
   cursor: pointer;
 }
+:where(.cx) button:disabled { cursor: not-allowed; }
+:where(.cx) input, :where(.cx) select, :where(.cx) textarea { font: inherit; color: inherit; }

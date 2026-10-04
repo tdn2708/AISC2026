@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Download, FileText, FileSpreadsheet, Calendar, Filter, Zap, CheckCircle, Loader2, Trash2, ChevronDown } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet, Calendar, Trash2, Eye } from 'lucide-react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  AreaChart, Area, Cell, Legend, ComposedChart, Line, ReferenceDot, ReferenceLine
+  Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  AreaChart, Area, Legend, ComposedChart, Line, ReferenceDot, ReferenceLine
 } from 'recharts';
-import { REPORT, fmtVnd, fmtInt, DeltaPill, SeverityDot, buildTakeaways, buildPareto, findPeak } from './report_kit';
+import { REPORT, fmtInt, DeltaPill, SeverityDot, buildTakeaways, buildPareto, findPeak } from './report_kit';
 import FilterBar from './FilterBar';
+import { PageHeader, GlassPanel, Button, Segmented, Badge, EmptyState, Modal, TextField, Toast } from './ui';
 
 const Reports = () => {
   const [downloadingCsv, setDownloadingCsv] = useState(false);
@@ -28,7 +29,6 @@ const Reports = () => {
     } catch { return []; }
   });
   const [historyFilter, setHistoryFilter] = useState('All'); // 'All', 'PDF', 'CSV'
-  const [showHistoryFilter, setShowHistoryFilter] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('reportHistory', JSON.stringify(reportHistory));
@@ -51,21 +51,25 @@ const Reports = () => {
     setReportHistory(prev => prev.filter(r => r.id !== id));
   };
 
-  const clearAllHistory = () => {
-    if (window.confirm('Bạn có chắc muốn xóa toàn bộ lịch sử báo cáo?')) {
-      setReportHistory([]);
-    }
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [exportDialog, setExportDialog] = useState(null); // { type: 'CSV' | 'PDF', name }
+
+  const openExport = (type) =>
+    setExportDialog({ type, name: `${type === 'CSV' ? 'CX_Data' : 'Executive_Report'}_${new Date().toISOString().split('T')[0]}` });
+
+  const runExport = () => {
+    const { type, name } = exportDialog;
+    setExportDialog(null);
+    if (type === 'CSV') handleExportCSV(name);
+    else handleExportPDF(name);
   };
 
   const filteredHistory = historyFilter === 'All' 
     ? reportHistory 
     : reportHistory.filter(r => r.type === historyFilter);
 
-  const handleExportCSV = async () => {
-    // Prompt user for custom filename
-    const userFilename = window.prompt('Đặt tên file CSV:', `CX_Report_${new Date().toISOString().split('T')[0]}`);
-    if (userFilename === null) return; // User cancelled
-    const filename = (userFilename.trim() || 'CX_Report') + '.csv';
+  const handleExportCSV = async (name) => {
+    const filename = (name?.trim() || 'CX_Report') + '.csv';
 
     try {
       setDownloadingCsv(true);
@@ -164,13 +168,9 @@ const Reports = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewMode, timeFilter, sourceFilter, productFilter]);
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = async (name) => {
     if (!pdfTemplateRef.current) return;
-
-    // Prompt user for custom filename
-    const userFilename = window.prompt('Đặt tên file PDF:', `Executive_Report_${new Date().toISOString().split('T')[0]}`);
-    if (userFilename === null) return; // User cancelled
-    const filename = (userFilename.trim() || 'Executive_Report') + '.pdf';
+    const filename = (name?.trim() || 'Executive_Report') + '.pdf';
 
     try {
       setGeneratingPdf(true);
@@ -290,7 +290,7 @@ const Reports = () => {
         // giới khối nên lát ảnh thường ngắn hơn một trang giấy, và phần
         // dư phía dưới sẽ lấy nền mặc định của PDF là màu trắng — một
         // mảng trắng giữa bản báo cáo nền tối trông như lỗi in.
-        pdf.setFillColor(6, 8, 10);
+        pdf.setFillColor(246, 248, 247);
         pdf.rect(0, 0, pdfWidth, pageHeightMm, 'F');
 
         pdf.addImage(page.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfWidth, sliceH / pxPerMm);
@@ -320,210 +320,157 @@ const Reports = () => {
     }
   };
 
+  const busy = downloadingCsv || generatingPdf;
+  const typeLabel = { All: 'Tất cả', PDF: 'PDF', CSV: 'CSV' };
+
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '2rem', position: 'relative' }}>
-      <header style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.875rem', fontWeight: 700, margin: '0 0 0.25rem 0' }}>Báo cáo và xuất dữ liệu</h2>
+    <div className="cx relative">
+      <PageHeader
+        section="Hệ thống"
+        title="Báo cáo"
+        accent="& xuất dữ liệu"
+        subtitle="Mọi tệp xuất ra được tính trên đúng phạm vi bộ lọc bên dưới, và chỉ gồm phản hồi đã qua tầng kiểm soát tin cậy."
+        actions={<Button variant="secondary" icon={Eye} onClick={() => window.location.assign('/reports?preview=1')}>Xem trước bản in</Button>}
+      />
 
-      </header>
-
-      <FilterBar 
+      <FilterBar
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}
         sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
         productFilter={productFilter} setProductFilter={setProductFilter}
-        hideExportButton={true}
+        hideExportButton
       />
 
-      <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
-        {/* CSV Export */}
-        <div className="glass-panel col-span-6" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderTop: '4px solid var(--accent-blue)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ width: 48, height: 48, borderRadius: '12px', background: 'rgba(56, 189, 248, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <FileSpreadsheet size={24} color="var(--accent-blue)" />
+      <div className="mb-8 grid gap-6 lg:grid-cols-2">
+        {[
+          {
+            type: 'PDF',
+            icon: FileText,
+            tile: 'bg-accent-dim text-accent',
+            title: 'Báo cáo điều hành',
+            ext: 'PDF · A4 · nhiều trang',
+            text: 'Điểm nhấn cần quyết, chỉ số so với kỳ trước, diễn biến theo thời gian, Pareto nhóm vấn đề và nguyên nhân gốc rễ. Kế hoạch hành động lấy từ bộ đề xuất theo playbook — không có đoạn văn nào được viết tự do.',
+            loading: generatingPdf,
+            cta: generatingPdf ? 'Đang dựng PDF…' : 'Tạo báo cáo PDF'
+          },
+          {
+            type: 'CSV',
+            icon: FileSpreadsheet,
+            tile: 'bg-sky/50 text-[#2F5E92]',
+            title: 'Dữ liệu thô',
+            ext: 'CSV · UTF-8',
+            text: 'Toàn bộ phản hồi trong phạm vi lọc: thời điểm, nguồn, nội dung gốc, cảm xúc, nhóm vấn đề, hạng và trọng số tin cậy. Mở được bằng Excel hoặc công cụ BI.',
+            loading: downloadingCsv,
+            cta: downloadingCsv ? 'Đang xuất CSV…' : 'Tải tệp CSV'
+          }
+        ].map((c) => (
+          <GlassPanel key={c.type} tone="strong" className="flex flex-col p-6">
+            <div className="flex items-start gap-4">
+              <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${c.tile}`}>
+                <c.icon size={22} aria-hidden="true" />
+              </span>
+              <div>
+                <h3 className="text-[1.05rem] font-semibold text-ink-hi">{c.title}</h3>
+                <p className="font-mono text-xs text-ink-lo">{c.ext}</p>
+              </div>
             </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Xuất dữ liệu thô</h3>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Export filtered feedbacks to CSV for Excel/BI tools</p>
-            </div>
-          </div>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0.5rem 0' }}>
-            Includes all data fields: timestamps, customer verbatim, AI sentiment, categories, and risk scores.
-          </p>
-          <button 
-            onClick={handleExportCSV}
-            disabled={downloadingCsv || generatingPdf}
-            style={{ 
-              marginTop: 'auto', background: 'var(--accent-blue)', color: 'white', border: 'none', 
-              padding: '0.75rem', borderRadius: 'var(--radius-md)', fontWeight: 600, 
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              cursor: (downloadingCsv || generatingPdf) ? 'not-allowed' : 'pointer', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out', opacity: (downloadingCsv || generatingPdf) ? 0.7 : 1
-            }}
-          >
-            {downloadingCsv ? <Zap size={18} className="animate-pulse" /> : <Download size={18} />}
-            {downloadingCsv ? 'Generating CSV...' : 'Download CSV'}
-          </button>
-        </div>
-
-        {/* PDF Export */}
-        <div className="glass-panel col-span-6" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderTop: '4px solid var(--accent-purple)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ width: 48, height: 48, borderRadius: '12px', background: 'var(--accent-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <FileText size={24} color="var(--accent-purple)" />
-            </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Báo cáo điều hành</h3>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Auto-generated summary for management</p>
-            </div>
-          </div>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0.5rem 0' }}>
-            A comprehensive PDF including trend charts, risk matrix, and AI-driven action plans.
-          </p>
-          <button 
-            onClick={handleExportPDF}
-            disabled={downloadingCsv || generatingPdf}
-            style={{ 
-              marginTop: 'auto', background: 'var(--accent-purple)', color: 'white', border: 'none', 
-              padding: '0.75rem', borderRadius: 'var(--radius-md)', fontWeight: 600, 
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              cursor: (downloadingCsv || generatingPdf) ? 'not-allowed' : 'pointer', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out', opacity: (downloadingCsv || generatingPdf) ? 0.7 : 1
-            }}
-          >
-            {generatingPdf ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
-            {generatingPdf ? 'Rendering PDF...' : 'Generate Premium PDF'}
-          </button>
-        </div>
+            <p className="mt-4 flex-1 text-sm leading-relaxed text-ink-mid">{c.text}</p>
+            <Button className="mt-5 self-start" icon={Download} loading={c.loading} disabled={busy} onClick={() => openExport(c.type)}>
+              {c.cta}
+            </Button>
+          </GlassPanel>
+        ))}
       </div>
 
-      {/* Report History */}
-      <div className="glass-panel">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>Lịch sử báo cáo</h3>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {/* Filter Dropdown */}
-            <div style={{ position: 'relative' }}>
-              <button 
-                onClick={() => setShowHistoryFilter(!showHistoryFilter)}
-                style={{ 
-                  background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)',
-                  padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '0.4rem',
-                  fontSize: '0.85rem', cursor: 'pointer', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <Filter size={14} /> {historyFilter === 'All' ? 'All Types' : historyFilter}
-                <ChevronDown size={12} />
-              </button>
-              {showHistoryFilter && (
-                <div className="glass-panel animate-fade-in" style={{
-                  position: 'absolute', top: '100%', right: 0, marginTop: '0.5rem', width: '200px',
-                  background: 'var(--bg-card)',
-                  boxShadow: 'var(--glass-shadow)',
-                  border: 'var(--glass-border)'
-                }}>
-                  {['All', 'PDF', 'CSV'].map(opt => (
-                    <div key={opt}
-                      onClick={() => { setHistoryFilter(opt); setShowHistoryFilter(false); }}
-                      style={{
-                        padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)',
-                        background: historyFilter === opt ? 'rgba(255,255,255,0.1)' : 'transparent',
-                        cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-primary)',
-                        transition: 'background 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
-                      onMouseLeave={(e) => e.target.style.background = historyFilter === opt ? 'rgba(255,255,255,0.1)' : 'transparent'}
-                    >
-                      {opt === 'All' ? 'All Types' : opt}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Clear All button */}
-            {reportHistory.length > 0 && (
-              <button 
-                onClick={clearAllHistory}
-                style={{ 
-                  background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', color: 'var(--risk-critical)',
-                  padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '0.4rem',
-                  fontSize: '0.85rem', cursor: 'pointer', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'}
-              >
-                <Trash2 size={14} /> Xóa tất cả
-              </button>
-            )}
+      <GlassPanel tone="strong" className="overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-4">
+          <div>
+            <h3 className="text-[0.98rem] font-semibold text-ink-hi">Lịch sử báo cáo</h3>
+            <p className="text-xs text-ink-lo">Lưu trên máy này</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Segmented
+              label="Lọc loại tệp"
+              value={historyFilter}
+              onChange={setHistoryFilter}
+              options={['All', 'PDF', 'CSV'].map((v) => ({ value: v, label: typeLabel[v] }))}
+            />
+            {reportHistory.length > 0 && <Button size="sm" variant="danger" icon={Trash2} onClick={() => setConfirmClear(true)}>Xoá tất cả</Button>}
           </div>
         </div>
-        
         {filteredHistory.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-            <FileText size={40} style={{ marginBottom: '1rem', opacity: 0.3 }} />
-            <p style={{ margin: 0, fontSize: '0.95rem' }}>
-              {reportHistory.length === 0 ? 'Chưa có báo cáo nào. Hãy tải CSV hoặc PDF để bắt đầu!' : `Không có báo cáo loại "${historyFilter}".`}
-            </p>
-          </div>
+          <EmptyState
+            compact
+            title={reportHistory.length === 0 ? 'Chưa có báo cáo nào' : `Không có tệp ${historyFilter}`}
+            description={reportHistory.length === 0 ? 'Tạo một báo cáo PDF hoặc tải CSV để bắt đầu.' : 'Đổi bộ lọc loại tệp để xem các báo cáo khác.'}
+          />
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'left' }}>
-                <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Report Name</th>
-                <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Type</th>
-                <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Generated Date</th>
-                <th style={{ padding: '1rem 0.5rem', fontWeight: 500 }}>Size</th>
-                <th style={{ padding: '1rem 0.5rem', fontWeight: 500, textAlign: 'right' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredHistory.map(report => (
-                <tr key={report.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '1rem 0.5rem', fontSize: '0.95rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      {report.type === 'PDF' ? <FileText size={16} color="var(--accent-purple)" /> : <FileSpreadsheet size={16} color="var(--accent-blue)" />}
-                      {report.name}
-                    </div>
-                  </td>
-                  <td style={{ padding: '1rem 0.5rem' }}>
-                    <span className="badge badge-medium" style={{ background: report.type === 'PDF' ? 'var(--accent-dim)' : 'rgba(56, 189, 248, 0.1)', color: report.type === 'PDF' ? 'var(--accent-purple)' : 'var(--accent-blue)' }}>
-                      {report.type}
-                    </span>
-                  </td>
-                  <td style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Calendar size={14} /> {report.date}
-                    </div>
-                  </td>
-                  <td style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{report.size}</td>
-                  <td style={{ padding: '1rem 0.5rem', textAlign: 'right' }}>
-                    <button 
-                      onClick={() => deleteFromHistory(report.id)}
-                      title="Xóa khỏi lịch sử"
-                      style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem', transition: 'color 0.2s' }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--risk-critical)'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="data-table min-w-[620px]">
+              <thead><tr><th className="pl-5">Tên báo cáo</th><th>Loại</th><th>Ngày tạo</th><th>Dung lượng</th><th className="pr-5" /></tr></thead>
+              <tbody>
+                {filteredHistory.map((r) => (
+                  <tr key={r.id}>
+                    <td className="pl-5">
+                      <span className="inline-flex items-center gap-2.5 font-medium">
+                        {r.type === 'PDF' ? <FileText size={16} className="text-accent" /> : <FileSpreadsheet size={16} className="text-pos" />}
+                        {r.name}
+                      </span>
+                    </td>
+                    <td><Badge tone={r.type === 'PDF' ? 'accent' : 'sky'} mono>{r.type}</Badge></td>
+                    <td className="font-mono text-xs text-ink-mid"><span className="inline-flex items-center gap-1.5"><Calendar size={13} />{r.date}</span></td>
+                    <td className="font-mono text-xs text-ink-mid">{r.size}</td>
+                    <td className="pr-5 text-right">
+                      <button type="button" onClick={() => deleteFromHistory(r.id)} aria-label="Xoá khỏi lịch sử" className="grid size-8 place-items-center rounded-full text-ink-lo hover:bg-crit/10 hover:text-crit">
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
+      </GlassPanel>
 
-      {showToast && (
-        <div style={{
-          position: 'fixed', bottom: '2rem', right: '2rem', background: 'var(--risk-low)', color: 'var(--bg-dark)',
-          padding: '1rem 1.5rem', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '0.75rem',
-          fontWeight: 600, boxShadow: '0 10px 25px rgba(0,0,0,0.5)', zIndex: 9999, animation: 'slideIn 0.3s ease-out'
-        }}>
-          <CheckCircle size={20} />
-          Exported {showToast} successfully!
-        </div>
-      )}
+      <Modal
+        open={Boolean(exportDialog)}
+        onClose={() => setExportDialog(null)}
+        icon={exportDialog?.type === 'CSV' ? FileSpreadsheet : FileText}
+        title={exportDialog?.type === 'CSV' ? 'Xuất dữ liệu thô' : 'Tạo báo cáo điều hành'}
+        description="Đặt tên tệp — phần mở rộng được thêm tự động."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setExportDialog(null)}>Huỷ</Button>
+            <Button icon={Download} onClick={runExport} disabled={!exportDialog?.name?.trim()}>Xuất {exportDialog?.type}</Button>
+          </>
+        }
+      >
+        <TextField
+          label="Tên tệp"
+          value={exportDialog?.name || ''}
+          onChange={(e) => setExportDialog((d) => ({ ...d, name: e.target.value }))}
+          onKeyDown={(e) => e.key === 'Enter' && exportDialog?.name?.trim() && runExport()}
+          trailing={<span className="pr-2 font-mono text-xs text-ink-lo">.{exportDialog?.type?.toLowerCase()}</span>}
+        />
+      </Modal>
+
+      <Modal
+        open={confirmClear}
+        onClose={() => setConfirmClear(false)}
+        icon={Trash2}
+        tone="crit"
+        size="sm"
+        title="Xoá toàn bộ lịch sử báo cáo?"
+        description="Chỉ xoá danh sách trên máy này — các tệp đã tải về không bị ảnh hưởng."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirmClear(false)}>Huỷ</Button>
+            <Button variant="danger" onClick={() => { setReportHistory([]); setConfirmClear(false); }}>Xoá lịch sử</Button>
+          </>
+        }
+      />
+
+      <Toast show={Boolean(showToast)}>Đã xuất tệp {showToast} thành công</Toast>
 
       {/* Hidden PDF Template Container (Rendered off-screen with high-res styling) */}
       <div style={previewMode
@@ -540,7 +487,7 @@ const Reports = () => {
                sang hay toi. */
             background: REPORT.canvas,
             color: REPORT.hi,
-            fontFamily: "'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif",
+            fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
             display: 'flex',
             flexDirection: 'column'
           }}
@@ -564,7 +511,7 @@ const Reports = () => {
             </div>
           </div>
 
-          {/* AI Summary Section */}
+          {/* Khối nhận định */}
           {/*
             KHỐI NHẬN ĐỊNH.
 

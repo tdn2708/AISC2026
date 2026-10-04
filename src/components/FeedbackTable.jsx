@@ -86,7 +86,7 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
   })();
 
   return (
-    <div className="glass-panel" style={{ marginTop: '1.5rem', padding: 0, overflow: 'hidden' }}>
+    <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
       <div className="fb-panel-head">
         <div>
           <h3>Phản hồi gần đây</h3>

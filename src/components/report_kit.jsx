@@ -15,24 +15,27 @@ import React from 'react';
  *    dài 570 dòng lo việc dựng PDF.
  */
 
-/** Bảng màu bản in. Cùng giá trị với hệ thiết kế chính, chỉ khác là hằng số. */
+/**
+ * Bảng màu bản in — tông Mist sáng của hệ thiết kế, viết thành hằng số.
+ * Bản in nền sáng: in ra giấy không tốn mực, đọc được cả khi photo đen trắng.
+ */
 export const REPORT = {
-  canvas: '#06080A',
-  surface: '#171F25',
-  raised: '#232D35',
-  border: '#35424B',
-  hi: '#E9F0F3',
-  mid: '#A6B6BF',
-  lo: '#8496A0',
-  accent: '#2BA3C7',
-  accentHi: '#4FBEDD',
-  accentDim: '#12313C',
-  crit: '#FF6B5E',
-  critDim: '#2E1A18',
-  high: '#F0A64B',
-  highDim: '#2C2317',
-  ok: '#4BC48A',
-  okDim: '#15291F'
+  canvas: '#F6F8F7',
+  surface: '#FFFFFF',
+  raised: '#EEF2F1',
+  border: '#DCE4E2',
+  hi: '#1F2D35',
+  mid: '#4A5A62',
+  lo: '#5A6A71',
+  accent: '#3D6B5F',
+  accentHi: '#2F574D',
+  accentDim: '#E3EEEA',
+  crit: '#B03A4F',
+  critDim: '#F8E6E9',
+  high: '#8F5509',
+  highDim: '#F6ECDD',
+  ok: '#2E7350',
+  okDim: '#E2F0E8'
 };
 
 export const fmtInt = (n) => new Intl.NumberFormat('vi-VN').format(Math.round(n ?? 0));

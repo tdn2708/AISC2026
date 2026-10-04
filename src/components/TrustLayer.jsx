@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
-  ShieldCheck, Loader2, Copy, Zap, UserX, Star, Receipt,
-  ToggleLeft, ToggleRight, CheckCircle2, XCircle, HelpCircle, Layers
+  Copy, Zap, UserX, Star, Receipt, HelpCircle, CheckCircle2, XCircle, Ban, Layers, ChevronDown, ShieldCheck, ShieldOff
 } from 'lucide-react';
+import { PageHeader, GlassPanel, PanelHeader, Stepper, Switch, Badge, ProgressBar, EmptyState, Button, SectionLabel } from './ui';
+import { fmtInt, fmtDateTime } from '../lib/format';
 
 /**
- * MÀN HÌNH TẦNG KIỂM SOÁT TIN CẬY DỮ LIỆU
+ * TẦNG KIỂM SOÁT TIN CẬY DỮ LIỆU
  * ------------------------------------------------------------------
- * Toàn bộ hoạt động của Trust Layer được hiển thị công khai dưới dạng
- * một phễu, thay vì ẩn trong hệ thống. Lý do: chỉ số Sức khỏe Dữ liệu
- * trả lời trực tiếp câu hỏi mà mọi người dùng doanh nghiệp đều có khi
- * nhìn một dashboard phân tích — "tôi có nên tin những con số này không?"
+ * Toàn bộ hoạt động của Trust Layer hiển thị công khai dưới dạng một
+ * phễu, vì Sức khỏe Dữ liệu trả lời câu hỏi mà mọi người dùng doanh
+ * nghiệp đều có khi nhìn một dashboard: "tôi có nên tin những con số này?"
  */
 
 const SIGNAL_ICONS = {
@@ -22,69 +22,35 @@ const SIGNAL_ICONS = {
   'Bất nhất với dữ liệu giao dịch': Receipt
 };
 
-const fmt = (n) => new Intl.NumberFormat('vi-VN').format(n);
-
-/** Vòng tròn hiển thị điểm sức khỏe dữ liệu */
-const HealthDial = ({ score }) => {
-  const color = score >= 75 ? 'var(--risk-low)' : score >= 50 ? 'var(--risk-medium)' : 'var(--risk-critical)';
-  const R = 52;
-  const C = 2 * Math.PI * R;
-
+const Signal = ({ s, tone = 'high' }) => {
+  const Icon = SIGNAL_ICONS[s.signal] || HelpCircle;
   return (
-    <div style={{ position: 'relative', width: 140, height: 140, flexShrink: 0 }}>
-      <svg width="140" height="140" viewBox="0 0 140 140">
-        <circle cx="70" cy="70" r={R} fill="none" stroke="rgba(148,163,184,0.15)" strokeWidth="12" />
-        <circle
-          cx="70" cy="70" r={R} fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"
-          strokeDasharray={C}
-          strokeDashoffset={C * (1 - Math.max(0, Math.min(100, score)) / 100)}
-          transform="rotate(-90 70 70)"
-          style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1)' }}
-        />
-      </svg>
-      <div style={{
-        position: 'absolute', inset: 0, display: 'flex',
-        flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
-      }}>
-        <div style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1, color }}>{score}</div>
-        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>/ 100</div>
-      </div>
-    </div>
+    <span title={s.detail || ''}>
+      <Badge tone={tone} icon={Icon}>{s.signal}{s.value != null ? ` · ${s.value}` : ''}</Badge>
+    </span>
   );
 };
 
-/** Một bậc của phễu dữ liệu */
-const FunnelStep = ({ label, count, pct, tone, note, isResult }) => {
-  const color = {
-    neutral: 'var(--text-secondary)',
-    spam: 'var(--risk-high)',
-    fake: 'var(--risk-critical)',
-    pending: 'var(--risk-medium)',
-    ok: 'var(--risk-low)'
-  }[tone] || 'var(--text-secondary)';
-
+/** Vòng sức khỏe dữ liệu — vòng sage mảnh, số đơn cách ở giữa */
+const HealthDial = ({ score = 0 }) => {
+  const R = 58;
+  const C = 2 * Math.PI * R;
+  const tone = score >= 75 ? 'var(--sev-ok)' : score >= 50 ? 'var(--sev-high)' : 'var(--sev-crit)';
+  const label = score >= 75 ? 'Đáng tin cậy' : score >= 50 ? 'Cần chú ý' : 'Rủi ro cao';
   return (
-    <div style={{
-      display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-      gap: '1rem', padding: '0.8rem 0',
-      borderTop: isResult ? '1px solid rgba(148,163,184,0.25)' : 'none',
-      marginTop: isResult ? '0.35rem' : 0
-    }}>
-      <div style={{ minWidth: 0 }}>
-        <div style={{
-          fontSize: isResult ? '0.95rem' : '0.9rem',
-          fontWeight: isResult ? 700 : 500,
-          color: isResult ? 'var(--text-primary)' : 'var(--text-secondary)'
-        }}>
-          {label}
-        </div>
-        {note && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>{note}</div>}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem', whiteSpace: 'nowrap' }}>
-        <span style={{ fontSize: isResult ? '1.4rem' : '1.1rem', fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>
-          {fmt(count)}
-        </span>
-        {pct != null && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{pct}%</span>}
+    <div className="relative size-[150px] shrink-0">
+      <svg viewBox="0 0 150 150" className="size-full -rotate-90">
+        <circle cx="75" cy="75" r={R} fill="none" stroke="var(--raised)" strokeWidth="10" />
+        <circle
+          cx="75" cy="75" r={R} fill="none" stroke={tone} strokeWidth="10" strokeLinecap="round"
+          strokeDasharray={C} strokeDashoffset={C * (1 - Math.max(0, Math.min(100, score)) / 100)}
+          style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(.2,.8,.2,1)' }}
+        />
+      </svg>
+      <div className="absolute inset-0 grid place-content-center text-center">
+        <span className="font-mono text-4xl leading-none font-semibold text-ink-hi">{score}</span>
+        <span className="mt-1 text-[0.68rem] text-ink-lo">/ 100</span>
+        <span className="mt-1.5 text-xs font-medium" style={{ color: tone }}>{label}</span>
       </div>
     </div>
   );
@@ -100,6 +66,7 @@ const TrustLayerPage = () => {
   const [error, setError] = useState(null);
   const [openCluster, setOpenCluster] = useState(null);
   const [labelling, setLabelling] = useState(null);
+  const [labelError, setLabelError] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -116,8 +83,8 @@ const TrustLayerPage = () => {
       setImpact(i.data);
       setError(null);
     } catch (e) {
-      console.error('Loi tai Trust Layer:', e);
-      setError('Không tải được dữ liệu Trust Layer. Kiểm tra xem máy chủ đã chạy chưa.');
+      console.error('Lỗi tải Trust Layer:', e);
+      setError('Không tải được dữ liệu Trust Layer. Kiểm tra máy chủ đã chạy chưa.');
     } finally {
       setLoading(false);
     }
@@ -128,375 +95,237 @@ const TrustLayerPage = () => {
   const submitLabel = async (feedbackId, label) => {
     try {
       setLabelling(feedbackId);
+      setLabelError(null);
       await axios.post('/trust/label', { feedbackId, label });
       setQueue((prev) => prev.filter((q) => q._id !== feedbackId));
       load();
     } catch (e) {
-      alert('Không lưu được nhãn: ' + e.message);
+      setLabelError(`Không lưu được nhãn: ${e.message}`);
     } finally {
       setLabelling(null);
     }
   };
 
+  const header = (
+    <PageHeader
+      section="Phân tích"
+      title="Tin cậy"
+      accent="dữ liệu"
+      subtitle="Mỗi phản hồi được gán một trọng số tin cậy trước khi chạm tới bất kỳ chỉ số nào — đánh giá ảo, quảng cáo và cụm đánh giá có tổ chức bị loại hoặc giảm trọng số."
+    />
+  );
+
+  if (error) return <div className="cx">{header}<GlassPanel><EmptyState variant="error" title="Không tải được" description={error} action={<Button onClick={load}>Thử lại</Button>} /></GlassPanel></div>;
   if (loading && !health) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '1rem' }}>
-        <Loader2 size={40} color="var(--accent-cyan)" style={{ animation: 'spin 1s linear infinite' }} />
-        <p style={{ color: 'var(--text-secondary)' }}>Đang chạy tầng kiểm soát tin cậy dữ liệu...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--risk-critical)', background: 'rgba(239,68,68,0.05)', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(239,68,68,0.2)' }}>
-        {error}
+      <div className="cx">
+        {header}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="h-[260px] animate-pulse rounded-[20px] bg-surface/50 lg:col-span-2" />
+          <div className="h-[260px] animate-pulse rounded-[20px] bg-surface/50" />
+        </div>
       </div>
     );
   }
 
   const shown = trustOn ? impact?.withTrustLayer : impact?.withoutTrustLayer;
+  const comps = health.components || {};
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '3rem' }}>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1 style={{ margin: '0 0 0.4rem 0', fontSize: '1.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
-          <ShieldCheck size={26} color="var(--accent-cyan)" />
-          Tầng Kiểm soát Tin cậy Dữ liệu
-        </h1>
+    <div className="cx">
+      {header}
 
-      </header>
-
-      {/* --- Phễu dữ liệu + điểm sức khỏe --- */}
-      <div className="dashboard-grid">
-        <div className="col-span-8">
-          <div className="glass-panel" style={{ height: '100%' }}>
-            <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.05rem', fontWeight: 600 }}>Phễu dữ liệu</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.83rem', margin: '0 0 0.5rem 0' }}>
-              Đường đi của dữ liệu từ lúc thu thập tới lúc được đưa vào phân tích
-            </p>
-
-            <FunnelStep label="Phản hồi thô thu thập được" count={health.rawCollected} tone="neutral" />
-            <FunnelStep
-              label="− Loại vì nội dung rác / quảng cáo"
-              count={health.spamRemoved.count} pct={health.spamRemoved.pct} tone="spam"
-            />
-            <FunnelStep
-              label="− Gắn cờ nghi ngờ không xác thực"
-              count={health.inauthenticFlagged.count} pct={health.inauthenticFlagged.pct} tone="fake"
-              note={`Trong đó ${health.inauthenticFlagged.duplicateClusters} cụm trùng lặp gần`}
-            />
-            <FunnelStep
-              label="− Đang chờ kiểm duyệt"
-              count={health.pendingReview.count} pct={health.pendingReview.pct} tone="pending"
-              note="Vùng xám, xếp theo độ bất định của mô hình"
-            />
-            <FunnelStep
-              label="= Phản hồi hợp lệ đưa vào phân tích"
-              count={health.validForAnalysis} tone="ok" isResult
-              note={`Tổng trọng số hiệu dụng: ${health.effectiveWeight}`}
-            />
-
-            <div style={{
-              display: 'flex', flexWrap: 'wrap', gap: '1.25rem',
-              marginTop: '1.1rem', paddingTop: '1rem',
-              borderTop: '1px solid rgba(148,163,184,0.12)',
-              fontSize: '0.8rem', color: 'var(--text-muted)'
-            }}>
-              <span>Độ phủ kênh: <strong style={{ color: 'var(--text-secondary)' }}>{health.channelCoverage.covered}/{health.channelCoverage.expected}</strong></span>
-              <span>Đối soát được giao dịch: <strong style={{ color: 'var(--text-secondary)' }}>{health.reconciliationRate}%</strong></span>
-              <span>Độ trễ thu thập: <strong style={{ color: 'var(--text-secondary)' }}>{health.ingestionLagMinutes != null ? `${fmt(health.ingestionLagMinutes)} phút` : 'chưa rõ'}</strong></span>
-              <span>Từ điển chuẩn hóa: <strong style={{ color: 'var(--text-secondary)' }}>{health.dictionarySize} mục</strong></span>
-            </div>
+      <SectionLabel>Phễu dữ liệu</SectionLabel>
+      <div className="mb-8 grid items-stretch gap-6 lg:grid-cols-3">
+        <GlassPanel tone="strong" className="flex flex-col p-6 lg:col-span-2">
+          <PanelHeader title="Đường đi của dữ liệu" subtitle="Từ lúc thu thập tới lúc được đưa vào phân tích" />
+          <Stepper
+            className="mb-6"
+            steps={[
+              { label: 'Phản hồi thô', value: fmtInt(health.rawCollected), tone: 'neutral', sub: 'thu thập từ mọi kênh' },
+              { label: 'Loại vì rác / quảng cáo', value: `−${fmtInt(health.spamRemoved.count)}`, tone: 'high', sub: `${health.spamRemoved.pct}%` },
+              { label: 'Nghi không xác thực', value: `−${fmtInt(health.inauthenticFlagged.count)}`, tone: 'crit', sub: `${health.inauthenticFlagged.pct}% · ${health.inauthenticFlagged.duplicateClusters} cụm` },
+              { label: 'Chờ kiểm duyệt', value: fmtInt(health.pendingReview.count), tone: 'med', sub: `${health.pendingReview.pct}% · vùng xám` },
+              { label: 'Hợp lệ để phân tích', value: fmtInt(health.validForAnalysis), tone: 'ok', marker: '✓', sub: `trọng số hiệu dụng ${health.effectiveWeight}` }
+            ]}
+          />
+          <div className="mt-auto flex flex-wrap gap-x-6 gap-y-2 border-t border-line-soft pt-4 text-xs text-ink-lo">
+            <span>Độ phủ kênh <b className="font-mono font-semibold text-ink-hi">{health.channelCoverage.covered}/{health.channelCoverage.expected}</b></span>
+            <span>Đối soát giao dịch <b className="font-mono font-semibold text-ink-hi">{health.reconciliationRate}%</b></span>
+            <span>Độ trễ thu thập <b className="font-mono font-semibold text-ink-hi">{health.ingestionLagMinutes != null ? `${fmtInt(health.ingestionLagMinutes)} phút` : 'chưa rõ'}</b></span>
+            <span>Từ điển chuẩn hoá <b className="font-mono font-semibold text-ink-hi">{fmtInt(health.dictionarySize)} mục</b></span>
           </div>
-        </div>
+        </GlassPanel>
 
-        <div className="col-span-4">
-          <div className="glass-panel" style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-            <h3 style={{ margin: '0 0 0.2rem 0', fontSize: '1.05rem', fontWeight: 600 }}>Sức khỏe dữ liệu</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: '0 0 1rem 0' }}>
-              Tôi có nên tin những con số này không?
-            </p>
-            <HealthDial score={health.dataHealthScore} />
-            <div style={{ width: '100%', marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+        <GlassPanel tone="strong" className="flex flex-col items-center p-6 text-center">
+          <PanelHeader title="Sức khoẻ dữ liệu" subtitle="Tôi có nên tin những con số này không?" className="w-full text-left" />
+          <HealthDial score={health.dataHealthScore} />
+          <div className="mt-5 flex w-full flex-col gap-3 text-left">
+            <ProgressBar label="Vượt qua Trust Layer" value={(comps.passRate ?? 0) / 100} showValue />
+            <ProgressBar label="Độ phủ kênh" value={(comps.channelCoverage ?? 0) / 100} showValue />
+            <ProgressBar label="Độ tươi dữ liệu" value={(comps.freshness ?? 0) / 100} showValue />
+            <ProgressBar label="Đối soát giao dịch" value={(comps.reconciliation ?? 0) / 100} showValue />
+          </div>
+        </GlassPanel>
+      </div>
+
+      {impact && (
+        <>
+          <SectionLabel>Nếu tắt Trust Layer thì sao?</SectionLabel>
+          <GlassPanel tone="strong" glow={!trustOn ? 'crit' : null} className="mb-8 p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <p className="max-w-2xl text-sm leading-relaxed text-ink-mid">
+                Cùng một tập dữ liệu, tính lại như một hệ thống <b className="text-ink-hi">không có</b> tầng kiểm soát tin cậy — mỗi phản hồi đều được đếm đủ một điểm.
+              </p>
+              <label className="flex items-center gap-3 rounded-full bg-surface/70 py-1.5 pr-1.5 pl-4">
+                <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${trustOn ? 'text-ok' : 'text-crit'}`}>
+                  {trustOn ? <ShieldCheck size={16} /> : <ShieldOff size={16} />}
+                  Trust Layer {trustOn ? 'đang bật' : 'đã tắt'}
+                </span>
+                <Switch checked={trustOn} onChange={setTrustOn} label="Bật hoặc tắt Trust Layer" />
+              </label>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
               {[
-                ['Dữ liệu vượt Trust Layer', health.components.passRate],
-                ['Độ phủ kênh', health.components.channelCoverage],
-                ['Độ tươi dữ liệu', health.components.freshness],
-                ['Đối soát giao dịch', health.components.reconciliation]
-              ].map(([label, v]) => (
-                <div key={label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', color: 'var(--text-secondary)', marginBottom: '3px' }}>
-                    <span>{label}</span><span style={{ fontVariantNumeric: 'tabular-nums' }}>{v}%</span>
-                  </div>
-                  <div style={{ height: 5, background: 'rgba(148,163,184,0.15)', borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${v}%`, background: 'linear-gradient(90deg,#22d3ee,#3b82f6)', borderRadius: 99, transition: 'width 0.6s' }} />
-                  </div>
+                { label: 'Cảnh báo sinh ra', value: shown?.alertCount ?? 0 },
+                { label: 'Tỉ lệ khiếu nại (WCR)', value: trustOn ? impact.wcrWithTrustLayer : impact.wcrWithoutTrustLayer },
+                { label: 'Phản hồi bị loại', value: trustOn ? fmtInt(impact.excludedFeedbacks) : '0' },
+                { label: 'Cảnh báo ma được chặn', value: impact.phantomAlerts, keep: true }
+              ].map((m) => (
+                <div key={m.label} className={`rounded-2xl p-4 transition-colors ${!trustOn && !m.keep ? 'bg-crit/10' : 'bg-surface/60'}`}>
+                  <p className="eyebrow">{m.label}</p>
+                  <p className={`mt-1.5 font-mono text-2xl font-semibold ${!trustOn && !m.keep ? 'text-crit' : 'text-ink-hi'}`}>{m.value}</p>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* --- Công tắc Tắt Trust Layer --- */}
-      {impact && (
-        <div className="glass-panel" style={{ marginBottom: '1.5rem' }}>
-          <div className="flex-wrap-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1.5rem' }}>
-            <div style={{ minWidth: 0 }}>
-              <h3 style={{ margin: '0 0 0.3rem 0', fontSize: '1.05rem', fontWeight: 600 }}>
-                Nếu tắt Trust Layer thì sao?
-              </h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', margin: 0, maxWidth: '60ch', lineHeight: 1.55 }}>
-                Cùng một tập dữ liệu, tính lại như một hệ thống không có tầng kiểm soát tin
-                cậy: mỗi phản hồi đều được đếm đủ một điểm.
+            {impact.phantomAlerts > 0 && (
+              <p className="mt-4 text-sm leading-relaxed text-ink-mid">
+                Không có tầng này, hệ thống sẽ báo cho doanh nghiệp{' '}
+                <b className="text-crit">{impact.phantomAlerts} vấn đề không có thật</b>
+                {impact.phantomExamples?.length > 0 && <> — ví dụ: {impact.phantomExamples.map((p) => `${p.category}${p.cause ? ' → ' + p.cause : ''}`).join('; ')}</>}.
               </p>
-            </div>
-
-            <button
-              onClick={() => setTrustOn(!trustOn)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.6rem',
-                background: trustOn ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
-                border: `1px solid ${trustOn ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)'}`,
-                color: trustOn ? 'var(--risk-low)' : 'var(--risk-critical)',
-                padding: '0.65rem 1.1rem', borderRadius: 99, cursor: 'pointer',
-                fontWeight: 600, fontSize: '0.88rem', whiteSpace: 'nowrap', flexShrink: 0
-              }}
-            >
-              {trustOn ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
-              {trustOn ? 'Trust Layer: BẬT' : 'Trust Layer: TẮT'}
-            </button>
-          </div>
-
-          <div className="dashboard-grid" style={{ marginTop: '1.25rem', marginBottom: 0 }}>
-            {[
-              { label: 'Số cảnh báo sinh ra', value: shown?.alertCount ?? 0, danger: !trustOn },
-              { label: 'Tỉ lệ khiếu nại (WCR)', value: trustOn ? impact.wcrWithTrustLayer : impact.wcrWithoutTrustLayer, danger: !trustOn },
-              { label: 'Phản hồi bị loại', value: trustOn ? fmt(impact.excludedFeedbacks) : '0', danger: !trustOn },
-              { label: 'Cảnh báo ma biến mất sau lọc', value: impact.phantomAlerts, danger: false }
-            ].map((m) => (
-              <div key={m.label} className="col-span-3">
-                <div style={{
-                  padding: '1rem',
-                  background: m.danger ? 'rgba(239,68,68,0.07)' : 'rgba(148,163,184,0.06)',
-                  border: `1px solid ${m.danger ? 'rgba(239,68,68,0.2)' : 'rgba(148,163,184,0.14)'}`,
-                  borderRadius: 'var(--radius-md)'
-                }}>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>
-                    {m.label}
-                  </div>
-                  <div style={{ fontSize: '1.6rem', fontWeight: 700, color: m.danger ? 'var(--risk-critical)' : 'var(--text-primary)' }}>
-                    {m.value}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {impact.phantomAlerts > 0 && (
-            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-              Nếu không có tầng này, hệ thống sẽ báo cho doanh nghiệp{' '}
-              <strong style={{ color: 'var(--risk-critical)' }}>{impact.phantomAlerts} vấn đề không có thật</strong>
-              {impact.phantomExamples?.length > 0 && (
-                <> — ví dụ: {impact.phantomExamples.map((p) => `${p.category}${p.cause ? ' → ' + p.cause : ''}`).join('; ')}</>
-              )}.
-            </p>
-          )}
-        </div>
+            )}
+          </GlassPanel>
+        </>
       )}
 
-      {/* --- Phân hạng nguồn gốc --- */}
-      <div className="glass-panel" style={{ marginBottom: '1.5rem', padding: 0 }}>
-        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
-          <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>T0 — Phân hạng nguồn gốc</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0 0' }}>
-            Phản hồi hạng P5 dùng để quan sát xu hướng nhưng không đủ điều kiện kích hoạt cảnh báo mức Cao / Nghiêm trọng
-          </p>
-        </div>
-        <div className="table-responsive">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Hạng</th><th>Mô tả nguồn</th><th>Đối soát giao dịch</th><th>Trọng số</th><th>Số phản hồi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {health.tierBreakdown.map((t) => (
-                <tr key={t.tier}>
-                  <td><span className="cat-badge" style={{ fontWeight: 700 }}>{t.tier}</span></td>
-                  <td style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{t.label}</td>
-                  <td style={{ fontSize: '0.85rem' }}>{t.reconciliation}</td>
-                  <td style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{t.weight.toFixed(2)}</td>
-                  <td style={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(t.count)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div className="mb-8 grid items-start gap-6 xl:grid-cols-2">
+        <section>
+          <SectionLabel>Phân hạng nguồn gốc</SectionLabel>
+          <GlassPanel tone="strong" className="overflow-hidden">
+            <p className="border-b border-line-soft px-5 py-3.5 text-xs leading-relaxed text-ink-lo">
+              Hạng P5 dùng để quan sát xu hướng nhưng không đủ điều kiện kích hoạt cảnh báo mức Cao / Nghiêm trọng.
+            </p>
+            <table className="data-table">
+              <thead>
+                <tr><th className="pl-5">Hạng</th><th>Nguồn</th><th className="text-right">Trọng số</th><th className="pr-5 text-right">Phản hồi</th></tr>
+              </thead>
+              <tbody>
+                {health.tierBreakdown.map((t) => (
+                  <tr key={t.tier}>
+                    <td className="pl-5"><span className="font-mono font-semibold text-accent">{t.tier}</span></td>
+                    <td>
+                      <span className="block text-[0.82rem] text-ink-hi">{t.label}</span>
+                      <span className="block text-[0.7rem] text-ink-lo">{t.reconciliation}</span>
+                    </td>
+                    <td className="text-right">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="hidden h-1.5 w-10 overflow-hidden rounded-full bg-raised 2xl:block"><span className="block h-full rounded-full bg-accent" style={{ width: `${t.weight * 100}%` }} /></span>
+                        <span className="font-mono">{t.weight.toFixed(2)}</span>
+                      </span>
+                    </td>
+                    <td className="pr-5 text-right font-mono">{fmtInt(t.count)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </GlassPanel>
+        </section>
 
-      {/* --- Cụm trùng lặp gần --- */}
-      <div className="glass-panel" style={{ marginBottom: '1.5rem' }}>
-        <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.05rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Layers size={18} color="var(--risk-critical)" />
-          Cụm trùng lặp gần bị đánh dấu nghi vấn
-        </h3>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0 0 1rem 0' }}>
-          Nội dung giống nhau và dồn cục trong thời gian ngắn — dấu vết của đánh giá được đặt hàng
-        </p>
-
-        {clusters.length === 0 ? (
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: 0 }}>
-            Không phát hiện cụm trùng lặp nào trong dữ liệu hiện tại.
-          </p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {clusters.map((c) => (
-              <div key={c.clusterId} style={{
-                border: '1px solid rgba(239,68,68,0.22)',
-                background: 'rgba(239,68,68,0.05)',
-                borderRadius: 'var(--radius-md)', overflow: 'hidden'
-              }}>
-                <button
-                  onClick={() => setOpenCluster(openCluster === c.clusterId ? null : c.clusterId)}
-                  style={{
-                    width: '100%', display: 'flex', justifyContent: 'space-between',
-                    alignItems: 'center', gap: '1rem', padding: '0.9rem 1.1rem',
-                    background: 'transparent', border: 'none', cursor: 'pointer',
-                    color: 'var(--text-primary)', textAlign: 'left'
-                  }}
-                >
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                      {c.size} đánh giá gần như giống hệt nhau · đăng trong {c.spanMinutes} phút
-                    </div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {c.productName} — “{c.sampleText}”
-                    </div>
-                  </div>
-                  <span className="badge badge-critical" style={{ flexShrink: 0 }}>
-                    tương đồng {(c.avgSimilarity * 100).toFixed(0)}%
-                  </span>
-                </button>
-
-                {openCluster === c.clusterId && (
-                  <div style={{ padding: '0 1.1rem 1rem 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {c.members.map((m) => (
-                      <div key={m._id} style={{
-                        padding: '0.7rem 0.85rem', background: 'rgba(0,0,0,0.18)',
-                        borderRadius: 'var(--radius-sm)', fontSize: '0.82rem'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
-                          <strong style={{ color: 'var(--text-primary)' }}>@{m.author}</strong>
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                            {new Date(m.timestamp).toLocaleString('vi-VN')} · hạng {m.trust?.tier}
-                          </span>
-                        </div>
-                        <div style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>{m.originalText}</div>
-                        {m.trust?.triggeredSignals?.length > 0 && (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.5rem' }}>
-                            {m.trust.triggeredSignals.map((s, i) => {
-                              const Icon = SIGNAL_ICONS[s.signal] || HelpCircle;
-                              return (
-                                <span key={i} title={s.detail || ''} style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                  fontSize: '0.72rem', padding: '3px 8px', borderRadius: 99,
-                                  background: 'rgba(239,68,68,0.12)', color: '#fca5a5',
-                                  border: '1px solid rgba(239,68,68,0.25)'
-                                }}>
-                                  <Icon size={11} /> {s.signal} ({s.value})
-                                </span>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* --- Hàng đợi kiểm duyệt --- */}
-      <div className="glass-panel">
-        <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.05rem', fontWeight: 600 }}>
-          T4 — Hàng đợi kiểm duyệt và học chủ động
-        </h3>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0 0 1rem 0' }}>
-          Sắp xếp theo độ bất định của mô hình, không theo thời gian — mỗi thao tác của bạn
-          mang lại nhiều thông tin huấn luyện nhất có thể.
-          {health.humanLabelCount > 0 && ` Đã có ${health.humanLabelCount} nhãn do người kiểm duyệt xác nhận.`}
-        </p>
-
-        {queue.length === 0 ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--risk-low)', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.18)', borderRadius: 'var(--radius-md)' }}>
-            <CheckCircle2 size={28} style={{ marginBottom: '0.5rem' }} />
-            <p style={{ margin: 0, fontSize: '0.9rem' }}>Không còn phản hồi nào nằm trong vùng xám cần kiểm duyệt.</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-            {queue.map((q) => (
-              <div key={q._id} style={{
-                padding: '0.9rem 1rem', background: 'rgba(234,179,8,0.06)',
-                border: '1px solid rgba(234,179,8,0.22)', borderRadius: 'var(--radius-md)'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.45rem' }}>
-                  <strong style={{ fontSize: '0.86rem' }}>@{q.author} · {q.source}</strong>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                    Điểm xác thực A = {q.authenticityScore} · độ bất định {q.uncertainty}
-                  </span>
-                </div>
-                <p style={{ margin: '0 0 0.6rem 0', fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                  {q.originalText}
-                </p>
-                {q.triggeredSignals?.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.7rem' }}>
-                    {q.triggeredSignals.map((s, i) => {
-                      const Icon = SIGNAL_ICONS[s.signal] || HelpCircle;
-                      return (
-                        <span key={i} title={s.detail || ''} style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '4px',
-                          fontSize: '0.72rem', padding: '3px 8px', borderRadius: 99,
-                          background: 'rgba(234,179,8,0.12)', color: '#fde68a',
-                          border: '1px solid rgba(234,179,8,0.25)'
-                        }}>
-                          <Icon size={11} /> {s.signal} ({s.value})
+        <section>
+          <SectionLabel>Cụm trùng lặp nghi vấn</SectionLabel>
+          <GlassPanel tone="strong" className="p-5">
+            <PanelHeader title="Đánh giá dồn cục" subtitle="Nội dung gần như giống nhau, đăng trong thời gian ngắn — dấu vết của đánh giá được đặt hàng" right={<Layers size={16} className="text-ink-lo" />} />
+            {clusters.length === 0 ? (
+              <EmptyState compact variant="calm" title="Không phát hiện cụm nào" description="Dữ liệu hiện tại không có cụm trùng lặp gần đạt ngưỡng." />
+            ) : (
+              <ul className="flex list-none flex-col gap-2">
+                {clusters.map((c) => {
+                  const isOpen = openCluster === c.clusterId;
+                  return (
+                    <li key={c.clusterId} className="overflow-hidden rounded-2xl bg-surface/60">
+                      <button
+                        type="button"
+                        onClick={() => setOpenCluster(isOpen ? null : c.clusterId)}
+                        aria-expanded={isOpen}
+                        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-raised"
+                      >
+                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-crit/12 font-mono text-sm font-semibold text-crit">{c.size}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-medium text-ink-hi">{c.size} đánh giá giống nhau · trong {c.spanMinutes} phút</span>
+                          <span className="block truncate text-xs text-ink-lo">{c.productName} — “{c.sampleText}”</span>
                         </span>
-                      );
-                    })}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  {[
-                    { label: 'Hợp lệ', value: 'valid', Icon: CheckCircle2, color: 'var(--risk-low)' },
-                    { label: 'Không xác thực', value: 'inauthentic', Icon: XCircle, color: 'var(--risk-critical)' },
-                    { label: 'Nội dung rác', value: 'spam', Icon: UserX, color: 'var(--risk-high)' }
-                  ].map((b) => (
-                    <button
-                      key={b.value}
-                      disabled={labelling === q._id}
-                      onClick={() => submitLabel(q._id, b.value)}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                        padding: '0.42rem 0.85rem', borderRadius: 'var(--radius-sm)',
-                        background: 'transparent', border: `1px solid ${b.color}`,
-                        color: b.color, cursor: labelling === q._id ? 'wait' : 'pointer',
-                        fontSize: '0.8rem', fontWeight: 600
-                      }}
-                    >
-                      <b.Icon size={13} /> {b.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                        <Badge tone="crit" mono>{(c.avgSimilarity * 100).toFixed(0)}%</Badge>
+                        <ChevronDown size={16} className={`shrink-0 text-ink-lo transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {isOpen && (
+                        <ul className="flex list-none flex-col gap-2 px-4 pb-4 animate-fade-up">
+                          {c.members.map((m) => (
+                            <li key={m._id} className="rounded-xl bg-surface/80 p-3 text-sm">
+                              <div className="mb-1 flex flex-wrap justify-between gap-2">
+                                <b className="font-medium text-ink-hi">{m.author}</b>
+                                <span className="font-mono text-[0.68rem] text-ink-lo">{fmtDateTime(m.timestamp)} · {m.trust?.tier}</span>
+                              </div>
+                              <p className="leading-relaxed text-ink-mid">{m.originalText}</p>
+                              {m.trust?.triggeredSignals?.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1.5">{m.trust.triggeredSignals.map((s, i) => <Signal key={i} s={s} tone="crit" />)}</div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </GlassPanel>
+        </section>
       </div>
+
+      <SectionLabel right={queue.length > 0 && <Badge tone="med" mono>{queue.length} chờ</Badge>}>Hàng đợi kiểm duyệt</SectionLabel>
+      <GlassPanel tone="strong" className="p-5">
+        <PanelHeader
+          title="Học chủ động"
+          subtitle={`Xếp theo độ bất định của mô hình, không theo thời gian — mỗi nhãn của bạn mang lại nhiều thông tin huấn luyện nhất có thể.${health.humanLabelCount > 0 ? ` Đã có ${fmtInt(health.humanLabelCount)} nhãn do người kiểm duyệt xác nhận.` : ''}`}
+        />
+        {labelError && <p className="mb-3 rounded-xl bg-crit/10 px-3 py-2 text-sm text-crit">{labelError}</p>}
+        {queue.length === 0 ? (
+          <EmptyState compact variant="calm" title="Hàng đợi trống" description="Không còn phản hồi nào nằm trong vùng xám cần kiểm duyệt." />
+        ) : (
+          <ul className="grid list-none gap-3 lg:grid-cols-2">
+            {queue.map((q) => (
+              <li key={q._id} className="flex flex-col rounded-2xl bg-surface/60 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-ink-hi">{q.author} <span className="font-normal text-ink-lo">· {q.source}</span></span>
+                  <span className="font-mono text-[0.68rem] text-ink-lo">A={q.authenticityScore} · bất định {q.uncertainty}</span>
+                </div>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-mid">{q.originalText}</p>
+                {q.triggeredSignals?.length > 0 && (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">{q.triggeredSignals.map((s, i) => <Signal key={i} s={s} />)}</div>
+                )}
+                <div className="mt-3.5 flex flex-wrap gap-2">
+                  <Button size="sm" variant="soft" icon={CheckCircle2} loading={labelling === q._id} onClick={() => submitLabel(q._id, 'valid')}>Hợp lệ</Button>
+                  <Button size="sm" variant="danger" icon={XCircle} disabled={labelling === q._id} onClick={() => submitLabel(q._id, 'inauthentic')}>Không xác thực</Button>
+                  <Button size="sm" variant="ghost" icon={Ban} disabled={labelling === q._id} onClick={() => submitLabel(q._id, 'spam')}>Rác</Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </GlassPanel>
     </div>
   );
 };

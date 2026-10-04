@@ -1,216 +1,313 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Search, Filter, Loader2, AlertCircle } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, Copy, Zap, UserX, Star, Receipt, HelpCircle, Laugh, Meh, Frown } from 'lucide-react';
 import FilterBar from './FilterBar';
+import { PageHeader, GlassPanel, Chip, Drawer, EmptyState, SentimentFace, Badge, ProgressBar } from './ui';
+import { buildQuery, fmtInt, fmtDateTime, initials, SENTIMENT_MAP } from '../lib/format';
+
+/**
+ * KHO PHẢN HỒI
+ * ------------------------------------------------------------------
+ * Bộ lọc "mức độ" của bản cũ lọc theo Critical/High trên một trường
+ * không tồn tại — chọn gì cũng ra rỗng. Mức nghiêm trọng là thuộc tính
+ * của một CỤM phản hồi đã qua kiểm định, không phải của một câu văn;
+ * thứ thuộc về từng phản hồi là HẠNG TIN CẬY của nguồn, nên lọc theo đó.
+ */
+
+const PAGE_SIZE = 20;
+const TIERS = ['P1', 'P2', 'P3', 'P4', 'P5'];
+const MOODS = [
+  { value: 'Positive', label: 'Tích cực', icon: Laugh },
+  { value: 'Neutral', label: 'Trung tính', icon: Meh },
+  { value: 'Negative', label: 'Tiêu cực', icon: Frown }
+];
+const SIGNAL_ICONS = {
+  'Trùng lặp gần về nội dung': Copy,
+  'Đột biến thời gian': Zap,
+  'Bất thường hành vi tài khoản': UserX,
+  'Bất nhất điểm sao và nội dung': Star,
+  'Bất nhất với dữ liệu giao dịch': Receipt
+};
+
+const strip = (s = '') => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').toLowerCase();
+
+const tierTone = (w = 0) => (w >= 0.9 ? 'text-ok' : w >= 0.6 ? 'text-ink-mid' : w >= 0.4 ? 'text-high' : 'text-crit');
+
+const FeedbackDetail = ({ item, onClose }) => {
+  const t = item?.trust;
+  return (
+    <Drawer open={Boolean(item)} onClose={onClose} title="Chi tiết phản hồi" subtitle={item ? `${item.source} · ${fmtDateTime(item.timestamp)}` : ''}>
+      {item && (
+        <div className="flex flex-col gap-5">
+          <div className="flex items-center gap-3">
+            <span className="grid size-11 place-items-center rounded-full bg-linear-to-br from-sky/70 to-blush/70 text-sm font-semibold text-ink-hi">
+              {initials(item.author || 'Ẩn danh')}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold text-ink-hi">{item.author || 'Ẩn danh'}</p>
+              <p className="truncate text-xs text-ink-lo">{item.productName || 'Không gắn sản phẩm'}{item.region ? ` · ${item.region}` : ''}</p>
+            </div>
+            <SentimentFace sentiment={item.sentiment} size={36} />
+          </div>
+
+          <blockquote className="rounded-2xl bg-surface/65 p-4 text-[0.95rem] leading-relaxed text-ink-hi">
+            {item.originalText}
+            {item.rating != null && (
+              <span className="mt-2 flex items-center gap-1 text-xs text-ink-lo">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <Star key={i} size={12} className={i < item.rating ? 'fill-high text-high' : 'text-line'} aria-hidden="true" />
+                ))}
+                <span className="ml-1 font-mono">{item.rating}/5</span>
+              </span>
+            )}
+          </blockquote>
+
+          {item.aiSummary && (
+            <div>
+              <p className="eyebrow mb-1.5">Tóm tắt</p>
+              <p className="text-sm leading-relaxed text-ink-mid">{item.aiSummary}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-surface/55 p-3">
+              <p className="text-[0.7rem] text-ink-lo">Nhóm vấn đề</p>
+              <p className="mt-0.5 text-sm font-medium text-ink-hi">{item.categoryLabel || item.category || '—'}</p>
+            </div>
+            <div className="rounded-xl bg-surface/55 p-3">
+              <p className="text-[0.7rem] text-ink-lo">Nguyên nhân</p>
+              <p className="mt-0.5 text-sm font-medium text-ink-hi">{item.causeLabel || '—'}</p>
+            </div>
+          </div>
+
+          {t && (
+            <div>
+              <p className="eyebrow mb-3">Tầng kiểm soát tin cậy</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl bg-surface/55 p-3">
+                  <p className="text-[0.7rem] text-ink-lo">Hạng nguồn</p>
+                  <p className={`mt-0.5 font-mono text-lg font-semibold ${tierTone(t.tierWeight)}`}>{t.tier}</p>
+                </div>
+                <div className="rounded-xl bg-surface/55 p-3">
+                  <p className="text-[0.7rem] text-ink-lo">Trọng số</p>
+                  <p className="mt-0.5 font-mono text-lg font-semibold text-ink-hi">{Number(t.weight).toFixed(2)}</p>
+                </div>
+                <div className="rounded-xl bg-surface/55 p-3">
+                  <p className="text-[0.7rem] text-ink-lo">Nghi vấn</p>
+                  <p className="mt-0.5 font-mono text-lg font-semibold text-ink-hi">{t.authenticityScore != null ? Number(t.authenticityScore).toFixed(2) : '—'}</p>
+                </div>
+              </div>
+              <ProgressBar className="mt-3" value={t.weight} label="Mức đóng góp vào chỉ số" showValue />
+              {t.bandLabelVi && <p className="mt-2 text-xs text-ink-lo">Vùng: {t.bandLabelVi}</p>}
+              {t.triggeredSignals?.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {t.triggeredSignals.map((s, i) => {
+                    const Icon = SIGNAL_ICONS[s.signal] || HelpCircle;
+                    return <Badge key={i} tone="high" icon={Icon}>{s.signal}</Badge>;
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </Drawer>
+  );
+};
 
 const Feedbacks = () => {
+  const [params, setParams] = useSearchParams();
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Filters and Search
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterSentiment, setFilterSentiment] = useState('All');
-  const [filterSeverity, setFilterSeverity] = useState('All');
+  const [search, setSearch] = useState(params.get('q') || '');
+  const [mood, setMood] = useState('All');
+  const [tier, setTier] = useState('All');
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState(null);
 
-  // Global Filters
   const [timeFilter, setTimeFilter] = useState(localStorage.getItem('timeFilter') || 'All');
   const [sourceFilter, setSourceFilter] = useState(localStorage.getItem('sourceFilter') || 'All');
   const [productFilter, setProductFilter] = useState(localStorage.getItem('productFilter') || 'All');
 
-  // Sync to localStorage
   useEffect(() => {
     localStorage.setItem('timeFilter', timeFilter);
     localStorage.setItem('sourceFilter', sourceFilter);
     localStorage.setItem('productFilter', productFilter);
   }, [timeFilter, sourceFilter, productFilter]);
 
+  // Đến từ bảng lệnh Ctrl+K với ?q=
   useEffect(() => {
-    const fetchFeedbacks = async () => {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams();
-        if (timeFilter !== 'All') params.append('time', timeFilter);
-        if (sourceFilter !== 'All') params.append('source', sourceFilter);
-        if (productFilter !== 'All') params.append('product', productFilter);
-        
-        const q = params.toString() ? `?${params.toString()}` : '';
-        const res = await axios.get(`/feedbacks${q}`);
-        setFeedbacks(res.data);
-      } catch (err) {
-        setError('Failed to fetch feedbacks. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFeedbacks();
+    const q = params.get('q');
+    if (q != null) setSearch(q);
+  }, [params]);
+
+  useEffect(() => {
+    setLoading(true);
+    axios
+      .get(`/feedbacks${buildQuery({ time: timeFilter, source: sourceFilter, product: productFilter })}`)
+      .then((res) => {
+        setFeedbacks(Array.isArray(res.data) ? res.data : []);
+        setError(null);
+      })
+      .catch(() => setError('Không tải được phản hồi. Kiểm tra máy chủ đã chạy chưa.'))
+      .finally(() => setLoading(false));
   }, [timeFilter, sourceFilter, productFilter]);
 
-  const getSentimentBadge = (sentiment) => {
-    switch (sentiment) {
-      case 'Positive': return <span className="badge badge-low">Positive</span>;
-      case 'Negative': return <span className="badge badge-critical">Negative</span>;
-      default: return <span className="badge badge-medium">Neutral</span>;
-    }
+  useEffect(() => setPage(1), [search, mood, tier, timeFilter, sourceFilter, productFilter]);
+
+  const q = strip(search.trim());
+  const searched = useMemo(
+    () => (q ? feedbacks.filter((f) => strip(`${f.originalText} ${f.author} ${f.productName}`).includes(q)) : feedbacks),
+    [feedbacks, q]
+  );
+  const filtered = searched.filter((f) => (mood === 'All' || f.sentiment === mood) && (tier === 'All' || f.trust?.tier === tier));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const countBy = (key, val) => searched.filter((f) => (key === 'mood' ? f.sentiment === val : f.trust?.tier === val)).length;
+
+  const clearSearch = () => {
+    setSearch('');
+    if (params.get('q')) setParams({}, { replace: true });
   };
-
-  /** Hạng nguồn thay cho "severity" — xem ghi chú trong FeedbackTable.jsx */
-  const getSeverityBadge = (trust) => {
-    if (!trust) return <span className="cat-badge">—</span>;
-    const color =
-      trust.tierWeight >= 0.9 ? '#10b981' :
-      trust.tierWeight >= 0.6 ? '#eab308' :
-      trust.tierWeight >= 0.4 ? '#f97316' : '#ef4444';
-    return (
-      <span className="cat-badge" style={{ color, borderColor: color + '4d' }}
-            title={`Trọng số tin cậy ${trust.weight}`}>
-        {trust.tier}
-      </span>
-    );
-  };
-
-  const filteredFeedbacks = feedbacks.filter((fb) => {
-    const matchesSearch = (fb.originalText && fb.originalText.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                          (fb.author && fb.author.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesSentiment = filterSentiment === 'All' || fb.sentiment === filterSentiment;
-    const matchesSeverity = filterSeverity === 'All' || (fb.trust && fb.trust.tier === filterSeverity);
-
-    return matchesSearch && matchesSentiment && matchesSeverity;
-  });
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '2rem' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.75rem', fontWeight: 600 }}>Quản lý phản hồi</h1>
+    <div className="cx">
+      <PageHeader
+        section="Giám sát"
+        title="Kho"
+        accent="phản hồi"
+        subtitle="Chỉ hiển thị phản hồi đã qua tầng kiểm soát tin cậy. Bấm vào một dòng để xem chi tiết và các tín hiệu đã kích hoạt."
+      />
 
-      </div>
-
-      <FilterBar 
+      <FilterBar
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}
         sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
         productFilter={productFilter} setProductFilter={setProductFilter}
-        hideExportButton={true}
+        hideExportButton
       />
 
-      <div className="glass-panel" style={{ padding: '0', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 250px)' }}>
-        {/* Toolbar */}
-        <div style={{ 
-          padding: '1.25rem 1.5rem', 
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
-          display: 'flex',
-          gap: '1rem',
-          flexWrap: 'wrap',
-          alignItems: 'center'
-        }}>
-          {/* Search Box */}
-          <div style={{ 
-            display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', 
-            borderRadius: 'var(--radius-md)', padding: '0.5rem 1rem', border: '1px solid rgba(255,255,255,0.1)', flex: 1, minWidth: '250px' 
-          }}>
-            <Search size={18} color="var(--text-muted)" style={{ marginRight: '0.75rem' }} />
-            <input 
-              type="text" 
-              placeholder="Search by keyword or username..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                background: 'transparent', border: 'none', color: 'var(--text-primary)', width: '100%', outline: 'none', fontSize: '0.9rem'
-              }}
+      <GlassPanel tone="strong" className="overflow-hidden">
+        <div className="flex flex-col gap-4 border-b border-line-soft p-5">
+          <div className="relative">
+            <Search size={17} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-lo" aria-hidden="true" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm theo nội dung, khách hàng hoặc sản phẩm — gõ không dấu cũng được"
+              aria-label="Tìm phản hồi"
+              className="h-12 w-full rounded-2xl border border-line bg-surface/70 pr-12 pl-11 text-sm text-ink-hi outline-none transition-[border-color,box-shadow] placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
             />
+            {search && (
+              <button type="button" onClick={clearSearch} aria-label="Xoá tìm kiếm" className="absolute top-1/2 right-3 grid size-7 -translate-y-1/2 place-items-center rounded-full text-ink-lo hover:bg-raised hover:text-ink-hi">
+                <X size={15} />
+              </button>
+            )}
           </div>
 
-          {/* Filters */}
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-md)', padding: '0.25rem 0.75rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <Filter size={14} color="var(--text-muted)" />
-              <select 
-                value={filterSentiment} 
-                onChange={(e) => setFilterSentiment(e.target.value)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem', padding: '0.25rem', cursor: 'pointer' }}
-              >
-                <option value="All" style={{ background: 'var(--bg-dark)' }}>Mọi sắc thái</option>
-                <option value="Positive" style={{ background: 'var(--bg-dark)' }}>Positive</option>
-                <option value="Neutral" style={{ background: 'var(--bg-dark)' }}>Neutral</option>
-                <option value="Negative" style={{ background: 'var(--bg-dark)' }}>Negative</option>
-              </select>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Lọc theo cảm xúc">
+              <span className="eyebrow mr-1">Cảm xúc</span>
+              <Chip active={mood === 'All'} onClick={() => setMood('All')} count={searched.length}>Tất cả</Chip>
+              {MOODS.map((m) => (
+                <Chip key={m.value} active={mood === m.value} onClick={() => setMood(m.value)} icon={m.icon} count={countBy('mood', m.value)}>
+                  {m.label}
+                </Chip>
+              ))}
             </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-md)', padding: '0.25rem 0.75rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <AlertCircle size={14} color="var(--text-muted)" />
-              <select 
-                value={filterSeverity} 
-                onChange={(e) => setFilterSeverity(e.target.value)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem', padding: '0.25rem', cursor: 'pointer' }}
-              >
-                <option value="All" style={{ background: 'var(--bg-dark)' }}>Mọi mức độ</option>
-                <option value="Critical" style={{ background: 'var(--bg-dark)' }}>Critical</option>
-                <option value="High" style={{ background: 'var(--bg-dark)' }}>High</option>
-                <option value="Medium" style={{ background: 'var(--bg-dark)' }}>Medium</option>
-                <option value="Low" style={{ background: 'var(--bg-dark)' }}>Low</option>
-              </select>
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Lọc theo hạng tin cậy">
+              <span className="eyebrow mr-1">Hạng nguồn</span>
+              <Chip active={tier === 'All'} onClick={() => setTier('All')}>Mọi hạng</Chip>
+              {TIERS.map((t) => (
+                <Chip key={t} active={tier === t} onClick={() => setTier(t)} count={countBy('tier', t)} className="font-mono">{t}</Chip>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Data Table */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0' }}>
-          {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
-              <Loader2 size={32} className="animate-spin" style={{ marginBottom: '1rem', color: 'var(--accent-purple)' }} />
-              <p>Loading feedbacks...</p>
-            </div>
-          ) : error ? (
-            <div style={{ color: 'var(--risk-critical)', textAlign: 'center', padding: '3rem' }}>{error}</div>
-          ) : filteredFeedbacks.length === 0 ? (
-            <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '3rem' }}>No feedbacks found matching your filters.</div>
-          ) : (
-            <div className="table-responsive">
-              <table className="data-table" style={{ borderCollapse: 'collapse', width: '100%' }}>
-                <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 10 }}>
-                  <tr>
-                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Customer</th>
-                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', width: '35%' }}>Feedback</th>
-                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</th>
-                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sentiment</th>
-                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Độ tin cậy</th>
-                    <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Source</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredFeedbacks.map((item, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', transition: 'background 0.2s ease' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
-                      <td style={{ padding: '1.25rem 1.5rem' }}>
-                        <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>@{item.author || `user_${idx}`}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{new Date(item.timestamp).toLocaleDateString()}</div>
-                      </td>
-                      <td style={{ padding: '1.25rem 1.5rem' }}>
-                        <div style={{ fontSize: '0.9rem', lineHeight: '1.5', color: 'var(--text-primary)' }}>{item.originalText}</div>
-                        {item.aiSummary && (
-                          <div style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', marginTop: '0.5rem', fontStyle: 'italic' }}>
-                            ↳ AI Note: {item.aiSummary}
+        {error ? (
+          <EmptyState variant="error" title="Không tải được phản hồi" description={error} />
+        ) : loading && feedbacks.length === 0 ? (
+          <div className="flex flex-col gap-2 p-5">{Array.from({ length: 8 }, (_, i) => <div key={i} className="h-14 animate-pulse rounded-xl bg-raised" />)}</div>
+        ) : filtered.length === 0 ? (
+          <EmptyState title="Không có phản hồi khớp" description="Thử bỏ bớt điều kiện lọc hoặc đổi từ khoá tìm kiếm." />
+        ) : (
+          <div className={`overflow-x-auto transition-opacity ${loading ? 'opacity-60' : ''}`}>
+            <table className="fb-table">
+              <colgroup>
+                <col style={{ width: '20%' }} />
+                <col style={{ width: '38%' }} />
+                <col style={{ width: '15%' }} />
+                <col style={{ width: '11%' }} />
+                <col style={{ width: '8%' }} />
+                <col style={{ width: '8%' }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Khách hàng</th>
+                  <th>Nội dung</th>
+                  <th>Nhóm vấn đề</th>
+                  <th>Cảm xúc</th>
+                  <th>Hạng</th>
+                  <th>Nguồn</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((f, i) => {
+                  const author = f.author || 'Ẩn danh';
+                  const s = SENTIMENT_MAP[f.sentiment] || SENTIMENT_MAP.Neutral;
+                  return (
+                    <tr
+                      key={f._id || i}
+                      tabIndex={0}
+                      onClick={() => setSelected(f)}
+                      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setSelected(f))}
+                      className="cursor-pointer focus-visible:bg-raised focus-visible:outline-none"
+                    >
+                      <td>
+                        <div className="fb-user">
+                          <span className="fb-avatar" aria-hidden="true">{initials(author)}</span>
+                          <div className="fb-user-text">
+                            <div className="fb-user-name" title={author}>{author}</div>
+                            <div className="fb-meta">{fmtDateTime(f.timestamp)}</div>
                           </div>
-                        )}
+                        </div>
                       </td>
-                      <td style={{ padding: '1.25rem 1.5rem' }}><span className="cat-badge">{item.category}</span></td>
-                      <td style={{ padding: '1.25rem 1.5rem' }}>{getSentimentBadge(item.sentiment)}</td>
-                      <td style={{ padding: '1.25rem 1.5rem' }}>{getSeverityBadge(item.trust)}</td>
-                      <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{item.source}</td>
+                      <td><div className="fb-clamp" title={f.originalText}>{f.originalText}</div></td>
+                      <td>{f.categoryLabel ? <span className="fb-chip" title={f.categoryLabel}>{f.categoryLabel}</span> : <span className="text-ink-lo">—</span>}</td>
+                      <td>
+                        <span className="inline-flex items-center gap-2 text-[0.8rem] text-ink-mid">
+                          <SentimentFace sentiment={f.sentiment} size={22} />
+                          {s.label}
+                        </span>
+                      </td>
+                      <td><span className={`fb-trust-tier ${tierTone(f.trust?.tierWeight)}`}>{f.trust?.tier || '—'}</span></td>
+                      <td><span className="fb-source">{f.source}</span></td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-        
-        {/* Footer */}
-        {!loading && !error && filteredFeedbacks.length > 0 && (
-          <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            <span>{filteredFeedbacks.length} / {feedbacks.length}</span>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
+
+        {filtered.length > 0 && (
+          <div className="fb-pager">
+            <span className="fb-pager-info">
+              {fmtInt((page - 1) * PAGE_SIZE + 1)}–{fmtInt(Math.min(page * PAGE_SIZE, filtered.length))} / {fmtInt(filtered.length)}
+              {filtered.length !== feedbacks.length && <span className="text-ink-lo"> (trên {fmtInt(feedbacks.length)})</span>}
+            </span>
+            <div className="fb-pager-btns">
+              <button className="fb-page-btn" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} aria-label="Trang trước"><ChevronLeft size={14} /></button>
+              <span className="px-2 font-mono text-xs text-ink-mid">{page} / {totalPages}</span>
+              <button className="fb-page-btn" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} aria-label="Trang sau"><ChevronRight size={14} /></button>
+            </div>
+          </div>
+        )}
+      </GlassPanel>
+
+      <FeedbackDetail item={selected} onClose={() => setSelected(null)} />
     </div>
   );
 };

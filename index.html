@@ -4,13 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Customer Radar — phân tích phản hồi khách hàng đa kênh có tầng kiểm soát tin cậy dữ liệu." />
+    <meta name="description" content="Customer Radar — phân tích phản hồi khách hàng đa kênh có tầng kiểm soát tin cậy dữ liệu. Đội LDS, Trường ĐH Công nghệ Thông tin – ĐHQG-HCM." />
+    <meta name="theme-color" content="#E9EFEE" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preload" as="image" href="/images/uit-campus-mist.webp">
     <title>Customer Radar</title>
+    <script>
+      // Áp theme đã lưu TRƯỚC khi React chạy, để không nháy nền sai màu
+      try {
+        var t = localStorage.getItem('cr-theme');
+        document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+        if (localStorage.getItem('cr-glass') === 'off') document.documentElement.setAttribute('data-glass', 'off');
+      } catch (e) {}
+    </script>
     <style>
-      body { background-color: #09090b; margin: 0; font-family: 'Inter', system-ui, sans-serif; }
+      body { background-color: #E9EFEE; margin: 0; font-family: 'Inter', system-ui, sans-serif; }
+      [data-theme='dark'] body { background-color: #121B20; }
     </style>
   </head>
   <body>

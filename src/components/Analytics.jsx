@@ -1,81 +1,109 @@
-import React, { useState, useEffect } from 'react';
-import { Brain, AlertTriangle, HelpCircle, Sparkles, Database, Lightbulb, Route } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, Package, MessageSquareQuote, ArrowRight } from 'lucide-react';
 import FilterBar from './FilterBar';
+import Segments from './Segments';
+import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, SentimentFace, Button, Stat } from './ui';
+import { buildQuery, fmtInt, fmtPct, fmtSignedPct, fmtDate } from '../lib/format';
 
 /**
- * PHÂN TÍCH CHIẾN LƯỢC — bố cục
+ * PHÂN TÍCH NGUYÊN NHÂN
  * ------------------------------------------------------------------
- *   [ Nhãn AI · tiêu đề · chip bộ lọc                            12 ]
- *   [ Bộ lọc dạng pill, không khung bao                          12 ]
- *   [ Tóm tắt điều hành + timeline hành động  8 ][ Ma trận rủi ro 4 ]
- *   [                                          ][ Chú thích       4 ]
- *
- * Không còn nút "Chạy lại dự báo": khi chưa có bản cache, trang tự sinh
- * báo cáo một lần cho bộ lọc hiện tại.
+ * Thay cho "báo cáo AI" cũ — một đoạn văn do mô hình ngôn ngữ viết tự do,
+ * không truy ngược được về con số nào. Trang này dựng HOÀN TOÀN từ phản
+ * hồi đã qua Trust Layer: chọn một nhóm vấn đề → thấy nguyên nhân cấp 2
+ * xếp hạng → thấy diễn biến theo ngày → mở tới phản hồi gốc. Mọi con số
+ * đều đếm được bằng tay nếu muốn kiểm tra.
  */
 
-// Card kính: tách lớp bằng ánh sáng (viền mảnh trong suốt + vệt sáng mép
-// trên) thay cho viền xám đặc.
-const GlassCard = ({ className = '', children, ...rest }) => (
-  <section className={`glass relative overflow-hidden rounded-2xl ${className}`} {...rest}>
-    <span
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-accent/50 to-transparent"
-    />
-    {children}
-  </section>
-);
+const DAYS = 28;
+const AXIS = { fontSize: 11, fill: 'var(--text-lo)' };
 
-// Làm nổi số liệu và các cụm từ mang tín hiệu rủi ro trong đoạn văn do mô
-// hình sinh, để mắt quét được ý chính mà không phải đọc từng chữ.
-const RISK_TERMS = ['tiêu cực', 'rủi ro', 'khiếu nại', 'nghiêm trọng', 'khẩn cấp', 'suy giảm', 'ưu tiên'];
-const TOKEN_RE = new RegExp(`(\\d+(?:[.,]\\d+)?\\s?%|\\d+(?:[.,]\\d+)*|${RISK_TERMS.join('|')})`, 'giu');
+const dayKey = (d) => d.toISOString().slice(0, 10);
 
-const highlight = (text) =>
-  text.split(TOKEN_RE).map((part, i) => {
-    if (i % 2 === 0) return part;
-    if (/\d/.test(part)) {
-      return <span key={i} className="data-num font-medium text-accent-hi">{part}</span>;
-    }
-    return <span key={i} className="font-medium text-high">{part}</span>;
+/** Đếm khiếu nại theo ngày trong 28 ngày gần nhất */
+const dailySeries = (items) => {
+  const now = new Date();
+  const days = Array.from({ length: DAYS }, (_, i) => {
+    const d = new Date(now);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (DAYS - 1 - i));
+    return { key: dayKey(d), name: `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`, value: 0 };
   });
-
-// Mức rủi ro là nhãn định tính do mô hình trả về, không phải xác suất đo
-// được. Độ dài thanh chỉ để so sánh bằng mắt, nên KHÔNG in kèm con số %.
-const riskLevel = (probability = '') => {
-  const p = probability.toLowerCase();
-  if (p.includes('cao')) {
-    return {
-      width: 90,
-      bar: 'from-crit to-high',
-      chip: 'bg-crit/10 text-crit ring-crit/30',
-      glow: 'shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--sev-crit)_70%,transparent)]',
-    };
+  const idx = Object.fromEntries(days.map((d, i) => [d.key, i]));
+  for (const f of items) {
+    const t = new Date(f.timestamp);
+    if (Number.isNaN(t.getTime())) continue;
+    const k = dayKey(new Date(t.getFullYear(), t.getMonth(), t.getDate()));
+    if (idx[k] != null) days[idx[k]].value += 1;
   }
-  if (p.includes('thấp')) {
-    return {
-      width: 25,
-      bar: 'from-med/80 to-med',
-      chip: 'bg-med/10 text-med ring-med/30',
-      glow: 'shadow-[0_0_10px_-3px_color-mix(in_oklab,var(--sev-med)_60%,transparent)]',
-    };
-  }
-  return {
-    width: 58,
-    bar: 'from-high to-med',
-    chip: 'bg-high/10 text-high ring-high/30',
-    glow: 'shadow-[0_0_12px_-3px_color-mix(in_oklab,var(--sev-high)_65%,transparent)]',
-  };
+  return days;
 };
 
-const riskHorizon = (timeFilter) =>
-  timeFilter === 'Today' ? '7 ngày'
-    : timeFilter === 'This Week' ? '4 tuần'
-    : timeFilter === 'This Month' ? '1 quý'
-    : '30 ngày';
+/** So 7 ngày gần nhất với 7 ngày liền trước */
+const weekDelta = (items) => {
+  const now = Date.now();
+  const W = 7 * 86400000;
+  let cur = 0;
+  let prev = 0;
+  for (const f of items) {
+    const t = new Date(f.timestamp).getTime();
+    if (t > now - W) cur += 1;
+    else if (t > now - 2 * W) prev += 1;
+  }
+  return { cur, prev, rel: prev ? (cur - prev) / prev : null };
+};
 
-const Analytics = () => {
+const groupCount = (items, keyFn, labelFn) => {
+  const m = new Map();
+  for (const f of items) {
+    const k = keyFn(f);
+    if (!k) continue;
+    if (!m.has(k)) m.set(k, { key: k, label: labelFn(f), count: 0 });
+    m.get(k).count += 1;
+  }
+  return [...m.values()].sort((a, b) => b.count - a.count);
+};
+
+/** Hàng xếp hạng — chỉ là nút khi có hành động; không thì là khối thường */
+const RankBar = ({ label, count, max, total, active, onClick, tone = 'bg-neg' }) => {
+  const Tag = onClick ? 'button' : 'div';
+  return (
+  <Tag
+    {...(onClick ? { type: 'button', onClick, 'aria-pressed': active } : {})}
+    className={`block w-full rounded-xl px-3 py-2.5 text-left transition-[background-color,box-shadow] ${
+      active ? 'bg-surface shadow-[0_0_0_2px_var(--accent)]' : onClick ? 'hover:bg-surface/70' : ''
+    }`}
+  >
+    <div className="flex items-baseline justify-between gap-3">
+      <span className={`min-w-0 truncate text-sm ${active ? 'font-semibold text-ink-hi' : 'text-ink-hi'}`}>{label}</span>
+      <span className="shrink-0 font-mono text-xs text-ink-mid">
+        {fmtInt(count)} <span className="text-ink-lo">· {fmtPct(total ? count / total : null, 0)}</span>
+      </span>
+    </div>
+    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-raised">
+      <div className={`h-full rounded-full ${tone}`} style={{ width: `${max ? Math.max(3, (count / max) * 100) : 0}%` }} />
+    </div>
+  </Tag>
+  );
+};
+
+const TrendTip = ({ active, payload, label }) =>
+  active && payload?.length ? (
+    <div className="glass-strong rounded-xl px-3 py-2 text-xs">
+      <p className="text-ink-lo">Ngày {label}</p>
+      <p className="mt-0.5"><span className="font-mono font-semibold text-ink-hi">{fmtInt(payload[0].value)}</span> <span className="text-ink-mid">khiếu nại</span></p>
+    </div>
+  ) : null;
+
+const RootCauses = () => {
+  const navigate = useNavigate();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selected, setSelected] = useState(null);
   const [timeFilter, setTimeFilter] = useState(localStorage.getItem('timeFilter') || 'All');
   const [sourceFilter, setSourceFilter] = useState(localStorage.getItem('sourceFilter') || 'All');
   const [productFilter, setProductFilter] = useState(localStorage.getItem('productFilter') || 'All');
@@ -86,284 +114,216 @@ const Analytics = () => {
     localStorage.setItem('productFilter', productFilter);
   }, [timeFilter, sourceFilter, productFilter]);
 
-  const [prediction, setPrediction] = useState(null);
-  // So phan hoi hop le ma du bao dua tren. Day la con so THAT do API
-  // tra ve, dung de thay cho "92% diem tin cay" von duoc viet cung.
-  const [basedOn, setBasedOn] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Chỉ còn đường tự sinh khi chưa có cache — nút chạy tay đã bỏ.
-  const generatePrediction = async () => {
-    try {
-      const res = await axios.post('/predict/refresh', {
-        time: timeFilter,
-        source: sourceFilter,
-        product: productFilter
-      });
-      setPrediction(res.data.data);
-      setBasedOn(res.data.basedOnValidFeedbacks ?? null);
-    } catch (err) {
-      console.error(err);
-      setError("Không thể tự động tạo báo cáo AI: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPrediction = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      if (timeFilter !== 'All') params.append('time', timeFilter);
-      if (sourceFilter !== 'All') params.append('source', sourceFilter);
-      if (productFilter !== 'All') params.append('product', productFilter);
-      const q = params.toString() ? `?${params.toString()}` : '';
-
-      const res = await axios.get(`/predict${q}`);
-      if (res.data.data) {
-        setPrediction(res.data.data);
-        setBasedOn(res.data.basedOnValidFeedbacks ?? null);
-        setLoading(false);
-      } else {
-        await generatePrediction();
-      }
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchPrediction();
+    setLoading(true);
+    axios
+      .get(`/feedbacks${buildQuery({ time: timeFilter, source: sourceFilter, product: productFilter })}`)
+      .then((r) => {
+        setItems(Array.isArray(r.data) ? r.data : []);
+        setError(null);
+      })
+      .catch(() => setError('Không tải được dữ liệu phân tích.'))
+      .finally(() => setLoading(false));
   }, [timeFilter, sourceFilter, productFilter]);
 
-  const basedOnLabel = basedOn != null ? basedOn.toLocaleString('vi-VN') : '—';
-  const activeChips = [sourceFilter, timeFilter].filter((f) => f !== 'All');
+  // Phân tích nguyên nhân trên KHIẾU NẠI — phản hồi tiêu cực đã được phân loại
+  const complaints = useMemo(() => items.filter((f) => f.sentiment === 'Negative' && f.category && f.category !== 'Other'), [items]);
+  const categories = useMemo(() => groupCount(complaints, (f) => f.category, (f) => f.categoryLabel || f.category), [complaints]);
+  const current = categories.find((c) => c.key === selected) || categories[0] || null;
+  const scoped = useMemo(() => (current ? complaints.filter((f) => f.category === current.key) : []), [complaints, current]);
+  const causes = useMemo(() => groupCount(scoped, (f) => f.subCategory, (f) => f.causeLabel || f.subCategory), [scoped]);
+  const products = useMemo(() => groupCount(scoped, (f) => f.productName, (f) => f.productName).slice(0, 5), [scoped]);
+  const series = useMemo(() => dailySeries(scoped), [scoped]);
+  const delta = useMemo(() => weekDelta(scoped), [scoped]);
+  const samples = useMemo(
+    () => [...scoped].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 4),
+    [scoped]
+  );
+  const unclassified = items.filter((f) => f.sentiment === 'Negative' && (!f.category || f.category === 'Other')).length;
 
-  const renderSkeleton = () => (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-      <GlassCard className="flex flex-col gap-6 p-6 lg:col-span-8">
-        <div className="flex items-center gap-3">
-          <div className="skeleton size-10 rounded-xl" />
-          <div className="skeleton h-7 w-52 rounded-md" />
-        </div>
-        <div className="skeleton h-32 w-full rounded-xl" />
-        <div className="skeleton h-5 w-44 rounded-md" />
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="flex gap-4">
-            <div className="skeleton size-8 shrink-0 rounded-full" />
-            <div className="skeleton h-16 w-full rounded-xl" />
-          </div>
-        ))}
-      </GlassCard>
-      <GlassCard className="flex flex-col gap-5 p-6 lg:col-span-4">
-        <div className="skeleton h-6 w-40 rounded-md" />
-        {[0, 1, 2].map((i) => <div key={i} className="skeleton h-10 w-full rounded-lg" />)}
-      </GlassCard>
-    </div>
+  const filters = (
+    <FilterBar
+      timeFilter={timeFilter} setTimeFilter={setTimeFilter}
+      sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
+      productFilter={productFilter} setProductFilter={setProductFilter}
+      hideExportButton
+    />
   );
 
+  if (error) return <>{filters}<GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel></>;
+  if (loading && items.length === 0) {
+    return (
+      <>
+        {filters}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
+          <div className="h-[520px] animate-pulse rounded-[20px] bg-surface/50" />
+          <div className="h-[520px] animate-pulse rounded-[20px] bg-surface/50" />
+        </div>
+      </>
+    );
+  }
+  if (!current) {
+    return <>{filters}<GlassPanel><EmptyState title="Chưa có khiếu nại nào được phân loại" description="Trong phạm vi đang lọc không có phản hồi tiêu cực nào gắn được nhóm vấn đề." /></GlassPanel></>;
+  }
+
+  const up = delta.rel != null && delta.rel > 0.005;
+
   return (
-    <div className="cx relative isolate">
-      {/* Ánh sáng môi trường cho lớp kính có thứ để làm mờ.
-          KHÔNG đặt overflow-hidden ở đây: nó cắt vệt sáng đúng theo mép vùng
-          nội dung và để lộ một khung chữ nhật cạnh cứng ở góc trang.
-          .main-content đã có overflow-x: hidden nên không sinh thanh cuộn ngang. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -left-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-accent/15 blur-[120px]" />
-        <div className="absolute -right-40 top-24 h-[26rem] w-[26rem] rounded-full bg-pos/10 blur-[140px]" />
-        <div className="absolute bottom-0 right-1/4 h-[22rem] w-[22rem] rounded-full bg-crit/[0.07] blur-[130px]" />
-      </div>
-
-      {/* ---------- Header ---------- */}
-      <header className="mb-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 className="m-0 text-[1.75rem] font-bold tracking-tight text-ink-hi">Phân tích chiến lược</h2>
-          {activeChips.map((chip) => (
-            <span
-              key={chip}
-              className="rounded-full bg-raised/60 px-3 py-0.5 text-[0.72rem] font-medium text-ink-mid ring-1 ring-line/50"
-            >
-              {chip}
-            </span>
-          ))}
-        </div>
-      </header>
-
-      <FilterBar
-        variant="pill"
-        timeFilter={timeFilter} setTimeFilter={setTimeFilter}
-        sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
-        productFilter={productFilter} setProductFilter={setProductFilter}
-      />
-
-      {error ? (
-        <GlassCard className="flex items-center gap-3 p-5 text-crit">
-          <AlertTriangle size={18} aria-hidden="true" />
-          <span className="text-[0.9rem]">Lỗi: {error}</span>
-        </GlassCard>
-      ) : loading ? (
-        renderSkeleton()
-      ) : !prediction ? (
-        <GlassCard className="px-6 py-16 text-center">
-          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-raised/60 ring-1 ring-line/40">
-            <HelpCircle size={26} className="text-ink-lo" aria-hidden="true" />
+    <>
+      {filters}
+      <div className={`grid items-start gap-6 transition-opacity lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] ${loading ? 'opacity-60' : ''}`}>
+        {/* Cột trái — nhóm vấn đề xếp hạng */}
+        <GlassPanel tone="strong" className="p-5 lg:sticky lg:top-20">
+          <PanelHeader
+            title="Nhóm vấn đề"
+            subtitle={`${fmtInt(complaints.length)} khiếu nại đã phân loại · chọn một nhóm để bóc tách`}
+          />
+          <div className="flex flex-col gap-1">
+            {categories.map((c) => (
+              <RankBar
+                key={c.key}
+                label={c.label}
+                count={c.count}
+                max={categories[0].count}
+                total={complaints.length}
+                active={c.key === current.key}
+                onClick={() => setSelected(c.key)}
+              />
+            ))}
           </div>
-          <h3 className="mb-2 text-[1.2rem] font-semibold text-ink-hi">Chưa có báo cáo AI</h3>
-          <p className="mx-auto max-w-md text-[0.9rem] text-ink-lo">
-            Chưa đủ dữ liệu để sinh dự báo cho bộ lọc này. Thử nới rộng khoảng thời gian hoặc nguồn dữ liệu.
-          </p>
-        </GlassCard>
-      ) : (
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+          {unclassified > 0 && (
+            <p className="mt-4 border-t border-line-soft pt-3 text-xs leading-relaxed text-ink-lo">
+              <span className="font-mono text-ink-mid">{fmtInt(unclassified)}</span> phản hồi tiêu cực chưa gắn được nhóm nào — đây là phần taxonomy đang bỏ sót.
+            </p>
+          )}
+        </GlassPanel>
 
-          {/* ---------- Cột chính ---------- */}
-          <GlassCard className="flex flex-col gap-7 p-5 sm:p-7 lg:col-span-8">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="grid size-10 place-items-center rounded-xl bg-linear-to-br from-accent/30 to-accent/5 ring-1 ring-accent/30">
-                  <Brain size={19} className="text-accent-hi" aria-hidden="true" />
-                </div>
-                <div>
-                  <h3 className="m-0 text-[1.2rem] font-semibold text-ink-hi">Tóm tắt điều hành</h3>
-                  <p className="text-[0.75rem] text-ink-lo">Tổng hợp tình hình và rủi ro nổi bật</p>
-                </div>
-              </div>
-
-              {/* Số phản hồi THẬT mà dự báo dựa trên — thay cho điểm tin cậy
-                  viết cứng ở bản cũ. */}
-              <div className="flex items-center gap-3 rounded-full bg-accent/10 py-1.5 pl-1.5 pr-4 ring-1 ring-accent/30 shadow-[0_0_28px_-8px_color-mix(in_oklab,var(--accent)_70%,transparent)]">
-                <span className="relative grid size-8 place-items-center rounded-full bg-accent/15">
-                  <Database size={15} className="text-accent-hi" aria-hidden="true" />
-                  <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-ok shadow-[0_0_8px_var(--sev-ok)]" />
-                </span>
-                <div className="leading-tight">
-                  <div className="data-num text-[1.05rem] font-semibold text-ink-hi">{basedOnLabel}</div>
-                  <div className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-ink-lo">
-                    Phản hồi hợp lệ
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative rounded-xl bg-canvas/40 px-5 py-5 shadow-[inset_0_2px_14px_rgb(0_0_0/0.28),inset_0_0_0_1px_var(--glass-line)] sm:px-6">
-              <span aria-hidden="true" className="absolute inset-y-5 left-0 w-[2px] rounded-full bg-linear-to-b from-accent via-accent/40 to-transparent" />
-              <div className="flex flex-col gap-3 text-[0.95rem] leading-[1.85] text-ink-mid">
-                {prediction.aiReport.split('\n').filter((line) => line.trim()).map((line, i) => (
-                  <p key={i}>{highlight(line)}</p>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-5 flex items-center gap-2.5">
-                <Route size={16} className="text-accent-hi" aria-hidden="true" />
-                <h4 className="m-0 text-[0.98rem] font-semibold text-ink-hi">Kế hoạch hành động đề xuất</h4>
-                <span className="h-px flex-1 bg-linear-to-r from-line/60 to-transparent" />
-              </div>
-
-              <ol className="relative">
-                {prediction.actionableSteps.map((step, idx) => {
-                  const isLast = idx === prediction.actionableSteps.length - 1;
-                  return (
-                    <li key={idx} className="group relative grid grid-cols-[2rem_1fr] gap-4 pb-5 last:pb-0">
-                      {!isLast && (
-                        <span
-                          aria-hidden="true"
-                          className="absolute bottom-0 left-4 top-9 w-px -translate-x-1/2 bg-linear-to-b from-accent/60 via-accent/25 to-accent/5"
-                        />
-                      )}
-
-                      <div className="relative flex justify-center pt-1">
-                        <span
-                          aria-hidden="true"
-                          className={`absolute top-1 size-8 rounded-full bg-accent/30 blur-md ${idx === 0 ? 'animate-pulse' : 'opacity-60'}`}
-                        />
-                        <span className="relative grid size-8 place-items-center rounded-full bg-canvas ring-1 ring-accent/60 shadow-[0_0_16px_-2px_color-mix(in_oklab,var(--accent)_65%,transparent)]">
-                          <span className="size-2 rounded-full bg-accent-hi shadow-[0_0_8px_var(--accent-hi)]" />
-                        </span>
-                      </div>
-
-                      <div className="rounded-xl bg-raised/25 px-4 py-3 ring-1 ring-line/30 transition duration-200 group-hover:bg-accent/[0.06] group-hover:ring-accent/30">
-                        <div className="data-num mb-1 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-accent-hi/90">
-                          Bước {String(idx + 1).padStart(2, '0')}
-                        </div>
-                        <p className="text-[0.92rem] leading-relaxed text-ink-hi">{step}</p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          </GlassCard>
-
-          {/* ---------- Sidebar ---------- */}
-          <aside className="flex flex-col gap-6 lg:col-span-4">
-            <GlassCard className="p-5 sm:p-6">
-              <div className="mb-5 flex items-center gap-3">
-                <div className="grid size-9 place-items-center rounded-xl bg-linear-to-br from-crit/25 to-high/5 ring-1 ring-crit/25">
-                  <AlertTriangle size={16} className="text-high" aria-hidden="true" />
-                </div>
-                <div>
-                  <h3 className="m-0 text-[1.05rem] font-semibold text-ink-hi">Ma trận rủi ro</h3>
-                  <p className="data-num text-[0.7rem] uppercase tracking-[0.12em] text-ink-lo">
-                    Tầm nhìn · {riskHorizon(timeFilter)}
+        {/* Cột phải — bóc tách nhóm đang chọn */}
+        <div className="flex flex-col gap-6" key={current.key}>
+          <GlassPanel className="p-6 animate-fade-up">
+            <p className="eyebrow mb-1.5">Đang bóc tách</p>
+            <h2 className="text-2xl font-semibold text-ink-hi">{current.label}</h2>
+            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+              <Stat label="Khiếu nại" value={fmtInt(current.count)} />
+              <Stat label="Tỉ trọng" value={fmtPct(current.count / complaints.length, 1)} sub="trong mọi khiếu nại" />
+              <Stat label="7 ngày qua" value={fmtInt(delta.cur)} sub={`trước đó ${fmtInt(delta.prev)}`} />
+              <div className="rounded-2xl bg-surface/55 p-4">
+                <p className="eyebrow">Xu hướng tuần</p>
+                {delta.rel == null ? (
+                  <p className="mt-1.5 text-sm text-ink-lo">Chưa đủ dữ liệu</p>
+                ) : (
+                  <p className={`mt-1.5 inline-flex items-center gap-1 font-mono text-2xl font-semibold ${up ? 'text-crit' : 'text-ok'}`}>
+                    {up ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
+                    {fmtSignedPct(delta.rel)}
                   </p>
-                </div>
+                )}
               </div>
-
-              <ul className="flex flex-col gap-5">
-                {prediction.topRisks.map((risk, idx) => {
-                  const lvl = riskLevel(risk.probability);
-                  return (
-                    <li key={idx}>
-                      <div className="mb-2 flex items-center justify-between gap-3">
-                        <span className="min-w-0 truncate text-[0.88rem] text-ink-hi" title={risk.name}>
-                          {risk.name}
-                        </span>
-                        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[0.66rem] font-semibold uppercase tracking-wider ring-1 ${lvl.chip}`}>
-                          {risk.probability}
-                        </span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-raised/70 shadow-[inset_0_1px_2px_rgb(0_0_0/0.35)]">
-                        <div
-                          className={`h-full rounded-full bg-linear-to-r transition-[width] duration-500 ${lvl.bar} ${lvl.glow}`}
-                          style={{ width: `${lvl.width}%` }}
-                        />
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </GlassCard>
-
-            {/* Ranh giới giữa "số đo" và "dự báo" phải nói thành lời, nhưng
-                đây là chú thích nên hạ tông để không tranh sự chú ý. */}
-            <div role="note" className="rounded-2xl bg-raised/20 px-4 py-4 ring-1 ring-line/25">
-              <div className="mb-2 flex items-center gap-2">
-                <Lightbulb size={14} className="text-med" aria-hidden="true" />
-                <h3 className="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-ink-lo">
-                  Đọc trang này thế nào
-                </h3>
-              </div>
-              <ul className="flex list-disc flex-col gap-1.5 pl-4 text-[0.76rem] leading-relaxed text-ink-lo marker:text-line">
-                <li>
-                  Toàn bộ nội dung là <span className="text-ink-mid">dự báo do mô hình sinh</span>, không phải số đo.
-                  Số đo nằm ở Tổng quan và Trung tâm cảnh báo.
-                </li>
-                <li>
-                  Dựa trên <span className="data-num text-ink-mid">{basedOnLabel}</span> phản hồi đã qua tầng kiểm
-                  soát tin cậy, theo bộ lọc đang áp dụng.
-                </li>
-                <li>Hệ thống không tự thực thi bước nào. Mọi hành động cần người có thẩm quyền phê duyệt.</li>
-              </ul>
             </div>
-          </aside>
+          </GlassPanel>
 
+          <div className="grid gap-6 xl:grid-cols-2">
+            <GlassPanel tone="strong" className="p-5">
+              <PanelHeader title="Nguyên nhân cốt lõi" subtitle="Bóc tách cấp 2 trong nhóm đang chọn" />
+              {causes.length === 0 ? (
+                <p className="text-sm text-ink-lo">Nhóm này chưa có nguyên nhân cấp 2 nào được gán.</p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {causes.slice(0, 7).map((c) => (
+                    <RankBar key={c.key} label={c.label} count={c.count} max={causes[0].count} total={current.count} tone="bg-accent" />
+                  ))}
+                </div>
+              )}
+            </GlassPanel>
+
+            <GlassPanel tone="strong" className="p-5">
+              <PanelHeader title="Diễn biến theo ngày" subtitle={`Số khiếu nại mỗi ngày · ${DAYS} ngày gần nhất`} />
+              <div className="h-[230px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={series} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="rc-fill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" stopColor="var(--viz-neg)" stopOpacity={0.22} />
+                        <stop offset="1" stopColor="var(--viz-neg)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="var(--viz-grid)" vertical={false} />
+                    <XAxis dataKey="name" tick={AXIS} axisLine={false} tickLine={false} minTickGap={24} dy={6} />
+                    <YAxis tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} width={40} />
+                    <Tooltip content={<TrendTip />} cursor={{ stroke: 'var(--text-lo)', strokeWidth: 1 }} />
+                    <Area type="monotone" dataKey="value" stroke="var(--viz-neg)" strokeWidth={2} fill="url(#rc-fill)" isAnimationActive={false} activeDot={{ r: 4, stroke: 'var(--surface-solid)', strokeWidth: 2 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </GlassPanel>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <GlassPanel tone="strong" className="p-5">
+              <PanelHeader title="Sản phẩm bị ảnh hưởng" subtitle="Năm sản phẩm có nhiều khiếu nại nhất trong nhóm" right={<Package size={16} className="text-ink-lo" />} />
+              <ol className="flex list-none flex-col gap-2">
+                {products.map((p, i) => (
+                  <li key={p.key} className="flex items-center gap-3 rounded-xl bg-surface/55 px-3 py-2.5">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-raised font-mono text-[0.68rem] text-ink-mid">{i + 1}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-ink-hi" title={p.label}>{p.label}</span>
+                    <span className="font-mono text-xs text-ink-mid">{fmtInt(p.count)}</span>
+                  </li>
+                ))}
+                {products.length === 0 && <p className="text-sm text-ink-lo">Không có phản hồi gắn sản phẩm.</p>}
+              </ol>
+            </GlassPanel>
+
+            <GlassPanel tone="strong" className="p-5">
+              <PanelHeader title="Tiếng nói khách hàng" subtitle="Phản hồi mới nhất trong nhóm" right={<MessageSquareQuote size={16} className="text-ink-lo" />} />
+              <ul className="flex list-none flex-col gap-2.5">
+                {samples.map((f) => (
+                  <li key={f._id} className="flex gap-3 rounded-xl bg-surface/55 p-3">
+                    <SentimentFace sentiment={f.sentiment} size={26} />
+                    <div className="min-w-0">
+                      <p className="line-clamp-2 text-sm leading-relaxed text-ink-hi">{f.originalText}</p>
+                      <p className="mt-1 font-mono text-[0.68rem] text-ink-lo">{f.causeLabel || '—'} · {fmtDate(f.timestamp)} · {f.source}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                variant="ghost"
+                size="sm"
+                iconRight={ArrowRight}
+                className="mt-3"
+                onClick={() => navigate(`/feedbacks?q=${encodeURIComponent(causes[0]?.label || current.label)}`)}
+              >
+                Mở trong kho phản hồi
+              </Button>
+            </GlassPanel>
+          </div>
         </div>
-      )}
+      </div>
+    </>
+  );
+};
+
+const Analytics = () => {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') === 'segments' ? 'segments' : 'causes';
+
+  return (
+    <div className="cx">
+      <PageHeader
+        section="Phân tích"
+        title="Phân tích"
+        accent="nguyên nhân"
+        subtitle="Dựng hoàn toàn từ phản hồi đã qua tầng kiểm soát tin cậy — mọi con số đều truy ngược được về phản hồi gốc."
+      />
+      <Tabs
+        className="mb-6"
+        value={tab}
+        onChange={(v) => setParams(v === 'segments' ? { tab: 'segments' } : {}, { replace: true })}
+        tabs={[
+          { value: 'causes', label: 'Nguyên nhân cốt lõi', icon: ScanSearch },
+          { value: 'segments', label: 'Phân khúc khách hàng', icon: Users }
+        ]}
+      />
+      {tab === 'segments' ? <Segments /> : <RootCauses />}
     </div>
   );
 };

@@ -1,433 +1,249 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import {
-  Home, BarChart2, MessageSquare, AlertTriangle, Settings, Users, Database,
-  FileText, LogOut, User, ChevronUp, ShieldCheck, FlaskConical,
-  PanelLeftClose, PanelLeftOpen, Cpu
-} from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X } from 'lucide-react';
 import Logo, { LogoMark } from './Logo';
+import { NAV } from '../lib/nav';
+import { initials } from '../lib/format';
 
 /**
- * THANH ĐIỀU HƯỚNG
- * ==================================================================
- * Bản cũ hỏng ở hai chỗ, và chỗ thứ hai mới là chỗ đáng nói.
- *
- * ------------------------------------------------------------------
- * 1. NÓ TRÀN KHỎI MÀN HÌNH TRÊN PHẦN LỚN LAPTOP.
- *
- * Đo trên chính bản cũ: phần điều hướng cần 669px chiều cao, trong khi
- * màn hình 800px chỉ chừa cho nó 596px. Tràn 73px. Ở màn 720px thì tràn
- * 153px, tức khoảng ba mục cuối bị cắt mất — đúng hiện tượng "Báo cáo"
- * bị che trong ảnh chụp.
- *
- * Nguyên nhân: mỗi mục cao 52px (padding 0.875rem trên dưới, chữ
- * 0.95rem, icon 20px), nhân 10 mục là 520px, cộng 97px khối logo và
- * 91px khối người dùng. Gần 190px chiều cao chỉ để trang trí hai đầu.
- *
- * Bản này hạ mục xuống 34px và nén hai đầu, tổng còn khoảng 570px —
- * vừa mọi laptop mà không cần cuộn.
- *
- * ------------------------------------------------------------------
- * 2. 260px CHIỀU RỘNG KHÔNG MANG MỘT THÔNG TIN NÀO.
- *
- * Đây mới là vấn đề kiến trúc. Thanh bên cũ chỉ là một danh sách liên
- * kết: nó chiếm một phần năm màn hình và nói với người dùng đúng bằng
- * không. Trong một sản phẩm giám sát, thanh điều hướng nên đồng thời là
- * MỘT MẶT ĐỒNG HỒ — mở máy lên là biết ngay có bao nhiêu cảnh báo đang
- * chờ, hàng đợi kiểm duyệt còn bao nhiêu, dữ liệu tươi tới đâu.
- *
- * Cảm giác "tech" đến từ chỗ đó, không đến từ hiệu ứng phát sáng.
- *
- * Số liệu lấy từ /api/nav/status — một endpoint riêng rất nhẹ, cố ý
- * không gọi thẳng /alerts hay /trust/queue vì hai endpoint đó trả về
- * toàn bộ nội dung kèm bằng chứng, trong khi ở đây chỉ cần con số đếm.
+ * THANH BÊN — kính nổi cách mép, đồng thời là MỘT MẶT ĐỒNG HỒ: mở máy lên
+ * là thấy ngay bao nhiêu cảnh báo đang chờ, hàng đợi kiểm duyệt còn bao
+ * nhiêu, dữ liệu khoẻ tới đâu và bộ phân loại đang chạy bằng gì.
+ * Số liệu lấy từ /api/nav/status — endpoint nhẹ, chỉ trả số đếm.
  */
 
-/** Chu kỳ làm tươi trạng thái. Đủ chậm để không tạo tải, đủ nhanh để không nói dối. */
 const STATUS_POLL_MS = 60000;
 
-const SidebarItem = ({ icon, label, to, collapsed, badge, badgeTone = 'accent' }) => {
-  const tones = {
-    accent: { bg: 'var(--accent-dim)', fg: 'var(--accent-hi)' },
-    crit: { bg: 'var(--sev-crit-dim)', fg: 'var(--sev-crit)' },
-    muted: { bg: 'var(--raised)', fg: 'var(--text-lo)' }
-  }[badgeTone];
-
+const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
+  const Icon = item.icon;
   return (
     <NavLink
-      to={to}
-      title={collapsed ? label + (badge ? ` (${badge})` : '') : undefined}
-      style={({ isActive }) => ({
-        display: 'flex',
-        alignItems: 'center',
-        gap: collapsed ? '0' : '0.7rem',
-        /* 52px -> 34px. Đây là thay đổi gỡ được toàn bộ hiện tượng tràn. */
-        padding: collapsed ? '0.5rem 0' : '0.45rem 0.75rem',
-        justifyContent: collapsed ? 'center' : 'flex-start',
-        cursor: 'pointer',
-        color: isActive ? 'var(--accent-hi)' : 'var(--text-mid)',
-        background: isActive ? 'var(--accent-dim)' : 'transparent',
-        borderLeft: isActive ? '2px solid var(--accent-hi)' : '2px solid transparent',
-        borderRadius: collapsed ? '0' : '0 var(--r-ctrl) var(--r-ctrl) 0',
-        marginRight: collapsed ? 0 : '0.6rem',
-        fontSize: '0.85rem',
-        fontWeight: isActive ? 600 : 450,
-        textDecoration: 'none',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        transition:
-          'background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease)'
-      })}
+      to={item.to}
+      onClick={onNavigate}
+      title={collapsed ? `${item.label}${count ? ` (${count})` : ''}` : undefined}
+      className={({ isActive }) =>
+        `group relative flex h-10 items-center rounded-xl text-[0.86rem] transition-[background-color,color,box-shadow] duration-150 ${
+          collapsed ? 'justify-center' : 'gap-3 px-3'
+        } ${
+          isActive
+            ? 'bg-surface/90 font-semibold text-ink-hi shadow-[0_1px_2px_rgb(31_45_53/0.06),0_6px_16px_-10px_rgb(31_45_53/0.35)]'
+            : 'text-ink-mid hover:bg-raised hover:text-ink-hi'
+        }`
+      }
     >
-      <span style={{ color: 'inherit', flexShrink: 0, display: 'flex' }}>{icon}</span>
-      {!collapsed && (
+      {({ isActive }) => (
         <>
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
-          {/* Con số ngay trên mục điều hướng: người dùng biết có việc cần
-              làm mà không phải bấm vào mới thấy. */}
-          {badge ? (
+          <Icon size={18} className={`shrink-0 ${isActive ? 'text-accent' : 'text-ink-lo group-hover:text-ink-mid'}`} aria-hidden="true" />
+          {!collapsed && <span className="flex-1 truncate">{item.short || item.label}</span>}
+          {!collapsed && count ? (
             <span
-              className="data-num"
-              style={{
-                flexShrink: 0, fontSize: '0.68rem', fontWeight: 600,
-                padding: '1px 6px', borderRadius: 99,
-                background: tones.bg, color: tones.fg, lineHeight: 1.6
-              }}
+              className={`rounded-full px-1.5 py-px font-mono text-[0.66rem] font-semibold ${
+                critical ? 'bg-crit text-white' : 'bg-raised text-ink-mid'
+              }`}
             >
-              {badge}
+              {count}
             </span>
+          ) : null}
+          {collapsed && count ? (
+            <span className={`absolute top-1.5 right-3 size-2 rounded-full ${critical ? 'bg-crit' : 'bg-accent'}`} />
           ) : null}
         </>
       )}
-      {/* Ở trạng thái thu gọn, badge rút thành một chấm để không mất tín hiệu */}
-      {collapsed && badge ? (
-        <span style={{
-          position: 'absolute', marginLeft: 18, marginTop: -14,
-          width: 6, height: 6, borderRadius: 99, background: tones.fg
-        }} />
-      ) : null}
     </NavLink>
   );
 };
 
-/** Nhãn nhóm, kèm một đường kẻ mảnh để mắt bám vào cấu trúc */
-const GroupLabel = ({ children, collapsed, first }) => {
-  if (collapsed) {
-    return <div style={{ margin: '0.6rem 0.9rem', borderTop: '1px solid var(--border-soft)' }} />;
-  }
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: '0.6rem',
-      padding: '0 0.9rem', marginTop: first ? '0.25rem' : '1.1rem', marginBottom: '0.35rem'
-    }}>
-      <span style={{
-        fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase',
-        letterSpacing: '0.13em', color: 'var(--text-lo)', whiteSpace: 'nowrap'
-      }}>
-        {children}
-      </span>
-      <span style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
-    </div>
-  );
-};
-
 const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollapse }) => {
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [status, setStatus] = useState(null);
   // undefined = đang kiểm tra lần đầu; null = không lấy được trạng thái
   const [nlp, setNlp] = useState(undefined);
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
+  // Tên và email lấy từ Cài đặt → Hồ sơ; cập nhật ngay khi người dùng lưu
+  const readProfile = () => {
+    try {
+      const s = JSON.parse(localStorage.getItem('crSettings') || '{}');
+      return { name: s.name || 'Admin User', email: s.email || 'admin@company.com' };
+    } catch {
+      return { name: 'Admin User', email: 'admin@company.com' };
+    }
+  };
+  const [profile, setProfile] = useState(readProfile);
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowUserMenu(false);
-      }
+    const onChange = () => setProfile(readProfile());
+    window.addEventListener('cr-settings', onChange);
+    window.addEventListener('storage', onChange);
+    return () => {
+      window.removeEventListener('cr-settings', onChange);
+      window.removeEventListener('storage', onChange);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const onDown = (e) => menuRef.current && !menuRef.current.contains(e.target) && setShowMenu(false);
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
   }, []);
 
   useEffect(() => {
     let alive = true;
-    const load = async () => {
-      // Hai yêu cầu chạy song song: /nav/status phải chạy Trust Layer trên cả
-      // kho dữ liệu nên chậm, không được bắt trạng thái mô hình chờ theo nó
-      const navReq = axios.get('/nav/status')
-        .then((res) => { if (alive) setStatus(res.data); })
-        .catch(() => {
-          // Không lấy được trạng thái thì thanh bên vẫn phải điều hướng
-          // được. Im lặng bỏ qua, và dải trạng thái tự chuyển sang "không
-          // rõ" thay vì hiển thị một con số cũ như thể nó còn đúng.
-          if (alive) setStatus(null);
-        });
-      const nlpReq = axios.get('/nlp/status')
-        .then((res) => { if (alive) setNlp(res.data); })
-        .catch(() => { if (alive) setNlp(null); });
-      await Promise.all([navReq, nlpReq]);
+    const load = () => {
+      // Hai yêu cầu song song: /nav/status chạy Trust Layer trên cả kho nên
+      // chậm, không được bắt trạng thái mô hình chờ theo nó
+      axios.get('/nav/status').then((r) => alive && setStatus(r.data)).catch(() => alive && setStatus(null));
+      axios.get('/nlp/status').then((r) => alive && setNlp(r.data)).catch(() => alive && setNlp(null));
     };
     load();
     const id = setInterval(load, STATUS_POLL_MS);
-    return () => { alive = false; clearInterval(id); };
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
   }, []);
 
+  const counts = { alerts: status?.openAlerts || null, queue: status?.reviewQueue || null };
   const health = status?.dataHealth;
-  const healthTone =
-    health == null ? 'var(--text-lo)'
-      : health >= 75 ? 'var(--sev-ok)'
-        : health >= 50 ? 'var(--sev-high)'
-          : 'var(--sev-crit)';
+  const healthTone = health == null ? 'bg-ink-lo' : health >= 75 ? 'bg-ok' : health >= 50 ? 'bg-high' : 'bg-crit';
+  const healthText = health == null ? 'text-ink-lo' : health >= 75 ? 'text-ok' : health >= 50 ? 'text-high' : 'text-crit';
 
-  // Trạng thái mô hình ngôn ngữ: nói thẳng tầng phân loại đang chạy bằng gì
-  const nlpView = nlp === undefined
-    ? { tone: 'var(--text-lo)', label: 'Đang kiểm tra ViSoBERT…', title: 'Đang hỏi trạng thái dịch vụ mô hình' }
-    : !nlp || !nlp.reachable
-    ? { tone: 'var(--text-lo)', label: 'ViSoBERT tắt · dùng luật', title: nlp?.reason || 'Chưa kết nối dịch vụ ViSoBERT' }
-    : nlp.canLabel
-      ? {
-          tone: 'var(--sev-ok)', label: 'ViSoBERT đang gán nhãn',
-          title: `Checkpoint train lúc ${nlp.checkpoint?.trainedAt ? new Date(nlp.checkpoint.trainedAt).toLocaleString('vi-VN') : '—'} · đầu vào ${nlp.inputMode}`
-        }
-      : { tone: 'var(--sev-high)', label: 'ViSoBERT chưa tinh chỉnh', title: nlp.reason };
+  const nlpView =
+    nlp === undefined
+      ? { dot: 'bg-ink-lo', label: 'Đang kiểm tra…', title: 'Đang hỏi trạng thái dịch vụ mô hình' }
+      : !nlp || !nlp.reachable
+        ? { dot: 'bg-ink-lo', label: 'Đang dùng bộ luật', title: nlp?.reason || 'Chưa kết nối dịch vụ ViSoBERT' }
+        : nlp.canLabel
+          ? { dot: 'bg-ok', label: 'ViSoBERT đang chạy', title: `Đầu vào ${nlp.inputMode}` }
+          : { dot: 'bg-high', label: 'ViSoBERT chưa tinh chỉnh', title: nlp.reason };
 
   const updatedAt = status?.computedAt
     ? new Date(status.computedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
     : null;
-
-  const menuBtn = {
-    width: '100%', display: 'flex', alignItems: 'center', gap: '0.65rem',
-    padding: '0.55rem 0.75rem', borderRadius: 'var(--r-ctrl)',
-    background: 'transparent', color: 'var(--text-hi)', fontFamily: 'inherit',
-    border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '0.84rem',
-    transition: 'background-color var(--dur-fast) var(--ease)'
-  };
 
   return (
     <>
       <div className={`sidebar-overlay ${isOpen ? 'visible' : ''}`} onClick={onClose} />
 
       <aside
-        className={`sidebar-container ${isOpen ? 'open' : ''}`}
+        className={`sidebar-container cx ${isOpen ? 'open' : ''}`}
         style={{ width: collapsed ? 'var(--sidebar-w-collapsed)' : 'var(--sidebar-w)' }}
+        aria-label="Điều hướng chính"
       >
-        {/* Khối thương hiệu, kèm nút thu gọn NHÌN THẤY ĐƯỢC.
-            Bản cũ giấu chức năng này sau một dải kéo rộng 6px trong suốt
-            ở mép phải — không ai tìm ra một điều khiển vô hình. */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '0.5rem',
-          padding: collapsed ? '0.9rem 0' : '0.9rem 0.75rem 0.9rem 1rem',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          borderBottom: '1px solid var(--border-soft)',
-          flexShrink: 0, overflow: 'hidden'
-        }}>
-          {collapsed ? <LogoMark size={30} /> : <Logo size="sm" />}
-          {!collapsed && (
-            <button
-              onClick={onToggleCollapse}
-              title="Thu gọn thanh bên"
-              aria-label="Thu gọn thanh bên"
-              style={{
-                display: 'grid', placeItems: 'center', width: 26, height: 26, flexShrink: 0,
-                background: 'transparent', border: '1px solid transparent', borderRadius: 'var(--r-ctrl)',
-                color: 'var(--text-lo)', cursor: 'pointer',
-                transition: 'background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--raised)';
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.color = 'var(--text-hi)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.color = 'var(--text-lo)';
-              }}
-            >
-              <PanelLeftClose size={15} />
-            </button>
-          )}
-        </div>
-
-        {collapsed && (
+        {/* Thương hiệu + thu gọn */}
+        <div className={`flex shrink-0 items-center pt-4 pb-3 ${collapsed ? 'flex-col gap-3 px-0' : 'justify-between pr-3 pl-4'}`}>
+          {collapsed ? <LogoMark size={36} /> : <Logo size="sm" />}
           <button
-            onClick={onToggleCollapse}
-            title="Mở rộng thanh bên"
-            aria-label="Mở rộng thanh bên"
-            style={{
-              margin: '0.6rem auto 0', display: 'grid', placeItems: 'center',
-              width: 28, height: 28, background: 'transparent',
-              border: '1px solid var(--border)', borderRadius: 'var(--r-ctrl)',
-              color: 'var(--text-lo)', cursor: 'pointer', flexShrink: 0
-            }}
+            type="button"
+            onClick={isOpen ? onClose : onToggleCollapse}
+            aria-label={isOpen ? 'Đóng menu' : collapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
+            title={collapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
+            className="grid size-8 place-items-center rounded-lg text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi"
           >
-            <PanelLeftOpen size={15} />
+            {isOpen ? <X size={16} /> : collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           </button>
-        )}
+        </div>
 
         {/* Điều hướng */}
-        <nav style={{ padding: '0.6rem 0 0.6rem', flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
-          <GroupLabel collapsed={collapsed} first>Tổng quan</GroupLabel>
-          <SidebarItem to="/dashboard" icon={<Home size={16} />} label="Tổng quan" collapsed={collapsed} />
-          <SidebarItem to="/analytics" icon={<BarChart2 size={16} />} label="Phân tích" collapsed={collapsed} />
-          <SidebarItem to="/lab" icon={<FlaskConical size={16} />} label="Phòng thí nghiệm" collapsed={collapsed} />
-
-          <GroupLabel collapsed={collapsed}>Dữ liệu khách hàng</GroupLabel>
-          <SidebarItem to="/feedbacks" icon={<MessageSquare size={16} />} label="Phản hồi" collapsed={collapsed} />
-          <SidebarItem
-            to="/trust" icon={<ShieldCheck size={16} />} label="Tin cậy dữ liệu" collapsed={collapsed}
-            badge={status?.reviewQueue || null} badgeTone="muted"
-          />
-          <SidebarItem to="/segments" icon={<Users size={16} />} label="Phân khúc" collapsed={collapsed} />
-          <SidebarItem
-            to="/risk" icon={<AlertTriangle size={16} />} label="Trung tâm cảnh báo" collapsed={collapsed}
-            badge={status?.openAlerts || null}
-            badgeTone={status?.criticalAlerts > 0 ? 'crit' : 'accent'}
-          />
-
-          <GroupLabel collapsed={collapsed}>Hệ thống</GroupLabel>
-          <SidebarItem to="/data" icon={<Database size={16} />} label="Nguồn dữ liệu" collapsed={collapsed} />
-          <SidebarItem to="/reports" icon={<FileText size={16} />} label="Báo cáo" collapsed={collapsed} />
-          <SidebarItem to="/settings" icon={<Settings size={16} />} label="Cài đặt" collapsed={collapsed} />
+        <nav className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-3 ${collapsed ? 'px-3' : 'px-3'}`}>
+          {NAV.map((g, gi) => (
+            <div key={g.group} className={gi === 0 ? 'mt-1' : 'mt-5'}>
+              {collapsed ? (
+                gi > 0 && <div className="mx-2 mb-3 h-px bg-line-soft" />
+              ) : (
+                <p className="eyebrow mb-1.5 px-3">{g.group}</p>
+              )}
+              <div className="flex flex-col gap-0.5">
+                {g.items.map((item) => (
+                  <NavItem
+                    key={item.to}
+                    item={item}
+                    collapsed={collapsed}
+                    count={item.badge ? counts[item.badge] : null}
+                    critical={item.badge === 'alerts' && status?.criticalAlerts > 0}
+                    onNavigate={onClose}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </nav>
 
-        {/* DẢI TRẠNG THÁI HỆ THỐNG.
-            Giống thanh trạng thái của một IDE hay một terminal: luôn ở
-            đó, chiếm rất ít chỗ, và trả lời câu hỏi "hệ thống có đang
-            khoẻ không" mà không cần rời màn hình đang xem. */}
-        <div
-          title={
-            health != null
-              ? `Sức khoẻ dữ liệu ${health}/100 · ${status?.validFeedbacks?.toLocaleString('vi-VN')} phản hồi hợp lệ${updatedAt ? ' · cập nhật ' + updatedAt : ''}`
-              : 'Chưa lấy được trạng thái hệ thống'
-          }
-          style={{
-            display: 'flex', alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'space-between',
-            gap: '0.5rem', flexShrink: 0,
-            padding: collapsed ? '0.5rem 0' : '0.5rem 0.9rem',
-            borderTop: '1px solid var(--border-soft)',
-            fontSize: '0.7rem', color: 'var(--text-lo)'
-          }}
-        >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
-            <span style={{
-              width: 6, height: 6, borderRadius: 99, background: healthTone, flexShrink: 0,
-              transition: 'background-color var(--dur-base) var(--ease)'
-            }} />
-            {!collapsed && (
-              <span style={{ whiteSpace: 'nowrap' }}>
-                Sức khoẻ <span className="data-num" style={{ color: healthTone }}>{health != null ? health : '—'}</span>
-              </span>
-            )}
-          </span>
-          {!collapsed && updatedAt && (
-            <span className="data-num" style={{ whiteSpace: 'nowrap' }}>{updatedAt}</span>
+        {/* Dải trạng thái hệ thống */}
+        <div className="shrink-0 px-3 pb-2">
+          {collapsed ? (
+            <div className="flex flex-col items-center gap-2 py-2" title={`Sức khoẻ dữ liệu ${health ?? '—'} · ${nlpView.label}`}>
+              <span className={`size-2 rounded-full ${healthTone}`} />
+              <span className={`size-2 rounded-full ${nlpView.dot}`} />
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-line-soft bg-surface/55 p-3">
+              <div className="flex items-center justify-between text-[0.72rem]">
+                <span className="text-ink-mid">Sức khoẻ dữ liệu</span>
+                <span className={`font-mono font-semibold ${healthText}`}>{health ?? '—'}<span className="text-ink-lo">/100</span></span>
+              </div>
+              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-raised">
+                <div className={`h-full rounded-full ${healthTone} transition-[width] duration-700`} style={{ width: `${health ?? 0}%` }} />
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/lab')}
+                title={nlpView.title}
+                className="mt-2.5 flex w-full items-center gap-2 text-left text-[0.72rem] text-ink-mid hover:text-ink-hi"
+              >
+                <Cpu size={12} className="shrink-0 text-ink-lo" aria-hidden="true" />
+                <span className="flex-1 truncate">{nlpView.label}</span>
+                <span className={`size-1.5 shrink-0 rounded-full ${nlpView.dot}`} />
+              </button>
+              {updatedAt && <p className="mt-1 font-mono text-[0.66rem] text-ink-lo">cập nhật {updatedAt}</p>}
+            </div>
           )}
         </div>
 
-        <div
-          title={nlpView.title}
-          onClick={() => navigate('/lab')}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
-            gap: '0.45rem', flexShrink: 0, cursor: 'pointer',
-            padding: collapsed ? '0.45rem 0' : '0.45rem 0.9rem',
-            borderTop: '1px solid var(--border-soft)', fontSize: '0.7rem', color: 'var(--text-lo)'
-          }}
-        >
-          <Cpu size={12} color={nlpView.tone} style={{ flexShrink: 0 }} />
-          {!collapsed && <span style={{ whiteSpace: 'nowrap', color: nlpView.tone }}>{nlpView.label}</span>}
-        </div>
-
-        {/* Khối người dùng — nén còn một hàng */}
-        <div
-          style={{
-            padding: collapsed ? '0.6rem 0' : '0.6rem 0.75rem',
-            borderTop: '1px solid var(--border-soft)', position: 'relative', flexShrink: 0
-          }}
-          ref={menuRef}
-        >
-          {showUserMenu && (
-            <div className="glass-panel" style={{
-              position: 'fixed', bottom: '14px', left: collapsed ? '72px' : '14px',
-              width: '216px', padding: '0.4rem', zIndex: 9999
-            }}>
-              <div style={{ padding: '0.45rem 0.75rem', borderBottom: '1px solid var(--border-soft)', marginBottom: '0.35rem' }}>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-lo)' }}>Đang đăng nhập</div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-hi)' }}>admin@company.com</div>
+        {/* Người dùng */}
+        <div className="relative shrink-0 border-t border-line-soft p-3" ref={menuRef}>
+          {showMenu && (
+            <div className="glass-strong absolute right-3 bottom-[calc(100%+6px)] left-3 z-10 min-w-[200px] rounded-2xl p-1.5 animate-pop-in">
+              <div className="border-b border-line-soft px-3 py-2">
+                <p className="text-[0.7rem] text-ink-lo">Đang đăng nhập</p>
+                <p className="truncate text-sm font-medium text-ink-hi">{profile.email}</p>
               </div>
-
               <button
-                onClick={() => { navigate('/settings'); setShowUserMenu(false); }}
-                style={menuBtn}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--raised)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                type="button"
+                onClick={() => { navigate('/settings'); setShowMenu(false); }}
+                className="mt-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-ink-hi hover:bg-raised"
               >
-                <User size={15} color="var(--text-lo)" /> Hồ sơ
+                <Settings size={15} className="text-ink-lo" /> Cài đặt
               </button>
-
-              <button
-                onClick={() => { navigate('/settings'); setShowUserMenu(false); }}
-                style={menuBtn}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--raised)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-              >
-                <Settings size={15} color="var(--text-lo)" /> Cài đặt
-              </button>
-
               {onLogout && (
                 <button
+                  type="button"
                   onClick={onLogout}
-                  style={{ ...menuBtn, color: 'var(--sev-crit)', marginTop: '0.25rem', fontWeight: 500 }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--sev-crit-dim)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-crit hover:bg-crit/10"
                 >
                   <LogOut size={15} /> Đăng xuất
                 </button>
               )}
             </div>
           )}
-
           <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            title={collapsed ? 'Admin User' : undefined}
-            aria-expanded={showUserMenu}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: '0.6rem',
-              padding: '0.35rem 0.4rem', borderRadius: 'var(--r-ctrl)',
-              justifyContent: collapsed ? 'center' : 'flex-start',
-              background: showUserMenu ? 'var(--raised)' : 'transparent',
-              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-              transition: 'background-color var(--dur-fast) var(--ease)'
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--raised)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = showUserMenu ? 'var(--raised)' : 'transparent')}
+            type="button"
+            onClick={() => setShowMenu((v) => !v)}
+            aria-expanded={showMenu}
+            title={collapsed ? profile.name : undefined}
+            className={`flex w-full items-center rounded-xl p-1.5 transition-colors hover:bg-raised ${collapsed ? 'justify-center' : 'gap-2.5'}`}
           >
-            <span style={{
-              width: 28, height: 28, minWidth: 28, borderRadius: 99, display: 'grid', placeItems: 'center',
-              background: 'var(--raised)', border: '1px solid var(--border)', color: 'var(--text-lo)'
-            }}>
-              <User size={14} />
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-linear-to-br from-blush to-sky text-[0.7rem] font-semibold text-ink-hi">
+              {initials(profile.name)}
             </span>
             {!collapsed && (
               <>
-                <span style={{
-                  flex: 1, minWidth: 0, textAlign: 'left', fontSize: '0.82rem', fontWeight: 500,
-                  color: 'var(--text-hi)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                }}>
-                  Admin User
+                <span className="min-w-0 flex-1 text-left">
+                  <span className="block truncate text-[0.82rem] font-medium text-ink-hi">{profile.name}</span>
+                  <span className="block truncate text-[0.7rem] text-ink-lo">Quản lý trải nghiệm KH</span>
                 </span>
-                <ChevronUp
-                  size={14}
-                  color="var(--text-lo)"
-                  style={{
-                    flexShrink: 0,
-                    transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0)',
-                    transition: 'transform var(--dur-base) var(--ease)'
-                  }}
-                />
+                <ChevronsUpDown size={14} className="shrink-0 text-ink-lo" />
               </>
             )}
           </button>

@@ -1,55 +1,54 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { buildQuery } from '../lib/format';
 
-const API_URL = '';
-
+/**
+ * Dữ liệu trang Tổng quan.
+ * - Cảnh báo được gắn kèm trạng thái quyết định (từ /recommendations), để
+ *   Trung tâm hành động không mời "Chấp nhận" lại một việc đã quyết.
+ * - Đổi bộ lọc nhanh liên tiếp thì phản hồi về muộn của lần trước bị bỏ,
+ *   không ghi đè lên kết quả của lần mới nhất.
+ */
 export const useDashboardData = (timeFilter = 'All', sourceFilter = 'All', productFilter = 'All') => {
-  const [stats, setStats] = useState({ totalComplaints: 0, complaintRate: "0%", avgResolutionTime: "0 hrs" });
-  const [categories, setCategories] = useState([]);
+  const [stats, setStats] = useState(null);
   const [sentiments, setSentiments] = useState([]);
-  const [risks, setRisks] = useState([]);
   const [trend, setTrend] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams();
-        if (timeFilter !== 'All') params.append('time', timeFilter);
-        if (sourceFilter !== 'All') params.append('source', sourceFilter);
-        if (productFilter !== 'All') params.append('product', productFilter);
-        const q = params.toString() ? `?${params.toString()}` : '';
+    let alive = true;
+    const q = buildQuery({ time: timeFilter, source: sourceFilter, product: productFilter });
 
-        const [statsRes, catRes, sentRes, risksRes, trendRes, alertsRes] = await Promise.all([
-          axios.get(`${API_URL}/stats${q}`),
-          axios.get(`${API_URL}/categories${q}`),
-          axios.get(`${API_URL}/sentiment${q}`),
-          axios.get(`${API_URL}/risks${q}`),
-          axios.get(`${API_URL}/trend${q}`),
-          // Cảnh báo đầy đủ kèm khuyến nghị (độ tin cậy, người duyệt, công sức) cho Trung tâm hành động
-          axios.get(`${API_URL}/alerts${q}`)
-        ]);
-
+    setLoading(true);
+    Promise.all([
+      axios.get(`/stats${q}`),
+      axios.get(`/sentiment${q}`),
+      axios.get(`/trend${q}`),
+      axios.get(`/alerts${q}`),
+      axios.get(`/recommendations${q}`).catch(() => ({ data: null }))
+    ])
+      .then(([statsRes, sentRes, trendRes, alertsRes, recRes]) => {
+        if (!alive) return;
+        const status = new Map((recRes.data?.recommendations || []).map((r) => [r.alertId, r.status]));
         setStats(statsRes.data);
-        setCategories(catRes.data);
         setSentiments(sentRes.data);
-        setRisks(risksRes.data);
         setTrend(trendRes.data);
-        setAlerts(alertsRes.data?.alerts || []);
+        setAlerts((alertsRes.data?.alerts || []).map((a) => ({ ...a, decision: status.get(a.id) || 'PROPOSED' })));
         setError(null);
-      } catch (err) {
-        console.error("Error fetching data:", err);
+      })
+      .catch((err) => {
+        if (!alive) return;
+        console.error('Không tải được dữ liệu tổng quan:', err);
         setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+      })
+      .finally(() => alive && setLoading(false));
 
-    fetchData();
+    return () => {
+      alive = false;
+    };
   }, [timeFilter, sourceFilter, productFilter]);
 
-  return { stats, categories, sentiments, risks, alerts, trend, loading, error };
+  return { stats, sentiments, alerts, trend, loading, error };
 };

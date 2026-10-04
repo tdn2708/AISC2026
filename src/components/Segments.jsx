@@ -1,374 +1,196 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Loader2, Users, TrendingUp, AlertTriangle, MessageSquare, Search, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, HeartHandshake, TriangleAlert, Users } from 'lucide-react';
+import { GlassPanel, ChipGroup, EmptyState, SentimentFace } from './ui';
+import { fmtInt, fmtDate, initials } from '../lib/format';
+
+/**
+ * PHÂN KHÚC KHÁCH HÀNG — nay là một tab của Phân tích nguyên nhân.
+ * Ba nhóm do máy chủ phân theo lịch sử cảm xúc của từng khách:
+ *   rủi ro (có phản hồi tiêu cực) · trung thành · trung lập.
+ */
+
+const SEGMENTS = [
+  {
+    key: 'atRisk',
+    label: 'Có nguy cơ rời bỏ',
+    icon: TriangleAlert,
+    note: 'Đã để lại ít nhất một phản hồi tiêu cực — cần liên hệ trước tiên.',
+    tone: 'bg-blush/45 text-[#8E2F45]'
+  },
+  {
+    key: 'promoters',
+    label: 'Khách trung thành',
+    icon: HeartHandshake,
+    note: 'Phản hồi chủ yếu tích cực — ứng viên cho chương trình giới thiệu.',
+    tone: 'bg-sky/50 text-[#2F5E92]'
+  },
+  {
+    key: 'passives',
+    label: 'Trung lập',
+    icon: Users,
+    note: 'Cảm xúc lẫn lộn hoặc trung tính — có thể đi theo cả hai hướng.',
+    tone: 'bg-raised text-ink-mid'
+  }
+];
+
+const RANGES = [
+  { value: 'all', label: 'Mọi lúc' },
+  { value: '7', label: '7 ngày' },
+  { value: '30', label: '30 ngày' },
+  { value: '90', label: '90 ngày' }
+];
+
+const PAGE = 12;
 
 const Segments = () => {
   const [data, setData] = useState({ promoters: [], atRisk: [], passives: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedSegment, setSelectedSegment] = useState('atRisk');
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateRange, setDateRange] = useState('all');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [segment, setSegment] = useState('atRisk');
+  const [search, setSearch] = useState('');
+  const [range, setRange] = useState('all');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    const fetchSegments = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get('/segments');
-        setData(res.data);
-      } catch (err) {
-        setError('Failed to fetch segment data.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSegments();
+    axios
+      .get('/segments')
+      .then((r) => setData(r.data))
+      .catch(() => setError('Không tải được dữ liệu phân khúc.'))
+      .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedSegment, searchTerm, dateRange, customStartDate, customEndDate]);
+  useEffect(() => setPage(1), [segment, search, range]);
 
-  const filteredList = useMemo(() => {
-    let list = data[selectedSegment] || [];
-    
-    if (searchTerm) {
-      list = list.filter(user => user.author.toLowerCase().includes(searchTerm.toLowerCase()));
+  const list = useMemo(() => {
+    let l = data[segment] || [];
+    if (search) l = l.filter((u) => u.author.toLowerCase().includes(search.toLowerCase()));
+    if (range !== 'all') {
+      const cutoff = Date.now() - Number(range) * 86400000;
+      l = l.filter((u) => new Date(u.latestFeedback).getTime() >= cutoff);
     }
-    
-    if (dateRange === 'custom') {
-      const start = customStartDate ? new Date(customStartDate) : null;
-      const end = customEndDate ? new Date(customEndDate) : null;
-      if (end) end.setHours(23, 59, 59, 999);
-      
-      list = list.filter(user => {
-        const d = new Date(user.latestFeedback);
-        if (start && d < start) return false;
-        if (end && d > end) return false;
-        return true;
-      });
-    } else if (dateRange !== 'all') {
-      const now = new Date();
-      let days = 0;
-      if (dateRange === '7days') days = 7;
-      if (dateRange === '30days') days = 30;
-      if (dateRange === '90days') days = 90;
-      
-      const cutoffDate = new Date(now.setDate(now.getDate() - days));
-      list = list.filter(user => new Date(user.latestFeedback) >= cutoffDate);
-    }
-    
-    return list;
-  }, [data, selectedSegment, searchTerm, dateRange, customStartDate, customEndDate]);
+    return [...l].sort((a, b) => b.total - a.total);
+  }, [data, segment, search, range]);
 
-  const totalPages = Math.ceil(filteredList.length / itemsPerPage);
-  
-  const paginatedList = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredList.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredList, currentPage]);
+  const pages = Math.max(1, Math.ceil(list.length / PAGE));
+  const rows = list.slice((page - 1) * PAGE, page * PAGE);
+  const total = data.atRisk.length + data.promoters.length + data.passives.length;
 
-  const getActiveList = () => paginatedList;
-
-  const getPageNumbers = () => {
-    const pages = [];
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      if (currentPage <= 3) {
-        pages.push(1, 2, 3, 4, '...', totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
-      }
-    }
-    return pages;
-  };
-
-  const SegmentCard = ({ title, count, icon, type, isActive, onClick, description }) => {
-    let colorClass = '';
-    let bgColor = '';
-    if (type === 'promoter') { colorClass = 'var(--accent-cyan)'; bgColor = 'rgba(6, 182, 212, 0.1)'; }
-    if (type === 'risk') { colorClass = '#ef4444'; bgColor = 'rgba(239, 68, 68, 0.1)'; }
-    if (type === 'passive') { colorClass = '#eab308'; bgColor = 'rgba(234, 179, 8, 0.1)'; }
-
-    return (
-      <div 
-        className="glass-panel" 
-        onClick={onClick}
-        style={{ 
-          cursor: 'pointer', 
-          border: isActive ? `1px solid ${colorClass}` : '1px solid rgba(255,255,255,0.05)',
-          background: isActive ? bgColor : 'var(--bg-card)',
-          transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out',
-          flex: 1
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: 'var(--text-secondary)' }}>{title}</h3>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--text-primary)' }}>{count}</div>
-          </div>
-          <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colorClass }}>
-            {icon}
-          </div>
-        </div>
-        <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          {description}
-        </div>
-      </div>
-    );
-  };
+  if (error) return <GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel>;
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '2rem' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.75rem', fontWeight: 600 }}>Customer Segments</h1>
-
+    <>
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        {SEGMENTS.map((s) => {
+          const n = data[s.key].length;
+          const active = s.key === segment;
+          return (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setSegment(s.key)}
+              aria-pressed={active}
+              className={`glass rounded-[20px] p-5 text-left transition-[box-shadow,transform] hover:-translate-y-0.5 ${active ? 'shadow-[0_0_0_2px_var(--accent),var(--glass-shade)]' : ''}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <span className={`grid size-10 place-items-center rounded-2xl ${s.tone}`}>
+                  <s.icon size={18} aria-hidden="true" />
+                </span>
+                <span className="font-mono text-xs text-ink-lo">{total ? Math.round((n / total) * 100) : 0}%</span>
+              </div>
+              <p className="mt-4 text-sm font-medium text-ink-mid">{s.label}</p>
+              <p className="font-mono text-3xl font-semibold tracking-tight text-ink-hi">{loading ? '—' : fmtInt(n)}</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-ink-lo">{s.note}</p>
+            </button>
+          );
+        })}
       </div>
 
-      {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '300px', color: 'var(--text-muted)' }}>
-          <Loader2 size={32} className="animate-spin" style={{ marginBottom: '1rem', color: 'var(--accent-purple)' }} />
-          <p>Analyzing customer segments...</p>
+      <GlassPanel tone="strong" className="overflow-hidden">
+        <div className="flex flex-wrap items-center gap-3 border-b border-line-soft p-5">
+          <div className="relative min-w-[220px] flex-1">
+            <Search size={15} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink-lo" aria-hidden="true" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm khách hàng…"
+              aria-label="Tìm khách hàng"
+              className="h-10 w-full rounded-xl border border-line bg-surface/70 pr-3 pl-10 text-sm text-ink-hi outline-none placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
+            />
+          </div>
+          <ChipGroup label="Hoạt động gần nhất" options={RANGES} value={range} onChange={setRange} />
         </div>
-      ) : error ? (
-        <div style={{ color: 'var(--risk-critical)', textAlign: 'center', padding: '3rem' }}>{error}</div>
-      ) : (
-        <>
-          <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-            <SegmentCard 
-              title="At-Risk Customers" 
-              count={data.atRisk.length} 
-              icon={<AlertTriangle size={20} />} 
-              type="risk"
-              isActive={selectedSegment === 'atRisk'}
-              onClick={() => setSelectedSegment('atRisk')}
-              description="Customers who submitted critical or negative feedbacks. Needs immediate action."
-            />
-            <SegmentCard 
-              title="Loyal Promoters" 
-              count={data.promoters.length} 
-              icon={<TrendingUp size={20} />} 
-              type="promoter"
-              isActive={selectedSegment === 'promoters'}
-              onClick={() => setSelectedSegment('promoters')}
-              description="Highly satisfied customers with mostly positive sentiments."
-            />
-            <SegmentCard 
-              title="Passive Users" 
-              count={data.passives.length} 
-              icon={<Users size={20} />} 
-              type="passive"
-              isActive={selectedSegment === 'passives'}
-              onClick={() => setSelectedSegment('passives')}
-              description="Neutral or mixed sentiments. Potential for upselling or churn."
-            />
-          </div>
 
-          <div className="glass-panel" style={{ padding: '0', display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>
-                    {selectedSegment === 'atRisk' && 'At-Risk Customers'}
-                    {selectedSegment === 'promoters' && 'Loyal Promoters'}
-                    {selectedSegment === 'passives' && 'Passive Users'}
-                  </h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0, marginTop: '0.25rem' }}>
-                    List of customers categorized into this segment.
-                  </p>
-                </div>
-                
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <div style={{ position: 'relative' }}>
-                    <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input 
-                      type="text" 
-                      placeholder="Tìm kiếm tên..." 
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      style={{ 
-                        background: 'rgba(0,0,0,0.2)', 
-                        border: '1px solid rgba(255,255,255,0.1)', 
-                        padding: '0.5rem 1rem 0.5rem 2.2rem', 
-                        borderRadius: '6px', 
-                        color: 'var(--text-primary)',
-                        outline: 'none',
-                        fontSize: '0.9rem'
-                      }} 
-                    />
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.25rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <Calendar size={16} color="var(--text-muted)" style={{ marginLeft: '0.5rem' }} />
-                    <select 
-                      value={dateRange} 
-                      onChange={(e) => setDateRange(e.target.value)}
-                      style={{ 
-                        background: 'transparent', 
-                        border: 'none', 
-                        color: 'var(--text-primary)',
-                        padding: '0.25rem 0.5rem',
-                        outline: 'none',
-                        fontSize: '0.9rem',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <option value="all" style={{ background: '#1a1a2e' }}>Tất cả thời gian</option>
-                      <option value="7days" style={{ background: '#1a1a2e' }}>7 ngày qua</option>
-                      <option value="30days" style={{ background: '#1a1a2e' }}>30 ngày qua</option>
-                      <option value="90days" style={{ background: '#1a1a2e' }}>90 ngày qua</option>
-                      <option value="custom" style={{ background: '#1a1a2e' }}>Tùy chọn...</option>
-                    </select>
-                  </div>
-                  {dateRange === 'custom' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.25rem 0.5rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <input 
-                        type="date" 
-                        value={customStartDate}
-                        onChange={(e) => setCustomStartDate(e.target.value)}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem', colorScheme: 'dark' }} 
-                        title="Từ ngày"
-                      />
-                      <span style={{ color: 'var(--text-muted)' }}>-</span>
-                      <input 
-                        type="date" 
-                        value={customEndDate}
-                        onChange={(e) => setCustomEndDate(e.target.value)}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem', colorScheme: 'dark' }} 
-                        title="Đến ngày"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div style={{ overflowX: 'auto', flex: 1 }}>
-              {getActiveList().length === 0 ? (
-                <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '3rem' }}>No customers match the criteria.</div>
-              ) : (
-                <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Customer Profile</th>
-                      <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Feedbacks</th>
-                      <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sentiment Split</th>
-                      <th style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last Active</th>
+        {loading ? (
+          <div className="flex flex-col gap-2 p-5">{Array.from({ length: 6 }, (_, i) => <div key={i} className="h-14 animate-pulse rounded-xl bg-raised" />)}</div>
+        ) : rows.length === 0 ? (
+          <EmptyState compact title="Không có khách hàng khớp" description="Thử đổi khoảng thời gian hoặc từ khoá." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="data-table min-w-[720px]">
+              <thead>
+                <tr>
+                  <th className="pl-6">Khách hàng</th>
+                  <th>Số phản hồi</th>
+                  <th>Phân bố cảm xúc</th>
+                  <th className="pr-6">Hoạt động gần nhất</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((u) => {
+                  const parts = [
+                    ['Positive', u.positive, 'bg-pos'],
+                    ['Neutral', u.neutral, 'bg-neu'],
+                    ['Negative', u.negative, 'bg-neg']
+                  ];
+                  return (
+                    <tr key={u.author}>
+                      <td className="pl-6">
+                        <div className="flex items-center gap-3">
+                          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-linear-to-br from-sky/70 to-blush/70 text-xs font-semibold text-ink-hi">
+                            {initials(u.author)}
+                          </span>
+                          <span className="font-medium">{u.author}</span>
+                        </div>
+                      </td>
+                      <td className="font-mono">{fmtInt(u.total)}</td>
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-2 w-32 gap-0.5 overflow-hidden rounded-full bg-raised" role="img" aria-label={`${u.positive} tích cực, ${u.neutral} trung tính, ${u.negative} tiêu cực`}>
+                            {parts.filter(([, n]) => n > 0).map(([k, n, cls]) => (
+                              <span key={k} className={`h-full ${cls}`} style={{ flexGrow: n }} />
+                            ))}
+                          </div>
+                          <span className="flex items-center gap-1.5">
+                            {parts.filter(([, n]) => n > 0).map(([k, n]) => (
+                              <span key={k} className="inline-flex items-center gap-1 font-mono text-xs text-ink-mid">
+                                <SentimentFace sentiment={k} size={18} />{n}
+                              </span>
+                            ))}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="pr-6 font-mono text-xs text-ink-mid">{fmtDate(u.latestFeedback)}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {getActiveList().map((user, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', transition: 'background 0.2s ease' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 600, fontSize: '0.9rem' }}>
-                              {user.author.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>@{user.author}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                {user.critical > 0 && <span style={{ color: '#ef4444' }}>Critical History</span>}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <MessageSquare size={16} color="var(--text-secondary)" />
-                            <span style={{ fontWeight: 500 }}>{user.total}</span>
-                          </div>
-                        </td>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            {user.positive > 0 && <span className="badge badge-low" style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>{user.positive} Pos</span>}
-                            {user.neutral > 0 && <span className="badge badge-medium" style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>{user.neutral} Neu</span>}
-                            {user.negative > 0 && <span className="badge badge-critical" style={{ fontSize: '0.7rem', padding: '0.1rem 0.4rem' }}>{user.negative} Neg</span>}
-                          </div>
-                        </td>
-                        <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                          {new Date(user.latestFeedback).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              {getActiveList().length > 0 && totalPages > 1 && (
-                <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến {Math.min(currentPage * itemsPerPage, filteredList.length)} trong số {filteredList.length} khách hàng
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-                    <button 
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      style={{ 
-                        background: currentPage === 1 ? 'transparent' : 'rgba(255,255,255,0.05)', 
-                        border: '1px solid rgba(255,255,255,0.1)', 
-                        padding: '0.4rem', 
-                        borderRadius: '4px', 
-                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                        color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-primary)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-                    {getPageNumbers().map((p, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => p !== '...' && setCurrentPage(p)}
-                        disabled={p === '...'}
-                        style={{
-                          background: currentPage === p ? 'var(--accent-purple)' : (p === '...' ? 'transparent' : 'rgba(255,255,255,0.02)'),
-                          border: p === '...' ? 'none' : (currentPage === p ? '1px solid var(--accent-purple)' : '1px solid rgba(255,255,255,0.1)'),
-                          padding: '0.2rem',
-                          minWidth: '28px',
-                          height: '28px',
-                          borderRadius: '4px',
-                          cursor: p === '...' ? 'default' : 'pointer',
-                          color: currentPage === p ? 'white' : 'var(--text-primary)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.85rem'
-                        }}
-                      >
-                        {p}
-                      </button>
-                    ))}
-
-                    <button 
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      style={{ 
-                        background: currentPage === totalPages ? 'transparent' : 'rgba(255,255,255,0.05)', 
-                        border: '1px solid rgba(255,255,255,0.1)', 
-                        padding: '0.4rem', 
-                        borderRadius: '4px', 
-                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                        color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-                </div>
-              )}
+        {list.length > PAGE && (
+          <div className="fb-pager">
+            <span className="fb-pager-info">{fmtInt((page - 1) * PAGE + 1)}–{fmtInt(Math.min(page * PAGE, list.length))} / {fmtInt(list.length)} khách</span>
+            <div className="fb-pager-btns">
+              <button className="fb-page-btn" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} aria-label="Trang trước"><ChevronLeft size={14} /></button>
+              <span className="px-2 font-mono text-xs text-ink-mid">{page} / {pages}</span>
+              <button className="fb-page-btn" onClick={() => setPage((p) => Math.min(pages, p + 1))} disabled={page === pages} aria-label="Trang sau"><ChevronRight size={14} /></button>
             </div>
           </div>
-        </>
-      )}
-    </div>
+        )}
+      </GlassPanel>
+    </>
   );
 };
 

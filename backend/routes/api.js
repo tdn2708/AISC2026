@@ -297,9 +297,16 @@ router.get('/nav/status', wrap(async (req, res) => {
   const queue = trustLayer.buildReviewQueue(ctx.items, 500);
   const queueCount = Array.isArray(queue) ? queue.length : (queue?.items?.length ?? 0);
 
+  // Huy hiệu trên thanh bên đếm việc CẦN QUYẾT, khớp với mục "Đang chờ"
+  // của trang Cảnh báo — cảnh báo đã chấp nhận/bỏ qua không còn là việc chờ
+  const decisions = await req.db.collection('recommendation_log').find({}, { projection: { alertId: 1 } }).toArray();
+  const decided = new Set(decisions.map((d) => d.alertId));
+  const pending = alerts.filter((a) => !decided.has(a.id));
+
   res.json({
-    openAlerts: alerts.length,
-    criticalAlerts: alerts.filter((a) => a.severity === 'Critical' || a.severity === 'High').length,
+    openAlerts: pending.length,
+    totalAlerts: alerts.length,
+    criticalAlerts: pending.filter((a) => a.severity === 'Critical' || a.severity === 'High').length,
     reviewQueue: queueCount,
     dataHealth: ctx.funnel.dataHealthScore ?? null,
     validFeedbacks: ctx.items.filter((f) => f.trust && f.trust.weight > 0).length,

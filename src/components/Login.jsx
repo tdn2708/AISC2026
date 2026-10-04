@@ -1,217 +1,153 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Loader2, ShieldCheck, BarChart3, KeyRound } from 'lucide-react';
-import Logo from './Logo';
+import { Mail, Lock, ArrowRight, ShieldCheck, Activity, EyeOff, Eye, KeyRound } from 'lucide-react';
+import Logo, { LogoMark } from './Logo';
+import { Button, TextField } from './ui';
 
 /**
- * Tài khoản demo được IN THẲNG trên màn hình đăng nhập.
- * Người mở link lần đầu (giám khảo, khách tham quan) gặp ngay ô "Email /
- * Mật khẩu" mà không có gợi ý thì phần lớn sẽ đóng tab — và toàn bộ
- * công sức triển khai thành số không. Một nút điền sẵn giải quyết việc đó.
+ * ĐĂNG NHẬP — màn "trình diễn" của sản phẩm.
+ * Ảnh phong cảnh tràn màn hình (chỉ là hình nền, không gắn với khách hàng
+ * nào), phủ sương sage; thẻ đăng nhập là một tấm kính.
+ *
+ * Tài khoản demo in THẲNG trên màn hình: người mở link lần đầu (giám khảo,
+ * khách tham quan) gặp ô trống không gợi ý thì phần lớn sẽ đóng tab.
  */
-const DEMO_ACCOUNT = { email: 'admin@company.com', password: 'password123' };
+const DEMO = { email: 'admin@company.com', password: 'password123' };
+
+const FEATURES = [
+  { icon: ShieldCheck, title: 'Tầng kiểm soát tin cậy', text: 'Năm nhóm tín hiệu lọc đánh giá ảo trước khi chạm tới con số' },
+  { icon: Activity, title: 'Cảnh báo có kiểm định', text: 'z-test, EWMA và hiệu chỉnh FDR — không dùng ngưỡng cố định' },
+  { icon: EyeOff, title: 'Che thông tin cá nhân', text: 'Ngay từ bước tiền xử lý, theo Nghị định 13/2023' }
+];
 
 const Login = ({ onLogin }) => {
-  const [email, setEmail] = useState(DEMO_ACCOUNT.email);
-  const [password, setPassword] = useState(DEMO_ACCOUNT.password);
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState(DEMO.email);
+  const [password, setPassword] = useState(DEMO.password);
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const submit = (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoading(true);
     setError('');
-    
-    // Simulate API call for premium feel
     setTimeout(() => {
-      if (email === DEMO_ACCOUNT.email && password === DEMO_ACCOUNT.password) {
+      if (email === DEMO.email && password === DEMO.password) {
         onLogin();
         navigate('/dashboard');
       } else {
-        setError('Sai thông tin đăng nhập. Dùng tài khoản demo hiển thị phía trên.');
-        setIsLoading(false);
+        setError('Sai thông tin đăng nhập. Dùng tài khoản dùng thử bên dưới.');
+        setLoading(false);
       }
-    }, 1500);
+    }, 700);
   };
 
   return (
-    <div className="login-container">
-      {/* Left Side - Marketing/Branding */}
-      <div className="login-left">
-        {/* Decorative Blur Circles */}
-        <div style={{ position: 'absolute', top: '20%', left: '10%', width: '300px', height: '300px', background: 'var(--accent-dim)', borderRadius: '50%', filter: 'blur(100px)' }}></div>
-        <div style={{ position: 'absolute', bottom: '20%', right: '10%', width: '300px', height: '300px', background: 'var(--accent-dim)', borderRadius: '50%', filter: 'blur(100px)' }}></div>
+    <div className="cx relative min-h-screen overflow-hidden">
+      {/* Ảnh nền + lớp sương: đậm dần sang phải để thẻ kính luôn đọc rõ */}
+      <div
+        className="absolute inset-0 scale-105 bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/uit-campus.webp')" }}
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(180deg, transparent 45%, rgb(20 34 38 / 0.45) 100%), linear-gradient(100deg, rgb(20 34 38 / 0.7) 0%, rgb(20 34 38 / 0.42) 42%, rgb(233 239 238 / 0.35) 62%, rgb(233 239 238 / 0.82) 100%)'
+        }}
+        aria-hidden="true"
+      />
 
-        <div style={{ position: 'relative', zIndex: 10, maxWidth: '600px' }}>
-          <div style={{ marginBottom: '2.5rem' }}>
-            <Logo size="lg" tagline="Customer Intelligence" />
-          </div>
-
-          <h2 style={{ fontSize: '3rem', fontWeight: 800, lineHeight: 1.12, marginBottom: '1.25rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            Nghe đúng tiếng nói<br />
-            <span style={{ color: 'var(--accent-blue)' }}>của khách hàng thật</span>
-          </h2>
-          <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: '2.5rem', maxWidth: '85%' }}>
-            Phân tích phản hồi đa kênh với một tầng kiểm soát tin cậy dữ liệu đặt trước
-            tầng phân tích. Đánh giá ảo, nội dung quảng cáo và cụm đánh giá có tổ chức
-            được loại trước khi chạm tới bất kỳ con số nào bạn nhìn thấy.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <ShieldCheck size={18} color="var(--risk-low)" style={{ flexShrink: 0 }} />
-              Năm nhóm tín hiệu phát hiện đánh giá không xác thực
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <BarChart3 size={18} color="var(--accent-cyan)" style={{ flexShrink: 0 }} />
-              Cảnh báo có kiểm định thống kê, không dùng ngưỡng cố định
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Lock size={18} color="var(--accent-purple)" style={{ flexShrink: 0 }} />
-              Che thông tin cá nhân ngay từ bước tiền xử lý
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Side - Login Form */}
-      <div className="login-right">
-        {/* Logo lặp lại ở cột phải cho màn hình hẹp, nơi cột trái bị ẩn */}
-        <div className="login-mobile-logo" style={{ marginBottom: '2rem' }}>
-          <Logo size="md" />
-        </div>
-
-        <div style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>Đăng nhập</h3>
-          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.95rem' }}>Nhập thông tin để vào bảng điều khiển.</p>
-        </div>
-
-        {/* Tài khoản demo hiển thị sẵn — xem ghi chú ở đầu tệp */}
-        <div style={{
-          background: 'rgba(34, 211, 238, 0.07)',
-          border: '1px solid rgba(34, 211, 238, 0.25)',
-          borderRadius: 'var(--radius-md)',
-          padding: '1rem',
-          marginBottom: '1.5rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
-            <KeyRound size={15} color="var(--accent-cyan)" />
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Tài khoản dùng thử
+      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1320px] items-center gap-10 px-6 py-10 lg:grid-cols-[1.15fr_minmax(380px,460px)] lg:px-12">
+        {/* Thương hiệu */}
+        <section className="hidden text-white lg:block animate-fade-up">
+          <div className="inline-flex items-center gap-3 rounded-2xl border border-white/20 bg-white/12 p-2 pr-5 backdrop-blur-md">
+            <LogoMark size={38} />
+            <span className="text-lg leading-none text-white">
+              <span className="font-semibold">Customer</span>{' '}
+              <span className="font-light text-[#CFE6DE]">Radar</span>
             </span>
           </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontFamily: 'ui-monospace, monospace', lineHeight: 1.7 }}>
-            {DEMO_ACCOUNT.email}<br />
-            {DEMO_ACCOUNT.password}
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setEmail(DEMO_ACCOUNT.email);
-              setPassword(DEMO_ACCOUNT.password);
-              setError('');
-            }}
-            style={{
-              marginTop: '0.75rem', width: '100%', padding: '0.5rem',
-              background: 'rgba(34, 211, 238, 0.12)', color: 'var(--accent-cyan)',
-              border: '1px solid rgba(34, 211, 238, 0.3)', borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600
-            }}
-          >
-            Điền sẵn và đăng nhập nhanh
-          </button>
-        </div>
+          <p className="mt-10 text-xs font-semibold tracking-[0.22em] text-white/75 uppercase">Customer intelligence · đa kênh</p>
+          <h1 className="mt-3 max-w-xl text-[3.4rem] leading-[1.08] font-semibold tracking-tight">
+            Nghe đúng tiếng nói
+            <span className="block font-light text-[#CFE6DE]">của khách hàng thật.</span>
+          </h1>
+          <p className="mt-5 max-w-lg text-[1.02rem] leading-relaxed text-white/80">
+            Phân tích phản hồi đa kênh với một tầng kiểm soát tin cậy đặt trước tầng phân tích — đánh giá ảo, quảng cáo và
+            chiến dịch có tổ chức bị loại trước khi chạm tới bất kỳ con số nào bạn nhìn thấy.
+          </p>
+          <ul className="mt-9 grid max-w-2xl list-none gap-3 sm:grid-cols-3">
+            {FEATURES.map((f) => (
+              <li key={f.title} className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-md">
+                <f.icon size={18} className="text-[#CFE6DE]" aria-hidden="true" />
+                <p className="mt-2.5 text-sm font-semibold">{f.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-white/70">{f.text}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-        {error && (
-          <div style={{ 
-            background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', 
-            color: 'var(--risk-critical)', padding: '1rem', borderRadius: 'var(--radius-md)', 
-            marginBottom: '1.5rem', fontSize: '0.9rem' 
-          }}>
-            {error}
-          </div>
-        )}
+        {/* Thẻ đăng nhập */}
+        <section className="glass-strong mx-auto w-full max-w-[460px] rounded-[28px] p-7 sm:p-9 animate-pop-in">
+          <div className="mb-7 lg:hidden"><Logo size="md" /></div>
+          <p className="eyebrow">Đăng nhập</p>
+          <h2 className="mt-2 text-[1.7rem] font-semibold tracking-tight text-ink-hi">
+            Chào mừng <span className="font-light text-accent">trở lại</span>
+          </h2>
+          <p className="mt-1 text-sm text-ink-mid">Đăng nhập để vào bảng điều khiển.</p>
 
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Địa chỉ email</label>
-            <div style={{ position: 'relative' }}>
-              <div style={{ position: 'absolute', top: '50%', left: '1rem', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
-                <Mail size={18} />
-              </div>
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                style={{ 
-                  width: '100%', padding: '1rem 1rem 1rem 3rem', 
-                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', 
-                  borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', 
-                  fontSize: '1rem', outline: 'none', transition: 'border 0.2s'
-                }} 
-                onFocus={(e) => e.target.style.border = '1px solid var(--accent-blue)'}
-                onBlur={(e) => e.target.style.border = '1px solid rgba(255,255,255,0.1)'}
-              />
-            </div>
+          <div className="mt-6 rounded-2xl bg-accent-dim p-4">
+            <p className="flex items-center gap-2 text-[0.7rem] font-semibold tracking-[0.12em] text-accent-hi uppercase">
+              <KeyRound size={13} aria-hidden="true" /> Tài khoản dùng thử
+            </p>
+            <p className="mt-1.5 font-mono text-[0.82rem] leading-relaxed text-ink-hi">
+              {DEMO.email}
+              <br />
+              {DEMO.password}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              block
+              className="mt-3"
+              onClick={() => {
+                setEmail(DEMO.email);
+                setPassword(DEMO.password);
+                setError('');
+              }}
+            >
+              Điền sẵn thông tin
+            </Button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Mật khẩu</label>
-              <span style={{ fontSize: '0.8rem', color: 'var(--accent-blue)', cursor: 'pointer' }}>Quên mật khẩu?</span>
-            </div>
-            <div style={{ position: 'relative' }}>
-              <div style={{ position: 'absolute', top: '50%', left: '1rem', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
-                <Lock size={18} />
-              </div>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                style={{ 
-                  width: '100%', padding: '1rem 1rem 1rem 3rem', 
-                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', 
-                  borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', 
-                  fontSize: '1rem', outline: 'none', transition: 'border 0.2s'
-                }} 
-                onFocus={(e) => e.target.style.border = '1px solid var(--accent-blue)'}
-                onBlur={(e) => e.target.style.border = '1px solid rgba(255,255,255,0.1)'}
-              />
-            </div>
-          </div>
+          <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
+            <TextField label="Email" type="email" icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
+            <TextField
+              label="Mật khẩu"
+              type={showPw ? 'text' : 'password'}
+              icon={Lock}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+              error={error || undefined}
+              aside={<span className="text-xs text-ink-lo">Quên mật khẩu? Liên hệ quản trị viên</span>}
+              trailing={
+                <button type="button" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} className="grid size-8 place-items-center rounded-lg text-ink-lo hover:bg-raised hover:text-ink-hi">
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              }
+            />
+            <Button type="submit" size="lg" block iconRight={ArrowRight} loading={loading} className="mt-2">
+              {loading ? 'Đang xác thực…' : 'Vào bảng điều khiển'}
+            </Button>
+          </form>
 
-          <button 
-            type="submit"
-            disabled={isLoading}
-            style={{ 
-              marginTop: '1rem', width: '100%', padding: '1rem', 
-              background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))', 
-              color: 'white', border: 'none', borderRadius: 'var(--radius-md)', 
-              fontSize: '1rem', fontWeight: 600, cursor: isLoading ? 'not-allowed' : 'pointer',
-              display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem',
-              boxShadow: '0 10px 25px var(--accent)', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out',
-              opacity: isLoading ? 0.8 : 1
-            }}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 size={20} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
-                Đang xác thực...
-              </>
-            ) : (
-              <>
-                Vào bảng điều khiển <ArrowRight size={20} />
-              </>
-            )}
-          </button>
-        </form>
-        
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '3rem' }}>
-          &copy; 2026 Customer Radar — Đội LDS, Trường Đại học Công nghệ Thông tin
-        </p>
+          <p className="mt-7 text-center text-xs text-ink-lo">© 2026 Customer Radar</p>
+        </section>
       </div>
     </div>
   );

@@ -147,7 +147,9 @@ chuẩn hóa. Tầng sinh ngôn ngữ chỉ diễn đạt lại, không thêm d�
 | `GET /api/alerts/:id/evidence` | Phản hồi gốc đứng sau một cảnh báo |
 | `GET /api/recommendations` | Khuyến nghị đang chờ quyết định |
 | `POST /api/recommendations/decision` | Chấp nhận / Bỏ qua (bỏ qua phải nêu lý do) |
-| `POST /api/analyze` | Phân tích trực tiếp một câu |
+| `POST /api/analyze` | Phân tích trực tiếp một câu, kèm `trace` từng bước xử lý |
+| `POST /api/analyze/batch` | Chạy cả lô phản hồi, trả thời gian và tốc độ đo được |
+| `GET /api/nlp/status` | Trạng thái mô hình ViSoBERT |
 | `GET /api/taxonomy` | Cây taxonomy nhãn |
 | `POST /api/transactions` | Nạp dữ liệu giao dịch (mẫu số của WCR) |
 
@@ -218,9 +220,20 @@ backend/
 nlp_service/             Dịch vụ Python: tinh chỉnh và suy luận ViSoBERT
 visobert/                Trọng số gốc uitnlp/visobert (không commit, tải từ HuggingFace)
 
-src/components/
-  Logo.jsx               Nhận diện thương hiệu dùng chung
-  TrustLayer.jsx         Phễu dữ liệu, cụm nghi vấn, hàng đợi kiểm duyệt
-  KPICards.jsx           Thẻ chỉ số kèm mẫu số
-  RiskAlerts.jsx         Cảnh báo kèm bằng chứng thống kê
+src/
+  index.css              Token màu Mist (sáng) / Dusk (tối), nền khuôn viên UIT
+  styles/tailwind.css    Ánh xạ token sang Tailwind, tiện ích kính mờ
+  lib/                   format.js (định dạng, bảng tra), nav.js (điều hướng dùng chung)
+  hooks/                 useTheme (theme + tắt kính), useDecisions, useDashboardData
+  components/
+    ui/                  Bộ thành phần: nút, ô nhập, chip, tab, modal, stepper…
+    shell/               Thanh trên, bảng lệnh Ctrl+K
+    dashboard/           Các khối của trang Tổng quan
+    alerts/              Bằng chứng thống kê, hộp thoại bỏ qua khuyến nghị
+    Logo.jsx             Nhận diện thương hiệu (SVG)
+    TrustLayer.jsx       Phễu dữ liệu, cụm nghi vấn, hàng đợi kiểm duyệt
+    Analytics.jsx        Phân tích nguyên nhân + tab Phân khúc
+    UiKit.jsx            Trang /ui-kit — toàn bộ hệ thiết kế trên một màn
 ```
+
+Thiết kế giao diện: xem [docs/KE-HOACH-THIET-KE-LAI-UI.md](docs/KE-HOACH-THIET-KE-LAI-UI.md).

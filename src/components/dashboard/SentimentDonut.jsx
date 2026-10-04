@@ -1,7 +1,7 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { GlassPanel, PanelHeader } from './Glass';
-import { fmtInt, fmtPct, SENTIMENT } from './format';
+import { GlassPanel, PanelHeader } from '../ui';
+import { fmtInt, fmtPct, SENTIMENT } from '../../lib/format';
 
 /**
  * DONUT — phân bổ cảm xúc.

@@ -1,322 +1,226 @@
 import React, { useState } from 'react';
-import { useTheme } from '../hooks/useTheme';
-import { Moon, Sun, Monitor, Bell, Shield, Key, User, Database, Cpu, Mail, Hash, Smartphone, Save, Check } from 'lucide-react';
+import { UserRound, Palette, BellRing, Database, ShieldCheck, Save, Mail, Hash, Smartphone, KeyRound, Sun, Moon, Sparkles } from 'lucide-react';
+import { useTheme, useGlass } from '../hooks/useTheme';
+import { PageHeader, GlassPanel, PanelHeader, Button, TextField, Select, Switch, RadioCards, Toast } from './ui';
+import { initials } from '../lib/format';
+
+/**
+ * CÀI ĐẶT
+ * ------------------------------------------------------------------
+ * Bỏ tab "AI Configuration" (chọn nhà cung cấp mô hình, cân bằng tải
+ * ba API): đó là hạ tầng của nhóm phát triển, không phải lựa chọn của
+ * người dùng doanh nghiệp. Mọi tuỳ chọn ở đây được lưu thật vào máy.
+ */
+
+const KEY = 'crSettings';
+const DEFAULTS = {
+  name: 'Admin User',
+  email: 'admin@company.com',
+  timezone: 'Asia/Ho_Chi_Minh',
+  notifyEmail: true,
+  notifySlack: false,
+  notifySms: false,
+  syncInterval: '1h',
+  retention: '90'
+};
+
+const load = () => {
+  try {
+    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+  } catch {
+    return DEFAULTS;
+  }
+};
+
+const TABS = [
+  { id: 'general', label: 'Hồ sơ', icon: UserRound },
+  { id: 'appearance', label: 'Giao diện', icon: Palette },
+  { id: 'notifications', label: 'Thông báo', icon: BellRing },
+  { id: 'data', label: 'Dữ liệu & quyền riêng tư', icon: Database },
+  { id: 'security', label: 'Bảo mật', icon: ShieldCheck }
+];
+
+const Row = ({ icon: Icon, title, description, children }) => (
+  <div className="flex items-center justify-between gap-4 rounded-2xl bg-surface/60 p-4">
+    <div className="flex min-w-0 items-center gap-3.5">
+      {Icon && (
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent-dim text-accent">
+          <Icon size={18} aria-hidden="true" />
+        </span>
+      )}
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-ink-hi">{title}</p>
+        {description && <p className="mt-0.5 text-xs text-ink-lo">{description}</p>}
+      </div>
+    </div>
+    {children}
+  </div>
+);
+
+const Swatches = ({ colors }) => (
+  <span className="mt-3 flex gap-1.5">
+    {colors.map((c) => <span key={c} className="size-6 rounded-full border border-white/60 shadow-sm" style={{ background: c }} />)}
+  </span>
+);
 
 const Settings = () => {
-  const { theme, toggleTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('general');
+  const { theme, setTheme } = useTheme();
+  const { glass, setGlass } = useGlass();
+  const [tab, setTab] = useState('general');
+  const [form, setForm] = useState(load);
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
+  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v?.target ? v.target.value : v }));
+
+  const save = () => {
+    localStorage.setItem(KEY, JSON.stringify(form));
+    // Thanh bên đọc tên/email từ đây — báo cho nó cập nhật ngay
+    window.dispatchEvent(new Event('cr-settings'));
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 2200);
   };
 
-  const tabs = [
-    { id: 'general', label: 'General', icon: <User size={18} /> },
-    { id: 'appearance', label: 'Appearance', icon: <Monitor size={18} /> },
-    { id: 'ai', label: 'AI Configuration', icon: <Cpu size={18} /> },
-    { id: 'notifications', label: 'Notifications', icon: <Bell size={18} /> },
-    { id: 'data', label: 'Data & Privacy', icon: <Database size={18} /> },
-    { id: 'security', label: 'Security', icon: <Shield size={18} /> },
-  ];
-
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '2rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h2 style={{ fontSize: '1.875rem', fontWeight: 700, margin: '0 0 0.25rem 0' }}>Settings</h2>
+    <div className="cx">
+      <PageHeader
+        section="Hệ thống"
+        title="Cài"
+        accent="đặt"
+        subtitle="Tuỳ chỉnh hồ sơ, giao diện và cách hệ thống liên lạc với bạn."
+        actions={<Button icon={Save} onClick={save}>Lưu thay đổi</Button>}
+      />
 
-        </div>
-        <button 
-          onClick={handleSave}
-          style={{
-            background: saved ? 'var(--risk-low)' : 'var(--accent-blue)',
-            color: 'white', border: 'none', padding: '0.6rem 1.25rem',
-            borderRadius: 'var(--radius-md)', fontWeight: 600, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out'
-          }}
-        >
-          {saved ? <Check size={18} /> : <Save size={18} />}
-          {saved ? 'Saved Successfully' : 'Save Changes'}
-        </button>
-      </header>
+      <div className="grid items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <GlassPanel className="p-2 lg:sticky lg:top-20">
+          <nav className="flex gap-1 overflow-x-auto lg:flex-col" aria-label="Mục cài đặt">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                aria-current={tab === t.id || undefined}
+                className={`flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
+                  tab === t.id ? 'bg-surface font-semibold text-ink-hi shadow-[0_1px_3px_rgb(31_45_53/0.1)]' : 'text-ink-mid hover:bg-raised hover:text-ink-hi'
+                }`}
+              >
+                <t.icon size={17} className={tab === t.id ? 'text-accent' : 'text-ink-lo'} aria-hidden="true" />
+                {t.label}
+              </button>
+            ))}
+          </nav>
+        </GlassPanel>
 
-      <div style={{ display: 'flex', gap: '2rem', flex: 1 }}>
-        {/* Sidebar Navigation */}
-        <div style={{ width: '240px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.75rem',
-                padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)',
-                background: activeTab === tab.id ? 'var(--accent-dim)' : 'transparent',
-                color: activeTab === tab.id ? 'var(--accent-blue)' : 'var(--text-secondary)',
-                border: 'none', cursor: 'pointer', textAlign: 'left',
-                fontWeight: activeTab === tab.id ? 600 : 500,
-                transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out'
-              }}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Content Area */}
-        <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2rem', minHeight: '500px' }}>
-          
-          {activeTab === 'general' && (
-            <div className="animate-fade-in">
-              <h3 style={{ fontSize: '1.25rem', margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <User size={20} color="var(--accent-blue)" /> Profile Information
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Full Name</label>
-                  <input type="text" defaultValue="Admin User" style={{ 
-                    padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'var(--bg-dark)', color: 'var(--text-primary)', outline: 'none'
-                  }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Email Address</label>
-                  <input type="email" defaultValue="admin@company.com" style={{ 
-                    padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'var(--bg-dark)', color: 'var(--text-primary)', outline: 'none'
-                  }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Role / Department</label>
-                  <input type="text" defaultValue="CX Director" disabled style={{ 
-                    padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'rgba(0,0,0,0.2)', color: 'var(--text-muted)', cursor: 'not-allowed'
-                  }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Timezone</label>
-                  <select style={{ 
-                    padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none'
-                  }}>
-                    <option value="Asia/Ho_Chi_Minh" style={{ background: 'var(--bg-card)' }}>(GMT+07:00) Indochina Time (ICT)</option>
-                    <option value="UTC" style={{ background: 'var(--bg-card)' }}>UTC / GMT</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'appearance' && (
-            <div className="animate-fade-in">
-              <h3 style={{ fontSize: '1.25rem', margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Monitor size={20} color="var(--accent-purple)" /> Appearance
-              </h3>
-              <div style={{ background: 'var(--bg-dark)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h4 style={{ margin: '0 0 0.25rem 0', fontWeight: 600 }}>Theme Mode</h4>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      Switch between Dark and Light mode for the dashboard interface.
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', padding: '0.35rem', borderRadius: 'var(--radius-md)' }}>
-                    <button 
-                      onClick={() => toggleTheme('light')}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-sm)',
-                        background: theme === 'light' ? 'var(--bg-card)' : 'transparent',
-                        color: theme === 'light' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                        border: 'none', cursor: 'pointer', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out',
-                        boxShadow: theme === 'light' ? 'var(--glass-shadow)' : 'none', fontWeight: 500
-                      }}
-                    >
-                      <Sun size={18} /> Light
-                    </button>
-                    <button 
-                      onClick={() => toggleTheme('dark')}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-sm)',
-                        background: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'transparent',
-                        color: theme === 'dark' ? 'white' : 'var(--text-secondary)',
-                        border: 'none', cursor: 'pointer', transition: 'background-color 120ms ease-out, border-color 120ms ease-out, color 120ms ease-out',
-                        boxShadow: theme === 'dark' ? 'var(--glass-shadow)' : 'none', fontWeight: 500
-                      }}
-                    >
-                      <Moon size={18} /> Dark
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'ai' && (
-            <div className="animate-fade-in">
-              <h3 style={{ fontSize: '1.25rem', margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Cpu size={20} color="var(--accent-cyan)" /> AI Architecture (Tri-API Load Balancing)
-              </h3>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Primary Analysis Engine (Batch Processing)</label>
-                  <select style={{ 
-                    padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', width: '100%', maxWidth: '500px'
-                  }}>
-                    <option value="groq" style={{ background: 'var(--bg-card)' }}>Groq - LLaMA 3.3 70B (Ultra-fast)</option>
-                    <option value="gemini" style={{ background: 'var(--bg-card)' }}>Gemini 1.5 Flash (Standard)</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Predictive & Strategic Engine (Analytics)</label>
-                  <select style={{ 
-                    padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', width: '100%', maxWidth: '500px'
-                  }}>
-                    <option value="openrouter" style={{ background: 'var(--bg-card)' }}>OpenRouter - GPT-4o-mini (High Accuracy)</option>
-                    <option value="groq" style={{ background: 'var(--bg-card)' }}>Groq - LLaMA 3.3 70B (Fast Fallback)</option>
-                  </select>
-                </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Conversational Assistant (ChatWidget)</label>
-                  <select style={{ 
-                    padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
-                    background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', width: '100%', maxWidth: '500px'
-                  }}>
-                    <option value="gemini" style={{ background: 'var(--bg-card)' }}>Gemini 2.5 Flash (Large Context Window)</option>
-                    <option value="openrouter" style={{ background: 'var(--bg-card)' }}>OpenRouter - Claude 3.5 Sonnet</option>
-                  </select>
-                </div>
-
-                <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                    <input type="checkbox" defaultChecked /> 
-                    <div>
-                      <div style={{ fontWeight: 600, color: 'var(--risk-low)' }}>Enable Tri-API Failover (Self-Healing)</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>Automatically route traffic between Groq, OpenRouter, and Gemini if one provider goes down.</div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'notifications' && (
-            <div className="animate-fade-in">
-              <h3 style={{ fontSize: '1.25rem', margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Bell size={20} color="#f97316" /> Notification Channels
-              </h3>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <Mail size={24} color="var(--text-secondary)" />
-                    <div>
-                      <div style={{ fontWeight: 600 }}>Email Alerts</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Receive daily executive summaries.</div>
-                    </div>
-                  </div>
-                  <input type="checkbox" className="toggle-switch" defaultChecked style={{ transform: 'scale(1.2)' }} />
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <Hash size={24} color="var(--text-secondary)" />
-                    <div>
-                      <div style={{ fontWeight: 600 }}>Slack Integration</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Send critical risk alerts to #cx-urgent.</div>
-                    </div>
-                  </div>
-                  <input type="checkbox" className="toggle-switch" style={{ transform: 'scale(1.2)' }} />
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-md)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <Smartphone size={24} color="var(--text-secondary)" />
-                    <div>
-                      <div style={{ fontWeight: 600 }}>SMS / Push Notifications</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Only for severe PR crises.</div>
-                    </div>
-                  </div>
-                  <input type="checkbox" className="toggle-switch" style={{ transform: 'scale(1.2)' }} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'security' && (
-            <div className="animate-fade-in">
-              <h3 style={{ fontSize: '1.25rem', margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Shield size={20} color="var(--risk-low)" /> Security Settings
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <GlassPanel tone="strong" className="p-6 animate-fade-up" key={tab}>
+          {tab === 'general' && (
+            <>
+              <PanelHeader title="Hồ sơ" subtitle="Thông tin hiển thị trong báo cáo và nhật ký quyết định" />
+              <div className="mb-6 flex items-center gap-4">
+                <span className="grid size-16 place-items-center rounded-full bg-linear-to-br from-blush to-sky text-xl font-semibold text-ink-hi">{initials(form.name)}</span>
                 <div>
-                  <h4 style={{ margin: '0 0 0.5rem 0' }}>Change Password</h4>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input type="password" placeholder="Current Password" style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--bg-dark)', color: 'var(--text-primary)', outline: 'none' }} />
-                    <input type="password" placeholder="New Password" style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--bg-dark)', color: 'var(--text-primary)', outline: 'none' }} />
-                    <button style={{ background: 'var(--bg-dark)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', padding: '0 1.5rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>Update</button>
-                  </div>
-                </div>
-                
-                <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 0.25rem 0', fontWeight: 600 }}>Two-Factor Authentication (2FA)</h4>
-                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Add an extra layer of security to your account.</p>
-                    </div>
-                    <button style={{ background: 'var(--accent-indigo)', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: 'var(--radius-sm)', fontWeight: 500, cursor: 'pointer' }}>Enable 2FA</button>
-                  </div>
+                  <p className="font-semibold text-ink-hi">{form.name}</p>
+                  <p className="text-sm text-ink-lo">Quản lý trải nghiệm khách hàng</p>
                 </div>
               </div>
-            </div>
-          )}
-          
-          {activeTab === 'data' && (
-            <div className="animate-fade-in">
-              <h3 style={{ fontSize: '1.25rem', margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Database size={20} color="var(--risk-medium)" /> Data & Privacy
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Auto-Sync Interval</label>
-                  <select style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', width: '50%' }}>
-                    <option value="realtime" style={{ background: 'var(--bg-card)' }}>Real-time (WebSockets)</option>
-                    <option value="5m" style={{ background: 'var(--bg-card)' }}>Every 5 minutes</option>
-                    <option value="1h" style={{ background: 'var(--bg-card)' }}>Every 1 hour</option>
-                    <option value="manual" style={{ background: 'var(--bg-card)' }}>Manual Sync Only</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Data Retention</label>
-                  <select style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'var(--bg-card)', color: 'var(--text-primary)', outline: 'none', width: '50%' }}>
-                    <option value="30" style={{ background: 'var(--bg-card)' }}>30 Days</option>
-                    <option value="90" style={{ background: 'var(--bg-card)' }}>90 Days</option>
-                    <option value="365" style={{ background: 'var(--bg-card)' }}>1 Year</option>
-                    <option value="forever" style={{ background: 'var(--bg-card)' }}>Indefinitely</option>
-                  </select>
-                </div>
-
-                <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem', marginTop: '1rem' }}>
-                  <button style={{ background: 'transparent', border: '1px solid var(--risk-critical)', color: 'var(--risk-critical)', padding: '0.6rem 1.2rem', borderRadius: 'var(--radius-sm)', fontWeight: 500, cursor: 'pointer' }}>
-                    Purge System Cache
-                  </button>
-                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>This will force the AI to re-analyze all historical data.</p>
-                </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <TextField label="Họ và tên" value={form.name} onChange={set('name')} />
+                <TextField label="Email" type="email" icon={Mail} value={form.email} onChange={set('email')} />
+                <TextField label="Vai trò" value="Quản lý trải nghiệm khách hàng" disabled hint="Do quản trị viên tổ chức cấp" />
+                <Select
+                  label="Múi giờ"
+                  value={form.timezone}
+                  onChange={set('timezone')}
+                  options={[{ value: 'Asia/Ho_Chi_Minh', label: '(GMT+07:00) Giờ Đông Dương' }, { value: 'UTC', label: 'UTC / GMT' }]}
+                />
               </div>
-            </div>
+            </>
           )}
 
-        </div>
+          {tab === 'appearance' && (
+            <>
+              <PanelHeader title="Giao diện" subtitle="Áp dụng ngay, lưu riêng trên máy này" />
+              <RadioCards
+                name="Chủ đề"
+                value={theme}
+                onChange={setTheme}
+                options={[
+                  { value: 'light', label: 'Mist — sáng', description: 'Kính sáng trên nền phong cảnh phủ sương', preview: <Swatches colors={['#F1F5F4', '#5E8B7E', '#A7C7E7', '#E8AEB7', '#2F3E46']} /> },
+                  { value: 'dark', label: 'Dusk — tối', description: 'Dịu mắt khi làm việc buổi tối', preview: <Swatches colors={['#121B20', '#84B9A9', '#7AAAE0', '#E8899B', '#E6EEED']} /> }
+                ]}
+              />
+              <div className="mt-4 flex flex-col gap-3">
+                <Row icon={Sparkles} title="Hiệu ứng kính mờ" description="Tắt nếu máy chậm khi cuộn — mọi bề mặt chuyển về nền đặc">
+                  <Switch checked={glass} onChange={setGlass} label="Hiệu ứng kính mờ" />
+                </Row>
+                <Row icon={theme === 'dark' ? Moon : Sun} title="Phím tắt đổi chủ đề" description="Mở bảng lệnh bằng Ctrl + K rồi gõ “giao diện”">
+                  <kbd className="rounded-lg border border-line bg-surface px-2 py-1 font-mono text-xs text-ink-mid">Ctrl K</kbd>
+                </Row>
+              </div>
+            </>
+          )}
+
+          {tab === 'notifications' && (
+            <>
+              <PanelHeader title="Kênh thông báo" subtitle="Cảnh báo mức Nghiêm trọng luôn được gửi qua mọi kênh đang bật" />
+              <div className="flex flex-col gap-3">
+                <Row icon={Mail} title="Email" description="Bản tóm tắt điều hành hằng ngày lúc 8:00">
+                  <Switch checked={form.notifyEmail} onChange={set('notifyEmail')} label="Thông báo qua email" />
+                </Row>
+                <Row icon={Hash} title="Slack" description="Gửi cảnh báo mức Cao trở lên tới #cx-urgent">
+                  <Switch checked={form.notifySlack} onChange={set('notifySlack')} label="Thông báo qua Slack" />
+                </Row>
+                <Row icon={Smartphone} title="SMS / đẩy" description="Chỉ dành cho khủng hoảng truyền thông nghiêm trọng">
+                  <Switch checked={form.notifySms} onChange={set('notifySms')} label="Thông báo qua SMS" />
+                </Row>
+              </div>
+            </>
+          )}
+
+          {tab === 'data' && (
+            <>
+              <PanelHeader title="Dữ liệu & quyền riêng tư" subtitle="Customer Radar là Bên Xử lý dữ liệu theo Nghị định 13/2023/NĐ-CP — thông tin cá nhân được che ngay ở bước tiền xử lý" />
+              <div className="grid gap-4 md:grid-cols-2">
+                <Select
+                  label="Chu kỳ tự đồng bộ"
+                  value={form.syncInterval}
+                  onChange={set('syncInterval')}
+                  options={[{ value: '5m', label: 'Mỗi 5 phút' }, { value: '1h', label: 'Mỗi giờ' }, { value: 'nightly', label: 'Hằng đêm' }, { value: 'manual', label: 'Chỉ khi bấm đồng bộ' }]}
+                />
+                <Select
+                  label="Thời gian lưu trữ"
+                  value={form.retention}
+                  onChange={set('retention')}
+                  options={[{ value: '30', label: '30 ngày' }, { value: '90', label: '90 ngày' }, { value: '365', label: '1 năm' }]}
+                  hint="Hết hạn thì phản hồi được ẩn danh hoá, chỉ số tổng hợp được giữ lại"
+                />
+              </div>
+            </>
+          )}
+
+          {tab === 'security' && (
+            <>
+              <PanelHeader title="Bảo mật" subtitle="Bảo vệ tài khoản quản trị" />
+              {/* Bản này dùng tài khoản dùng thử cố định, chưa có máy chủ xác thực.
+                  Nút không làm gì mà vẫn bấm được thì còn tệ hơn không có nút. */}
+              <p className="mb-4 rounded-xl bg-accent-dim px-4 py-3 text-sm text-accent-hi">
+                Tài khoản dùng thử do quản trị viên quản lý — đổi mật khẩu và xác thực hai lớp sẽ mở khi kết nối máy chủ xác thực.
+              </p>
+              <form className="grid gap-4 md:grid-cols-2" onSubmit={(e) => e.preventDefault()}>
+                <input type="text" name="username" autoComplete="username" value={form.email} readOnly hidden />
+                <TextField label="Mật khẩu hiện tại" type="password" icon={KeyRound} placeholder="••••••••" autoComplete="current-password" disabled />
+                <TextField label="Mật khẩu mới" type="password" icon={KeyRound} placeholder="Tối thiểu 10 ký tự" autoComplete="new-password" disabled />
+                <Button type="submit" variant="outline" disabled className="justify-self-start">Đổi mật khẩu</Button>
+              </form>
+              <div className="mt-6">
+                <Row icon={ShieldCheck} title="Xác thực hai lớp" description="Yêu cầu mã từ ứng dụng xác thực mỗi lần đăng nhập">
+                  <Button size="sm" variant="soft" disabled>Bật 2FA</Button>
+                </Row>
+              </div>
+            </>
+          )}
+        </GlassPanel>
       </div>
+
+      <Toast show={saved}>Đã lưu cài đặt</Toast>
     </div>
   );
 };

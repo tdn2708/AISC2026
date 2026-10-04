@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight, Activity, ShieldCheck, Gauge, CheckCircle2 } from 'lucide-react';
-import { GlassPanel, SeverityBadge, MethodHint } from './Glass';
-import { fmtInt, fmtPct, fmtSignedPct, SEVERITY, SEVERITY_ORDER } from './format';
+import { GlassPanel, SeverityBadge, MethodHint } from '../ui';
+import { fmtInt, fmtPct, fmtSignedPct, SEVERITY, SEVERITY_ORDER } from '../../lib/format';
 
 /**
  * VÙNG CHỈ SỐ
@@ -14,7 +14,7 @@ import { fmtInt, fmtPct, fmtSignedPct, SEVERITY, SEVERITY_ORDER } from './format
 
 const Label = ({ children, method }) => (
   <div className="flex items-center justify-between gap-3">
-    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-ink-lo">{children}</p>
+    <p className="eyebrow">{children}</p>
     {method && <MethodHint text={method} />}
   </div>
 );
@@ -91,7 +91,7 @@ const ComplaintRateCard = ({ stats, trend }) => {
 
       <Sparkline
         series={series}
-        tone={worsening ? 'var(--sev-crit)' : 'var(--text-lo)'}
+        tone={worsening ? 'var(--sev-crit)' : 'var(--accent)'}
         label="Khiếu nại có trọng số, 14 kỳ trong 28 ngày gần nhất"
       />
 
@@ -145,7 +145,7 @@ const SeverityCard = ({ alerts }) => {
 
       {/* Phân bố theo mức: một thanh xếp chồng, khe 2px giữa các đoạn. */}
       <div
-        className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full bg-raised/60"
+        className="flex h-2.5 w-full gap-0.5 overflow-hidden rounded-full bg-raised"
         role="img"
         aria-label={counts.map((c) => `${c.label}: ${c.n}`).join(', ')}
       >
@@ -188,7 +188,7 @@ const SeverityCard = ({ alerts }) => {
 
 const CompactMetric = ({ icon: Icon, title, value, method, children }) => (
   <GlassPanel className="flex items-center gap-3 px-4 py-3">
-    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-raised/70 text-ink-lo">
+    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-accent-dim text-accent">
       <Icon size={16} aria-hidden="true" />
     </span>
     <div className="min-w-0 flex-1">
@@ -207,7 +207,14 @@ const KpiZone = ({ stats, trend = [], alerts = [] }) => {
   const health = stats?.dataHealthScore;
   const total = stats?.totalFeedbacks;
 
-  const velTone = vel?.velocity == null ? 'text-ink-lo' : vel.velocity > 0.2 ? 'text-crit' : vel.velocity > 0 ? 'text-high' : 'text-ok';
+  // Ngưỡng ±5% để dao động nhỏ không bị gọi là "tăng" hay "giảm"
+  const v = vel?.velocity;
+  const [velTone, velLabel] =
+    v == null ? ['text-ink-lo', 'Chưa đủ dữ liệu']
+      : v > 0.2 ? ['text-crit', 'Tăng nhanh']
+        : v > 0.05 ? ['text-high', 'Đang tăng']
+          : v < -0.05 ? ['text-ok', 'Đang giảm']
+            : ['text-ink-mid', 'Ổn định'];
   const [healthTone, healthLabel] =
     health == null ? ['text-ink-lo', 'Chưa có dữ liệu'] : health >= 75 ? ['text-ok', 'Tốt'] : health >= 50 ? ['text-high', 'Cần chú ý'] : ['text-crit', 'Kém'];
 
@@ -237,7 +244,7 @@ const KpiZone = ({ stats, trend = [], alerts = [] }) => {
             value={vel?.display ?? '—'}
             method="Số phản hồi tiêu cực mỗi ngày trong 7 ngày gần nhất so với nền 28 ngày trước đó."
           >
-            <span className={velTone}>{vel?.velocity > 0.2 ? 'Tăng nhanh' : vel?.velocity > 0 ? 'Đang tăng' : 'Ổn định'}</span>
+            <span className={velTone}>{velLabel}</span>
             <span className="text-ink-lo"> · 7 ngày so với nền 28 ngày</span>
           </CompactMetric>
         </div>

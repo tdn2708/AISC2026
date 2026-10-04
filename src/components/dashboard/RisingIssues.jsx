@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp } from 'lucide-react';
-import { GlassPanel, PanelHeader, SeverityBadge } from './Glass';
-import { alertTitle, fmtInt, fmtPct, fmtSignedPct, growthOf } from './format';
+import { GlassPanel, PanelHeader, SeverityBadge, EmptyState } from '../ui';
+import { alertTitle, fmtInt, fmtPct, fmtSignedPct, growthOf } from '../../lib/format';
 
 /**
  * HORIZONTAL BAR — Top vấn đề tăng nhanh.
@@ -38,9 +38,13 @@ const RisingIssues = ({ alerts = [] }) => {
       />
 
       {rows.length === 0 ? (
-        <div className="grid flex-1 place-items-center py-10 text-center text-sm text-ink-lo">
-          Không có vấn đề nào tăng có ý nghĩa thống kê trong kỳ này
-        </div>
+        <EmptyState
+          compact
+          variant="calm"
+          className="flex-1"
+          title="Không có vấn đề nào đang tăng"
+          description="Không có biến động nào đạt ý nghĩa thống kê trong kỳ này."
+        />
       ) : (
         <ol className="flex list-none flex-col gap-4">
           {rows.map(({ alert, growth }, i) => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { GlassPanel, PanelHeader } from './Glass';
-import { fmtInt } from './format';
+import { GlassPanel, PanelHeader } from '../ui';
+import { fmtInt } from '../../lib/format';
 
 /**
  * LINE CHART — diễn biến theo thời gian.

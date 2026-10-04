@@ -1,84 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Menu } from 'lucide-react';
+import axios from 'axios';
 import Sidebar from './components/Sidebar';
+import Topbar from './components/shell/Topbar';
+import CommandPalette from './components/shell/CommandPalette';
 import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
 import Feedbacks from './components/Feedbacks';
-import Segments from './components/Segments';
 import RiskCenter from './components/RiskCenter';
 import DataSources from './components/DataSources';
 import Reports from './components/Reports';
-import AiChatWidget from './components/AiChatWidget';
 import SettingsPage from './components/Settings';
 import Login from './components/Login';
-import Logo from './components/Logo';
 import TrustLayerPage from './components/TrustLayer';
 import Lab from './components/Lab';
-import { useTheme } from './hooks/useTheme';
-import axios from 'axios';
+import UiKit from './components/UiKit';
 import { API_URL } from './config';
-import './index.css';
+import './hooks/useTheme';
 
 axios.defaults.baseURL = API_URL;
 
-const ProtectedRoute = ({ isAuthenticated, children }) => {
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-};
+const ProtectedRoute = ({ isAuthenticated, children }) =>
+  isAuthenticated ? children : <Navigate to="/login" replace />;
 
+/**
+ * KHUNG ỨNG DỤNG
+ * Nền khuôn viên UIT phủ sương nằm cố định phía sau; thanh bên kính nổi;
+ * vùng nội dung cuộn riêng với thanh trên dính. Ctrl+K mở bảng lệnh ở
+ * mọi trang.
+ */
 const MainLayout = ({ children, onLogout }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    return localStorage.getItem('sidebarCollapsed') === 'true';
-  });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
   const location = useLocation();
 
-  // Close sidebar when route changes on mobile
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
+  useEffect(() => setMenuOpen(false), [location.pathname]);
+  useEffect(() => localStorage.setItem('sidebarCollapsed', collapsed), [collapsed]);
 
   useEffect(() => {
-    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
-  }, [sidebarCollapsed]);
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const closeCommand = useCallback(() => setCommandOpen(false), []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-dark)' }}>
-      {/* Mobile Header */}
-      <div className="mobile-header">
-        <Logo size="sm" showTagline={false} />
-        <button
-          onClick={() => setIsMobileMenuOpen(true)}
-          style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem' }}
-        >
-          <Menu size={24} />
-        </button>
-      </div>
-
-      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
-        <Sidebar 
-          onLogout={onLogout} 
-          isOpen={isMobileMenuOpen} 
-          onClose={() => setIsMobileMenuOpen(false)}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+    <>
+      <div className="app-backdrop" aria-hidden="true" />
+      <div className="flex min-h-screen">
+        <Sidebar
+          onLogout={onLogout}
+          isOpen={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          collapsed={collapsed}
+          onToggleCollapse={() => setCollapsed((v) => !v)}
         />
-        <main className="main-content" style={{ marginLeft: sidebarCollapsed ? 'var(--sidebar-w-collapsed)' : undefined, transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-          {children}
+        <main className={`main-content ${collapsed ? 'is-collapsed' : ''}`}>
+          <Topbar onOpenMenu={() => setMenuOpen(true)} onOpenCommand={() => setCommandOpen(true)} />
+          <div key={location.pathname} className="animate-fade-in">{children}</div>
         </main>
       </div>
-      <AiChatWidget />
-    </div>
+      <CommandPalette open={commandOpen} onClose={closeCommand} onLogout={onLogout} />
+    </>
   );
 };
 
 function App() {
-  useTheme(); // Initialize theme
-  
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  // Lần đầu mở vẫn vào thẳng bảng điều khiển (bản demo cho giám khảo), nhưng
+  // đã đăng xuất thì phải nhớ — trước đây tải lại trang là tự đăng nhập lại.
+  const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('isAuthenticated') !== 'false');
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -87,29 +84,31 @@ function App() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    localStorage.removeItem('isAuthenticated');
+    localStorage.setItem('isAuthenticated', 'false');
   };
+
+  const page = (el) => (
+    <ProtectedRoute isAuthenticated={isAuthenticated}>
+      <MainLayout onLogout={handleLogout}>{el}</MainLayout>
+    </ProtectedRoute>
+  );
 
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLogin} />
-        } />
-        
-        {/* Protected Routes wrapped in MainLayout */}
-        <Route path="/" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MainLayout onLogout={handleLogout}><Navigate to="/dashboard" replace /></MainLayout></ProtectedRoute>} />
-        <Route path="/dashboard" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MainLayout onLogout={handleLogout}><Dashboard /></MainLayout></ProtectedRoute>} />
-        <Route path="/analytics" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MainLayout onLogout={handleLogout}><Analytics /></MainLayout></ProtectedRoute>} />
-        <Route path="/feedbacks" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MainLayout onLogout={handleLogout}><Feedbacks /></MainLayout></ProtectedRoute>} />
-        <Route path="/segments" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MainLayout onLogout={handleLogout}><Segments /></MainLayout></ProtectedRoute>} />
-        <Route path="/risk" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MainLayout onLogout={handleLogout}><RiskCenter /></MainLayout></ProtectedRoute>} />
-        <Route path="/trust" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MainLayout onLogout={handleLogout}><TrustLayerPage /></MainLayout></ProtectedRoute>} />
-        <Route path="/lab" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MainLayout onLogout={handleLogout}><Lab /></MainLayout></ProtectedRoute>} />
-        <Route path="/data" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MainLayout onLogout={handleLogout}><DataSources /></MainLayout></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MainLayout onLogout={handleLogout}><Reports /></MainLayout></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute isAuthenticated={isAuthenticated}><MainLayout onLogout={handleLogout}><SettingsPage /></MainLayout></ProtectedRoute>} />
-        
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLogin} />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={page(<Dashboard />)} />
+        <Route path="/risk" element={page(<RiskCenter />)} />
+        <Route path="/feedbacks" element={page(<Feedbacks />)} />
+        <Route path="/analytics" element={page(<Analytics />)} />
+        <Route path="/segments" element={<Navigate to="/analytics?tab=segments" replace />} />
+        <Route path="/trust" element={page(<TrustLayerPage />)} />
+        <Route path="/lab" element={page(<Lab />)} />
+        <Route path="/data" element={page(<DataSources />)} />
+        <Route path="/reports" element={page(<Reports />)} />
+        <Route path="/settings" element={page(<SettingsPage />)} />
+        <Route path="/ui-kit" element={page(<UiKit />)} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
