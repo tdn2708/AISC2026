@@ -4,6 +4,7 @@ import {
   Loader2, FlaskConical, AlertTriangle, CheckCircle2, XCircle
 } from 'lucide-react';
 import PipelineDemo from './lab/PipelineDemo';
+import BatchDemo from './lab/BatchDemo';
 
 /**
  * PHÒNG THÍ NGHIỆM
@@ -316,6 +317,7 @@ const Lab = () => {
       }}>
         {[
           { id: 'live', label: 'Trình diễn xử lý ngôn ngữ' },
+          { id: 'batch', label: 'Xử lý hàng loạt' },
           { id: 'eval', label: 'Kết quả thực nghiệm' }
         ].map((t) => (
           <button
@@ -335,7 +337,7 @@ const Lab = () => {
         ))}
       </div>
 
-      {tab === 'live' ? <PipelineDemo /> : <Experiments />}
+      {tab === 'live' ? <PipelineDemo /> : tab === 'batch' ? <BatchDemo /> : <Experiments />}
     </div>
   );
 };

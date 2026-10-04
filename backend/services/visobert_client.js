@@ -167,13 +167,18 @@ async function embed(texts) {
   }
 }
 
-/** Dự đoán thô từ checkpoint tinh chỉnh. Chưa tinh chỉnh hoặc lỗi -> null */
-async function predict(texts) {
+/**
+ * Dự đoán thô từ checkpoint tinh chỉnh. Chưa tinh chỉnh hoặc lỗi -> null.
+ * `cache: false` chạy thẳng, không dùng bộ đệm — dùng khi cần ĐO tốc độ thật,
+ * vì đọc từ đệm sẽ cho ra một con số throughput không có thật.
+ */
+async function predict(texts, { cache = true } = {}) {
   if (!Array.isArray(texts) || texts.length === 0) return [];
   const s = await status();
   if (!s.finetuned) return null;
   try {
     const inputs = texts.map((t) => prepareInput(t, s.inputMode));
+    if (!cache) return await postChunked('/predict', inputs, 'predictions');
     // Khóa đệm gắn với thời điểm train: đổi checkpoint thì kết quả cũ tự vô hiệu
     const prefix = `${s.checkpoint?.trainedAt || 'ckpt'}|${s.inputMode}|`;
     return await cachedCall(predictCache, prefix, '/predict', 'predictions', inputs);

@@ -112,7 +112,8 @@ def health():
         "checkpoint": None if meta is None else {
             k: meta.get(k) for k in ("model", "inputMode", "trainedTasks", "trainCounts", "bestEpoch",
                                      "devReport", "leakageGuard", "excludedTestSha256",
-                                     "testOverlapRemoved", "trainedAt", "dataManifests", "hyperparameters")
+                                     "testOverlapRemoved", "trainedAt", "dataManifests", "hyperparameters",
+                                     "calibration", "multiLabel")
         },
     }
 
@@ -144,7 +145,7 @@ def predict(body: TextsIn):
         batch = tok(part, padding=True, truncation=True, max_length=max_len, return_tensors="pt").to(DEVICE)
         logits = model(batch["input_ids"], batch["attention_mask"])
         out.extend(decode({k: v.cpu() for k, v in logits.items()}, meta["labels"], meta["trainedTasks"],
-                          multi_label=bool(meta.get("multiLabel"))))
+                          multi_label=bool(meta.get("multiLabel")), calibration=meta.get("calibration")))
     return {"predictions": out, "trainedTasks": meta["trainedTasks"], "multiLabel": bool(meta.get("multiLabel"))}
 
 
@@ -193,15 +194,19 @@ def explain(body: TextIn):
     t1 = time.perf_counter()
 
     multi_label = bool(meta.get("multiLabel"))
+    cal = meta.get("calibration") or {}
     logits = _logits(model, tok, [body.text], max_len)
     # Ở chế độ đa nhãn, danh mục và nguyên nhân là xác suất ĐỘC LẬP (sigmoid),
     # nên các cột không cộng lại thành 100% — đúng như vậy mới nêu được nhiều vấn đề
     probs = {
         t: (torch.sigmoid(logits[t][0]) if (multi_label and t in ("category", "cause"))
-            else torch.softmax(logits[t][0], dim=-1))
+            # Cảm xúc và rác hiển thị theo xác suất ĐÃ HIỆU CHỈNH, đúng bằng
+            # con số mà tầng quyết định dùng
+            else torch.softmax(logits[t][0] / float(cal.get(f"{t}Temperature", 1.0) or 1.0), dim=-1))
         for t in TASKS
     }
-    prediction = decode({t: logits[t] for t in TASKS}, labels, trained, multi_label=multi_label)[0]
+    prediction = decode({t: logits[t] for t in TASKS}, labels, trained,
+                        multi_label=multi_label, calibration=meta.get("calibration"))[0]
     t2 = time.perf_counter()
 
     def dist(task):
@@ -266,6 +271,8 @@ def explain(body: TextIn):
         "distributions": distributions,
         "multiLabel": multi_label,
         "thresholds": meta.get("thresholds"),
+        "calibrated": bool(cal),
+        "calibration": {k: v for k, v in cal.items() if k.endswith("Temperature") or k == "causeThreshold"} or None,
         "words": words,
         "importance": importance,
         "noneLabel": NONE,

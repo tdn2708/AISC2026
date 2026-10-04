@@ -16,6 +16,14 @@ if (!process.env.MONGODB_URI) {
 
 const client = new MongoClient(process.env.MONGODB_URI);
 
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT EXCEPTION]', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[UNHANDLED REJECTION]', reason);
+});
+
 /**
  * Chỉ mục cần thiết cho các truy vấn hay dùng. Tạo lúc khởi động để
  * không phải nhớ chạy tay sau mỗi lần triển khai mới.

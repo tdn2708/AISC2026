@@ -88,7 +88,7 @@ CAUSE_THRESHOLD = 0.3
 
 @torch.no_grad()
 def decode(logits, labels, trained_tasks, multi_label=False,
-           cat_threshold=CATEGORY_THRESHOLD, cause_threshold=CAUSE_THRESHOLD):
+           cat_threshold=CATEGORY_THRESHOLD, cause_threshold=CAUSE_THRESHOLD, calibration=None):
     """
     Chuyển logits thành nhãn. Đầu ra chưa từng được huấn luyện thì KHÔNG
     trả về — trọng số của nó là khởi tạo ngẫu nhiên, và một nhãn ngẫu
@@ -106,7 +106,16 @@ def decode(logits, labels, trained_tasks, multi_label=False,
     """
     groups = cause_indexes_by_category(labels)
     none_idx = labels["category"].index(NONE)
-    soft = {t: torch.softmax(logits[t], dim=-1) for t in ("sentiment", "spam")}
+
+    # Giá trị hiệu chỉnh học trên tập dev (calibrate.py). Không có thì dùng
+    # mặc định: nhiệt độ 1.0 và ngưỡng chung.
+    cal = calibration or {}
+    cat_thresholds = cal.get("categoryThresholds") or {}
+    cause_threshold = cal.get("causeThreshold", cause_threshold)
+    soft = {
+        t: torch.softmax(logits[t] / float(cal.get(f"{t}Temperature", 1.0) or 1.0), dim=-1)
+        for t in ("sentiment", "spam")
+    }
     if multi_label:
         cat_p = torch.sigmoid(logits["category"])
         cause_p = torch.sigmoid(logits["cause"])
@@ -152,7 +161,7 @@ def decode(logits, labels, trained_tasks, multi_label=False,
                     ((labels["category"][j], float(row[j])) for j in range(len(row)) if j != none_idx),
                     key=lambda x: -x[1],
                 )
-                detected = [(c, p) for c, p in scored if p >= cat_threshold]
+                detected = [(c, p) for c, p in scored if p >= cat_thresholds.get(c, cat_threshold)]
                 none_p = float(row[none_idx])
                 # Không danh mục nào vượt ngưỡng: theo lớp NONE nếu nó mạnh hơn
                 if not detected and none_p >= scored[0][1]:

@@ -478,6 +478,8 @@ router.post('/analyze', wrap(async (req, res) => {
         // Đa nhãn: mọi khía cạnh vượt ngưỡng, không chỉ danh mục mạnh nhất
         multiLabel: Boolean(explained.multiLabel),
         thresholds: explained.thresholds || null,
+        calibrated: Boolean(explained.calibrated),
+        calibration: explained.calibration || null,
         detected: visobert.detectedAspects(explained.prediction),
         checkpointTrainedAt: explained.checkpoint?.trainedAt || null
       }
@@ -563,6 +565,110 @@ router.post('/analyze', wrap(async (req, res) => {
       ? 'Khía cạnh ở trên theo luật từ khóa (baseline B1); trường "model" là kết quả ViSoBERT tinh chỉnh để đối chiếu.'
       : 'Phân loại theo luật từ khóa (baseline B1). ViSoBERT tinh chỉnh thay lớp này khi dịch vụ nlp_service có checkpoint; luật được giữ để đối chứng.'
   });
+}));
+
+/**
+ * XỬ LÝ HÀNG LOẠT — màn hình trình diễn quy mô.
+ *
+ * Một câu chạy 200ms thì ai cũng gật đầu; câu hỏi thật của doanh nghiệp là
+ * "mỗi ngày mười nghìn phản hồi thì sao". Endpoint này chạy cả lô qua đúng
+ * đường chạy nóng (che PII -> lọc rác -> ViSoBERT) và trả về thời gian ĐO
+ * ĐƯỢC, không phải ước tính.
+ *
+ * Bộ đệm bị tắt có chủ đích: đọc lại kết quả cũ sẽ cho một con số tốc độ
+ * không có thật.
+ */
+const BATCH_LIMIT = 500;
+
+router.post('/analyze/batch', wrap(async (req, res) => {
+  const texts = Array.isArray(req.body?.texts) ? req.body.texts.map((t) => String(t || '').trim()).filter(Boolean) : [];
+  if (texts.length === 0) return res.status(400).json({ error: 'Cần mảng texts' });
+  if (texts.length > BATCH_LIMIT) {
+    return res.status(400).json({ error: `Tối đa ${BATCH_LIMIT} phản hồi mỗi lượt` });
+  }
+
+  const t0 = nowMs();
+  const normalized = texts.map((t) => normalizer.normalize(t));
+  const normalizeMs = since(t0);
+
+  const nlpStatus = await visobert.status();
+  let preds = null;
+  let modelMs = 0;
+  if (nlpStatus.canLabel) {
+    const tModel = nowMs();
+    preds = await visobert.predict(texts, { cache: false });
+    modelMs = since(tModel);
+  }
+
+  const items = texts.map((text, i) => {
+    const pred = preds && preds[i];
+    const spam = trustLayer.runSpamFilter({ originalText: text }, normalized[i],
+      pred && Number.isFinite(pred.spamProbability) ? pred.spamProbability : null);
+    const aspects = pred
+      ? visobert.detectedAspects(pred)
+      : taxonomy.classifyByRules(normalized[i].normalized).slice(0, 3).map((m) => ({
+          category: m.category,
+          categoryLabel: taxonomy.categoryLabel(m.category),
+          cause: m.cause,
+          causeLabel: taxonomy.causeLabel(m.category, m.cause),
+          confidence: Number(m.confidence.toFixed(2))
+        }));
+    return {
+      text,
+      sentiment: pred ? pred.sentiment : (aspects.length ? 'Negative' : 'Neutral'),
+      aspects,
+      spam: spam.isSpam,
+      piiMasked: normalized[i].piiMasked
+    };
+  });
+
+  const byCategory = new Map();
+  const sentiment = {};
+  let multiIssue = 0;
+  let spamCount = 0;
+  let piiCount = 0;
+  for (const it of items) {
+    if (it.spam) { spamCount++; continue; }
+    if (it.piiMasked) piiCount++;
+    sentiment[it.sentiment] = (sentiment[it.sentiment] || 0) + 1;
+    if (it.aspects.length > 1) multiIssue++;
+    for (const a of it.aspects) {
+      const cur = byCategory.get(a.category) || { category: a.category, label: a.categoryLabel, count: 0 };
+      cur.count++;
+      byCategory.set(a.category, cur);
+    }
+  }
+
+  const totalMs = since(t0);
+  res.json({
+    count: texts.length,
+    source: preds ? 'visobert' : 'rules',
+    timings: {
+      totalMs,
+      normalizeMs,
+      modelMs,
+      msPerItem: Number((totalMs / texts.length).toFixed(2)),
+      itemsPerSecond: Number((texts.length / (totalMs / 1000)).toFixed(1))
+    },
+    summary: {
+      spam: spamCount,
+      piiMasked: piiCount,
+      multiIssue,
+      complaints: items.filter((i) => !i.spam && i.aspects.length > 0).length,
+      sentiment,
+      byCategory: [...byCategory.values()].sort((a, b) => b.count - a.count)
+    },
+    items: items.slice(0, 60)
+  });
+}));
+
+/** Lấy mẫu phản hồi THẬT trong kho dữ liệu để chạy thử hàng loạt */
+router.get('/analyze/batch/sample', wrap(async (req, res) => {
+  const n = Math.min(Number(req.query.n) || 200, BATCH_LIMIT);
+  const docs = await req.db.collection('feedbacks')
+    .aggregate([{ $sample: { size: n } }, { $project: { originalText: 1, _id: 0 } }])
+    .toArray();
+  res.json({ texts: docs.map((d) => d.originalText).filter(Boolean) });
 }));
 
 /** Trạng thái dịch vụ ViSoBERT: có chạy không, đã tinh chỉnh chưa, học những đầu ra nào */

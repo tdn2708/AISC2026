@@ -136,6 +136,36 @@ function parseCsv(content) {
   return rows.filter((r) => r.some((x) => x.trim()));
 }
 
+/**
+ * ÁNH XẠ KHÍA CẠNH CỦA UIT-ViSFD SANG TAXONOMY 7 DANH MỤC.
+ *
+ * UIT-ViSFD gán nhãn theo 10 khía cạnh của điện thoại, mỗi khía cạnh kèm một
+ * cực tính, do NGƯỜI gán. Đây là nhãn thật duy nhất mà đề tài có ở quy mô
+ * hàng nghìn câu, nên phải khai thác tối đa thay vì chỉ lấy cực tính toàn câu.
+ *
+ * Quy ước chuyển đổi: một khía cạnh bị gán Negative = một khiếu nại thuộc
+ * danh mục tương ứng. Khía cạnh Positive/Neutral không sinh khiếu nại.
+ *
+ * GIỚI HẠN phải nêu khi báo cáo:
+ *   - Ánh xạ có mất mát: GENERAL và OTHERS không ứng với danh mục nào, nên
+ *     câu chỉ chê chung chung sẽ mang nhãn "không thuộc taxonomy".
+ *   - Ánh xạ tới cấp danh mục (Level 1), KHÔNG suy ra được nguyên nhân
+ *     (Level 2) — nguyên nhân vẫn phải học từ tập chuyên ngành.
+ *   - Lệch miền: UIT-ViSFD là đánh giá điện thoại, không có khiếu nại giao
+ *     hàng, thanh toán hay đổi trả.
+ */
+const VISFD_ASPECT_TO_CATEGORY = {
+  PERFORMANCE: 'ProductQuality',
+  BATTERY: 'ProductQuality',
+  CAMERA: 'ProductQuality',
+  SCREEN: 'ProductQuality',
+  STORAGE: 'ProductQuality',
+  DESIGN: 'ProductQuality',
+  FEATURES: 'ProductQuality',
+  'SER&ACC': 'CustomerService',
+  PRICE: 'PricePromotion'
+};
+
 function readVisfd(file) {
   const rows = parseCsv(fs.readFileSync(file, 'utf8').replace(/^﻿/, ''));
   const header = rows[0].map((h) => h.trim().toLowerCase());
@@ -144,16 +174,41 @@ function readVisfd(file) {
   if (textCol < 0 || labelCol < 0) {
     throw new Error(`Không thấy cột comment/label trong ${file} (có: ${header.join(', ')})`);
   }
+
   const out = [];
-  let mixed = 0;
+  const stats = { multiAspect: 0, mixedPolarity: 0, withCategory: 0, none: 0, sentiment: {} };
   for (const r of rows.slice(1)) {
     const text = (r[textCol] || '').trim();
-    const polarities = new Set([...(r[labelCol] || '').matchAll(/#(Positive|Negative|Neutral)/g)].map((m) => m[1]));
-    if (!text || polarities.size === 0) continue;
-    if (polarities.size > 1) { mixed++; continue; }
-    out.push({ text, sentiment: [...polarities][0] });
+    const labels = [...(r[labelCol] || '').matchAll(/\{([A-Z&]+)#(Positive|Negative|Neutral)\}/g)];
+    if (!text || labels.length === 0) continue;
+
+    const polarities = new Set(labels.map((m) => m[2]));
+    if (labels.length > 1) stats.multiAspect++;
+    if (polarities.size > 1) stats.mixedPolarity++;
+
+    // Cực tính toàn câu: có bất kỳ khía cạnh tiêu cực nào thì câu là tiêu cực.
+    // Định nghĩa này khớp với mục đích của hệ thống (phát hiện vấn đề cần xử
+    // lý) và khớp với cách tập chuyên ngành gán nhãn câu "khen nhưng chê".
+    const sentiment = polarities.has('Negative') ? 'Negative'
+      : polarities.has('Positive') ? 'Positive' : 'Neutral';
+
+    const categories = [...new Set(
+      labels.filter((m) => m[2] === 'Negative').map((m) => VISFD_ASPECT_TO_CATEGORY[m[1]]).filter(Boolean)
+    )];
+
+    stats.sentiment[sentiment] = (stats.sentiment[sentiment] || 0) + 1;
+    if (categories.length) stats.withCategory++; else stats.none++;
+
+    // Không có `causes`: UIT-ViSFD không cho suy ra nguyên nhân Level 2,
+    // nên khóa này vắng mặt và đầu ra nguyên nhân bỏ qua các câu này
+    out.push({ text, sentiment, categories });
   }
-  console.log(`UIT-ViSFD: giữ ${out.length} câu cùng cực tính, bỏ ${mixed} câu có khía cạnh trái dấu`);
+
+  console.log(
+    `UIT-ViSFD: ${out.length} câu (nhãn người gán) | ${stats.multiAspect} câu nhiều khía cạnh | ` +
+    `${stats.mixedPolarity} câu trái dấu | ${stats.withCategory} câu có khiếu nại ánh xạ được, ${stats.none} câu không\n` +
+    `  cực tính: ${Object.entries(stats.sentiment).map(([k, v]) => `${k}=${v}`).join(', ')}`
+  );
   return out;
 }
 

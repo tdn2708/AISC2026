@@ -352,7 +352,9 @@ function StepInference({ t }) {
         {m.multiLabel
           ? ` Danh mục dùng xác suất ĐỘC LẬP (sigmoid) nên các cột không cộng lại thành 100%: mọi danh mục vượt ngưỡng ${m.thresholds?.category ?? 0.5} đều được ghi nhận, nhờ vậy một câu nêu được nhiều vấn đề.`
           : ' Danh mục dùng softmax nên tổng bằng 100% và chỉ chọn được một danh mục.'}
-        {' '}Mô hình hiện tự tin quá mức: đọc thứ hạng, đừng đọc như xác suất đã hiệu chỉnh.
+        {m.calibrated
+          ? ` Xác suất cảm xúc đã được HIỆU CHỈNH bằng temperature scaling học trên tập dev (T = ${m.calibration?.sentimentTemperature ?? '—'}), nên con số đọc được sát với tần suất đúng thật hơn.`
+          : ' Mô hình hiện tự tin quá mức: đọc thứ hạng, đừng đọc như xác suất đã hiệu chỉnh.'}
       </Note>
     </>
   );

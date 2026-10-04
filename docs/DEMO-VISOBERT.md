@@ -66,7 +66,23 @@ Thứ tự thẻ nên chạy:
 > Thẻ "Teencode, nhiều vấn đề" thì ngược lại: **luật bắt 3/3, mô hình chỉ 2/3** (thiếu
 > Thanh toán). Để nguyên cho người xem thấy; mô hình không thắng ở mọi câu.
 
-## Màn 3 — Số đo và đối đầu từng câu (2 phút)
+## Màn 3 — Xử lý hàng loạt: quy mô và tốc độ (1 phút)
+
+Tab **Xử lý hàng loạt**. Bấm **"Nạp 200 phản hồi thật từ kho dữ liệu"**, rồi **"Chạy 200
+phản hồi"**. Khoảng 8 giây sau có kết quả:
+
+- **Tốc độ đo được** (khoảng 26 phản hồi/giây trên CPU, một tiến trình), thời gian mỗi
+  phản hồi, tổng thời gian. Máy chủ tắt bộ đệm cho phép đo này, nên không có chuyện đọc
+  lại kết quả cũ rồi khoe tốc độ ảo.
+- Bao nhiêu phản hồi có khiếu nại, bao nhiêu nêu nhiều vấn đề, bao nhiêu bị chặn là rác,
+  bao nhiêu đã bị che thông tin cá nhân.
+- Phân bố khiếu nại theo danh mục và theo cảm xúc.
+
+Câu nên nói: *"26 phản hồi mỗi giây trên một CPU nghĩa là khoảng 2,2 triệu phản hồi mỗi
+ngày, chạy tại chỗ, không gọi API bên ngoài, không tốn phí theo lượt."* Có thể dán dữ liệu
+của chính ban giám khảo vào ô nhập để chạy trực tiếp.
+
+## Màn 4 — Số đo và đối đầu từng câu (2 phút)
 
 Tab **Kết quả thực nghiệm**:
 
