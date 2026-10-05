@@ -8,18 +8,18 @@ import { Loader2 } from 'lucide-react';
  */
 const VARIANT = {
   primary:
-    'bg-accent text-on-accent shadow-[inset_0_1px_0_rgb(255_255_255/0.22),0_8px_18px_-10px_var(--accent)] hover:brightness-110 active:brightness-95',
-  secondary: 'glass text-ink-hi hover:text-accent-hi',
+    'bg-accent text-on-accent hover:brightness-110 active:brightness-95',
+  secondary: 'border border-line bg-surface text-ink-hi hover:bg-raised',
   soft: 'bg-accent-dim text-accent-hi hover:bg-accent/25',
-  outline: 'border border-line bg-surface/40 text-ink-hi hover:bg-raised',
+  outline: 'border border-line bg-transparent text-ink-hi hover:bg-raised',
   ghost: 'text-ink-mid hover:bg-raised hover:text-ink-hi',
   danger: 'bg-crit/12 text-crit hover:bg-crit/20'
 };
 
 const SIZE = {
-  sm: 'h-8 gap-1.5 rounded-[10px] px-3 text-xs',
-  md: 'h-10 gap-2 rounded-xl px-4 text-sm',
-  lg: 'h-12 gap-2 rounded-2xl px-5 text-[0.95rem]'
+  sm: 'h-8 gap-1.5 rounded-md px-3 text-xs',
+  md: 'h-10 gap-2 rounded-lg px-4 text-sm',
+  lg: 'h-12 gap-2 rounded-lg px-5 text-[0.95rem]'
 };
 
 export const Button = ({
@@ -54,7 +54,7 @@ export const Button = ({
 /** Nút tròn chỉ có biểu tượng — luôn có `label` cho trình đọc màn hình */
 export const IconButton = ({ icon: Icon, label, variant = 'glass', size = 40, className = '', badge, ...rest }) => {
   const tone = {
-    glass: 'glass text-ink-mid hover:text-ink-hi',
+    glass: 'border border-line bg-surface text-ink-mid hover:bg-raised hover:text-ink-hi',
     primary: 'bg-accent text-on-accent hover:brightness-110',
     ghost: 'text-ink-lo hover:bg-raised hover:text-ink-hi'
   }[variant];
@@ -63,7 +63,7 @@ export const IconButton = ({ icon: Icon, label, variant = 'glass', size = 40, cl
       type="button"
       aria-label={label}
       title={label}
-      className={`relative grid shrink-0 place-items-center rounded-full transition-[color,background-color,filter] duration-150 disabled:opacity-45 ${tone} ${className}`}
+      className={`relative grid shrink-0 place-items-center rounded-lg transition-[color,background-color,filter] duration-150 disabled:opacity-45 ${tone} ${className}`}
       style={{ width: size, height: size }}
       {...rest}
     >

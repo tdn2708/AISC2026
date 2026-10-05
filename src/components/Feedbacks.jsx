@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Search, X, ChevronLeft, ChevronRight, Copy, Zap, UserX, Star, Receipt, HelpCircle, Laugh, Meh, Frown } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, Copy, Zap, UserX, Star, Receipt, HelpCircle } from 'lucide-react';
 import FilterBar from './FilterBar';
 import { PageHeader, GlassPanel, Chip, Drawer, EmptyState, SentimentFace, Badge, ProgressBar } from './ui';
 import { buildQuery, fmtInt, fmtDateTime, initials, SENTIMENT_MAP } from '../lib/format';
@@ -17,10 +17,14 @@ import { buildQuery, fmtInt, fmtDateTime, initials, SENTIMENT_MAP } from '../lib
 
 const PAGE_SIZE = 20;
 const TIERS = ['P1', 'P2', 'P3', 'P4', 'P5'];
+// Dấu màu thay cho biểu tượng mặt cười — cùng màu với biểu đồ cảm xúc
+const PosMark = () => <SentimentFace sentiment="Positive" size={24} />;
+const NeuMark = () => <SentimentFace sentiment="Neutral" size={24} />;
+const NegMark = () => <SentimentFace sentiment="Negative" size={24} />;
 const MOODS = [
-  { value: 'Positive', label: 'Tích cực', icon: Laugh },
-  { value: 'Neutral', label: 'Trung tính', icon: Meh },
-  { value: 'Negative', label: 'Tiêu cực', icon: Frown }
+  { value: 'Positive', label: 'Tích cực', icon: PosMark },
+  { value: 'Neutral', label: 'Trung tính', icon: NeuMark },
+  { value: 'Negative', label: 'Tiêu cực', icon: NegMark }
 ];
 const SIGNAL_ICONS = {
   'Trùng lặp gần về nội dung': Copy,
@@ -41,7 +45,7 @@ const FeedbackDetail = ({ item, onClose }) => {
       {item && (
         <div className="flex flex-col gap-5">
           <div className="flex items-center gap-3">
-            <span className="grid size-11 place-items-center rounded-full bg-linear-to-br from-sky/70 to-blush/70 text-sm font-semibold text-ink-hi">
+            <span className="grid size-11 place-items-center rounded-full bg-accent-dim text-sm font-semibold text-accent-hi">
               {initials(item.author || 'Ẩn danh')}
             </span>
             <div className="min-w-0 flex-1">
@@ -51,7 +55,7 @@ const FeedbackDetail = ({ item, onClose }) => {
             <SentimentFace sentiment={item.sentiment} size={36} />
           </div>
 
-          <blockquote className="rounded-2xl bg-surface/65 p-4 text-[0.95rem] leading-relaxed text-ink-hi">
+          <blockquote className="rounded-lg bg-surface/65 p-4 text-[0.95rem] leading-relaxed text-ink-hi">
             {item.originalText}
             {item.rating != null && (
               <span className="mt-2 flex items-center gap-1 text-xs text-ink-lo">
@@ -71,11 +75,11 @@ const FeedbackDetail = ({ item, onClose }) => {
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-surface/55 p-3">
+            <div className="rounded-lg bg-surface/55 p-3">
               <p className="text-[0.7rem] text-ink-lo">Nhóm vấn đề</p>
               <p className="mt-0.5 text-sm font-medium text-ink-hi">{item.categoryLabel || item.category || '—'}</p>
             </div>
-            <div className="rounded-xl bg-surface/55 p-3">
+            <div className="rounded-lg bg-surface/55 p-3">
               <p className="text-[0.7rem] text-ink-lo">Nguyên nhân</p>
               <p className="mt-0.5 text-sm font-medium text-ink-hi">{item.causeLabel || '—'}</p>
             </div>
@@ -85,15 +89,15 @@ const FeedbackDetail = ({ item, onClose }) => {
             <div>
               <p className="eyebrow mb-3">Tầng kiểm soát tin cậy</p>
               <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-xl bg-surface/55 p-3">
+                <div className="rounded-lg bg-surface/55 p-3">
                   <p className="text-[0.7rem] text-ink-lo">Hạng nguồn</p>
                   <p className={`mt-0.5 font-mono text-lg font-semibold ${tierTone(t.tierWeight)}`}>{t.tier}</p>
                 </div>
-                <div className="rounded-xl bg-surface/55 p-3">
+                <div className="rounded-lg bg-surface/55 p-3">
                   <p className="text-[0.7rem] text-ink-lo">Trọng số</p>
                   <p className="mt-0.5 font-mono text-lg font-semibold text-ink-hi">{Number(t.weight).toFixed(2)}</p>
                 </div>
-                <div className="rounded-xl bg-surface/55 p-3">
+                <div className="rounded-lg bg-surface/55 p-3">
                   <p className="text-[0.7rem] text-ink-lo">Nghi vấn</p>
                   <p className="mt-0.5 font-mono text-lg font-semibold text-ink-hi">{t.authenticityScore != null ? Number(t.authenticityScore).toFixed(2) : '—'}</p>
                 </div>
@@ -197,10 +201,10 @@ const Feedbacks = () => {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm theo nội dung, khách hàng hoặc sản phẩm — gõ không dấu cũng được"
               aria-label="Tìm phản hồi"
-              className="h-12 w-full rounded-2xl border border-line bg-surface/70 pr-12 pl-11 text-sm text-ink-hi outline-none transition-[border-color,box-shadow] placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
+              className="h-12 w-full rounded-lg border border-line bg-surface/70 pr-12 pl-11 text-sm text-ink-hi outline-none transition-[border-color,box-shadow] placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
             />
             {search && (
-              <button type="button" onClick={clearSearch} aria-label="Xoá tìm kiếm" className="absolute top-1/2 right-3 grid size-7 -translate-y-1/2 place-items-center rounded-full text-ink-lo hover:bg-raised hover:text-ink-hi">
+              <button type="button" onClick={clearSearch} aria-label="Xoá tìm kiếm" className="absolute top-1/2 right-3 grid size-7 -translate-y-1/2 place-items-center rounded-md text-ink-lo hover:bg-raised hover:text-ink-hi">
                 <X size={15} />
               </button>
             )}
@@ -229,7 +233,7 @@ const Feedbacks = () => {
         {error ? (
           <EmptyState variant="error" title="Không tải được phản hồi" description={error} />
         ) : loading && feedbacks.length === 0 ? (
-          <div className="flex flex-col gap-2 p-5">{Array.from({ length: 8 }, (_, i) => <div key={i} className="h-14 animate-pulse rounded-xl bg-raised" />)}</div>
+          <div className="flex flex-col gap-2 p-5">{Array.from({ length: 8 }, (_, i) => <div key={i} className="h-14 animate-pulse rounded-lg bg-raised" />)}</div>
         ) : filtered.length === 0 ? (
           <EmptyState title="Không có phản hồi khớp" description="Thử bỏ bớt điều kiện lọc hoặc đổi từ khoá tìm kiếm." />
         ) : (

@@ -96,10 +96,10 @@ const Notifications = () => {
         }
       />
       {open && (
-        <div className="glass-strong absolute top-[calc(100%+10px)] right-0 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl animate-pop-in">
+        <div className="glass-strong absolute top-[calc(100%+10px)] right-0 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg animate-pop-in">
           <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
             <h3 className="text-sm font-semibold text-ink-hi">Thông báo</h3>
-            {unread > 0 && <span className="rounded-full bg-crit/12 px-2 py-0.5 text-[0.68rem] font-semibold text-crit">{unread} mới</span>}
+            {unread > 0 && <span className="rounded bg-crit/12 px-1.5 py-0.5 font-mono text-[0.68rem] font-medium text-crit">{unread} mới</span>}
           </div>
           <ul className="max-h-[340px] list-none overflow-y-auto">
             {risks.length === 0 ? (
@@ -159,7 +159,7 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
   return (
     <div ref={barRef} className="cx sticky top-0 z-[120] -mr-2 pt-3 pr-2 pb-3">
       <div
-        className={`flex items-center gap-3 rounded-2xl px-2 py-2 transition-[background-color,box-shadow,backdrop-filter] duration-200 ${
+        className={`flex items-center gap-3 rounded-lg px-2 py-2 transition-[background-color,box-shadow,backdrop-filter] duration-200 ${
           scrolled ? 'glass' : ''
         }`}
       >
@@ -180,7 +180,7 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
         <button
           type="button"
           onClick={onOpenCommand}
-          className="glass flex h-10 w-full max-w-[300px] items-center gap-2.5 rounded-full pr-2 pl-3.5 text-sm text-ink-lo transition-colors hover:text-ink-mid"
+          className="flex h-10 w-full max-w-[300px] items-center gap-2.5 rounded-lg border border-line bg-surface pr-2 pl-3 text-sm text-ink-mid transition-colors hover:border-ink-lo hover:text-ink-hi"
         >
           <Search size={16} aria-hidden="true" />
           <span className="flex-1 truncate text-left">Tìm nhanh…</span>

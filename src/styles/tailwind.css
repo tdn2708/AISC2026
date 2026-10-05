@@ -38,6 +38,8 @@
   --color-neg: var(--viz-neg);
   --color-neu: var(--viz-neu);
   --color-pos: var(--viz-pos);
+  --color-strip: var(--strip-bg);
+  --color-hero: var(--hero-bg);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
@@ -46,10 +48,16 @@
 @theme {
   --animate-fade-up: fade-up 220ms cubic-bezier(.2, .8, .2, 1) both;
   --animate-pop-in: pop-in 180ms cubic-bezier(.2, .8, .2, 1) both;
+  --animate-grow-x: grow-x 700ms cubic-bezier(.2, .8, .2, 1) both;
 
   @keyframes fade-up {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: none; }
+  }
+  /* Thanh chạy vào MỘT lần khi tải trang; tắt khi người dùng chọn giảm chuyển động */
+  @keyframes grow-x {
+    from { transform: scaleX(0); }
+    to { transform: none; }
   }
   @keyframes pop-in {
     from { opacity: 0; transform: translateY(4px) scale(.98); }
@@ -60,8 +68,8 @@
 /* Kính mờ: viền trắng mảnh + vệt sáng mép trên như UI-kit tham chiếu */
 @utility glass {
   background: linear-gradient(180deg, var(--glass-hi), transparent 38%), var(--glass-bg);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--glass-line);
   box-shadow: var(--glass-shade);
 }
@@ -69,33 +77,29 @@
 /* Kính đặc hơn cho panel chứa dữ liệu dày — chữ nhỏ phải đọc rõ */
 @utility glass-strong {
   background: var(--glass-strong);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--glass-line);
   box-shadow: var(--glass-shade);
 }
 
 /* Ánh sáng chỉ dành cho luồng khẩn cấp */
 @utility glow-crit {
-  box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--sev-crit) 45%, transparent),
-    0 0 30px -6px color-mix(in oklab, var(--sev-crit) 45%, transparent),
-    var(--glass-shade);
+  /* Viền 1px rõ ràng thay cho quầng sáng — tín hiệu, không phải trang trí */
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--sev-crit) 60%, transparent), var(--glass-shade);
 }
 @utility glow-high {
-  box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--sev-high) 35%, transparent),
-    0 0 24px -8px color-mix(in oklab, var(--sev-high) 40%, transparent),
-    var(--glass-shade);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--sev-high) 50%, transparent), var(--glass-shade);
 }
 
 /* Nhãn khu vực kiểu kỹ thuật: "01 · CHỈ SỐ" */
 @utility eyebrow {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-lo);
+  color: var(--text-mid);
 }
 
 @media (prefers-reduced-transparency: reduce) {

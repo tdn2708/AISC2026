@@ -365,7 +365,7 @@ const Reports = () => {
         ].map((c) => (
           <GlassPanel key={c.type} tone="strong" className="flex flex-col p-6">
             <div className="flex items-start gap-4">
-              <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${c.tile}`}>
+              <span className={`grid size-12 shrink-0 place-items-center rounded-lg ${c.tile}`}>
                 <c.icon size={22} aria-hidden="true" />
               </span>
               <div>
@@ -420,7 +420,7 @@ const Reports = () => {
                     <td className="font-mono text-xs text-ink-mid"><span className="inline-flex items-center gap-1.5"><Calendar size={13} />{r.date}</span></td>
                     <td className="font-mono text-xs text-ink-mid">{r.size}</td>
                     <td className="pr-5 text-right">
-                      <button type="button" onClick={() => deleteFromHistory(r.id)} aria-label="Xoá khỏi lịch sử" className="grid size-8 place-items-center rounded-full text-ink-lo hover:bg-crit/10 hover:text-crit">
+                      <button type="button" onClick={() => deleteFromHistory(r.id)} aria-label="Xoá khỏi lịch sử" className="grid size-8 place-items-center rounded-md text-ink-lo hover:bg-crit/10 hover:text-crit">
                         <Trash2 size={15} />
                       </button>
                     </td>
@@ -487,7 +487,7 @@ const Reports = () => {
                sang hay toi. */
             background: REPORT.canvas,
             color: REPORT.hi,
-            fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
+            fontFamily: "'Geist', 'Segoe UI', system-ui, sans-serif",
             display: 'flex',
             flexDirection: 'column'
           }}
@@ -538,7 +538,7 @@ const Reports = () => {
                     Điểm nhấn cần quyết
                   </h3>
                   {takeaways.length > 0 && (
-                    <span style={{ fontSize: '11px', color: REPORT.lo, fontFamily: "'IBM Plex Mono', monospace" }}>
+                    <span style={{ fontSize: '11px', color: REPORT.lo, fontFamily: "'Geist Mono', monospace" }}>
                       {takeaways.length} việc · {crit} ở mức ưu tiên cao
                     </span>
                   )}
@@ -614,7 +614,7 @@ const Reports = () => {
                         {/* Dong 4 — BANG CHUNG, chu nho, cho ai can doi chat */}
                         <div style={{
                           marginTop: '8px', fontSize: '10.5px', color: REPORT.lo,
-                          fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.6
+                          fontFamily: "'Geist Mono', monospace", lineHeight: 1.6
                         }}>
                           Bằng chứng: {t.evidence}
                         </div>
@@ -630,7 +630,7 @@ const Reports = () => {
           {pdfData?.stats?.comparison?.label && (
             <p style={{
               margin: '0 0 10px 0', fontSize: '11px', color: REPORT.lo,
-              fontFamily: "'IBM Plex Mono', monospace"
+              fontFamily: "'Geist Mono', monospace"
             }}>
               So sánh: {pdfData.stats.comparison.label}
             </p>
@@ -639,7 +639,7 @@ const Reports = () => {
             <div style={{ flex: 1, background: REPORT.surface, border: `1px solid ${REPORT.border}`, padding: '18px 20px', borderRadius: '10px' }}>
               <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: REPORT.lo, textTransform: 'uppercase', letterSpacing: '0.9px', fontWeight: 600 }}>Phản hồi hợp lệ</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-                <h2 style={{ margin: 0, fontSize: '30px', fontWeight: 600, color: REPORT.hi, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>
+                <h2 style={{ margin: 0, fontSize: '30px', fontWeight: 600, color: REPORT.hi, fontFamily: "'Geist Mono', monospace", lineHeight: 1 }}>
                   {fmtInt(pdfData?.stats?.totalFeedbacks?.valid)}
                 </h2>
                 <DeltaPill delta={pdfData?.stats?.comparison?.deltas?.valid} />
@@ -651,7 +651,7 @@ const Reports = () => {
             <div style={{ flex: 1, background: REPORT.surface, border: `1px solid ${REPORT.border}`, padding: '18px 20px', borderRadius: '10px' }}>
               <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: REPORT.lo, textTransform: 'uppercase', letterSpacing: '0.9px', fontWeight: 600 }}>Tỉ lệ khiếu nại có trọng số</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-                <h2 style={{ margin: 0, fontSize: '30px', fontWeight: 600, color: REPORT.hi, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>
+                <h2 style={{ margin: 0, fontSize: '30px', fontWeight: 600, color: REPORT.hi, fontFamily: "'Geist Mono', monospace", lineHeight: 1 }}>
                   {pdfData?.stats?.weightedComplaintRate?.available
                     ? pdfData.stats.weightedComplaintRate.display
                     : 'Không khả dụng'}
@@ -676,7 +676,7 @@ const Reports = () => {
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
                 <h2 style={{
                   margin: 0, fontSize: '30px', fontWeight: 600, lineHeight: 1,
-                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontFamily: "'Geist Mono', monospace",
                   color: (pdfData?.stats?.dataHealthScore ?? 0) >= 75 ? REPORT.ok
                     : (pdfData?.stats?.dataHealthScore ?? 0) >= 50 ? REPORT.high : REPORT.crit
                 }}>
@@ -685,7 +685,7 @@ const Reports = () => {
                 {/* Chi so nay tinh tren TOAN BO kho du lieu chu khong theo cua
                     so thoi gian, nen khong ton tai ky truoc de so. Noi ro thay
                     vi bia ra mot mui ten. */}
-                <span style={{ fontSize: '10px', color: REPORT.lo, fontFamily: "'IBM Plex Mono', monospace" }}>
+                <span style={{ fontSize: '10px', color: REPORT.lo, fontFamily: "'Geist Mono', monospace" }}>
                   tính trên toàn kho
                 </span>
               </div>
@@ -878,7 +878,7 @@ const Reports = () => {
                             <td style={{ padding: '9px 10px 9px 0', color: REPORT.mid, borderBottom: `1px solid ${REPORT.raised}` }}>
                               {c.categoryLabel}
                             </td>
-                            <td style={{ padding: '9px 10px 9px 0', textAlign: 'right', color: REPORT.hi, fontFamily: "'IBM Plex Mono', monospace", borderBottom: `1px solid ${REPORT.raised}` }}>
+                            <td style={{ padding: '9px 10px 9px 0', textAlign: 'right', color: REPORT.hi, fontFamily: "'Geist Mono', monospace", borderBottom: `1px solid ${REPORT.raised}` }}>
                               {fmtInt(c.count)}
                             </td>
                             <td style={{ padding: '9px 0', textAlign: 'right', borderBottom: `1px solid ${REPORT.raised}` }}>
@@ -886,7 +886,7 @@ const Reports = () => {
                                 <span style={{ width: 46, height: 5, background: REPORT.raised, borderRadius: 3, overflow: 'hidden', display: 'inline-block' }}>
                                   <span style={{ display: 'block', height: '100%', width: `${Math.min(c.share, 100)}%`, background: REPORT.accent }} />
                                 </span>
-                                <span style={{ color: REPORT.mid, fontFamily: "'IBM Plex Mono', monospace", minWidth: 38, display: 'inline-block' }}>
+                                <span style={{ color: REPORT.mid, fontFamily: "'Geist Mono', monospace", minWidth: 38, display: 'inline-block' }}>
                                   {String(c.share).replace('.', ',')}%
                                 </span>
                               </span>

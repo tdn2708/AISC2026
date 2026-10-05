@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { CheckCircle2, CircleAlert, Laugh, Meh, Frown } from 'lucide-react';
+import { CheckCircle2, CircleAlert } from 'lucide-react';
 
 /* ---------------------------------------------------------------
    Nhóm hiển thị: tiêu đề trang, nhãn khu vực, badge, thanh tiến
@@ -8,16 +8,14 @@ import { CheckCircle2, CircleAlert, Laugh, Meh, Frown } from 'lucide-react';
    --------------------------------------------------------------- */
 
 /**
- * Tiêu đề trang. Nhãn đánh số kiểu kỹ thuật ở trên ("01 · GIÁM SÁT"),
- * một từ nhấn bằng chữ nghiêng có chân như wordmark của bộ kit tham chiếu.
+ * Tiêu đề trang: một dòng, một màu. Vị trí trang đã có ở thanh trên, nên
+ * không lặp lại nhãn nhóm ở đây; không tô hai màu cho một tiêu đề.
  */
-export const PageHeader = ({ section, title, accent, subtitle, actions, meta }) => (
+export const PageHeader = ({ title, accent, subtitle, actions, meta }) => (
   <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4 animate-fade-up">
     <div className="min-w-0">
-      {section && <p className="eyebrow mb-2">{section}</p>}
-      <h1 className="text-[2rem] leading-tight font-semibold tracking-tight text-ink-hi">
-        {title}
-        {accent && <span className="ml-2 font-light text-accent">{accent}</span>}
+      <h1 className="text-[1.6rem] leading-tight font-semibold tracking-[-0.02em] text-ink-hi">
+        {accent ? `${title} ${accent}` : title}
       </h1>
       {subtitle && <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink-mid">{subtitle}</p>}
       {meta && <div className="mt-2">{meta}</div>}
@@ -28,8 +26,9 @@ export const PageHeader = ({ section, title, accent, subtitle, actions, meta }) 
 
 /** Nhãn khu vực có đường kẻ: "BÁO CÁO MÔ TẢ ───────" */
 export const SectionLabel = ({ children, right, className = '' }) => (
-  <div className={`mb-3 flex items-center gap-3 ${className}`}>
-    <span className="eyebrow whitespace-nowrap">{children}</span>
+  <div className={`mb-4 flex items-center gap-3 ${className}`}>
+    <span className="size-2 shrink-0 rounded-[2px] bg-accent" aria-hidden="true" />
+    <span className="font-mono text-[0.76rem] font-semibold tracking-[0.04em] whitespace-nowrap text-ink-hi uppercase">{children}</span>
     <span className="h-px flex-1 bg-line-soft" aria-hidden="true" />
     {right}
   </div>
@@ -46,9 +45,9 @@ const BADGE = {
   sky: 'bg-sky/45 text-ink-hi'
 };
 
-/** Badge — theo nhóm "Бейджи": viên thuốc nhỏ, nền nhạt cùng tông chữ */
+/** Badge — nhãn chữ nhỏ, góc vuông nhẹ, nền nhạt cùng tông chữ */
 export const Badge = ({ tone = 'neutral', icon: Icon, children, mono, className = '' }) => (
-  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.7rem] font-semibold whitespace-nowrap ${BADGE[tone]} ${mono ? 'font-mono' : ''} ${className}`}>
+  <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[0.7rem] font-medium whitespace-nowrap ${BADGE[tone]} ${mono ? 'font-mono' : ''} ${className}`}>
     {Icon && <Icon size={12} aria-hidden="true" />}
     {children}
   </span>
@@ -102,9 +101,9 @@ export const Stepper = ({ steps, className = '' }) => (
       return (
         <li key={s.label} className="relative pr-3">
           {i < steps.length - 1 && (
-            <span aria-hidden="true" className="absolute top-[17px] right-0 left-11 hidden h-px bg-line sm:block" />
+            <span aria-hidden="true" className="absolute top-[15px] right-0 left-10 hidden h-px bg-line sm:block" />
           )}
-          <span className={`relative z-10 grid size-[34px] place-items-center rounded-full font-mono text-xs font-semibold ${toneCls}`}>
+          <span className={`relative z-10 grid size-[30px] place-items-center rounded-md font-mono text-xs font-semibold ${toneCls}`}>
             {s.marker ?? i + 1}
           </span>
           <p className="mt-3 text-xs leading-snug font-medium text-ink-mid">{s.label}</p>
@@ -116,25 +115,27 @@ export const Stepper = ({ steps, className = '' }) => (
   </ol>
 );
 
-const FACES = {
-  Positive: { Icon: Laugh, label: 'Tích cực', cls: 'bg-sky/55 text-[#2F5E92]' },
-  Neutral: { Icon: Meh, label: 'Trung tính', cls: 'bg-raised text-ink-mid' },
-  Negative: { Icon: Frown, label: 'Tiêu cực', cls: 'bg-blush/55 text-[#8E2F45]' }
+const MARK = {
+  Positive: { label: 'Tích cực', color: 'var(--viz-pos)' },
+  Neutral: { label: 'Trung tính', color: 'var(--viz-neu)' },
+  Negative: { label: 'Tiêu cực', color: 'var(--viz-neg)' }
 };
 
-/** Mặt cảm xúc — lấy từ hàng "Оценка настроения" của bộ kit */
+/**
+ * Dấu cảm xúc — một ô vuông màu nhỏ, cùng màu với biểu đồ. Giữ tên cũ để
+ * mọi nơi gọi không phải sửa; `size` là kích thước vùng chứa cũ.
+ */
 export const SentimentFace = ({ sentiment, size = 28 }) => {
-  const f = FACES[sentiment] || FACES.Neutral;
+  const m = MARK[sentiment] || MARK.Neutral;
+  const s = Math.max(8, Math.round(size * 0.34));
   return (
     <span
-      className={`inline-grid shrink-0 place-items-center rounded-full ${f.cls}`}
-      style={{ width: size, height: size }}
-      title={f.label}
-      aria-label={f.label}
+      className="inline-block shrink-0 rounded-[3px]"
+      style={{ width: s, height: s, background: m.color }}
+      title={m.label}
+      aria-label={m.label}
       role="img"
-    >
-      <f.Icon size={Math.round(size * 0.58)} aria-hidden="true" />
-    </span>
+    />
   );
 };
 
@@ -146,8 +147,8 @@ export const Toast = ({ show, tone = 'ok', children }) => {
   // backdrop-filter, `position: fixed` sẽ bám theo tổ tiên đó thay vì màn hình
   return createPortal(
     <div role="status" className="cx fixed right-6 bottom-6 z-[2100] animate-pop-in">
-      <div className="glass-strong flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-ink-hi">
-        <span className={`grid size-8 place-items-center rounded-full ${tone === 'crit' ? 'bg-crit/12 text-crit' : 'bg-ok/12 text-ok'}`}>
+      <div className="glass-strong flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-ink-hi">
+        <span className={`grid size-7 place-items-center rounded-md ${tone === 'crit' ? 'bg-crit/12 text-crit' : 'bg-ok/12 text-ok'}`}>
           <Icon size={16} aria-hidden="true" />
         </span>
         {children}
@@ -161,7 +162,7 @@ export const Toast = ({ show, tone = 'ok', children }) => {
 const STAT_TONE = { crit: 'text-crit', high: 'text-high', ok: 'text-ok', accent: 'text-accent-hi' };
 
 export const Stat = ({ label, value, sub, tone, className = '' }) => (
-  <div className={`rounded-2xl bg-surface/55 p-4 ${className}`}>
+  <div className={`rounded-lg border border-line-soft bg-surface p-4 ${className}`}>
     <p className="eyebrow">{label}</p>
     <p className={`mt-1.5 font-mono text-2xl font-semibold tracking-tight ${STAT_TONE[tone] || 'text-ink-hi'}`}>{value}</p>
     {sub && <p className="mt-0.5 text-xs text-ink-lo">{sub}</p>}

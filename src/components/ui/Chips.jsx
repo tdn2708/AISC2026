@@ -6,10 +6,10 @@ export const Chip = ({ active, onClick, icon: Icon, count, children, className =
     type="button"
     aria-pressed={active}
     onClick={onClick}
-    className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-150 ${
+    className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-3 text-xs font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-150 ${
       active
         ? 'border-transparent bg-accent text-on-accent'
-        : 'border-line bg-surface/55 text-ink-mid hover:border-ink-lo hover:text-ink-hi'
+        : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'
     } ${className}`}
     {...rest}
   >
@@ -34,7 +34,7 @@ export const ChipGroup = ({ options, value, onChange, label, className = '' }) =
 
 /** Điều khiển phân đoạn — chuyển chế độ xem trong cùng một panel */
 export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
-  <div role="group" aria-label={label} className="inline-flex rounded-full bg-raised p-0.5">
+  <div role="group" aria-label={label} className="inline-flex rounded-md border border-line-soft bg-raised p-0.5">
     {options.map((o) => {
       const active = o.value === value;
       return (
@@ -43,7 +43,7 @@ export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
           type="button"
           aria-pressed={active}
           onClick={() => onChange(o.value)}
-          className={`inline-flex items-center gap-1.5 rounded-full font-medium transition-[background-color,color,box-shadow] duration-150 ${
+          className={`inline-flex items-center gap-1.5 rounded font-medium transition-[background-color,color,box-shadow] duration-150 ${
             size === 'sm' ? 'h-7 px-3 text-[0.72rem]' : 'h-9 px-4 text-sm'
           } ${active ? 'bg-surface text-ink-hi shadow-[0_1px_3px_rgb(31_45_53/0.12)]' : 'text-ink-lo hover:text-ink-mid'}`}
         >
@@ -74,7 +74,7 @@ export const Tabs = ({ tabs, value, onChange, className = '' }) => (
           {t.icon && <t.icon size={15} aria-hidden="true" />}
           {t.label}
           {t.count != null && (
-            <span className={`rounded-full px-1.5 font-mono text-[0.68rem] ${active ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-lo'}`}>
+            <span className={`rounded px-1.5 font-mono text-[0.68rem] ${active ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-mid'}`}>
               {t.count}
             </span>
           )}

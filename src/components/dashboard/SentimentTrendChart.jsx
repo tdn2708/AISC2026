@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
 import { GlassPanel, PanelHeader } from '../ui';
 import { fmtInt } from '../../lib/format';
 
@@ -36,6 +36,11 @@ const TrendTooltip = ({ active, payload, label }) => {
 const SentimentTrendChart = ({ data = [] }) => {
   const [view, setView] = useState('chart');
   const totals = Object.fromEntries(SERIES.map((s) => [s.key, data.reduce((sum, d) => sum + (d[s.key] || 0), 0)]));
+  // Chú thích thẳng trên đỉnh khiếu nại: biểu đồ tự nói nó cần người đọc nhìn vào đâu
+  const peak = data.reduce((best, d) => ((d.complaints || 0) > (best?.complaints || 0) ? d : best), null);
+  // Đỉnh nằm sát mép thì đặt nhãn vào phía trong, để chữ không bị cắt
+  const peakAt = peak ? data.indexOf(peak) : -1;
+  const peakPos = peakAt <= 1 ? 'right' : peakAt >= data.length - 2 ? 'left' : 'top';
 
   const toggle = (
     <div className="flex items-center gap-4">
@@ -68,7 +73,7 @@ const SentimentTrendChart = ({ data = [] }) => {
   );
 
   return (
-    <GlassPanel className="p-5">
+    <GlassPanel className="p-6">
       <PanelHeader
         title="Diễn biến cảm xúc theo thời gian"
         subtitle="Số phản hồi hợp lệ mỗi kỳ · 14 kỳ trong 28 ngày gần nhất"
@@ -80,7 +85,7 @@ const SentimentTrendChart = ({ data = [] }) => {
       ) : view === 'chart' ? (
         <div className="h-[280px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
+            <LineChart data={data} margin={{ top: 26, right: 12, left: -12, bottom: 0 }}>
               <CartesianGrid stroke="var(--viz-grid)" vertical={false} />
               <XAxis dataKey="name" tick={AXIS_TICK} axisLine={{ stroke: 'var(--border)' }} tickLine={false} dy={6} minTickGap={16} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={44} allowDecimals={false} tickFormatter={fmtInt} />
@@ -98,6 +103,18 @@ const SentimentTrendChart = ({ data = [] }) => {
                   activeDot={{ r: 4, stroke: 'var(--surface)', strokeWidth: 2 }}
                 />
               ))}
+              {peak && peak.complaints > 0 && (
+                <ReferenceDot
+                  x={peak.name}
+                  y={peak.complaints}
+                  r={5}
+                  fill="var(--viz-neg)"
+                  stroke="var(--surface-solid)"
+                  strokeWidth={2}
+                  isFront
+                  label={{ value: `Đỉnh ${peak.name} · ${fmtInt(peak.complaints)} tiêu cực`, position: peakPos, offset: 10, fill: 'var(--text-hi)', fontSize: 11, fontWeight: 600 }}
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </div>

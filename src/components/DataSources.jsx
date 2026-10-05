@@ -145,7 +145,7 @@ const DataSources = () => {
               return (
                 <GlassPanel key={s.id} tone="strong" className="flex flex-col p-5 animate-fade-up">
                   <div className="flex items-start gap-3.5">
-                    <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${p.tile}`}>
+                    <span className={`grid size-12 shrink-0 place-items-center rounded-lg ${p.tile}`}>
                       <p.icon size={22} aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -155,8 +155,8 @@ const DataSources = () => {
                     {s.isDemo ? <Badge tone="sky">Mẫu</Badge> : <Badge tone="ok">Hoạt động</Badge>}
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded-xl bg-surface/60 px-3 py-2"><p className="text-ink-lo">Nền tảng</p><p className="font-medium text-ink-hi">{p.label}</p></div>
-                    <div className="rounded-xl bg-surface/60 px-3 py-2"><p className="text-ink-lo">Sản phẩm</p><p className="font-mono font-medium text-ink-hi">{s.isDemo ? 'chưa kết nối thật' : fmtInt(s.productsCount ?? 0)}</p></div>
+                    <div className="rounded-lg bg-surface/60 px-3 py-2"><p className="text-ink-lo">Nền tảng</p><p className="font-medium text-ink-hi">{p.label}</p></div>
+                    <div className="rounded-lg bg-surface/60 px-3 py-2"><p className="text-ink-lo">Sản phẩm</p><p className="font-mono font-medium text-ink-hi">{s.isDemo ? 'chưa kết nối thật' : fmtInt(s.productsCount ?? 0)}</p></div>
                   </div>
                   <div className="mt-4 flex items-center justify-between border-t border-line-soft pt-4">
                     <label className="flex items-center gap-2.5 text-sm text-ink-mid">
@@ -191,7 +191,7 @@ const DataSources = () => {
               {isSyncing ? 'Đang đồng bộ…' : 'Đồng bộ & phân loại'}
             </Button>
           </form>
-          <div className="mt-5 flex gap-3 rounded-2xl bg-accent-dim p-4 text-sm text-ink-mid">
+          <div className="mt-5 flex gap-3 rounded-lg bg-accent-dim p-4 text-sm text-ink-mid">
             <Clock size={18} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />
             <p>Mỗi lần đồng bộ mất khoảng 15 giây và có giới hạn tần suất. Để theo dõi ổn định, hãy kết nối cả gian hàng ở tab <b className="text-ink-hi">Gian hàng</b> — hệ thống tự đồng bộ hằng đêm và tuân thủ robots.txt.</p>
           </div>
@@ -229,7 +229,7 @@ const DataSources = () => {
                         <td className="text-right font-mono">{fmtInt(r.items || 0)}</td>
                         <td className="font-mono text-xs text-ink-mid">{fmtTime(r.time)}</td>
                         <td className="pr-5 text-right">
-                          <button type="button" onClick={() => setHistory((prev) => prev.filter((x) => x.id !== r.id))} aria-label="Xoá khỏi nhật ký" className="grid size-8 place-items-center rounded-full text-ink-lo hover:bg-crit/10 hover:text-crit">
+                          <button type="button" onClick={() => setHistory((prev) => prev.filter((x) => x.id !== r.id))} aria-label="Xoá khỏi nhật ký" className="grid size-8 place-items-center rounded-md text-ink-lo hover:bg-crit/10 hover:text-crit">
                             <Trash2 size={15} />
                           </button>
                         </td>

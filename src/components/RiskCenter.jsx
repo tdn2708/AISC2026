@@ -37,7 +37,7 @@ const AlertRow = ({ alert, status, active, onClick }) => {
         type="button"
         onClick={onClick}
         aria-current={active || undefined}
-        className={`relative w-full rounded-2xl border p-4 pl-5 text-left transition-[background-color,border-color,box-shadow] ${
+        className={`relative w-full rounded-lg border p-4 pl-5 text-left transition-[background-color,border-color,box-shadow] ${
           active ? 'border-accent/40 bg-surface shadow-[0_0_0_3px_var(--accent-dim)]' : 'border-transparent bg-surface/45 hover:bg-surface/80'
         }`}
         style={{ '--sev': meta.color }}
@@ -62,7 +62,7 @@ const AlertRow = ({ alert, status, active, onClick }) => {
 };
 
 const Fact = ({ icon: Icon, label, children }) => (
-  <div className="flex items-start gap-3 rounded-xl bg-surface/55 p-3">
+  <div className="flex items-start gap-3 rounded-lg bg-surface/55 p-3">
     <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-dim text-accent">
       <Icon size={15} aria-hidden="true" />
     </span>
@@ -88,7 +88,7 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
       {alert.productName && <p className="mt-1 text-sm text-ink-mid">{alert.productName}</p>}
 
       {alert.summary && (
-        <div className="mt-4 rounded-2xl bg-surface/55 p-4">
+        <div className="mt-4 rounded-lg bg-surface/55 p-4">
           <p className="eyebrow mb-1.5">Diễn giải</p>
           <p className="text-sm leading-relaxed text-ink-hi">{alert.summary}</p>
           <Evidence alert={alert} className="mt-3" />
@@ -116,8 +116,8 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
         ) : (
           <ol className="flex list-none flex-col gap-2">
             {steps.map((s, i) => (
-              <li key={s.actionId || i} className={`flex gap-3 rounded-2xl p-3.5 ${i === 0 ? 'bg-accent-dim' : 'bg-surface/50'}`}>
-                <span className={`grid size-7 shrink-0 place-items-center rounded-full font-mono text-xs font-semibold ${i === 0 ? 'bg-accent text-on-accent' : 'bg-raised text-ink-mid'}`}>
+              <li key={s.actionId || i} className={`flex gap-3 rounded-lg p-3.5 ${i === 0 ? 'bg-accent-dim' : 'bg-surface/50'}`}>
+                <span className={`grid size-7 shrink-0 place-items-center rounded-md font-mono text-xs font-semibold ${i === 0 ? 'bg-accent text-on-accent' : 'bg-raised text-ink-mid'}`}>
                   {i + 1}
                 </span>
                 <div className="min-w-0">
@@ -187,20 +187,20 @@ const EvidenceDrawer = ({ alert, onClose }) => {
         <EmptyState variant="error" compact title="Không tải được" description={error} />
       ) : !data ? (
         <div className="flex flex-col gap-3">
-          {[0, 1, 2].map((i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-raised" />)}
+          {[0, 1, 2].map((i) => <div key={i} className="h-24 animate-pulse rounded-lg bg-raised" />)}
         </div>
       ) : data.evidence?.length === 0 ? (
         <EmptyState compact title="Không có phản hồi đính kèm" description="Cảnh báo dạng suy giảm kéo dài được phát hiện trên chuỗi thời gian, không gắn với từng phản hồi." />
       ) : (
         <>
           {data.excludedByTrust > 0 && (
-            <p className="mb-4 rounded-xl bg-accent-dim px-3 py-2 text-xs text-accent-hi">
+            <p className="mb-4 rounded-lg bg-accent-dim px-3 py-2 text-xs text-accent-hi">
               Đã loại {fmtInt(data.excludedByTrust)} phản hồi không đạt ngưỡng tin cậy khỏi bằng chứng của cảnh báo này.
             </p>
           )}
           <ul className="flex list-none flex-col gap-3">
             {data.evidence.map((f) => (
-              <li key={f._id} className="rounded-2xl bg-surface/60 p-4">
+              <li key={f._id} className="rounded-lg bg-surface/60 p-4">
                 <div className="flex items-center gap-2.5">
                   <SentimentFace sentiment={f.sentiment} size={26} />
                   <div className="min-w-0 flex-1">
@@ -331,8 +331,8 @@ const RiskCenter = () => {
         <GlassPanel><EmptyState variant="error" title="Không tải được cảnh báo" description={error} action={<Button onClick={load}>Thử lại</Button>} /></GlassPanel>
       ) : loading && alerts.length === 0 ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-          <div className="flex flex-col gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-surface/50" />)}</div>
-          <div className="h-[520px] animate-pulse rounded-[20px] bg-surface/50" />
+          <div className="flex flex-col gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-pulse rounded-lg bg-surface/50" />)}</div>
+          <div className="h-[520px] animate-pulse rounded-xl bg-surface/50" />
         </div>
       ) : visible.length === 0 ? (
         <GlassPanel>

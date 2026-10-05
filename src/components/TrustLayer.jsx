@@ -121,8 +121,8 @@ const TrustLayerPage = () => {
       <div className="cx">
         {header}
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="h-[260px] animate-pulse rounded-[20px] bg-surface/50 lg:col-span-2" />
-          <div className="h-[260px] animate-pulse rounded-[20px] bg-surface/50" />
+          <div className="h-[260px] animate-pulse rounded-xl bg-surface/50 lg:col-span-2" />
+          <div className="h-[260px] animate-pulse rounded-xl bg-surface/50" />
         </div>
       </div>
     );
@@ -177,7 +177,7 @@ const TrustLayerPage = () => {
               <p className="max-w-2xl text-sm leading-relaxed text-ink-mid">
                 Cùng một tập dữ liệu, tính lại như một hệ thống <b className="text-ink-hi">không có</b> tầng kiểm soát tin cậy — mỗi phản hồi đều được đếm đủ một điểm.
               </p>
-              <label className="flex items-center gap-3 rounded-full bg-surface/70 py-1.5 pr-1.5 pl-4">
+              <label className="flex items-center gap-3 rounded-lg border border-line bg-surface py-1.5 pr-1.5 pl-3">
                 <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${trustOn ? 'text-ok' : 'text-crit'}`}>
                   {trustOn ? <ShieldCheck size={16} /> : <ShieldOff size={16} />}
                   Trust Layer {trustOn ? 'đang bật' : 'đã tắt'}
@@ -193,7 +193,7 @@ const TrustLayerPage = () => {
                 { label: 'Phản hồi bị loại', value: trustOn ? fmtInt(impact.excludedFeedbacks) : '0' },
                 { label: 'Cảnh báo ma được chặn', value: impact.phantomAlerts, keep: true }
               ].map((m) => (
-                <div key={m.label} className={`rounded-2xl p-4 transition-colors ${!trustOn && !m.keep ? 'bg-crit/10' : 'bg-surface/60'}`}>
+                <div key={m.label} className={`rounded-lg p-4 transition-colors ${!trustOn && !m.keep ? 'bg-crit/10' : 'bg-surface/60'}`}>
                   <p className="eyebrow">{m.label}</p>
                   <p className={`mt-1.5 font-mono text-2xl font-semibold ${!trustOn && !m.keep ? 'text-crit' : 'text-ink-hi'}`}>{m.value}</p>
                 </div>
@@ -255,14 +255,14 @@ const TrustLayerPage = () => {
                 {clusters.map((c) => {
                   const isOpen = openCluster === c.clusterId;
                   return (
-                    <li key={c.clusterId} className="overflow-hidden rounded-2xl bg-surface/60">
+                    <li key={c.clusterId} className="overflow-hidden rounded-lg bg-surface/60">
                       <button
                         type="button"
                         onClick={() => setOpenCluster(isOpen ? null : c.clusterId)}
                         aria-expanded={isOpen}
                         className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-raised"
                       >
-                        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-crit/12 font-mono text-sm font-semibold text-crit">{c.size}</span>
+                        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-crit/12 font-mono text-sm font-semibold text-crit">{c.size}</span>
                         <span className="min-w-0 flex-1">
                           <span className="block text-sm font-medium text-ink-hi">{c.size} đánh giá giống nhau · trong {c.spanMinutes} phút</span>
                           <span className="block truncate text-xs text-ink-lo">{c.productName} — “{c.sampleText}”</span>
@@ -273,7 +273,7 @@ const TrustLayerPage = () => {
                       {isOpen && (
                         <ul className="flex list-none flex-col gap-2 px-4 pb-4 animate-fade-up">
                           {c.members.map((m) => (
-                            <li key={m._id} className="rounded-xl bg-surface/80 p-3 text-sm">
+                            <li key={m._id} className="rounded-lg bg-surface/80 p-3 text-sm">
                               <div className="mb-1 flex flex-wrap justify-between gap-2">
                                 <b className="font-medium text-ink-hi">{m.author}</b>
                                 <span className="font-mono text-[0.68rem] text-ink-lo">{fmtDateTime(m.timestamp)} · {m.trust?.tier}</span>
@@ -301,13 +301,13 @@ const TrustLayerPage = () => {
           title="Học chủ động"
           subtitle={`Xếp theo độ bất định của mô hình, không theo thời gian — mỗi nhãn của bạn mang lại nhiều thông tin huấn luyện nhất có thể.${health.humanLabelCount > 0 ? ` Đã có ${fmtInt(health.humanLabelCount)} nhãn do người kiểm duyệt xác nhận.` : ''}`}
         />
-        {labelError && <p className="mb-3 rounded-xl bg-crit/10 px-3 py-2 text-sm text-crit">{labelError}</p>}
+        {labelError && <p className="mb-3 rounded-lg bg-crit/10 px-3 py-2 text-sm text-crit">{labelError}</p>}
         {queue.length === 0 ? (
           <EmptyState compact variant="calm" title="Hàng đợi trống" description="Không còn phản hồi nào nằm trong vùng xám cần kiểm duyệt." />
         ) : (
           <ul className="grid list-none gap-3 lg:grid-cols-2">
             {queue.map((q) => (
-              <li key={q._id} className="flex flex-col rounded-2xl bg-surface/60 p-4">
+              <li key={q._id} className="flex flex-col rounded-lg bg-surface/60 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-sm font-medium text-ink-hi">{q.author} <span className="font-normal text-ink-lo">· {q.source}</span></span>
                   <span className="font-mono text-[0.68rem] text-ink-lo">A={q.authenticityScore} · bất định {q.uncertainty}</span>

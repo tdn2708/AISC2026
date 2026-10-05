@@ -24,7 +24,7 @@ const RisingIssues = ({ alerts = [] }) => {
   const driftCount = alerts.filter((a) => a.type === 'SUSTAINED_DRIFT').length;
 
   return (
-    <GlassPanel className="flex h-full flex-col p-5">
+    <GlassPanel className="flex h-full flex-col p-6">
       <PanelHeader
         title="Top vấn đề đang tăng nhanh"
         subtitle="Mức tăng tỉ trọng khiếu nại so với nền 28 ngày · chỉ gồm biến động đã qua kiểm định"
@@ -73,7 +73,7 @@ const RisingIssues = ({ alerts = [] }) => {
 
                 <div className="mt-1.5 h-2 w-full rounded-full bg-raised/50">
                   <div
-                    className="h-full rounded-full bg-neg transition-[width,filter] duration-500 group-hover:brightness-125 group-focus-visible:brightness-125"
+                    className="h-full origin-left rounded-full bg-neg transition-[width,filter] duration-500 animate-grow-x group-hover:brightness-125 group-focus-visible:brightness-125"
                     style={{ width: `${width}%` }}
                   />
                 </div>

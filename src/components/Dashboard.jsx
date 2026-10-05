@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { RefreshCw, CircleAlert } from 'lucide-react';
 import FilterBar from './FilterBar';
 import FeedbackTable from './FeedbackTable';
 import { useDashboardData } from '../hooks/useDashboardData';
-import { PageHeader, SectionLabel, Button } from './ui';
+import { PageHeader, SectionLabel } from './ui';
+import StatusStrip from './dashboard/StatusStrip';
 import KpiZone from './dashboard/KpiZone';
 import SentimentTrendChart from './dashboard/SentimentTrendChart';
 import SentimentDonut from './dashboard/SentimentDonut';
@@ -14,9 +13,10 @@ import ActionCenter from './dashboard/ActionCenter';
 /**
  * TỔNG QUAN — bố cục lưới 12 cột
  * ------------------------------------------------------------------
- *   [ Tiêu đề trang · đồng bộ                                    12 ]
+ *   [ Tiêu đề trang                                              12 ]
+ *   [ DẢI TRẠNG THÁI (khối tối) — có việc gì cần làm không?      12 ]
  *   [ Bộ lọc — một hàng, áp cho mọi thứ bên dưới                 12 ]
- *   [ 01 Tỷ lệ khiếu nại 4 ][ Mức độ nghiêm trọng 4 ][ 3 chỉ số phụ 4 ]
+ *   [ Tỷ lệ khiếu nại (tối) 5 ][ Mức độ nghiêm trọng 4 ][ 3 chỉ số phụ 3 ]
  *   [ 02 Diễn biến cảm xúc (line)             8 ][ 03 HÀNH ĐỘNG  4 ]
  *   [ Phân bổ cảm xúc (donut) ][ Top tăng nhanh ][                 ]
  *   [ 04 Bảng phản hồi gần đây                                   12 ]
@@ -29,7 +29,6 @@ import ActionCenter from './dashboard/ActionCenter';
 const nowLabel = () => new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [timeFilter, setTimeFilter] = useState(localStorage.getItem('timeFilter') || 'All');
   const [sourceFilter, setSourceFilter] = useState(localStorage.getItem('sourceFilter') || 'All');
   const [productFilter, setProductFilter] = useState(localStorage.getItem('productFilter') || 'All');
@@ -55,18 +54,9 @@ const Dashboard = () => {
         title="Tổng quan"
         accent="vận hành"
         subtitle="Mọi con số được tính trên phản hồi đã qua tầng kiểm soát tin cậy dữ liệu."
-        meta={
-          <span className="inline-flex items-center gap-2 text-xs text-ink-lo">
-            <span className={`size-1.5 rounded-full ${error ? 'bg-crit' : loading ? 'bg-high animate-pulse' : 'bg-ok'}`} aria-hidden="true" />
-            {error ? (
-              <span className="inline-flex items-center gap-1 text-crit"><CircleAlert size={12} /> Không kết nối được máy chủ</span>
-            ) : (
-              <span className="font-mono">{loading ? 'đang cập nhật…' : `cập nhật lúc ${lastUpdated}`}</span>
-            )}
-          </span>
-        }
-        actions={<Button variant="secondary" icon={RefreshCw} onClick={() => navigate('/data')}>Đồng bộ dữ liệu</Button>}
       />
+
+      <StatusStrip stats={stats} alerts={alerts} loading={loading} error={error} lastUpdated={lastUpdated} />
 
       <FilterBar
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Plus, Mail, Lock, Eye, Search, Bell, CheckCircle2, BellRing, Clock3, LayoutDashboard, Siren, MessagesSquare,
-  ScanSearch, ShieldCheck, FlaskConical, DatabaseZap, FileText, Settings, Laugh, Meh, Frown
+  ScanSearch, ShieldCheck, FlaskConical, DatabaseZap, FileText, Settings
 } from 'lucide-react';
 import {
   PageHeader, GlassPanel, Button, IconButton, TextField, TextArea, Select, Switch, Checkbox, ChipGroup, Segmented, Tabs,
@@ -21,6 +21,11 @@ const Cell = ({ title, children, className = '' }) => (
     {children}
   </GlassPanel>
 );
+
+// Dấu màu thay cho biểu tượng mặt cười — cùng màu với biểu đồ cảm xúc
+const PosMark = () => <SentimentFace sentiment="Positive" size={24} />;
+const NeuMark = () => <SentimentFace sentiment="Neutral" size={24} />;
+const NegMark = () => <SentimentFace sentiment="Negative" size={24} />;
 
 const PALETTE = [
   ['#5E8B7E', 'Sage', 'Nhấn'],
@@ -46,8 +51,7 @@ const UiKit = () => {
       <PageHeader
         section="Hệ thiết kế"
         title="UI kit"
-        accent="Calm Tech"
-        subtitle="Bộ thành phần của Customer Radar — kính sáng trên nền phong cảnh phủ sương. Mọi cặp màu chữ/nền đã đo đạt WCAG AA."
+        subtitle="Bộ thành phần của Customer Radar — bề mặt gần đặc, viền mảnh, font Geist và Geist Mono. Mọi cặp màu chữ/nền đã đo đạt WCAG AA."
       />
 
       <div className="grid gap-5 lg:grid-cols-12">
@@ -56,7 +60,7 @@ const UiKit = () => {
             <div className="flex items-center gap-3">
               <LogoMark size={56} />
               <div>
-                <p className="text-2xl leading-none font-semibold text-ink-hi">Customer <span className="font-light text-accent">Radar</span></p>
+                <p className="text-2xl leading-none font-semibold text-ink-hi">Customer <span className="font-semibold text-accent">Radar</span></p>
                 <p className="mt-1 text-xs text-ink-lo">Radar khách hàng</p>
               </div>
             </div>
@@ -76,17 +80,17 @@ const UiKit = () => {
         <Cell title="Chữ" className="lg:col-span-5">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <p className="text-2xl font-semibold text-ink-hi">Inter</p>
-              <p className="text-xs text-ink-lo">Giao diện · tiêu đề</p>
+              <p className="text-2xl font-semibold text-ink-hi">Geist</p>
+              <p className="text-xs text-ink-lo">Tiêu đề · giao diện</p>
               <p className="mt-2 text-sm text-ink-mid">Ăn Ằ Ẳ Ẵ Ặ ữ</p>
             </div>
             <div>
-              <p className="text-2xl font-light text-accent">Inter Light</p>
-              <p className="text-xs text-ink-lo">Chữ nhấn nét mảnh</p>
-              <p className="mt-2 text-sm font-light text-ink-mid">vận hành · dữ liệu</p>
+              <p className="text-2xl text-ink-hi">Geist 400</p>
+              <p className="text-xs text-ink-lo">Nội dung</p>
+              <p className="mt-2 text-sm text-ink-mid">vận hành · dữ liệu</p>
             </div>
             <div>
-              <p className="font-mono text-2xl font-semibold text-ink-hi">Plex</p>
+              <p className="font-mono text-2xl font-semibold text-ink-hi">Mono</p>
               <p className="text-xs text-ink-lo">Số liệu đơn cách</p>
               <p className="mt-2 font-mono text-sm text-ink-mid">1.234 · 12,5%</p>
             </div>
@@ -153,9 +157,9 @@ const UiKit = () => {
             onChange={setChip}
             options={[
               { value: 'all', label: 'Tất cả' },
-              { value: 'pos', label: 'Tích cực', icon: Laugh, count: 3444 },
-              { value: 'neu', label: 'Trung tính', icon: Meh, count: 620 },
-              { value: 'neg', label: 'Tiêu cực', icon: Frown, count: 1806 }
+              { value: 'pos', label: 'Tích cực', icon: PosMark, count: 3444 },
+              { value: 'neu', label: 'Trung tính', icon: NeuMark, count: 620 },
+              { value: 'neg', label: 'Tiêu cực', icon: NegMark, count: 1806 }
             ]}
           />
           <div className="mt-4">
@@ -188,7 +192,7 @@ const UiKit = () => {
         <Cell title="Biểu tượng" className="lg:col-span-7">
           <div className="grid grid-cols-5 gap-3 sm:grid-cols-10">
             {[LayoutDashboard, Siren, MessagesSquare, ScanSearch, ShieldCheck, FlaskConical, DatabaseZap, FileText, Settings, Search].map((I, i) => (
-              <span key={i} className="grid aspect-square place-items-center rounded-2xl bg-surface/60 text-ink-mid"><I size={20} strokeWidth={1.6} /></span>
+              <span key={i} className="grid aspect-square place-items-center rounded-lg bg-surface/60 text-ink-mid"><I size={20} strokeWidth={1.6} /></span>
             ))}
           </div>
         </Cell>

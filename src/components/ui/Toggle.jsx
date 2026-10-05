@@ -59,7 +59,7 @@ export const RadioCards = ({ value, onChange, options, name }) => (
           role="radio"
           aria-checked={active}
           onClick={() => onChange(o.value)}
-          className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-[border-color,background-color,box-shadow] ${
+          className={`flex items-start gap-3 rounded-lg border p-4 text-left transition-[border-color,background-color,box-shadow] ${
             active ? 'border-accent bg-accent-dim shadow-[0_0_0_3px_var(--accent-dim)]' : 'border-line bg-surface/50 hover:border-ink-lo'
           }`}
         >

@@ -63,17 +63,17 @@ const Login = ({ onLogin }) => {
       <div className="relative z-10 mx-auto grid min-h-screen max-w-[1320px] items-center gap-10 px-6 py-10 lg:grid-cols-[1.15fr_minmax(380px,460px)] lg:px-12">
         {/* Thương hiệu */}
         <section className="hidden text-white lg:block animate-fade-up">
-          <div className="inline-flex items-center gap-3 rounded-2xl border border-white/20 bg-white/12 p-2 pr-5 backdrop-blur-md">
+          <div className="inline-flex items-center gap-3 rounded-lg border border-white/20 bg-white/12 p-2 pr-5 backdrop-blur-md">
             <LogoMark size={38} />
             <span className="text-lg leading-none text-white">
               <span className="font-semibold">Customer</span>{' '}
-              <span className="font-light text-[#CFE6DE]">Radar</span>
+              <span className="font-semibold text-[#CFE6DE]">Radar</span>
             </span>
           </div>
           <p className="mt-10 text-xs font-semibold tracking-[0.22em] text-white/75 uppercase">Customer intelligence · đa kênh</p>
           <h1 className="mt-3 max-w-xl text-[3.4rem] leading-[1.08] font-semibold tracking-tight">
             Nghe đúng tiếng nói
-            <span className="block font-light text-[#CFE6DE]">của khách hàng thật.</span>
+            <span className="block">của khách hàng thật.</span>
           </h1>
           <p className="mt-5 max-w-lg text-[1.02rem] leading-relaxed text-white/80">
             Phân tích phản hồi đa kênh với một tầng kiểm soát tin cậy đặt trước tầng phân tích — đánh giá ảo, quảng cáo và
@@ -81,7 +81,7 @@ const Login = ({ onLogin }) => {
           </p>
           <ul className="mt-9 grid max-w-2xl list-none gap-3 sm:grid-cols-3">
             {FEATURES.map((f) => (
-              <li key={f.title} className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-md">
+              <li key={f.title} className="rounded-lg border border-white/20 bg-white/10 p-4 backdrop-blur-md">
                 <f.icon size={18} className="text-[#CFE6DE]" aria-hidden="true" />
                 <p className="mt-2.5 text-sm font-semibold">{f.title}</p>
                 <p className="mt-1 text-xs leading-relaxed text-white/70">{f.text}</p>
@@ -91,15 +91,15 @@ const Login = ({ onLogin }) => {
         </section>
 
         {/* Thẻ đăng nhập */}
-        <section className="glass-strong mx-auto w-full max-w-[460px] rounded-[28px] p-7 sm:p-9 animate-pop-in">
+        <section className="glass-strong mx-auto w-full max-w-[460px] rounded-xl p-7 sm:p-9 animate-pop-in">
           <div className="mb-7 lg:hidden"><Logo size="md" /></div>
           <p className="eyebrow">Đăng nhập</p>
           <h2 className="mt-2 text-[1.7rem] font-semibold tracking-tight text-ink-hi">
-            Chào mừng <span className="font-light text-accent">trở lại</span>
+            Chào mừng trở lại
           </h2>
           <p className="mt-1 text-sm text-ink-mid">Đăng nhập để vào bảng điều khiển.</p>
 
-          <div className="mt-6 rounded-2xl bg-accent-dim p-4">
+          <div className="mt-6 rounded-lg bg-accent-dim p-4">
             <p className="flex items-center gap-2 text-[0.7rem] font-semibold tracking-[0.12em] text-accent-hi uppercase">
               <KeyRound size={13} aria-hidden="true" /> Tài khoản dùng thử
             </p>

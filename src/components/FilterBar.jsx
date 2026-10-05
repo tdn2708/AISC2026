@@ -43,7 +43,7 @@ const Dropdown = ({ open, onClose, children, width = 240, align = 'left' }) => {
   return (
     <div
       ref={ref}
-      className={`glass-strong absolute top-[calc(100%+8px)] z-[150] rounded-2xl p-1.5 animate-pop-in ${align === 'right' ? 'right-0' : 'left-0'}`}
+      className={`glass-strong absolute top-[calc(100%+8px)] z-[150] rounded-lg p-1.5 animate-pop-in ${align === 'right' ? 'right-0' : 'left-0'}`}
       style={{ width }}
     >
       {children}
@@ -55,7 +55,7 @@ const Option = ({ active, onClick, children }) => (
   <button
     type="button"
     onClick={onClick}
-    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+    className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
       active ? 'bg-accent-dim font-medium text-accent-hi' : 'text-ink-hi hover:bg-raised'
     }`}
   >
@@ -69,8 +69,8 @@ const Trigger = ({ icon: Icon, active, children, onClick, open }) => (
     type="button"
     onClick={onClick}
     aria-expanded={open}
-    className={`inline-flex h-8 max-w-[240px] items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors ${
-      active ? 'border-accent/40 bg-accent-dim text-accent-hi' : 'border-line bg-surface/55 text-ink-mid hover:border-ink-lo hover:text-ink-hi'
+    className={`inline-flex h-8 max-w-[240px] items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors ${
+      active ? 'border-accent/40 bg-accent-dim text-accent-hi' : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'
     }`}
   >
     <Icon size={13} className="shrink-0" aria-hidden="true" />
@@ -135,7 +135,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
   const filteredProducts = productOptions.filter((p) => p.toLowerCase().includes(productQuery.toLowerCase()));
 
   return (
-    <div className="cx glass relative z-[100] mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[20px] px-4 py-3">
+    <div className="cx glass relative z-[100] mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl px-4 py-3">
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Khoảng thời gian">
         <span className="eyebrow mr-1 hidden lg:inline">Thời gian</span>
         {TIME_PRESETS.map((t) => (
@@ -198,7 +198,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
                   onChange={(e) => setProductQuery(e.target.value)}
                   placeholder="Tìm sản phẩm…"
                   aria-label="Tìm sản phẩm"
-                  className="h-9 w-full rounded-xl border border-line bg-surface pr-3 pl-8 text-sm text-ink-hi outline-none focus:border-accent"
+                  className="h-9 w-full rounded-lg border border-line bg-surface pr-3 pl-8 text-sm text-ink-hi outline-none focus:border-accent"
                 />
               </div>
               <div className="max-h-64 overflow-y-auto">
@@ -220,7 +220,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-ink-lo transition-colors hover:bg-crit/10 hover:text-crit"
+            className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs text-ink-mid transition-colors hover:bg-crit/10 hover:text-crit"
           >
             <X size={13} aria-hidden="true" />
             <span className="font-mono">{activeCount}</span> điều kiện · xoá

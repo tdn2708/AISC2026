@@ -36,14 +36,14 @@ export const LogoMark = ({ size = 40, title = 'Customer Radar' }) => {
   );
 };
 
-/** Chữ ký: "Customer" sans + "Radar" nghiêng có chân, như wordmark Mindora */
+/** Chữ ký: "Customer" + "Radar" màu nhấn, cùng một font */
 export const LogoWordmark = ({ size = 'md', showTagline = true, tagline = 'Radar khách hàng' }) => {
   const scale = { sm: 1, md: 1.3, lg: 1.9 }[size] || 1.3;
   return (
     <div className="flex min-w-0 flex-col" style={{ gap: 1 }}>
       <div className="whitespace-nowrap text-ink-hi" style={{ fontSize: `${1 * scale}rem`, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
         <span className="font-semibold">Customer</span>
-        <span className="ml-1 font-light text-accent">Radar</span>
+        <span className="ml-1 font-semibold text-accent">Radar</span>
       </div>
       {showTagline && (
         <div

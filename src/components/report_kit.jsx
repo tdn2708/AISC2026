@@ -49,7 +49,7 @@ export const fmtVnd = (n) => {
   return `${fmtInt(v)} đồng`;
 };
 
-const MONO = "'IBM Plex Mono', ui-monospace, Consolas, monospace";
+const MONO = "'Geist Mono', ui-monospace, Consolas, monospace";
 
 /**
  * Mũi tên so sánh kỳ trước.

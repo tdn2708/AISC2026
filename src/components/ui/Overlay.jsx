@@ -53,14 +53,14 @@ export const Modal = ({ open, onClose, title, description, icon: Icon, tone = 'a
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`glass-strong relative w-full ${width} rounded-[26px] p-6 outline-none animate-pop-in`}
+        className={`glass-strong relative w-full ${width} rounded-xl p-6 outline-none animate-pop-in`}
       >
         <button
           type="button"
           data-close
           onClick={onClose}
           aria-label="Đóng"
-          className="absolute top-4 right-4 grid size-8 place-items-center rounded-full text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi"
+          className="absolute top-4 right-4 grid size-8 place-items-center rounded-md text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi"
         >
           <X size={16} aria-hidden="true" />
         </button>
@@ -95,7 +95,7 @@ export const Drawer = ({ open, onClose, title, subtitle, children, footer, width
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="glass-strong absolute top-3 right-3 bottom-3 flex flex-col overflow-hidden rounded-[24px] outline-none animate-pop-in"
+        className="glass-strong absolute top-3 right-3 bottom-3 flex flex-col overflow-hidden rounded-xl outline-none animate-pop-in"
         style={{ width: `min(${width}px, calc(100vw - 24px))` }}
       >
         <header className="flex items-start justify-between gap-4 border-b border-line-soft px-6 py-5">
@@ -108,7 +108,7 @@ export const Drawer = ({ open, onClose, title, subtitle, children, footer, width
             data-close
             onClick={onClose}
             aria-label="Đóng"
-            className="grid size-8 shrink-0 place-items-center rounded-full text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi"
+            className="grid size-8 shrink-0 place-items-center rounded-md text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi"
           >
             <X size={16} aria-hidden="true" />
           </button>

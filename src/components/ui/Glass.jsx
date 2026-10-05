@@ -11,7 +11,7 @@ import { severityOf } from '../../lib/format';
 export const GlassPanel = ({ as: Tag = 'div', tone = 'soft', glow = null, className = '', children, ...rest }) => {
   const glowClass = glow === 'crit' ? 'glow-crit' : glow === 'high' ? 'glow-high' : '';
   return (
-    <Tag className={`${tone === 'strong' ? 'glass-strong' : 'glass'} relative rounded-[20px] ${glowClass} ${className}`} {...rest}>
+    <Tag className={`${tone === 'strong' ? 'glass-strong' : 'glass'} relative rounded-xl ${glowClass} ${className}`} {...rest}>
       {children}
     </Tag>
   );
@@ -20,8 +20,8 @@ export const GlassPanel = ({ as: Tag = 'div', tone = 'soft', glow = null, classN
 export const PanelHeader = ({ title, subtitle, right, id, className = '' }) => (
   <header className={`mb-4 flex items-start justify-between gap-x-4 gap-y-2 ${right ? 'flex-wrap sm:flex-nowrap' : ''} ${className}`}>
     <div className="min-w-0 flex-1">
-      <h3 id={id} className="text-[0.98rem] font-semibold text-ink-hi">{title}</h3>
-      {subtitle && <p className="mt-0.5 text-xs leading-relaxed text-ink-lo">{subtitle}</p>}
+      <h3 id={id} className="text-[1.04rem] font-semibold tracking-tight text-ink-hi">{title}</h3>
+      {subtitle && <p className="mt-0.5 text-[0.8rem] leading-relaxed text-ink-mid">{subtitle}</p>}
     </div>
     {right}
   </header>
@@ -35,7 +35,7 @@ export const SeverityBadge = ({ level, className = '' }) => {
   const Icon = SEVERITY_ICON[level] || Info;
   return (
     <span
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-(--sev)/12 px-2 py-0.5 text-[0.68rem] font-semibold uppercase tracking-wide text-(--sev) ${className}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded bg-(--sev)/12 px-1.5 py-0.5 font-mono text-[0.66rem] font-medium uppercase tracking-[0.03em] text-(--sev) ${className}`}
       style={{ '--sev': meta.color }}
     >
       <Icon size={12} aria-hidden="true" />
@@ -51,7 +51,7 @@ export const MethodHint = ({ text }) => (
     role="img"
     aria-label={text}
     title={text}
-    className="grid size-5 shrink-0 cursor-help place-items-center rounded-full border border-line text-ink-lo transition-colors hover:border-ink-lo hover:text-ink-mid"
+    className="grid size-5 shrink-0 cursor-help place-items-center rounded border border-line text-ink-lo transition-colors hover:border-ink-lo hover:text-ink-mid"
   >
     <Info size={11} aria-hidden="true" />
   </span>

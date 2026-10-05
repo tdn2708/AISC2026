@@ -6,3 +6,4 @@ export { Chip, ChipGroup, Segmented, Tabs } from './Chips';
 export { Modal, Drawer } from './Overlay';
 export { PageHeader, SectionLabel, Badge, ProgressBar, Stepper, SentimentFace, Toast, Stat } from './Display';
 export { EmptyState } from './EmptyState';
+export { AnimatedNumber } from './AnimatedNumber';

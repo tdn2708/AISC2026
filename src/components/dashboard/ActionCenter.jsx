@@ -30,7 +30,7 @@ const ActionCard = ({ alert, state, onAccept, onDismiss, onEvidence }) => {
 
   return (
     <li
-      className={`relative shrink-0 overflow-hidden rounded-2xl border bg-surface/70 p-4 pl-5 transition-opacity ${tone} ${decided ? 'opacity-70' : ''}`}
+      className={`relative shrink-0 overflow-hidden rounded-lg border bg-surface/70 p-4 pl-5 transition-opacity ${tone} ${decided ? 'opacity-70' : ''}`}
       style={{ '--sev': SEVERITY[alert.severity]?.color || 'var(--sev-low)' }}
     >
       {/* Vạch mức độ ở mép trái: nhận ra mức độ ngay cả khi chỉ liếc qua cột */}
@@ -50,7 +50,7 @@ const ActionCard = ({ alert, state, onAccept, onDismiss, onEvidence }) => {
       <Evidence alert={alert} className="mt-2" />
 
       {step && (
-        <div className="mt-3 rounded-xl bg-accent-dim p-3">
+        <div className="mt-3 rounded-lg bg-accent-dim p-3">
           <p className="flex items-center gap-1.5 text-[0.66rem] font-semibold tracking-[0.12em] text-accent-hi uppercase">
             <Lightbulb size={12} aria-hidden="true" /> Đề xuất hành động
           </p>
@@ -120,12 +120,11 @@ const ActionCenter = ({ alerts = [] }) => {
       <div className="border-b border-line-soft px-5 pt-5 pb-4">
         <div className="flex items-center gap-2">
           <span className="relative flex size-2.5">
-            {critical > 0 && <span className="absolute inline-flex size-full rounded-full bg-crit opacity-70 motion-safe:animate-ping" />}
             <span className={`relative inline-flex size-2.5 rounded-full ${dot}`} />
           </span>
           <p className="eyebrow">Trung tâm hành động</p>
         </div>
-        <h3 className="mt-2 text-lg font-semibold text-ink-hi">
+        <h3 className="mt-2 text-[1.2rem] font-semibold tracking-tight text-ink-hi">
           {pending.length ? (
             <>
               <span className="font-mono">{pending.length}</span> việc cần quyết định
@@ -171,7 +170,7 @@ const ActionCenter = ({ alerts = [] }) => {
                 <button
                   type="button"
                   onClick={() => setShowAll((v) => !v)}
-                  className="w-full rounded-xl border border-dashed border-line py-2 text-xs text-ink-mid transition-colors hover:border-ink-lo hover:text-ink-hi"
+                  className="w-full rounded-lg border border-dashed border-line py-2 text-xs text-ink-mid transition-colors hover:border-ink-lo hover:text-ink-hi"
                 >
                   {showAll ? 'Thu gọn' : `Xem thêm ${sorted.length - PREVIEW} cảnh báo`}
                 </button>

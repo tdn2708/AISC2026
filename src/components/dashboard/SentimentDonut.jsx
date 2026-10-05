@@ -31,7 +31,7 @@ const SentimentDonut = ({ data = [] }) => {
   const negShare = total ? rows[0].value / total : null;
 
   return (
-    <GlassPanel className="flex h-full flex-col p-5">
+    <GlassPanel className="flex h-full flex-col p-6">
       <PanelHeader title="Phân bổ cảm xúc" subtitle={`${fmtInt(total)} phản hồi hợp lệ`} />
 
       {total === 0 ? (

@@ -105,7 +105,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
         role="dialog"
         aria-modal="true"
         aria-label="Bảng lệnh"
-        className="glass-strong relative w-full max-w-xl overflow-hidden rounded-[24px] animate-pop-in"
+        className="glass-strong relative w-full max-w-xl overflow-hidden rounded-xl animate-pop-in"
         onKeyDown={onKeyDown}
       >
         <div className="flex items-center gap-3 border-b border-line-soft px-5">
@@ -139,7 +139,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
                   data-index={i}
                   onMouseMove={() => setActive(i)}
                   onClick={() => runAt(i)}
-                  className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                  className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                     isActive ? 'bg-accent text-on-accent' : 'text-ink-hi'
                   }`}
                 >

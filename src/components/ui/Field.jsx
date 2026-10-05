@@ -7,7 +7,7 @@ import { ChevronDown, CircleAlert } from 'lucide-react';
  * Lỗi luôn có CHỮ, không chỉ đổi màu viền.
  */
 const base =
-  'w-full rounded-xl border bg-surface/70 text-sm text-ink-hi placeholder:text-ink-lo/80 outline-none transition-[border-color,box-shadow,background-color] duration-150 focus:bg-surface focus:ring-4 disabled:cursor-not-allowed disabled:opacity-55';
+  'w-full rounded-lg border bg-surface/70 text-sm text-ink-hi placeholder:text-ink-lo/80 outline-none transition-[border-color,box-shadow,background-color] duration-150 focus:bg-surface focus:ring-4 disabled:cursor-not-allowed disabled:opacity-55';
 const tone = (error) =>
   error ? 'border-crit/60 focus:border-crit focus:ring-crit/12' : 'border-line focus:border-accent focus:ring-accent-dim';
 

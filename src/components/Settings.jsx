@@ -41,10 +41,10 @@ const TABS = [
 ];
 
 const Row = ({ icon: Icon, title, description, children }) => (
-  <div className="flex items-center justify-between gap-4 rounded-2xl bg-surface/60 p-4">
+  <div className="flex items-center justify-between gap-4 rounded-lg bg-surface/60 p-4">
     <div className="flex min-w-0 items-center gap-3.5">
       {Icon && (
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent-dim text-accent">
+        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-accent-dim text-accent">
           <Icon size={18} aria-hidden="true" />
         </span>
       )}
@@ -99,7 +99,7 @@ const Settings = () => {
                 type="button"
                 onClick={() => setTab(t.id)}
                 aria-current={tab === t.id || undefined}
-                className={`flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
+                className={`flex shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
                   tab === t.id ? 'bg-surface font-semibold text-ink-hi shadow-[0_1px_3px_rgb(31_45_53/0.1)]' : 'text-ink-mid hover:bg-raised hover:text-ink-hi'
                 }`}
               >
@@ -115,7 +115,7 @@ const Settings = () => {
             <>
               <PanelHeader title="Hồ sơ" subtitle="Thông tin hiển thị trong báo cáo và nhật ký quyết định" />
               <div className="mb-6 flex items-center gap-4">
-                <span className="grid size-16 place-items-center rounded-full bg-linear-to-br from-blush to-sky text-xl font-semibold text-ink-hi">{initials(form.name)}</span>
+                <span className="grid size-16 place-items-center rounded-full bg-accent-dim text-xl font-semibold text-accent-hi">{initials(form.name)}</span>
                 <div>
                   <p className="font-semibold text-ink-hi">{form.name}</p>
                   <p className="text-sm text-ink-lo">Quản lý trải nghiệm khách hàng</p>
@@ -201,7 +201,7 @@ const Settings = () => {
               <PanelHeader title="Bảo mật" subtitle="Bảo vệ tài khoản quản trị" />
               {/* Bản này dùng tài khoản dùng thử cố định, chưa có máy chủ xác thực.
                   Nút không làm gì mà vẫn bấm được thì còn tệ hơn không có nút. */}
-              <p className="mb-4 rounded-xl bg-accent-dim px-4 py-3 text-sm text-accent-hi">
+              <p className="mb-4 rounded-lg bg-accent-dim px-4 py-3 text-sm text-accent-hi">
                 Tài khoản dùng thử do quản trị viên quản lý — đổi mật khẩu và xác thực hai lớp sẽ mở khi kết nối máy chủ xác thực.
               </p>
               <form className="grid gap-4 md:grid-cols-2" onSubmit={(e) => e.preventDefault()}>

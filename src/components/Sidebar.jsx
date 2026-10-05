@@ -23,11 +23,11 @@ const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
       onClick={onNavigate}
       title={collapsed ? `${item.label}${count ? ` (${count})` : ''}` : undefined}
       className={({ isActive }) =>
-        `group relative flex h-10 items-center rounded-xl text-[0.86rem] transition-[background-color,color,box-shadow] duration-150 ${
+        `group relative flex h-10 items-center rounded-lg text-[0.86rem] transition-[background-color,color,box-shadow] duration-150 ${
           collapsed ? 'justify-center' : 'gap-3 px-3'
         } ${
           isActive
-            ? 'bg-surface/90 font-semibold text-ink-hi shadow-[0_1px_2px_rgb(31_45_53/0.06),0_6px_16px_-10px_rgb(31_45_53/0.35)]'
+            ? 'bg-accent-dim font-semibold text-ink-hi before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-r before:bg-accent'
             : 'text-ink-mid hover:bg-raised hover:text-ink-hi'
         }`
       }
@@ -38,7 +38,7 @@ const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
           {!collapsed && <span className="flex-1 truncate">{item.short || item.label}</span>}
           {!collapsed && count ? (
             <span
-              className={`rounded-full px-1.5 py-px font-mono text-[0.66rem] font-semibold ${
+              className={`rounded px-1.5 py-px font-mono text-[0.66rem] font-semibold ${
                 critical ? 'bg-crit text-white' : 'bg-raised text-ink-mid'
               }`}
             >
@@ -178,7 +178,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollaps
               <span className={`size-2 rounded-full ${nlpView.dot}`} />
             </div>
           ) : (
-            <div className="rounded-2xl border border-line-soft bg-surface/55 p-3">
+            <div className="rounded-lg border border-line-soft bg-surface/55 p-3">
               <div className="flex items-center justify-between text-[0.72rem]">
                 <span className="text-ink-mid">Sức khoẻ dữ liệu</span>
                 <span className={`font-mono font-semibold ${healthText}`}>{health ?? '—'}<span className="text-ink-lo">/100</span></span>
@@ -204,7 +204,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollaps
         {/* Người dùng */}
         <div className="relative shrink-0 border-t border-line-soft p-3" ref={menuRef}>
           {showMenu && (
-            <div className="glass-strong absolute right-3 bottom-[calc(100%+6px)] left-3 z-10 min-w-[200px] rounded-2xl p-1.5 animate-pop-in">
+            <div className="glass-strong absolute right-3 bottom-[calc(100%+6px)] left-3 z-10 min-w-[200px] rounded-lg p-1.5 animate-pop-in">
               <div className="border-b border-line-soft px-3 py-2">
                 <p className="text-[0.7rem] text-ink-lo">Đang đăng nhập</p>
                 <p className="truncate text-sm font-medium text-ink-hi">{profile.email}</p>
@@ -212,7 +212,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollaps
               <button
                 type="button"
                 onClick={() => { navigate('/settings'); setShowMenu(false); }}
-                className="mt-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-ink-hi hover:bg-raised"
+                className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink-hi hover:bg-raised"
               >
                 <Settings size={15} className="text-ink-lo" /> Cài đặt
               </button>
@@ -220,7 +220,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollaps
                 <button
                   type="button"
                   onClick={onLogout}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-crit hover:bg-crit/10"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-crit hover:bg-crit/10"
                 >
                   <LogOut size={15} /> Đăng xuất
                 </button>
@@ -232,9 +232,9 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollaps
             onClick={() => setShowMenu((v) => !v)}
             aria-expanded={showMenu}
             title={collapsed ? profile.name : undefined}
-            className={`flex w-full items-center rounded-xl p-1.5 transition-colors hover:bg-raised ${collapsed ? 'justify-center' : 'gap-2.5'}`}
+            className={`flex w-full items-center rounded-lg p-1.5 transition-colors hover:bg-raised ${collapsed ? 'justify-center' : 'gap-2.5'}`}
           >
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-linear-to-br from-blush to-sky text-[0.7rem] font-semibold text-ink-hi">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-dim text-[0.7rem] font-semibold text-accent-hi">
               {initials(profile.name)}
             </span>
             {!collapsed && (

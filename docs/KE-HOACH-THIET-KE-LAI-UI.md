@@ -7,6 +7,12 @@
 
 ---
 
+> **Cập nhật 05/10/2026 — bớt "chất AI", tăng chất kỹ thuật.** Font đổi sang **Geist + Geist Mono**
+> (đủ dấu tiếng Việt); bỏ chữ nghiêng có chân, tiêu đề hai tông, hiệu ứng phát sáng, mặt cười cảm xúc
+> và minh hoạ; bo góc còn 8–12px; panel gần đặc với viền 1px; chữ ở theme sáng được làm đậm
+> (`text-mid` #33434B, `text-lo` #4F5E65). Các mục bên dưới mô tả bản thiết kế ban đầu.
+
+
 ## 1. Định hướng: "Calm Tech"
 
 Ảnh tham chiếu là một app thiền — êm, thoáng, nhiều khoảng trắng. Customer Radar là một

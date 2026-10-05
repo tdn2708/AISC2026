@@ -90,10 +90,10 @@ const Segments = () => {
               type="button"
               onClick={() => setSegment(s.key)}
               aria-pressed={active}
-              className={`glass rounded-[20px] p-5 text-left transition-[box-shadow,transform] hover:-translate-y-0.5 ${active ? 'shadow-[0_0_0_2px_var(--accent),var(--glass-shade)]' : ''}`}
+              className={`glass rounded-xl p-5 text-left transition-[box-shadow,transform] hover:-translate-y-0.5 ${active ? 'shadow-[0_0_0_2px_var(--accent),var(--glass-shade)]' : ''}`}
             >
               <div className="flex items-start justify-between gap-3">
-                <span className={`grid size-10 place-items-center rounded-2xl ${s.tone}`}>
+                <span className={`grid size-10 place-items-center rounded-lg ${s.tone}`}>
                   <s.icon size={18} aria-hidden="true" />
                 </span>
                 <span className="font-mono text-xs text-ink-lo">{total ? Math.round((n / total) * 100) : 0}%</span>
@@ -115,14 +115,14 @@ const Segments = () => {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm khách hàng…"
               aria-label="Tìm khách hàng"
-              className="h-10 w-full rounded-xl border border-line bg-surface/70 pr-3 pl-10 text-sm text-ink-hi outline-none placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
+              className="h-10 w-full rounded-lg border border-line bg-surface/70 pr-3 pl-10 text-sm text-ink-hi outline-none placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
             />
           </div>
           <ChipGroup label="Hoạt động gần nhất" options={RANGES} value={range} onChange={setRange} />
         </div>
 
         {loading ? (
-          <div className="flex flex-col gap-2 p-5">{Array.from({ length: 6 }, (_, i) => <div key={i} className="h-14 animate-pulse rounded-xl bg-raised" />)}</div>
+          <div className="flex flex-col gap-2 p-5">{Array.from({ length: 6 }, (_, i) => <div key={i} className="h-14 animate-pulse rounded-lg bg-raised" />)}</div>
         ) : rows.length === 0 ? (
           <EmptyState compact title="Không có khách hàng khớp" description="Thử đổi khoảng thời gian hoặc từ khoá." />
         ) : (
@@ -147,7 +147,7 @@ const Segments = () => {
                     <tr key={u.author}>
                       <td className="pl-6">
                         <div className="flex items-center gap-3">
-                          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-linear-to-br from-sky/70 to-blush/70 text-xs font-semibold text-ink-hi">
+                          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-dim text-xs font-semibold text-accent-hi">
                             {initials(u.author)}
                           </span>
                           <span className="font-medium">{u.author}</span>

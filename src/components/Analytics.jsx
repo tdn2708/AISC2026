@@ -73,7 +73,7 @@ const RankBar = ({ label, count, max, total, active, onClick, tone = 'bg-neg' })
   return (
   <Tag
     {...(onClick ? { type: 'button', onClick, 'aria-pressed': active } : {})}
-    className={`block w-full rounded-xl px-3 py-2.5 text-left transition-[background-color,box-shadow] ${
+    className={`block w-full rounded-lg px-3 py-2.5 text-left transition-[background-color,box-shadow] ${
       active ? 'bg-surface shadow-[0_0_0_2px_var(--accent)]' : onClick ? 'hover:bg-surface/70' : ''
     }`}
   >
@@ -92,7 +92,7 @@ const RankBar = ({ label, count, max, total, active, onClick, tone = 'bg-neg' })
 
 const TrendTip = ({ active, payload, label }) =>
   active && payload?.length ? (
-    <div className="glass-strong rounded-xl px-3 py-2 text-xs">
+    <div className="glass-strong rounded-lg px-3 py-2 text-xs">
       <p className="text-ink-lo">Ngày {label}</p>
       <p className="mt-0.5"><span className="font-mono font-semibold text-ink-hi">{fmtInt(payload[0].value)}</span> <span className="text-ink-mid">khiếu nại</span></p>
     </div>
@@ -156,8 +156,8 @@ const RootCauses = () => {
       <>
         {filters}
         <div className="grid gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
-          <div className="h-[520px] animate-pulse rounded-[20px] bg-surface/50" />
-          <div className="h-[520px] animate-pulse rounded-[20px] bg-surface/50" />
+          <div className="h-[520px] animate-pulse rounded-xl bg-surface/50" />
+          <div className="h-[520px] animate-pulse rounded-xl bg-surface/50" />
         </div>
       </>
     );
@@ -207,7 +207,7 @@ const RootCauses = () => {
               <Stat label="Khiếu nại" value={fmtInt(current.count)} />
               <Stat label="Tỉ trọng" value={fmtPct(current.count / complaints.length, 1)} sub="trong mọi khiếu nại" />
               <Stat label="7 ngày qua" value={fmtInt(delta.cur)} sub={`trước đó ${fmtInt(delta.prev)}`} />
-              <div className="rounded-2xl bg-surface/55 p-4">
+              <div className="rounded-lg bg-surface/55 p-4">
                 <p className="eyebrow">Xu hướng tuần</p>
                 {delta.rel == null ? (
                   <p className="mt-1.5 text-sm text-ink-lo">Chưa đủ dữ liệu</p>
@@ -262,8 +262,8 @@ const RootCauses = () => {
               <PanelHeader title="Sản phẩm bị ảnh hưởng" subtitle="Năm sản phẩm có nhiều khiếu nại nhất trong nhóm" right={<Package size={16} className="text-ink-lo" />} />
               <ol className="flex list-none flex-col gap-2">
                 {products.map((p, i) => (
-                  <li key={p.key} className="flex items-center gap-3 rounded-xl bg-surface/55 px-3 py-2.5">
-                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-raised font-mono text-[0.68rem] text-ink-mid">{i + 1}</span>
+                  <li key={p.key} className="flex items-center gap-3 rounded-lg bg-surface/55 px-3 py-2.5">
+                    <span className="grid size-6 shrink-0 place-items-center rounded bg-raised font-mono text-[0.68rem] text-ink-mid">{i + 1}</span>
                     <span className="min-w-0 flex-1 truncate text-sm text-ink-hi" title={p.label}>{p.label}</span>
                     <span className="font-mono text-xs text-ink-mid">{fmtInt(p.count)}</span>
                   </li>
@@ -276,7 +276,7 @@ const RootCauses = () => {
               <PanelHeader title="Tiếng nói khách hàng" subtitle="Phản hồi mới nhất trong nhóm" right={<MessageSquareQuote size={16} className="text-ink-lo" />} />
               <ul className="flex list-none flex-col gap-2.5">
                 {samples.map((f) => (
-                  <li key={f._id} className="flex gap-3 rounded-xl bg-surface/55 p-3">
+                  <li key={f._id} className="flex gap-3 rounded-lg bg-surface/55 p-3">
                     <SentimentFace sentiment={f.sentiment} size={26} />
                     <div className="min-w-0">
                       <p className="line-clamp-2 text-sm leading-relaxed text-ink-hi">{f.originalText}</p>
