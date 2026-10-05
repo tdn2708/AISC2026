@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowUpRight, ArrowDownRight, Minus, Activity, ShieldCheck, Gauge, CheckCircle2, Info } from 'lucide-react';
 import { GlassPanel, SeverityBadge, MethodHint, AnimatedNumber } from '../ui';
 import { fmtInt, fmtPct, fmtSignedPct, SEVERITY, SEVERITY_ORDER } from '../../lib/format';
+import { useTheme } from '../../hooks/useTheme';
 
 /**
  * VÙNG CHỈ SỐ — bố cục bento
@@ -33,7 +34,8 @@ const DeltaPill = ({ rel, lowerIsBetter = true, suffix, onDark = false }) => {
   const Icon = j === 'flat' ? Minus : rel > 0 ? ArrowUpRight : ArrowDownRight;
   const tone = onDark
     ? { good: 'bg-[#7FD1A3]/15 text-[#9BE3BE]', bad: 'bg-[#FF8A9B]/15 text-[#FFB3BF]', flat: 'bg-white/10 text-white/78' }[j]
-    : { good: 'bg-ok/12 text-ok', bad: 'bg-crit/12 text-crit', flat: 'bg-raised text-ink-mid' }[j];
+    // Nền trắng + viền màu: đọc rõ trên mọi nền thẻ (kể cả nền xanh sương), luôn ≥ 4.5:1
+    : { good: 'bg-surface text-ok ring-1 ring-ok/30', bad: 'bg-surface text-crit ring-1 ring-crit/30', flat: 'bg-surface text-ink-mid ring-1 ring-line' }[j];
   return (
     <span className="inline-flex items-center gap-2 text-xs">
       <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono font-medium ${tone}`}>
@@ -70,15 +72,15 @@ const AreaTrend = ({ series, label }) => {
     <div className="relative">
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block h-20 w-full" role="img" aria-label={label}>
         {[0.25, 0.5, 0.75].map((f) => (
-          <line key={f} x1="0" x2={W} y1={H * f} y2={H * f} stroke="rgb(255 255 255 / 0.07)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <line key={f} x1="0" x2={W} y1={H * f} y2={H * f} stroke="var(--hero-grid)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
         ))}
-        <path d={`${line}L${W},${H}L0,${H}Z`} fill="rgb(255 255 255 / 0.10)" />
-        <path d={line} fill="none" stroke="rgb(255 255 255 / 0.9)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path d={`${line}L${W},${H}L0,${H}Z`} fill="var(--hero-fill)" />
+        <path d={line} fill="none" stroke="var(--hero-stroke)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </svg>
       {/* Điểm cuối vẽ bằng HTML để không bị kéo méo theo tỉ lệ SVG */}
       <span
         aria-hidden="true"
-        className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white ring-4 ring-white/15"
+        className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--hero-stroke) ring-4 ring-(--hero-ring)"
         style={{ left: `${(lx / W) * 100}%`, top: `${(ly / H) * 100}%` }}
       />
     </div>
@@ -90,25 +92,27 @@ const ComplaintRateHero = ({ stats, trend }) => {
   const cmp = stats?.comparison;
   const available = Boolean(wcr?.available);
   const series = trend.map((t) => Number(t?.weightedComplaints ?? 0));
+  // Thẻ chỉ tối ở theme tối — viên so sánh phải đổi bảng màu theo
+  const onDark = useTheme().theme === 'dark';
   const method = available
     ? `Tổng trọng số tin cậy của khiếu nại chia cho ${fmtInt(wcr.denominator)} giao dịch đối soát được. Chỉ tính trên kênh gắn được mã đơn hàng.`
     : 'Chưa kết nối dữ liệu giao dịch nên không tồn tại mẫu số. Hệ thống báo không khả dụng thay vì trả về một con số không có cơ sở.';
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden rounded-xl bg-hero p-6 text-white shadow-[0_14px_34px_-18px_rgb(10_25_20/0.6)]">
+    <div className="relative flex h-full flex-col overflow-hidden rounded-xl border border-(--hero-line) bg-hero p-6 text-(--hero-fg) shadow-(--hero-shadow)">
       {/* Lưới mảnh trên nền tối — chất bảng đo, không phải trang trí phát sáng */}
       <span
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-60"
         style={{
           backgroundImage:
-            'linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px)',
+            'linear-gradient(var(--hero-grid) 1px, transparent 1px), linear-gradient(90deg, var(--hero-grid) 1px, transparent 1px)',
           backgroundSize: '28px 28px'
         }}
       />
       <div className="relative flex items-center justify-between gap-3">
-        <p className={`${LABEL} text-white/78`}>Tỷ lệ khiếu nại có trọng số</p>
-        <span title={method} aria-label={method} role="img" tabIndex={0} className="grid size-5 cursor-help place-items-center rounded border border-white/20 text-white/72">
+        <p className={`${LABEL} text-(--hero-mid)`}>Tỷ lệ khiếu nại có trọng số</p>
+        <span title={method} aria-label={method} role="img" tabIndex={0} className="grid size-5 cursor-help place-items-center rounded border border-(--hero-line) text-(--hero-lo)">
           <Info size={11} aria-hidden="true" />
         </span>
       </div>
@@ -117,32 +121,32 @@ const ComplaintRateHero = ({ stats, trend }) => {
         {available ? (
           <AnimatedNumber value={wcr.value * 100} decimals={2} unit="%" className="text-[3.25rem] leading-none font-semibold tracking-[-0.03em]" />
         ) : (
-          <span className="text-xl font-medium text-white/72">Không khả dụng</span>
+          <span className="text-xl font-medium text-(--hero-lo)">Không khả dụng</span>
         )}
-        {available && <DeltaPill rel={cmp?.deltas?.wcr?.rel} suffix="so với 7 ngày trước" onDark />}
+        {available && <DeltaPill rel={cmp?.deltas?.wcr?.rel} suffix="so với 7 ngày trước" onDark={onDark} />}
       </div>
 
       {/* Chỉ so khi kỳ trước có dữ liệu thật — 0% và 0% nghĩa là KHÔNG CÓ dữ liệu, không phải tỷ lệ bằng 0 */}
       {available && cmp?.deltas?.wcr?.rel != null && Number.isFinite(cmp.deltas.wcr.rel) && (
-        <p className="relative mt-3 font-mono text-xs text-white/72">
-          7 ngày qua <span className="text-white">{fmtPct(cmp?.current?.wcr, 2)}</span>
-          <span className="mx-2 text-white/30">/</span>
-          7 ngày trước <span className="text-white">{fmtPct(cmp?.previous?.wcr, 2)}</span>
+        <p className="relative mt-3 font-mono text-xs text-(--hero-lo)">
+          7 ngày qua <span className="text-(--hero-fg)">{fmtPct(cmp?.current?.wcr, 2)}</span>
+          <span className="mx-2 text-(--hero-lo) opacity-50">/</span>
+          7 ngày trước <span className="text-(--hero-fg)">{fmtPct(cmp?.previous?.wcr, 2)}</span>
         </p>
       )}
 
       <div className="relative mt-auto pt-5">
         <AreaTrend series={series} label="Khiếu nại có trọng số, 14 kỳ trong 28 ngày gần nhất" />
-        <div className="mt-2 flex justify-between font-mono text-[0.66rem] text-white/72">
+        <div className="mt-2 flex justify-between font-mono text-[0.66rem] text-(--hero-lo)">
           <span>{trend[0]?.name}</span>
           <span>28 ngày gần nhất</span>
           <span>{trend[trend.length - 1]?.name}</span>
         </div>
-        <p className="mt-3 border-t border-white/10 pt-3 text-xs text-white/78">
+        <p className="mt-3 border-t border-(--hero-line) pt-3 text-xs text-(--hero-mid)">
           {available ? (
             <>
-              Trên <span className="font-mono text-white">{fmtInt(wcr.denominator)}</span> giao dịch · độ phủ đối soát{' '}
-              <span className="font-mono text-white">{fmtPct(wcr.coverage, 0)}</span>
+              Trên <span className="font-mono text-(--hero-fg)">{fmtInt(wcr.denominator)}</span> giao dịch · độ phủ đối soát{' '}
+              <span className="font-mono text-(--hero-fg)">{fmtPct(wcr.coverage, 0)}</span>
             </>
           ) : (
             'Kết nối dữ liệu giao dịch ở màn hình Nguồn dữ liệu để tính chỉ số này'
