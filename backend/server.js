@@ -124,6 +124,16 @@ async function startServer() {
 
     app.listen(PORT, () => {
       console.log(`Máy chủ đang chạy tại cổng ${PORT}`);
+
+      // Nạp sẵn dữ liệu + Trust Layer ngay khi khởi động. Không có bước này,
+      // người mở trang ĐẦU TIÊN sau mỗi lần triển khai hay Render đánh thức máy
+      // chủ phải tự chờ toàn bộ việc đó (đo trên Render: ~18 giây). Request đến
+      // trong lúc đang nạp sẽ dùng chung lần nạp này, không nạp lại.
+      const t0 = Date.now();
+      require('./services/analysis_context')
+        .getContext(db)
+        .then(() => console.log(`Đã nạp sẵn ngữ cảnh phân tích (${Date.now() - t0} ms).`))
+        .catch((e) => console.warn('Không nạp sẵn được ngữ cảnh, sẽ nạp ở request đầu tiên:', e.message));
     });
   } catch (e) {
     console.error('Không kết nối được MongoDB:', e.message);

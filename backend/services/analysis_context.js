@@ -31,7 +31,10 @@ const visobert = require('./visobert_client');
  *    được nhận lời hứa cũ — nếu không, nhãn vừa gán có thể biến mất 30 giây.
  */
 const CACHE_TTL_MS = 30 * 1000;
-const MAX_AGE_MS = 10 * 60 * 1000;
+// Tính lại định kỳ chỉ để trọng số tin cậy suy giảm theo tuổi phản hồi (nửa
+// chu kỳ 30 ngày: 3 giờ chỉ đổi ~0,3%). Không đặt ngắn: Trust Layer chạy đồng
+// bộ, trên CPU yếu của Render một lần tính mất hơn chục giây và chặn mọi request.
+const MAX_AGE_MS = 3 * 60 * 60 * 1000;
 const FETCH_BATCH = 5000;
 // Chỉ các trường giao dịch thật sự được dùng (đối soát, doanh thu rủi ro, vùng)
 const TXN_PROJECTION = { _id: 0, orderId: 1, productName: 1, region: 1, orderedAt: 1, deliveredAt: 1, amount: 1 };
