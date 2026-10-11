@@ -25,7 +25,18 @@ Biến môi trường
   VISOBERT_THREADS     số luồng CPU cho torch
 """
 
-import math
+import sys
+
+# Log in tiếng Việt có dấu. Trên Windows, khi stdout bị chuyển hướng (chạy nền,
+# ghi ra tệp log) Python dùng cp1252 và print đầu tiên ném UnicodeEncodeError —
+# với service.py là sập ngay lúc khởi động. Ép UTF-8 thay vì trông vào
+# PYTHONIOENCODING do script khởi chạy đặt.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 import os
 import time
 from contextlib import asynccontextmanager
@@ -198,13 +209,14 @@ def explain(body: TextIn):
     logits = _logits(model, tok, [body.text], max_len)
     # Ở chế độ đa nhãn, danh mục và nguyên nhân là xác suất ĐỘC LẬP (sigmoid),
     # nên các cột không cộng lại thành 100% — đúng như vậy mới nêu được nhiều vấn đề
-    probs = {
-        t: (torch.sigmoid(logits[t][0]) if (multi_label and t in ("category", "cause"))
-            # Cảm xúc và rác hiển thị theo xác suất ĐÃ HIỆU CHỈNH, đúng bằng
-            # con số mà tầng quyết định dùng
-            else torch.softmax(logits[t][0] / float(cal.get(f"{t}Temperature", 1.0) or 1.0), dim=-1))
-        for t in TASKS
-    }
+    def to_probs(task, rows):
+        if multi_label and task in ("category", "cause"):
+            return torch.sigmoid(rows)
+        # Cảm xúc và rác hiển thị theo xác suất ĐÃ HIỆU CHỈNH, đúng bằng
+        # con số mà tầng quyết định dùng
+        return torch.softmax(rows / float(cal.get(f"{task}Temperature", 1.0) or 1.0), dim=-1)
+
+    probs = {t: to_probs(t, logits[t][0]) for t in TASKS}
     prediction = decode({t: logits[t] for t in TASKS}, labels, trained,
                         multi_label=multi_label, calibration=meta.get("calibration"))[0]
     t2 = time.perf_counter()
@@ -236,9 +248,16 @@ def explain(body: TextIn):
     # ~100%, bỏ một từ quan trọng chỉ kéo xác suất từ 99.99% xuống 99.9% — gần
     # như bằng 0 trên thang xác suất, nhưng là một bước lớn trên thang log-odds.
     # Đo trên thang xác suất cho kết quả "từ nào cũng không quan trọng", sai.
-    def log_odds(p):
-        p = min(max(p, 1e-6), 1 - 1e-6)
-        return math.log(p / (1 - p))
+    #
+    # Log-odds tính THẲNG từ logit, không đi qua xác suất: mô hình hay chắc
+    # chắn tới mức xác suất làm tròn thành 1.0, và phép kẹp p về [1e-6, 1-1e-6]
+    # khi đó biến mọi hiệu số thành 0 — đo trên câu thật, 11/12 từ ra 0.
+    def log_odds_rows(task, rows, target):
+        if multi_label and task in ("category", "cause"):
+            return rows[:, target]  # log-odds của sigmoid chính là logit
+        lp = torch.log_softmax(rows / float(cal.get(f"{task}Temperature", 1.0) or 1.0), dim=-1)
+        others = torch.cat([lp[:, :target], lp[:, target + 1:]], dim=1)
+        return lp[:, target] - torch.logsumexp(others, dim=1)
 
     words = body.text.split()
     importance = None
@@ -251,12 +270,18 @@ def explain(body: TextIn):
                 continue
             target = int(probs[task].argmax())
             base = float(probs[task][target])
-            occ_p = torch.softmax(occ[task], dim=-1)[:, target].tolist()
+            # Cùng hàm xác suất với `base`. Bản cũ luôn dùng softmax thô ở đây,
+            # trong khi `base` của danh mục đa nhãn là sigmoid và của cảm xúc là
+            # softmax đã chia nhiệt độ — hiệu số giữa hai thang khác nhau làm từ
+            # nào cũng có vẻ "quan trọng" kể cả khi bỏ nó đi không đổi gì.
+            occ_p = to_probs(task, occ[task])[:, target].tolist()
+            base_lo = float(log_odds_rows(task, logits[task][:1], target)[0])
+            occ_lo = log_odds_rows(task, occ[task], target).tolist()
             importance[task] = {
                 "target": labels[task][target],
                 "base": round(base, 4),
                 "measure": "log-odds",
-                "values": [round(log_odds(base) - log_odds(p), 3) for p in occ_p],
+                "values": [round(base_lo - lo, 3) for lo in occ_lo],
                 "probAfter": [round(p, 4) for p in occ_p],
             }
     t3 = time.perf_counter()

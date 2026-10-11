@@ -23,6 +23,18 @@ Kết quả ghi vào `meta.json` của checkpoint, mục `calibration`. Dịch v
 đọc và áp dụng; checkpoint chưa hiệu chỉnh vẫn chạy với ngưỡng mặc định.
 """
 
+import sys
+
+# Log in tiếng Việt có dấu. Trên Windows, khi stdout bị chuyển hướng (chạy nền,
+# ghi ra tệp log) Python dùng cp1252 và print đầu tiên ném UnicodeEncodeError —
+# với service.py là sập ngay lúc khởi động. Ép UTF-8 thay vì trông vào
+# PYTHONIOENCODING do script khởi chạy đặt.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 import argparse
 import json
 import math
