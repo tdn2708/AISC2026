@@ -77,6 +77,11 @@ def main():
         shutil.copy(HERE / "requirements.txt", stage)
         shutil.copy(HERE / "space_README.md", stage / "README.md")
         shutil.copytree(CHECKPOINT, stage / "checkpoints" / "visobert-absa")
+        # Git trên Windows ghi tệp văn bản với CRLF; Docker build trên Linux thì
+        # dấu "\" + CR không còn là nối dòng và lệnh RUN hỏng. Chuẩn hóa về LF.
+        for f in ("Dockerfile", "requirements.txt", "README.md", "service.py", "visobert_model.py"):
+            path = stage / f
+            path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n"))
 
         api = HfApi(token=token)
         print(f"Tài khoản: {api.whoami()['name']}")
