@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import PipelineDemo from './lab/PipelineDemo';
 import BatchDemo from './lab/BatchDemo';
+import VersusDemo from './lab/VersusDemo';
 
 /**
  * PHÒNG THÍ NGHIỆM
@@ -289,7 +290,8 @@ const Experiments = () => {
 // ==================================================================
 
 const Lab = () => {
-  const [tab, setTab] = useState('live');
+  // Mở vào tab Đối đầu: câu hỏi đầu tiên của người xem là "khác gì công cụ đang có"
+  const [tab, setTab] = useState('versus');
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '3rem' }}>
@@ -311,11 +313,13 @@ const Lab = () => {
       </header>
 
       <div style={{
-        display: 'inline-flex', gap: '0.25rem', marginBottom: '1.5rem',
+        // Màn hẹp: cuộn ngang thay vì ép mỗi tab thành ba dòng chữ
+        display: 'inline-flex', gap: '0.25rem', marginBottom: '1.5rem', maxWidth: '100%', overflowX: 'auto',
         background: 'var(--surface)', border: '1px solid var(--border)',
         borderRadius: 'var(--r-ctrl)', padding: '0.25rem'
       }}>
         {[
+          { id: 'versus', label: 'Đối đầu' },
           { id: 'live', label: 'Trình diễn xử lý ngôn ngữ' },
           { id: 'batch', label: 'Xử lý hàng loạt' },
           { id: 'eval', label: 'Kết quả thực nghiệm' }
@@ -324,7 +328,7 @@ const Lab = () => {
             key={t.id}
             onClick={() => setTab(t.id)}
             style={{
-              padding: '0.5rem 1rem', border: 'none', fontFamily: 'inherit',
+              padding: '0.5rem 1rem', border: 'none', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
               background: tab === t.id ? 'var(--accent-dim)' : 'transparent',
               borderRadius: 'calc(var(--r-ctrl) - 2px)',
               color: tab === t.id ? 'var(--accent-hi)' : 'var(--text-mid)',
@@ -337,7 +341,7 @@ const Lab = () => {
         ))}
       </div>
 
-      {tab === 'live' ? <PipelineDemo /> : tab === 'batch' ? <BatchDemo /> : <Experiments />}
+      {tab === 'versus' ? <VersusDemo /> : tab === 'live' ? <PipelineDemo /> : tab === 'batch' ? <BatchDemo /> : <Experiments />}
     </div>
   );
 };

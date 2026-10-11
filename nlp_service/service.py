@@ -37,6 +37,7 @@ for _stream in (sys.stdout, sys.stderr):
     except (AttributeError, ValueError):
         pass
 
+import hmac
 import os
 import time
 from contextlib import asynccontextmanager
@@ -47,6 +48,7 @@ import torch
 import torch.nn.functional as F
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from visobert_model import (
@@ -78,14 +80,22 @@ state = {"encoder": None, "tokenizer": None, "model": None, "model_tokenizer": N
 
 @asynccontextmanager
 async def lifespan(_app):
-    if not (BASE / "pytorch_model.bin").exists() and not (BASE / "model.safetensors").exists():
-        raise RuntimeError(f"Không thấy trọng số ViSoBERT trong {BASE}. "
-                           "Clone https://huggingface.co/uitnlp/visobert (cần git lfs).")
-    state["tokenizer"] = load_tokenizer(BASE)
-    state["encoder"] = load_encoder(BASE).to(DEVICE).eval()
-    print(f"[visobert] Đã nạp bộ mã hóa gốc từ {BASE} ({DEVICE})")
+    has_base = (BASE / "pytorch_model.bin").exists() or (BASE / "model.safetensors").exists()
+    has_checkpoint = (CHECKPOINT / "meta.json").exists()
+    if not has_base and not has_checkpoint:
+        raise RuntimeError(f"Không thấy trọng số ViSoBERT trong {BASE} lẫn checkpoint trong {CHECKPOINT}. "
+                           "Clone https://huggingface.co/uitnlp/visobert (cần git lfs) hoặc chạy train.py.")
+    if has_base:
+        state["tokenizer"] = load_tokenizer(BASE)
+        state["encoder"] = load_encoder(BASE).to(DEVICE).eval()
+        print(f"[visobert] Đã nạp bộ mã hóa gốc từ {BASE} ({DEVICE})")
+    else:
+        # Bản triển khai chỉ mang checkpoint tinh chỉnh (373 MB) thay vì thêm
+        # 746 MB trọng số gốc: /predict và /explain chạy đủ, chỉ /embed (vector
+        # nhúng cho Trust Layer, mặc định tắt) là đóng
+        print(f"[visobert] Không có trọng số gốc tại {BASE} — /embed tạm đóng, /predict vẫn chạy")
 
-    if (CHECKPOINT / "meta.json").exists():
+    if has_checkpoint:
         try:
             model, tok, meta = load_checkpoint(CHECKPOINT, DEVICE)
             state.update(model=model, model_tokenizer=tok, meta=meta)
@@ -99,6 +109,19 @@ async def lifespan(_app):
 
 
 app = FastAPI(title="Customer Radar — ViSoBERT", lifespan=lifespan)
+
+# Khi dịch vụ chạy trên máy chủ công khai (Hugging Face Spaces), chỉ backend
+# Customer Radar được gọi suy luận: đặt VISOBERT_API_KEY và backend gửi kèm
+# "Authorization: Bearer <khóa>". Chạy cục bộ không đặt khóa thì không kiểm tra.
+API_KEY = os.environ.get("VISOBERT_API_KEY", "").strip()
+
+
+@app.middleware("http")
+async def require_api_key(request, call_next):
+    if API_KEY and request.url.path in ("/embed", "/predict", "/explain"):
+        if not hmac.compare_digest(request.headers.get("authorization", ""), f"Bearer {API_KEY}"):
+            return JSONResponse({"detail": "Thiếu hoặc sai khóa truy cập dịch vụ"}, status_code=401)
+    return await call_next(request)
 
 
 class TextsIn(BaseModel):
@@ -133,6 +156,8 @@ def health():
 @torch.inference_mode()
 def embed(body: TextsIn):
     tok, enc = state["tokenizer"], state["encoder"]
+    if enc is None:
+        raise HTTPException(503, "Bản triển khai này không mang trọng số gốc nên không tính vector nhúng.")
     vectors = []
     for part in chunks(body.texts, BATCH):
         batch = tok(part, padding=True, truncation=True, max_length=MAX_LEN, return_tensors="pt").to(DEVICE)

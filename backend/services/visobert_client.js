@@ -33,6 +33,12 @@ function config() {
     enabled: !disabled,
     url: (raw && !disabled ? raw.trim() : 'http://127.0.0.1:8001').replace(/\/+$/, ''),
     timeoutMs: Number(process.env.VISOBERT_TIMEOUT_MS) || 30000,
+    // Dịch vụ đặt trên máy chủ từ xa (Hugging Face Spaces) phản hồi chậm hơn
+    // localhost; quá ngắn thì cứ bị coi là "không kết nối được"
+    healthTimeoutMs: Number(process.env.VISOBERT_HEALTH_TIMEOUT_MS) || 8000,
+    // Khóa xác thực khi dịch vụ chạy công khai (VISOBERT_API_KEY ở cả hai phía)
+    apiKey: (process.env.VISOBERT_API_KEY || '').trim(),
+    configured: Boolean(raw && !disabled),
     inputMode: INPUT_MODES.includes(mode) ? mode : 'masked',
     trustSignals: process.env.VISOBERT_TRUST_SIGNALS === '1'
   };
@@ -53,6 +59,11 @@ function config() {
  * PII luôn bị che ở cả hai chế độ — văn bản chưa che không bao giờ rời
  * khỏi tiến trình Node.
  */
+/** Header gửi kèm mọi lệnh gọi sang dịch vụ */
+function authHeaders(cfg = config()) {
+  return cfg.apiKey ? { Authorization: `Bearer ${cfg.apiKey}` } : {};
+}
+
 function prepareInput(text, mode = 'masked') {
   if (mode === 'normalized') return normalize(text).normalized;
   return maskPII(stripHtml(text)).text.replace(/\s+/g, ' ').trim();
@@ -78,7 +89,7 @@ async function status({ fresh = false } = {}) {
 
   let value;
   try {
-    const { data } = await axios.get(`${cfg.url}/health`, { timeout: 3000 });
+    const { data } = await axios.get(`${cfg.url}/health`, { timeout: cfg.healthTimeoutMs, headers: authHeaders(cfg) });
     const checkpoint = data.checkpoint || null;
     const tasks = checkpoint?.trainedTasks || {};
     // Chỉ coi là "đã tinh chỉnh" cho mục đích gán nhãn khi hai đầu ra cốt
@@ -103,7 +114,12 @@ async function status({ fresh = false } = {}) {
     value = {
       enabled: true, reachable: false, encoderLoaded: false, finetuned: false,
       canLabel: false, canScoreSpam: false, url: cfg.url,
-      reason: `Không kết nối được dịch vụ ViSoBERT tại ${cfg.url} (${e.code || e.message})`
+      // Câu này hiện ra cho người xem web (màn Lab): nói điều họ cần biết, không
+      // lộ địa chỉ nội bộ. Chi tiết kỹ thuật để ở `detail` và trong log.
+      reason: cfg.configured
+        ? 'Dịch vụ mô hình ViSoBERT đang khởi động hoặc tạm thời không truy cập được.'
+        : 'Máy chủ này chưa được nối với dịch vụ mô hình ViSoBERT.',
+      detail: e.code || e.message
     };
   }
   statusCache = { at: Date.now(), value };
@@ -134,7 +150,7 @@ async function postChunked(path, inputs, key) {
     const { data } = await axios.post(
       `${cfg.url}${path}`,
       { texts: inputs.slice(i, i + CHUNK_SIZE) },
-      { timeout: cfg.timeoutMs }
+      { timeout: cfg.timeoutMs, headers: authHeaders(cfg) }
     );
     out.push(...data[key]);
   }
@@ -168,6 +184,38 @@ async function embed(texts) {
 }
 
 /**
+ * LỚP AN TOÀN SAU MÔ HÌNH.
+ * Mô hình học lối tắt "nhắc tới shipper = khiếu nại thái độ shipper" (dữ liệu
+ * huấn luyện chỉ có shipper trong lời chê). Khi câu là lời khen người giao
+ * hàng và không có từ chê thái độ nào, khía cạnh đó bị gỡ và ghi lại lý do —
+ * không im lặng sửa kết quả. Xem taxonomy.isCourierPraise.
+ */
+function guardPrediction(pred, rawText) {
+  if (!pred) return pred;
+  const flagged = pred.cause === 'CourierAttitude' ||
+    (Array.isArray(pred.categories) && pred.categories.some((c) => c.cause === 'CourierAttitude'));
+  if (!flagged || !taxonomy.isCourierPraise(normalize(rawText).normalized)) return pred;
+
+  const categories = (pred.categories || []).filter((c) => c.cause !== 'CourierAttitude');
+  const out = {
+    ...pred,
+    categories,
+    guard: {
+      removed: 'Delivery.CourierAttitude',
+      reason: 'Câu khen người giao hàng, không có từ chê thái độ nào — gỡ khía cạnh khiếu nại mà mô hình gán do lối tắt học từ dữ liệu huấn luyện'
+    }
+  };
+  if (pred.cause === 'CourierAttitude') {
+    const top = categories[0] || null;
+    out.category = top ? top.category : null;
+    out.categoryConfidence = top ? top.p : pred.noneProbability ?? null;
+    out.cause = top ? top.cause : null;
+    out.causeConfidence = top ? top.causeConfidence : null;
+  }
+  return out;
+}
+
+/**
  * Dự đoán thô từ checkpoint tinh chỉnh. Chưa tinh chỉnh hoặc lỗi -> null.
  * `cache: false` chạy thẳng, không dùng bộ đệm — dùng khi cần ĐO tốc độ thật,
  * vì đọc từ đệm sẽ cho ra một con số throughput không có thật.
@@ -178,10 +226,11 @@ async function predict(texts, { cache = true } = {}) {
   if (!s.finetuned) return null;
   try {
     const inputs = texts.map((t) => prepareInput(t, s.inputMode));
-    if (!cache) return await postChunked('/predict', inputs, 'predictions');
+    const guard = (preds) => preds.map((p, i) => guardPrediction(p, texts[i]));
+    if (!cache) return guard(await postChunked('/predict', inputs, 'predictions'));
     // Khóa đệm gắn với thời điểm train: đổi checkpoint thì kết quả cũ tự vô hiệu
     const prefix = `${s.checkpoint?.trainedAt || 'ckpt'}|${s.inputMode}|`;
-    return await cachedCall(predictCache, prefix, '/predict', 'predictions', inputs);
+    return guard(await cachedCall(predictCache, prefix, '/predict', 'predictions', inputs));
   } catch (e) {
     console.warn('[VISOBERT] Lỗi /predict, lùi về tầng dự phòng:', e.message);
     invalidateStatus();
@@ -200,8 +249,8 @@ async function explain(text) {
   const cfg = config();
   try {
     const input = prepareInput(text, s.inputMode);
-    const { data } = await axios.post(`${cfg.url}/explain`, { text: input }, { timeout: cfg.timeoutMs });
-    return { ...data, inputMode: s.inputMode, checkpoint: s.checkpoint };
+    const { data } = await axios.post(`${cfg.url}/explain`, { text: input }, { timeout: cfg.timeoutMs, headers: authHeaders(cfg) });
+    return { ...data, prediction: guardPrediction(data.prediction, text), inputMode: s.inputMode, checkpoint: s.checkpoint };
   } catch (e) {
     console.warn('[VISOBERT] Lỗi /explain:', e.message);
     invalidateStatus();
@@ -346,5 +395,6 @@ module.exports = {
   toAnalysis,
   toBaselinePrediction,
   detectedAspects,
+  guardPrediction,
   _clearCaches: () => { embedCache.clear(); predictCache.clear(); }
 };

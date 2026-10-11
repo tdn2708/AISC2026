@@ -226,6 +226,20 @@ test('Nhắc tới shipper hay khía cạnh khác trong lời KHEN không phải
   assert.ok(causes('Thùng carton bị rách, ướt hết').includes('DamagedInTransit'));
 });
 
+test('Lớp an toàn gỡ khiếu nại shipper mô hình gán nhầm cho lời khen, giữ lời chê thật', () => {
+  const visobert = require('../services/visobert_client');
+  const pred = {
+    sentiment: 'Positive', category: 'Delivery', cause: 'CourierAttitude', categoryConfidence: 0.6,
+    categories: [{ category: 'Delivery', p: 0.6, cause: 'CourierAttitude', causeConfidence: 0.6 }]
+  };
+  const praise = visobert.guardPrediction(pred, 'Anh shipper vui tính, còn phụ mình bê thùng lên tận lầu ba');
+  assert.strictEqual(visobert.detectedAspects(praise).length, 0, 'lời khen không được thành khiếu nại');
+  assert.ok(praise.guard, 'phải ghi lại việc đã gỡ và lý do');
+  for (const s of ['Shipper cáu gắt, quát khách', 'Anh giao hàng thì vui vẻ nhưng shipper lần trước chửi mình', 'Shipper không thân thiện chút nào']) {
+    assert.strictEqual(visobert.guardPrediction(pred, s), pred, `"${s}" là lời chê thật, không được gỡ`);
+  }
+});
+
 test('Lời chê bị phủ định được hiểu là lời khen', () => {
   const { classifyByRulesFallback } = require('../services/ai_analyzer');
   for (const s of ['Không có gì để chê', 'Hết chỗ chê luôn', 'Chẳng có gì phải chê', 'Hàng không lỗi, đóng gói kỹ', 'App không lag chút nào']) {

@@ -571,6 +571,8 @@ router.post('/analyze', wrap(async (req, res) => {
         calibrated: Boolean(explained.calibrated),
         calibration: explained.calibration || null,
         detected: visobert.detectedAspects(explained.prediction),
+        // Lớp an toàn sau mô hình đã gỡ khía cạnh nào (nếu có) và vì sao
+        guard: explained.prediction?.guard || null,
         checkpointTrainedAt: explained.checkpoint?.trainedAt || null
       }
     : { available: false, reason: model.reason || nlpStatus.reason };
@@ -642,8 +644,15 @@ router.post('/analyze', wrap(async (req, res) => {
     }
   };
 
+  // ĐỐI CHỨNG cho màn "Đối đầu": cách các công cụ CRM/helpdesk phổ biến đang
+  // làm — một nhãn cảm xúc cho cả câu, không bóc tách vấn đề. Dùng ĐÚNG hàm
+  // B2 của khung đánh giá, để thứ hiện trên màn hình là thứ đã được đo.
+  const { B2_sentenceSentiment } = require('../evaluation/baselines');
+  const genericBaseline = { ...B2_sentenceSentiment(text), method: 'B2' };
+
   res.json({
     original: text,
+    genericBaseline,
     masked: normalized.masked,
     normalized: normalized.normalized,
     normalizedWithoutSlang: withoutSlang.normalized,

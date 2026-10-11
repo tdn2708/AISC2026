@@ -1,0 +1,11 @@
+# Chỉ phần suy luận, ghim đúng phiên bản đã chạy thử cục bộ.
+# torch bản CPU được cài riêng trong Dockerfile.
+transformers==4.57.6
+tokenizers==0.22.2
+safetensors==0.8.0
+sentencepiece==0.2.2
+protobuf==7.36.1
+fastapi==0.141.1
+pydantic==2.13.5
+uvicorn[standard]==0.53.0
+numpy==2.5.3

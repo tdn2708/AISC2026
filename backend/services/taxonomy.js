@@ -246,6 +246,45 @@ const MENTION_CUES = {
   invoice: ['sai', 'lỗi', 'nhầm', 'thiếu', 'chưa', 'không xuất', 'mãi', 'chậm', 'trễ']
 };
 
+/**
+ * LỜI KHEN NGƯỜI GIAO HÀNG, KHÔNG KÈM LỜI CHÊ.
+ *
+ * Dữ liệu huấn luyện ViSoBERT chỉ nhắc tới shipper trong lời chê, nên mô hình
+ * học lối tắt "có shipper = khiếu nại thái độ shipper": đo trên câu mới, "Anh
+ * shipper vui tính, còn phụ mình bê thùng lên lầu" bị gán khiếu nại. Hàm này
+ * là lớp an toàn cho đúng lối tắt đó — nó KHÔNG thay mô hình phân loại, chỉ
+ * báo khi câu có lời khen người giao hàng và không có từ chê thái độ nào đi
+ * cùng. Sửa tận gốc cần dữ liệu gán nhãn thật có lời khen shipper.
+ */
+const COURIER_REF = /(?:shipper|nhân viên giao hàng|người giao hàng|tài xế|(?:anh|chị|cô|chú|bạn|em|bác) giao hàng|bên giao hàng)/g;
+const COURIER_PRAISE = /(?<!không |chẳng |chưa |chả )(?:vui tính|vui vẻ|thân thiện|dễ thương|nhiệt tình|lịch sự|chu đáo|tận tình|tận tâm|nhanh nhẹn|niềm nở|tử tế|hài lòng|cảm ơn|dễ mến|phụ (?:mình|em|tôi)|giúp (?:mình|em|tôi)|gọi (?:báo )?trước|thái độ (?:(?:rất|cực|khá|quá) )?(?:tốt|ổn|dễ chịu|chuyên nghiệp))/;
+
+function isCourierPraise(normalizedText) {
+  const text = String(normalizedText || '').normalize('NFC').toLowerCase();
+  // Có bất kỳ lời chê thái độ nào ở bất kỳ đâu thì không can thiệp
+  if (mentionHit({ terms: ['shipper', 'tài xế', 'người giao hàng'], cues: 'attitude' }, text)) return false;
+  let praised = false;
+  for (const m of text.matchAll(COURIER_REF)) {
+    if (isNegatedAt(text, m.index)) continue;
+    const [cs, ce] = clauseAround(text, m.index);
+    if (clauseHasCue(text, cs, ce, MENTION_CUES.attitude)) return false;
+    if (COURIER_PRAISE.test(text.slice(cs, ce))) praised = true;
+  }
+  return praised;
+}
+
+/** Mệnh đề [cs, ce) có lời chê thật (không bị phủ định, không bị lời khen theo sau) */
+function clauseHasCue(text, cs, ce, cues) {
+  for (const cue of cues) {
+    for (const form of keywordForms(cue)) {
+      for (let c = text.indexOf(form, cs); c !== -1 && c + form.length <= ce; c = text.indexOf(form, c + 1)) {
+        if (!isNegatedAt(text, c) && !praiseFollows(text, c + form.length)) return true;
+      }
+    }
+  }
+  return false;
+}
+
 /** Ranh giới mệnh đề quanh vị trí pos: dấu câu hoặc "nhưng" */
 function clauseAround(text, pos) {
   const DELIM = /[.,;!?\n]|\snhưng\s/g;
@@ -391,6 +430,7 @@ module.exports = {
   categoryImpact,
   categoryOwner,
   classifyByRules,
+  isCourierPraise,
   keywordForms,
   flatTaxonomy
 };
