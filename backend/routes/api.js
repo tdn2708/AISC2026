@@ -44,6 +44,49 @@ function clampInt(v, def, min, max) {
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def;
 }
 
+/**
+ * BỘ NHỚ ĐỆM CẢNH BÁO + ĐỀ XUẤT
+ * Phát hiện cảnh báo và dựng kế hoạch hành động tốn ~150ms trên máy dev
+ * nhưng ~2,2 giây trên CPU của Render, và trang Tổng quan gọi /alerts,
+ * /recommendations, /nav/status cùng lúc — cả ba tính lại y hệt nhau.
+ * Kết quả chỉ đổi khi dữ liệu (ctx.computedAt), bộ lọc hay quyết định đã lưu
+ * đổi, nên ghi nhớ theo đúng ba thứ đó. Hết hạn sau 5 phút để cửa sổ thời
+ * gian của kiểm định vẫn trượt theo giờ thật.
+ */
+const ALERT_MEMO_TTL_MS = 5 * 60 * 1000;
+const alertMemo = new Map();
+
+function memo(key, compute) {
+  const hit = alertMemo.get(key);
+  if (hit && Date.now() - hit.at < ALERT_MEMO_TTL_MS) return hit.value;
+  const value = compute();
+  if (alertMemo.size > 200) alertMemo.clear();
+  alertMemo.set(key, { at: Date.now(), value });
+  return value;
+}
+
+const filterKey = (q = {}) => ['source', 'time', 'product', 'region'].map((k) => String(q[k] ?? '')).join('|');
+
+/** detectAlerts có ghi nhớ; `opts` là tùy chọn cửa sổ của kiểm định */
+function detectAlertsCached(ctx, query, opts = {}) {
+  const key = `detect|${ctx.computedAt}|${filterKey(query)}|${JSON.stringify(opts)}`;
+  return memo(key, () =>
+    alertEngine.detectAlerts(applyFilters(ctx.items, query), { transactionCount: ctx.transactionCount, ...opts })
+  );
+}
+
+/** recommender.buildAll có ghi nhớ, khóa gồm cả các quyết định đã lưu */
+function buildRecommendationsCached(ctx, query, opts, result, decisions) {
+  const decisionSig = decisions
+    .map((d) => `${d.alertId}:${d.decision}:${d.at ? new Date(d.at).getTime() : ''}`)
+    .sort()
+    .join(',');
+  const key = `build|${ctx.computedAt}|${filterKey(query)}|${JSON.stringify(opts)}|${decisionSig}`;
+  return memo(key, () =>
+    recommender.buildAll(result.alerts, { items: ctx.items, transactions: ctx.transactions, decisions })
+  );
+}
+
 /** Khóa chống trùng cho phản hồi thu thập: cào lại cùng trang không được nhân đôi kho dữ liệu */
 function dedupKey(doc) {
   const crypto = require('crypto');
@@ -326,9 +369,7 @@ router.get('/trust/queue', wrap(async (req, res) => {
  */
 router.get('/nav/status', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const { alerts } = alertEngine.detectAlerts(ctx.items, {
-    transactionCount: ctx.transactionCount
-  });
+  const { alerts } = detectAlertsCached(ctx, {});
 
   const queue = trustLayer.buildReviewQueue(ctx.items, 500);
   const queueCount = Array.isArray(queue) ? queue.length : (queue?.items?.length ?? 0);
@@ -742,20 +783,14 @@ router.get('/nlp/status', wrap(async (req, res) => {
 
 router.get('/alerts', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query);
-
-  const result = alertEngine.detectAlerts(items, {
-    transactionCount: ctx.transactionCount,
+  const opts = {
     windowDays: Number(req.query.windowDays) || undefined,
     baselineDays: Number(req.query.baselineDays) || undefined
-  });
+  };
+  const result = detectAlertsCached(ctx, req.query, opts);
 
   const decisions = await req.db.collection('recommendation_log').find({}).toArray();
-  const built = recommender.buildAll(result.alerts, {
-    items: ctx.items,
-    transactions: ctx.transactions,
-    decisions
-  });
+  const built = buildRecommendationsCached(ctx, req.query, opts, result, decisions);
   const recByAlert = new Map(built.recommendations.map((r) => [r.alertId, r]));
 
   const withRecommendations = result.alerts.map((a) => ({
@@ -773,15 +808,10 @@ router.get('/alerts', wrap(async (req, res) => {
  */
 router.get('/risks', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query);
-  const result = alertEngine.detectAlerts(items, { transactionCount: ctx.transactionCount });
+  const result = detectAlertsCached(ctx, req.query);
 
   const decisions = await req.db.collection('recommendation_log').find({}).toArray();
-  const built = recommender.buildAll(result.alerts, {
-    items: ctx.items,
-    transactions: ctx.transactions,
-    decisions
-  });
+  const built = buildRecommendationsCached(ctx, req.query, {}, result, decisions);
   const recByAlert = new Map(built.recommendations.map((r) => [r.alertId, r]));
 
   res.json(
@@ -814,8 +844,7 @@ router.get('/risks', wrap(async (req, res) => {
 /** Bằng chứng gốc của một cảnh báo — nhấp để mở xuống tận phản hồi thô */
 router.get('/alerts/:id/evidence', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query);
-  const result = alertEngine.detectAlerts(items, { transactionCount: ctx.transactionCount });
+  const result = detectAlertsCached(ctx, req.query);
 
   const alert = result.alerts.find((a) => a.id === req.params.id);
   if (!alert) return res.status(404).json({ error: 'Không tìm thấy cảnh báo' });
@@ -834,17 +863,12 @@ router.get('/alerts/:id/evidence', wrap(async (req, res) => {
 
 router.get('/recommendations', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query);
-  const result = alertEngine.detectAlerts(items, { transactionCount: ctx.transactionCount });
+  const result = detectAlertsCached(ctx, req.query);
 
   const decisions = await req.db.collection('recommendation_log').find({}).toArray();
   const decisionMap = new Map(decisions.map((d) => [d.alertId, d]));
 
-  const built = recommender.buildAll(result.alerts, {
-    items: ctx.items,
-    transactions: ctx.transactions,
-    decisions
-  });
+  const built = buildRecommendationsCached(ctx, req.query, {}, result, decisions);
   const alertById = new Map(result.alerts.map((a) => [a.id, a]));
 
   res.json({
@@ -1300,8 +1324,7 @@ router.get('/evaluation', wrap(async (req, res) => {
 /** Diễn đạt lại cảnh báo thành văn bản tự nhiên (tầng LLM tùy chọn) */
 router.post('/alerts/narrate', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query);
-  const result = alertEngine.detectAlerts(items, { transactionCount: ctx.transactionCount });
+  const result = detectAlertsCached(ctx, req.query);
   res.json(await generateRiskAlertsBatch(result.alerts.slice(0, 5)));
 }));
 
