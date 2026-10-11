@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { analyzeBatch } from '../../lib/analyze';
+import ModelStatus from './ModelStatus';
 import {
   Loader2, Play, Database, Gauge, ShieldAlert, EyeOff, Layers, AlertTriangle, XCircle
 } from 'lucide-react';
@@ -78,8 +80,9 @@ export default function BatchDemo() {
     setLoading('run');
     setError(null);
     try {
-      const res = await axios.post('/analyze/batch', { texts: lines });
-      setResult(res.data);
+      // Máy chủ không có mô hình thì trình duyệt tự chạy ViSoBERT cho cả lô
+      const status = await axios.get('/nlp/status').then((r) => r.data).catch(() => null);
+      setResult(await analyzeBatch(lines, { serverHasModel: Boolean(status?.canLabel) }));
     } catch (e) {
       setError(e.response?.data?.error || 'Không chạy được lô này.');
       setResult(null);
@@ -139,6 +142,8 @@ export default function BatchDemo() {
           }}
         />
 
+        <ModelStatus className="mt-3" />
+
         {error && (
           <div style={{
             marginTop: '0.8rem', padding: '0.7rem 0.9rem', fontSize: '0.84rem', borderRadius: 'var(--r-ctrl)',
@@ -191,7 +196,7 @@ export default function BatchDemo() {
               </div>
             </div>
             <p style={{ margin: '1rem 0 0', fontSize: '0.78rem', color: 'var(--text-lo)', lineHeight: 1.6 }}>
-              Nguồn nhãn: {result.source === 'visobert' ? 'ViSoBERT tinh chỉnh' : 'luật từ khóa (ViSoBERT chưa sẵn sàng)'} ·
+              Nguồn nhãn: {result.source === 'visobert' ? (result.modelRuntime === 'browser' ? 'ViSoBERT chạy trên trình duyệt của bạn' : 'ViSoBERT tinh chỉnh') : 'luật từ khóa (ViSoBERT chưa sẵn sàng)'} ·
               {' '}chuẩn hóa và che PII {result.timings.normalizeMs} ms · mô hình {result.timings.modelMs} ms.
               Chạy trên CPU, một tiến trình. Một phản hồi có thể nêu nhiều vấn đề nên tổng theo danh mục lớn hơn số phản hồi có khiếu nại.
             </p>

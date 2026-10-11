@@ -240,6 +240,26 @@ test('Lớp an toàn gỡ khiếu nại shipper mô hình gán nhầm cho lời 
   }
 });
 
+test('Kết quả mô hình do trình duyệt gửi lên được làm sạch trước khi dùng', () => {
+  const visobert = require('../services/visobert_client');
+  const bad = {
+    prediction: {
+      sentiment: '<script>', sentimentConfidence: 'cao', spamProbability: 7,
+      categories: [...Array(50)].map(() => ({ category: 'Delivery', p: 2, cause: 'x'.repeat(5000) }))
+    },
+    tokens: [...Array(10000)].map(() => 'a'), words: [...Array(500)].map(() => 'b'),
+    importance: { category: { values: [...Array(1000)].map(() => 'NaN') } }, device: 'máy chủ giả'
+  };
+  const e = visobert.sanitizeClientExplain(bad, 'câu thử');
+  assert.strictEqual(e.prediction.sentiment, 'Neutral');
+  assert.strictEqual(e.prediction.sentimentConfidence, null);
+  assert.strictEqual(e.prediction.spamProbability, null, 'xác suất ngoài [0,1] bị bỏ');
+  assert.ok(e.prediction.categories.length <= 8 && e.prediction.categories[0].cause.length <= 60);
+  assert.ok(e.tokens.length <= 300 && e.words.length <= 60 && e.importance.category.values.length <= 60);
+  assert.strictEqual(e.device, 'trình duyệt (WebAssembly)', 'không nhận nhãn thiết bị do phía người dùng tự khai');
+  assert.strictEqual(visobert.sanitizeClientExplain(null, 'x'), null);
+});
+
 test('Lời chê bị phủ định được hiểu là lời khen', () => {
   const { classifyByRulesFallback } = require('../services/ai_analyzer');
   for (const s of ['Không có gì để chê', 'Hết chỗ chê luôn', 'Chẳng có gì phải chê', 'Hàng không lỗi, đóng gói kỹ', 'App không lag chút nào']) {

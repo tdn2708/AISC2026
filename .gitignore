@@ -37,3 +37,6 @@ __pycache__/
 backend/.env
 backend/.env.*
 !backend/.env.example
+
+# Mô hình ONNX xuất ra để chạy trên web (tải lên kho mô hình Hugging Face, không commit)
+nlp_service/deploy/onnx/

@@ -381,7 +381,97 @@ async function trustSignals(feedbacks) {
   };
 }
 
+// ==================================================================
+// KẾT QUẢ MÔ HÌNH DO TRÌNH DUYỆT TÍNH (src/lib/visobertBrowser.js)
+// ==================================================================
+// Khi máy chủ không có dịch vụ mô hình, trình duyệt tự chạy bản ONNX của cùng
+// checkpoint rồi gửi kết quả lên để đi tiếp qua đúng các tầng phía sau (lọc rác,
+// lớp an toàn, gán bộ phận). Dữ liệu này đến từ phía người dùng: chỉ nhận các
+// trường đã biết, đúng kiểu, có giới hạn — và chỉ dùng cho màn trình diễn,
+// không bao giờ được ghi vào kho dữ liệu.
+
+const num01 = (v) => (Number.isFinite(v) && v >= 0 && v <= 1 ? v : null);
+const shortStr = (v, max = 60) => (typeof v === 'string' ? v.slice(0, max) : null);
+const SENTIMENTS = ['Positive', 'Negative', 'Neutral'];
+
+function sanitizeClientPrediction(p) {
+  if (!p || typeof p !== 'object') return null;
+  const cats = Array.isArray(p.categories) ? p.categories.slice(0, 8) : [];
+  return {
+    sentiment: SENTIMENTS.includes(p.sentiment) ? p.sentiment : 'Neutral',
+    sentimentConfidence: num01(p.sentimentConfidence),
+    category: shortStr(p.category, 40),
+    categoryConfidence: num01(p.categoryConfidence),
+    cause: shortStr(p.cause, 60),
+    causeConfidence: num01(p.causeConfidence),
+    causeUncertain: Boolean(p.causeUncertain),
+    noneProbability: num01(p.noneProbability),
+    spamProbability: num01(p.spamProbability),
+    categories: cats
+      .filter((c) => c && typeof c === 'object')
+      .map((c) => ({
+        category: shortStr(c.category, 40),
+        p: num01(c.p),
+        cause: shortStr(c.cause, 60),
+        causeConfidence: num01(c.causeConfidence),
+        causeUncertain: Boolean(c.causeUncertain)
+      }))
+  };
+}
+
+const numArr = (a, max) => (Array.isArray(a) ? a.slice(0, max).map((v) => (Number.isFinite(v) ? v : 0)) : []);
+const distArr = (a, max = 40) =>
+  Array.isArray(a) ? a.slice(0, max).filter((r) => r && typeof r === 'object').map((r) => ({ label: shortStr(r.label, 60), p: num01(r.p) ?? 0 })) : null;
+
+/** Kết quả /explain do trình duyệt tính -> cùng dạng visobert.explain() trả về */
+function sanitizeClientExplain(e, rawText) {
+  if (!e || typeof e !== 'object') return null;
+  const prediction = sanitizeClientPrediction(e.prediction);
+  if (!prediction) return null;
+  const imp = e.importance && typeof e.importance === 'object' ? e.importance : null;
+  const importance = imp
+    ? Object.fromEntries(['category', 'sentiment'].filter((k) => imp[k]).map((k) => [k, {
+        target: shortStr(imp[k].target, 60),
+        base: num01(imp[k].base),
+        measure: 'log-odds',
+        values: numArr(imp[k].values, 60),
+        probAfter: numArr(imp[k].probAfter, 60)
+      }]))
+    : null;
+  return {
+    modelInput: shortStr(e.modelInput, 2000),
+    tokens: Array.isArray(e.tokens) ? e.tokens.slice(0, 300).map((t) => shortStr(t, 40) ?? '') : [],
+    tokenCount: Number.isInteger(e.tokenCount) ? e.tokenCount : null,
+    maxLength: Number.isInteger(e.maxLength) ? e.maxLength : null,
+    truncated: Boolean(e.truncated),
+    device: 'trình duyệt (WebAssembly)',
+    timings: e.timings && typeof e.timings === 'object'
+      ? Object.fromEntries(['tokenizeMs', 'inferenceMs', 'explainMs'].map((k) => [k, Number.isFinite(e.timings[k]) ? e.timings[k] : null]))
+      : null,
+    words: Array.isArray(e.words) ? e.words.slice(0, 60).map((w) => shortStr(w, 60) ?? '') : [],
+    distributions: {
+      sentiment: distArr(e.distributions?.sentiment, 5),
+      category: distArr(e.distributions?.category, 12),
+      cause: distArr(e.distributions?.cause, 5),
+      spam: num01(e.distributions?.spam)
+    },
+    importance,
+    multiLabel: Boolean(e.multiLabel),
+    thresholds: e.thresholds && typeof e.thresholds === 'object'
+      ? { category: num01(e.thresholds.category), cause: num01(e.thresholds.cause) }
+      : null,
+    calibrated: false,
+    calibration: null,
+    prediction: guardPrediction(prediction, rawText),
+    inputMode: 'masked',
+    runtime: 'browser',
+    checkpoint: { trainedAt: shortStr(e.trainedAt, 40) }
+  };
+}
+
 module.exports = {
+  sanitizeClientPrediction,
+  sanitizeClientExplain,
   INPUT_MODES,
   config,
   prepareInput,

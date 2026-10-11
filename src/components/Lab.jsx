@@ -6,6 +6,7 @@ import {
 import PipelineDemo from './lab/PipelineDemo';
 import BatchDemo from './lab/BatchDemo';
 import VersusDemo from './lab/VersusDemo';
+import { preloadBrowserModel } from '../lib/analyze';
 
 /**
  * PHÒNG THÍ NGHIỆM
@@ -292,6 +293,14 @@ const Experiments = () => {
 const Lab = () => {
   // Mở vào tab Đối đầu: câu hỏi đầu tiên của người xem là "khác gì công cụ đang có"
   const [tab, setTab] = useState('versus');
+
+  // Máy chủ không có dịch vụ mô hình (bản web miễn phí): bắt đầu tải ViSoBERT
+  // về trình duyệt ngay khi mở Lab, để lúc người xem bấm thì mô hình đã sẵn
+  useEffect(() => {
+    axios.get('/nlp/status')
+      .then((r) => { if (!r.data?.canLabel) preloadBrowserModel(); })
+      .catch(() => preloadBrowserModel());
+  }, []);
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '3rem' }}>

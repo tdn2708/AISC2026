@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import {
   Swords, Play, Loader2, Check, X, MessageSquareText, Building2, ShieldCheck, Lock, Layers, Target, Info, Sparkles
 } from 'lucide-react';
 import { GlassPanel, PanelHeader, Badge, SentimentFace, Chip } from '../ui';
 import { SENTIMENT_MAP } from '../../lib/format';
+import { analyzeText } from '../../lib/analyze';
+import ModelStatus from './ModelStatus';
 
 /**
  * ĐỐI ĐẦU — cùng một câu phản hồi, hai cách đọc.
@@ -84,19 +86,24 @@ const VersusDemo = () => {
     axios.get('/evaluation').then((r) => setEvalData(r.data)).catch(() => setEvalData(null));
   }, []);
 
+  // Bấm nhanh nhiều thử thách: chỉ kết quả của lần bấm CUỐI được hiện, kết
+  // quả về muộn của câu trước không được đè lên câu đang xem
+  const latest = useRef(0);
   const run = async (value = text) => {
     const v = value.trim();
     if (!v) return;
+    const id = ++latest.current;
     setLoading(true);
     setError(null);
     try {
-      const r = await axios.post('/analyze', { text: v });
-      setResult(r.data);
+      const data = await analyzeText(v);
+      if (id === latest.current) setResult(data);
     } catch (e) {
+      if (id !== latest.current) return;
       setError(e.response?.data?.error || 'Không gọi được máy chủ phân tích.');
       setResult(null);
     } finally {
-      setLoading(false);
+      if (id === latest.current) setLoading(false);
     }
   };
 
@@ -120,6 +127,7 @@ const VersusDemo = () => {
   const replacements = result?.trace?.normalize?.replacements || [];
   const guard = result?.trace?.model?.guard;
   const usedModel = final?.source === 'visobert';
+  const inBrowser = result?.trace?.model?.runtime === 'browser';
 
   const models = evalData?.models || [];
   const mB2 = models.find((m) => m.id === 'B2');
@@ -170,6 +178,7 @@ const VersusDemo = () => {
           </button>
         </form>
         {error && <p className="mt-3 text-sm text-crit">{error}</p>}
+        <ModelStatus className="mt-4" />
       </GlassPanel>
 
       {result && (
@@ -200,7 +209,7 @@ const VersusDemo = () => {
             <div className="mb-1 flex items-center justify-between gap-2">
               <p className="eyebrow">Customer Radar</p>
               <Badge tone={usedModel ? 'accent' : 'neutral'} icon={Sparkles}>
-                {usedModel ? 'ViSoBERT tinh chỉnh' : 'Lớp luật dự phòng'}
+                {usedModel ? (inBrowser ? 'ViSoBERT · trên trình duyệt' : 'ViSoBERT tinh chỉnh') : 'Lớp luật dự phòng'}
               </Badge>
             </div>
             <p className="mb-5 text-[0.78rem] leading-relaxed text-ink-lo">

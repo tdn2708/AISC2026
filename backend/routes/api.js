@@ -514,6 +514,17 @@ router.post('/analyze', wrap(async (req, res) => {
       explained = null;
       model.reason = 'Dịch vụ ViSoBERT không trả kết quả cho câu này';
     }
+  } else if (req.body?.clientExplain) {
+    // Máy chủ không có dịch vụ mô hình: trình duyệt đã tự chạy bản ONNX của
+    // cùng checkpoint trên đúng `modelInput` mà route này trả về ở lượt trước
+    explained = visobert.sanitizeClientExplain(req.body.clientExplain, text);
+    const p = explained && explained.prediction;
+    if (p) {
+      modelSpamScore = Number.isFinite(p.spamProbability) ? p.spamProbability : null;
+      model = { name: 'ViSoBERT', available: true, inputMode: 'masked', runtime: 'browser', ...visobert.toAnalysis(p), spamProbability: modelSpamScore };
+    } else {
+      explained = null;
+    }
   }
 
   t0 = nowMs();
@@ -545,6 +556,8 @@ router.post('/analyze', wrap(async (req, res) => {
     ? {
         available: true,
         inputMode: explained.inputMode,
+        // Mô hình chạy ở đâu: máy chủ (nlp_service) hay ngay trong trình duyệt
+        runtime: explained.runtime || 'server',
         modelInput: explained.modelInput,
         tokens: explained.tokens,
         tokenCount: explained.tokenCount,
@@ -653,6 +666,9 @@ router.post('/analyze', wrap(async (req, res) => {
   res.json({
     original: text,
     genericBaseline,
+    // Đầu vào ĐÚNG như mô hình cần (đã che PII), để trình duyệt tự chạy mô hình
+    // khi máy chủ không có dịch vụ — không tự che PII lại ở phía trình duyệt
+    modelInput: visobert.prepareInput(text, nlpStatus.inputMode || visobert.config().inputMode),
     masked: normalized.masked,
     normalized: normalized.normalized,
     normalizedWithoutSlang: withoutSlang.normalized,
@@ -701,10 +717,16 @@ router.post('/analyze/batch', wrap(async (req, res) => {
   const nlpStatus = await visobert.status();
   let preds = null;
   let modelMs = 0;
+  let modelRuntime = 'server';
   if (nlpStatus.canLabel) {
     const tModel = nowMs();
     preds = await visobert.predict(texts, { cache: false });
     modelMs = since(tModel);
+  } else if (Array.isArray(req.body?.clientPredictions) && req.body.clientPredictions.length === texts.length) {
+    // Trình duyệt đã chạy mô hình trên /model-inputs của chính lô này
+    preds = req.body.clientPredictions.map((p, i) => visobert.guardPrediction(visobert.sanitizeClientPrediction(p), texts[i]));
+    modelMs = Number.isFinite(req.body.clientModelMs) ? Number(req.body.clientModelMs) : 0;
+    modelRuntime = 'browser';
   }
 
   const items = texts.map((text, i) => {
@@ -746,10 +768,13 @@ router.post('/analyze/batch', wrap(async (req, res) => {
     }
   }
 
-  const totalMs = since(t0);
+  // Mô hình chạy trên trình duyệt thì thời gian của nó nằm ngoài máy chủ: cộng
+  // vào để tốc độ báo ra là tốc độ thật của cả quy trình, không bị thổi phồng
+  const totalMs = since(t0) + (modelRuntime === 'browser' ? modelMs : 0);
   res.json({
     count: texts.length,
     source: preds ? 'visobert' : 'rules',
+    modelRuntime: preds ? modelRuntime : null,
     timings: {
       totalMs,
       normalizeMs,
@@ -767,6 +792,19 @@ router.post('/analyze/batch', wrap(async (req, res) => {
     },
     items: items.slice(0, 60)
   });
+}));
+
+/**
+ * Đầu vào mô hình cho một lô (đã che PII), để trình duyệt tự chạy ViSoBERT khi
+ * máy chủ không có dịch vụ mô hình. Che PII luôn ở máy chủ — một nơi duy nhất.
+ */
+router.post('/model-inputs', wrap(async (req, res) => {
+  const texts = Array.isArray(req.body?.texts) ? req.body.texts.map(readText).filter(Boolean) : [];
+  if (texts.length === 0) return res.status(400).json({ error: 'Cần mảng texts gồm các chuỗi không rỗng' });
+  if (texts.length > BATCH_LIMIT) return res.status(400).json({ error: `Tối đa ${BATCH_LIMIT} phản hồi mỗi lượt` });
+  if (texts.some((t) => t.length > MAX_TEXT_CHARS)) return res.status(413).json({ error: `Mỗi phản hồi tối đa ${MAX_TEXT_CHARS} ký tự` });
+  const mode = visobert.config().inputMode;
+  res.json({ texts, inputs: texts.map((t) => visobert.prepareInput(t, mode)) });
 }));
 
 /** Lấy mẫu phản hồi THẬT trong kho dữ liệu để chạy thử hàng loạt */

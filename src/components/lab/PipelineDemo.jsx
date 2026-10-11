@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { analyzeText, useBrowserModelStatus } from '../../lib/analyze';
+import { browserModelSupported } from '../../lib/visobertBrowser';
+import ModelStatus from './ModelStatus';
 import {
   MessageSquare, EyeOff, Languages, ShieldCheck, Puzzle, Brain, Search, ClipboardCheck,
   Play, Pause, FastForward, Loader2, CheckCircle2, XCircle, AlertTriangle, Cpu, Zap
@@ -682,8 +685,8 @@ export default function PipelineDemo() {
     setError(null);
     setPlaying(false);
     try {
-      const res = await axios.post('/analyze', { text: value });
-      setTrace(res.data.trace);
+      const data = await analyzeText(value);
+      setTrace(data.trace);
       // Chỉ gắn đáp án kỳ vọng khi câu chạy đúng là câu của kịch bản, chưa bị sửa
       const sc = SCENARIOS.find((s) => s.id === scenarioId);
       setRanScenario(sc && sc.text === value ? sc : null);
@@ -713,7 +716,10 @@ export default function PipelineDemo() {
     stepRefs.current[revealed - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [revealed, trace, playing]);
 
-  const modelReady = nlp?.canLabel;
+  // Sẵn sàng khi máy chủ có mô hình, HOẶC trình duyệt chạy được bản ONNX
+  const browserStatus = useBrowserModelStatus();
+  const inBrowser = !nlp?.canLabel && browserModelSupported() && browserStatus.phase !== 'error';
+  const modelReady = nlp?.canLabel || inBrowser;
   const done = trace && revealed >= STEPS.length;
 
   return (
@@ -730,9 +736,11 @@ export default function PipelineDemo() {
           </div>
           <Chip tone={modelReady ? 'ok' : 'warn'} title={nlp?.reason || ''}>
             <Cpu size={12} />
-            {modelReady
+            {nlp?.canLabel
               ? `ViSoBERT sẵn sàng · train ${nlp.checkpoint?.trainedAt ? new Date(nlp.checkpoint.trainedAt).toLocaleDateString('vi-VN') : ''}`
-              : 'ViSoBERT chưa sẵn sàng · bước 5–7 sẽ trống'}
+              : inBrowser
+                ? (browserStatus.phase === 'ready' ? 'ViSoBERT · chạy trên trình duyệt' : 'ViSoBERT · đang tải về trình duyệt')
+                : 'ViSoBERT chưa sẵn sàng · bước 5–7 sẽ trống'}
           </Chip>
         </div>
 
@@ -753,6 +761,8 @@ export default function PipelineDemo() {
             );
           })}
         </div>
+
+        {!nlp?.canLabel && <ModelStatus className="mt-4" />}
 
         <Label>Câu phản hồi</Label>
         <textarea
