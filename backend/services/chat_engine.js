@@ -31,6 +31,7 @@
 
 const { TOOLS } = require('./chat_tools');
 const { llmAvailability } = require('./ai_analyzer');
+const { canonicalize } = require('./normalizer');
 
 // ==================================================================
 // BƯỚC 1 — ĐỊNH TUYẾN Ý ĐỊNH
@@ -130,7 +131,9 @@ const FALLBACK_INTENT = {
 };
 
 function normalizeQuestion(q) {
-  return String(q || '').toLowerCase().trim();
+  // NFC: câu hỏi gõ bằng bàn phím tổ hợp dấu (macOS/iOS) không khớp được từ
+  // khóa ý định nào nếu để nguyên dạng NFD
+  return canonicalize(q).toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -321,16 +324,14 @@ ${question}`;
 }
 
 async function synthesize(prompt) {
-  const axios = require('axios');
   const analyzer = require('./ai_analyzer');
   const avail = llmAvailability();
 
+  // Mọi nhà cung cấp đều có trần thời gian (analyzer.LLM_TIMEOUT_MS): bản cũ
+  // gọi không trần, một nhà cung cấp treo là ô trò chuyện treo theo
   if (avail.gemini) {
     try {
-      const { GoogleGenerativeAI } = require('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: analyzer.GEMINI_MODEL });
-      const result = await model.generateContent(prompt);
+      const result = await analyzer.getGeminiModel().generateContent(prompt);
       return { text: result.response.text().trim(), provider: 'gemini' };
     } catch (e) {
       console.warn('[CHAT] Gemini lỗi:', e.message);
@@ -339,12 +340,11 @@ async function synthesize(prompt) {
 
   if (avail.openrouter) {
     try {
-      const res = await axios.post(
-        'https://openrouter.ai/api/v1/chat/completions',
-        { model: analyzer.OPENROUTER_MODEL, messages: [{ role: 'user', content: prompt }] },
-        { headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, 'Content-Type': 'application/json' } }
-      );
-      return { text: res.data.choices[0].message.content.trim(), provider: 'openrouter' };
+      const content = await analyzer.openRouterChat({
+        model: analyzer.OPENROUTER_MODEL,
+        messages: [{ role: 'user', content: prompt }]
+      });
+      return { text: content.trim(), provider: 'openrouter' };
     } catch (e) {
       console.warn('[CHAT] OpenRouter lỗi:', e.message);
     }
@@ -353,7 +353,7 @@ async function synthesize(prompt) {
   if (avail.groq) {
     try {
       const Groq = require('groq-sdk');
-      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY, timeout: analyzer.LLM_TIMEOUT_MS, maxRetries: 1 });
       const c = await groq.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
         model: analyzer.GROQ_MODEL
@@ -379,6 +379,13 @@ async function synthesize(prompt) {
  */
 async function ask(ctx, question, history = [], baseFilters = {}) {
   const started = Date.now();
+
+  // Lịch sử đến từ trình duyệt: phần tử null hay content không phải chuỗi từng
+  // làm buildPrompt ném TypeError; tin nhắn dài bất thường bị cắt bớt
+  history = (Array.isArray(history) ? history : [])
+    .filter((m) => m && typeof m.content === 'string' && m.content.trim())
+    .slice(-6)
+    .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', content: canonicalize(m.content).slice(0, 1000) }));
 
   const routed = routeIntent(question);
   const filters = inferFilters(question, baseFilters);

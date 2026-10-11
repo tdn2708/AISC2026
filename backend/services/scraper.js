@@ -21,7 +21,8 @@
 
 const puppeteer = require('puppeteer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { GEMINI_MODEL } = require('./ai_analyzer');
+const { GEMINI_MODEL, LLM_TIMEOUT_MS } = require('./ai_analyzer');
+const { canonicalize, maskPII } = require('./normalizer');
 
 /** Giới hạn tần suất: tối thiểu 5 giây giữa hai lần truy cập cùng tên miền */
 const MIN_INTERVAL_MS = 5000;
@@ -62,8 +63,59 @@ async function isAllowedByRobots(page, targetUrl) {
   }
 }
 
+/** Lỗi do đầu vào của người dùng — route trả 400 thay vì 500 */
+class InvalidUrlError extends Error {
+  constructor(message) {
+    super(message);
+    this.status = 400;
+  }
+}
+
+/**
+ * Chỉ nhận http/https tới máy chủ công khai. Không kiểm tra thì trình duyệt
+ * không giao diện sẽ mở cả `file:///...` hay `http://localhost:...` của chính
+ * máy chủ, rồi gửi nội dung đó cho mô hình ngôn ngữ.
+ */
+function validateTargetUrl(raw) {
+  let u;
+  try {
+    u = new URL(String(raw || '').trim());
+  } catch {
+    throw new InvalidUrlError('Đường dẫn không hợp lệ');
+  }
+  if (!['http:', 'https:'].includes(u.protocol)) {
+    throw new InvalidUrlError('Chỉ hỗ trợ đường dẫn http/https');
+  }
+  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const privateHost =
+    host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') ||
+    host === '0.0.0.0' || host === '::1' || /^127\./.test(host) || /^10\./.test(host) ||
+    /^192\.168\./.test(host) || /^169\.254\./.test(host) || /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+    /^f[cd][0-9a-f]{2}:/.test(host) || /^fe80:/.test(host);
+  if (privateHost) throw new InvalidUrlError('Không thu thập từ địa chỉ nội bộ');
+  return u;
+}
+
+/** Số sao hợp lệ 1–5, ngược lại null. `Number(null)` là 0 nên không được dùng thẳng. */
+function parseRating(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 1 && n <= 5 ? Math.round(n) : null;
+}
+
+/** Ngày mô hình trích ra: sai định dạng hoặc ở tương lai thì dùng thời điểm hiện tại */
+function parseReviewDate(v) {
+  const d = v ? new Date(v) : null;
+  const now = new Date();
+  if (!d || Number.isNaN(d.getTime()) || d > now) return now;
+  return d;
+}
+
+const MAX_SCROLL_STEPS = 60;
+
 const scrapeShopeeReviews = async (productUrl) => {
-  const { hostname } = new URL(productUrl);
+  const { hostname, href } = validateTargetUrl(productUrl);
+  productUrl = href;
   await respectRateLimit(hostname);
 
   let rawText = '';
@@ -90,20 +142,24 @@ const scrapeShopeeReviews = async (productUrl) => {
     await page.goto(productUrl, { waitUntil: 'networkidle2', timeout: 30000 });
 
     // Cuộn trang để kích hoạt tải chậm (lazy-load) phần bình luận
-    await page.evaluate(async () => {
+    // Có trần số bước: trang cuộn vô hạn tự dài ra mãi, điều kiện "chạm đáy"
+    // không bao giờ đúng và request treo tới khi puppeteer hết thời gian chờ
+    await page.evaluate(async (maxSteps) => {
       await new Promise((resolve) => {
         let total = 0;
+        let steps = 0;
         const step = 400;
         const timer = setInterval(() => {
           window.scrollBy(0, step);
           total += step;
-          if (total >= document.body.scrollHeight - window.innerHeight) {
+          steps += 1;
+          if (steps >= maxSteps || total >= document.body.scrollHeight - window.innerHeight) {
             clearInterval(timer);
             resolve();
           }
         }, 150);
       });
-    });
+    }, MAX_SCROLL_STEPS);
 
     await new Promise((r) => setTimeout(r, 2000));
     rawText = await page.evaluate(() => document.body.innerText);
@@ -124,10 +180,13 @@ const scrapeShopeeReviews = async (productUrl) => {
   }
 
   try {
+    if (!process.env.GEMINI_API_KEY) throw new Error('Thiếu GEMINI_API_KEY');
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL }, { timeout: LLM_TIMEOUT_MS });
 
-    const safeText = rawText.substring(0, 30000);
+    // Che PII trước khi gửi đi và trước khi lưu — đúng cam kết "KHÔNG lưu
+    // thông tin cá nhân" ở đầu tệp
+    const safeText = maskPII(rawText.substring(0, 30000)).text;
     const prompt = `Dưới đây là văn bản lấy trực tiếp từ trang: ${productUrl}
 ---
 ${safeText}
@@ -156,15 +215,15 @@ Trả về DUY NHẤT mảng JSON, không kèm giải thích:
       .filter((r) => r && r.rawText && String(r.rawText).trim())
       .map((r) => ({
         source: sourceName || 'Web',
-        rawText: String(r.rawText).trim(),
-        author: r.author || 'Ẩn danh',
-        rating: Number.isFinite(Number(r.rating)) ? Number(r.rating) : null,
+        rawText: canonicalize(r.rawText).trim().slice(0, 5000),
+        author: r.author ? canonicalize(r.author).trim().slice(0, 100) : 'Ẩn danh',
+        rating: parseRating(r.rating),
         // Không suy ra được từ trang công khai; để null thay vì đoán bừa.
         // Trust Layer sẽ xếp các phản hồi này vào hạng P3/P4 vì thiếu
         // thông tin đối soát — đúng với mức tin cậy thật của chúng.
         accountAgeDays: null,
         orderId: null,
-        timestamp: r.date && !isNaN(new Date(r.date).getTime()) ? new Date(r.date) : new Date()
+        timestamp: parseReviewDate(r.date)
       }));
   } catch (error) {
     console.error('[SCRAPER] Lỗi khi trích xuất bình luận:', error.message);
@@ -172,4 +231,4 @@ Trả về DUY NHẤT mảng JSON, không kèm giải thích:
   }
 };
 
-module.exports = { scrapeShopeeReviews };
+module.exports = { scrapeShopeeReviews, validateTargetUrl, parseRating, parseReviewDate };

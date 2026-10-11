@@ -42,7 +42,14 @@ function firedKeywords(dataset, keywords) {
   for (const g of dataset) {
     const t = normalize(g.text).normalized;
     for (const k of keywords) {
-      if (t.includes(k.keyword)) fired.add(k.keyword);
+      // Xét ĐÚNG các dạng mà bộ phân loại so khớp (gốc + đã dịch teencode),
+      // không thì từ khóa khớp qua dạng đã dịch lọt khỏi kiểm tra rò rỉ
+      if (taxonomy.keywordForms(k.keyword).some((form) => t.includes(form))) fired.add(k.keyword);
+    }
+    // Danh từ khía cạnh chỉ khớp KÈM từ chê ("shipper+cáu"): lấy đúng cặp mà
+    // bộ phân loại đã dùng, để cặp nào chỉ xuất hiện ở tập kiểm tra cũng bị bắt
+    for (const m of taxonomy.classifyByRules(t)) {
+      for (const label of m.keywords) if (label.includes('+')) fired.add(label);
     }
   }
   return fired;

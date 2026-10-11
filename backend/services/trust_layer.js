@@ -21,7 +21,7 @@
  *   T5  Chỉ số Sức khỏe Dữ liệu
  */
 
-const { normalize, spamSignals } = require('./normalizer');
+const { normalize, spamSignals, keyboardMash } = require('./normalizer');
 const { isolationForestScores, variance } = require('./anomaly');
 
 // ==================================================================
@@ -108,6 +108,9 @@ const MIN_MEANINGFUL_SYLLABLES = 5;
  */
 const SPAM_MODEL_THRESHOLD = 0.95;
 
+/** Bỏ toàn bộ dấu tiếng Việt: "chậm" -> "cham" */
+const foldDiacritics = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+
 function runSpamFilter(fb, normalized, modelScore = null) {
   const raw = fb.originalText || '';
   const sig = spamSignals(raw);
@@ -129,17 +132,24 @@ function runSpamFilter(fb, normalized, modelScore = null) {
   if (onlyEmojiOrPunct) {
     reasons.push('Nội dung chỉ gồm biểu tượng cảm xúc');
   }
+  // Câu ngắn có từ được KÉO DÀI ("ngonnnn", "chậmmmm") không rỗng nghĩa: kéo
+  // dài một từ thật là người viết đang nhấn mạnh cảm xúc, khác hẳn kiểu "ok",
+  // "đẹp", "5 sao" gõ cho đủ thủ tục nhận xu.
   const isEmptyMeaning =
     normalized.syllables > 0 &&
     normalized.syllables < MIN_MEANINGFUL_SYLLABLES &&
-    !/(chậm|hỏng|lỗi|tệ|xấu|kém|mất|thiếu|đắt|vỡ|móp)/.test(normalized.normalized);
+    !(normalized.emphasis > 0) &&
+    !/(chậm|hỏng|lỗi|tệ|xấu|kém|mất|thiếu|đắt|vỡ|móp)/.test(normalized.normalized) &&
+    // Cùng danh sách nhưng gõ không dấu ("giao hang cham qua")
+    !/\b(cham|hong|loi|te|xau|kem|mat|thieu|dat|vo|mop)\b/.test(foldDiacritics(normalized.normalized));
   if (isEmptyMeaning) {
     reasons.push(`Văn bản dưới ${MIN_MEANINGFUL_SYLLABLES} âm tiết, không chứa khía cạnh nào`);
   }
 
-  // Ký tự lặp bất thường (spam bàn phím)
-  if (/(\p{L})\1{5,}/u.test(raw)) {
-    reasons.push('Tỉ lệ ký tự lặp bất thường');
+  // Gõ phím bừa: chuỗi lặp không rút gọn được về từ thật và chiếm phần lớn
+  // nội dung. Bản cũ chặn MỌI chữ cái lặp từ 6 lần, kể cả "ngonnnnnn".
+  if (keyboardMash(raw)) {
+    reasons.push('Chuỗi ký tự lặp vô nghĩa (gõ phím bừa)');
   }
 
   const hasModelScore = Number.isFinite(modelScore);
@@ -274,17 +284,45 @@ function detectNearDuplicateClusters(items, config = DUPLICATE_CONFIG) {
   const assigned = new Array(items.length).fill(-1);
   const clusters = [];
 
+  // Chỉ so các cặp nằm trong cửa sổ thời gian: sắp chỉ số theo thời gian rồi
+  // tìm nhị phân biên cửa sổ. Bản cũ duyệt đủ n²/2 cặp (≈20 triệu cặp với 6,4
+  // nghìn phản hồi) chỉ để loại phần lớn chúng ở phép so thời gian. Phản hồi
+  // không có thời gian hợp lệ vẫn được so với mọi phản hồi như trước.
+  const timed = [];
+  const untimed = [];
+  prepared.forEach((p, idx) => (Number.isFinite(p.time) ? timed : untimed).push(idx));
+  timed.sort((a, b) => prepared[a].time - prepared[b].time);
+  const timedTimes = timed.map((idx) => prepared[idx].time);
+  const lowerBound = (t) => {
+    let lo = 0;
+    let hi = timedTimes.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (timedTimes[mid] < t) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
+  };
+  function* candidatesFor(seed, i) {
+    if (!Number.isFinite(seed.time)) {
+      for (let j = i + 1; j < prepared.length; j++) yield j;
+      return;
+    }
+    for (let k = lowerBound(seed.time - windowMs); k < timed.length && timedTimes[k] <= seed.time + windowMs; k++) {
+      if (timed[k] > i) yield timed[k];
+    }
+    for (const j of untimed) if (j > i) yield j;
+  }
+
   for (let i = 0; i < prepared.length; i++) {
     if (assigned[i] !== -1) continue;
 
     const seed = prepared[i];
-    const members = [i];
-    const sims = [];
+    const hits = [];
 
-    for (let j = i + 1; j < prepared.length; j++) {
+    for (const j of candidatesFor(seed, i)) {
       if (assigned[j] !== -1) continue;
       const cand = prepared[j];
-      if (Math.abs(cand.time - seed.time) > windowMs) continue;
 
       // Lọc thô: SimHash cách nhau quá xa thì bỏ qua cosine của vector token
       const tokenSim = hammingDistance(seed.hash, cand.hash) > 12
@@ -296,11 +334,13 @@ function detectNearDuplicateClusters(items, config = DUPLICATE_CONFIG) {
       const tokenHit = tokenSim >= config.similarityThreshold;
       const embeddingHit = embeddingSim !== null && embeddingSim >= embeddingThreshold;
 
-      if (tokenHit || embeddingHit) {
-        members.push(j);
-        sims.push(tokenHit ? tokenSim : embeddingSim);
-      }
+      if (tokenHit || embeddingHit) hits.push([j, tokenHit ? tokenSim : embeddingSim]);
     }
+
+    // Giữ thứ tự thành viên theo chỉ số như bản duyệt tuần tự
+    hits.sort((a, b) => a[0] - b[0]);
+    const members = [i, ...hits.map((h) => h[0])];
+    const sims = hits.map((h) => h[1]);
 
     if (members.length < config.minClusterSize) continue;
 

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const { scrapeShopeeReviews } = require('../services/scraper');
-const { analyzeFeedbackBatch, generateRiskAlertsBatch } = require('../services/ai_analyzer');
+const { analyzeFeedbackBatch, generateRiskAlertsBatch, classifyByRulesFallback } = require('../services/ai_analyzer');
 const { getContext, invalidate, applyFilters } = require('../services/analysis_context');
 const trustLayer = require('../services/trust_layer');
 const alertEngine = require('../services/alert_engine');
@@ -16,10 +16,45 @@ const visobert = require('../services/visobert_client');
 /** Bọc handler async để lỗi không làm treo request */
 const wrap = (fn) => (req, res) => {
   Promise.resolve(fn(req, res)).catch((err) => {
-    console.error(`[API] ${req.method} ${req.path}:`, err.message);
-    res.status(500).json({ error: err.message });
+    // Lỗi do đầu vào (err.status 4xx) không phải lỗi máy chủ
+    const status = Number.isInteger(err.status) && err.status >= 400 && err.status < 500 ? err.status : 500;
+    if (status === 500) console.error(`[API] ${req.method} ${req.path}:`, err.message);
+    if (res.headersSent) return;
+    res.status(status).json({ error: err.message });
   });
 };
+
+/**
+ * Độ dài tối đa một phản hồi đưa vào phân tích. Khớp với trần của
+ * nlp_service (/explain nhận tối đa 2000 ký tự); dài hơn thì mô hình từ chối
+ * và màn hình trình diễn lặng lẽ rơi về lớp luật mà không nói vì sao.
+ */
+const MAX_TEXT_CHARS = 2000;
+
+/** Văn bản người dùng gửi lên: chỉ nhận chuỗi, đưa về NFC, bỏ khoảng trắng hai đầu */
+function readText(v) {
+  if (typeof v !== 'string') return null;
+  const t = normalizer.canonicalize(v).trim();
+  return t || null;
+}
+
+/** Số nguyên trong [min, max]; thiếu hoặc sai thì lấy mặc định */
+function clampInt(v, def, min, max) {
+  const n = Math.trunc(Number(v));
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def;
+}
+
+/** Khóa chống trùng cho phản hồi thu thập: cào lại cùng trang không được nhân đôi kho dữ liệu */
+function dedupKey(doc) {
+  const crypto = require('crypto');
+  const day = doc.timestamp instanceof Date && !Number.isNaN(doc.timestamp.getTime())
+    ? doc.timestamp.toISOString().slice(0, 10)
+    : '';
+  const text = normalizer.canonicalize(doc.originalText).toLowerCase().replace(/\s+/g, ' ').trim();
+  return crypto.createHash('sha1')
+    .update([doc.source, doc.productName, doc.author, day, text].join('\u0001'))
+    .digest('hex');
+}
 
 /** Chỉ trả ra phần trust cần cho giao diện, bỏ các trường nội bộ nặng */
 function publicItem(f) {
@@ -208,8 +243,9 @@ router.get('/sentiment', wrap(async (req, res) => {
 router.get('/trend', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const items = applyFilters(ctx.items, req.query);
-  const spanDays = Number(req.query.spanDays) || 28;
-  const buckets = Number(req.query.buckets) || 14;
+  // Có trần: ?buckets=1e9 từng bắt máy chủ cấp phát một tỉ ô thời gian
+  const spanDays = clampInt(req.query.spanDays, 28, 1, 3650);
+  const buckets = clampInt(req.query.buckets, 14, 1, 366);
   res.json(metrics.weightedTimeSeries(items, buckets, new Date(), spanDays));
 }));
 
@@ -271,7 +307,7 @@ router.get('/trust/bursts', wrap(async (req, res) => {
  */
 router.get('/trust/queue', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const limit = Number(req.query.limit) || 50;
+  const limit = clampInt(req.query.limit, 50, 1, 1000);
   res.json(trustLayer.buildReviewQueue(ctx.items, limit));
 }));
 
@@ -396,9 +432,13 @@ function labelDistribution(rows, kind, category) {
  * đo được. Giao diện chỉ hiển thị lại những gì có trong trace, không vẽ sẵn.
  */
 router.post('/analyze', wrap(async (req, res) => {
-  const { text } = req.body;
-  if (!text || !String(text).trim()) {
-    return res.status(400).json({ error: 'Cần trường text' });
+  // Chỉ nhận chuỗi: số hay đối tượng từng làm `text.trim()` ném lỗi 500
+  const text = readText(req.body?.text);
+  if (!text) {
+    return res.status(400).json({ error: 'Cần trường text là chuỗi không rỗng' });
+  }
+  if (text.length > MAX_TEXT_CHARS) {
+    return res.status(413).json({ error: `Phản hồi dài ${text.length} ký tự, tối đa ${MAX_TEXT_CHARS}` });
   }
   const tStart = nowMs();
 
@@ -456,7 +496,9 @@ router.post('/analyze', wrap(async (req, res) => {
   const useModel = model.available;
   const finalCategory = useModel ? (model.category === 'Other' ? null : model.category) : (top ? top.category : null);
   const finalCause = useModel ? model.subCategory : (top ? top.cause : null);
-  const rulesSentiment = top ? 'Negative' : 'Neutral';
+  // Cảm xúc theo luật có xét phủ định ("không có gì để chê" là khen), không
+  // chỉ suy từ việc có khớp khiếu nại hay không
+  const rulesSentiment = classifyByRulesFallback(text).sentiment;
 
   const modelTrace = explained && model.available
     ? {
@@ -505,7 +547,11 @@ router.post('/analyze', wrap(async (req, res) => {
     normalize: {
       ms: normalizeMs,
       normalized: normalized.normalized,
-      replacements: normalized.slangReplacements,
+      // Từ kéo dài / Telex đã khôi phục đứng trước các cặp teencode đã dịch
+      replacements: [
+        ...normalized.restoredWords.map(({ from, to }) => ({ from, to })),
+        ...normalized.slangReplacements
+      ],
       syllables: normalized.syllables
     },
     spam: {
@@ -551,7 +597,7 @@ router.post('/analyze', wrap(async (req, res) => {
       agreeWithRules: useModel ? (top ? top.category : null) === finalCategory : null,
       note: useModel
         ? 'Tín hiệu xác thực (trùng lặp, đột biến, hành vi tài khoản) cần nhìn cả quần thể phản hồi nên không tính trên một câu — xem trang Tin cậy dữ liệu.'
-        : 'Dịch vụ ViSoBERT không sẵn sàng nên bản ghi dùng luật từ khóa. Cảm xúc theo luật chỉ suy ra từ việc có khớp khiếu nại hay không.'
+        : 'Dịch vụ ViSoBERT không sẵn sàng nên bản ghi dùng luật từ khóa. Cảm xúc theo luật dựa trên từ khen/chê có xét phủ định, kém tin cậy hơn mô hình.'
     }
   };
 
@@ -588,10 +634,14 @@ router.post('/analyze', wrap(async (req, res) => {
 const BATCH_LIMIT = 500;
 
 router.post('/analyze/batch', wrap(async (req, res) => {
-  const texts = Array.isArray(req.body?.texts) ? req.body.texts.map((t) => String(t || '').trim()).filter(Boolean) : [];
-  if (texts.length === 0) return res.status(400).json({ error: 'Cần mảng texts' });
+  const texts = Array.isArray(req.body?.texts) ? req.body.texts.map(readText).filter(Boolean) : [];
+  if (texts.length === 0) return res.status(400).json({ error: 'Cần mảng texts gồm các chuỗi không rỗng' });
   if (texts.length > BATCH_LIMIT) {
     return res.status(400).json({ error: `Tối đa ${BATCH_LIMIT} phản hồi mỗi lượt` });
+  }
+  const tooLong = texts.findIndex((t) => t.length > MAX_TEXT_CHARS);
+  if (tooLong !== -1) {
+    return res.status(413).json({ error: `Phản hồi thứ ${tooLong + 1} dài ${texts[tooLong].length} ký tự, tối đa ${MAX_TEXT_CHARS}` });
   }
 
   const t0 = nowMs();
@@ -622,7 +672,7 @@ router.post('/analyze/batch', wrap(async (req, res) => {
         }));
     return {
       text,
-      sentiment: pred ? pred.sentiment : (aspects.length ? 'Negative' : 'Neutral'),
+      sentiment: pred ? pred.sentiment : (aspects.length ? 'Negative' : classifyByRulesFallback(text).sentiment),
       aspects,
       spam: spam.isSpam,
       piiMasked: normalized[i].piiMasked
@@ -671,7 +721,8 @@ router.post('/analyze/batch', wrap(async (req, res) => {
 
 /** Lấy mẫu phản hồi THẬT trong kho dữ liệu để chạy thử hàng loạt */
 router.get('/analyze/batch/sample', wrap(async (req, res) => {
-  const n = Math.min(Number(req.query.n) || 200, BATCH_LIMIT);
+  // n âm hay 0 từng đi thẳng vào $sample và làm MongoDB báo lỗi
+  const n = clampInt(req.query.n, 200, 1, BATCH_LIMIT);
   const docs = await req.db.collection('feedbacks')
     .aggregate([{ $sample: { size: n } }, { $project: { originalText: 1, _id: 0 } }])
     .toArray();
@@ -741,7 +792,7 @@ router.get('/risks', wrap(async (req, res) => {
         issue: a.causeLabel ? `${a.categoryLabel} — ${a.causeLabel}` : a.categoryLabel,
         riskLevel: a.severity === 'Critical' ? 'CRITICAL' : a.severity === 'High' ? 'HIGH' : a.severity.toUpperCase(),
         insight: playbook.summarize(a),
-        recommendations: rec.steps.map((s) => s.text),
+        recommendations: (rec?.steps || []).map((s) => s.text),
         increase:
           a.type === 'SPIKE' && a.statistics.baselineRate > 0
             ? `+${Math.round(((a.statistics.currentRate - a.statistics.baselineRate) / a.statistics.baselineRate) * 100)}%`
@@ -929,9 +980,10 @@ router.get('/segments', wrap(async (req, res) => {
 // ==================================================================
 
 router.post('/scrape', wrap(async (req, res) => {
-  const { url } = req.body;
+  const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
   if (!url) return res.status(400).json({ error: 'Cần trường url' });
 
+  // URL sai định dạng / không phải http(s) / địa chỉ nội bộ -> lỗi 400 từ validateTargetUrl
   const rawReviews = await scrapeShopeeReviews(url);
 
   // Trình thu thập trả về rỗng khi trang chặn truy cập hoặc không có
@@ -974,16 +1026,29 @@ router.post('/scrape', wrap(async (req, res) => {
     };
   });
 
-  await req.db.collection('feedbacks').insertMany(analyzed);
-  await req.db.collection('predictions').deleteMany({});
-  invalidate();
+  // Ghi theo khóa chống trùng thay vì insertMany: cào lại cùng trang từng
+  // chèn nguyên bản sao của mọi bình luận, và chính các bản sao cùng thời
+  // điểm đó bị Trust Layer bắt thành "cụm đánh giá ảo".
+  for (const doc of analyzed) doc.dedupKey = dedupKey(doc);
+  const write = await req.db.collection('feedbacks').bulkWrite(
+    analyzed.map((doc) => ({
+      updateOne: { filter: { dedupKey: doc.dedupKey }, update: { $setOnInsert: doc }, upsert: true }
+    })),
+    { ordered: false }
+  );
+  const inserted = write.upsertedCount;
+  if (inserted > 0) {
+    await req.db.collection('predictions').deleteMany({});
+    invalidate();
+  }
 
   // Chạy lại Trust Layer để báo ngay lô mới ảnh hưởng thế nào tới chất lượng dữ liệu
-  const ctx = await getContext(req.db, { force: true });
+  const ctx = await getContext(req.db, { force: inserted > 0 });
 
   res.json({
-    message: 'Đã thu thập và phân tích xong',
-    count: analyzed.length,
+    message: inserted > 0 ? 'Đã thu thập và phân tích xong' : 'Mọi bình luận lấy được đều đã có trong kho',
+    count: inserted,
+    duplicatesSkipped: analyzed.length - inserted,
     dataHealthScore: ctx.funnel.dataHealthScore,
     funnel: ctx.funnel,
     data: analyzed.slice(0, 20)
@@ -1020,19 +1085,28 @@ router.post('/transactions', wrap(async (req, res) => {
     return res.status(400).json({ error: 'Cần một mảng giao dịch' });
   }
 
+  // Ngày sai định dạng thành null thay vì một Invalid Date nằm im trong kho
+  const toDate = (v) => {
+    if (!v) return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+  const text = (v) => (v == null || v === '' ? null : normalizer.canonicalize(v).trim().slice(0, 300) || null);
+
   const ops = rows
-    .filter((r) => r.orderId)
+    // Phần tử null hoặc không phải đối tượng từng làm `r.orderId` ném TypeError
+    .filter((r) => r && typeof r === 'object' && r.orderId != null && String(r.orderId).trim())
     .map((r) => ({
       updateOne: {
-        filter: { orderId: String(r.orderId) },
+        filter: { orderId: String(r.orderId).trim() },
         update: {
           $set: {
-            orderId: String(r.orderId),
-            productName: r.productName || null,
-            region: r.region || null,
-            orderedAt: r.orderedAt ? new Date(r.orderedAt) : null,
-            deliveredAt: r.deliveredAt ? new Date(r.deliveredAt) : null,
-            amount: Number(r.amount) || 0
+            orderId: String(r.orderId).trim(),
+            productName: text(r.productName),
+            region: text(r.region),
+            orderedAt: toDate(r.orderedAt),
+            deliveredAt: toDate(r.deliveredAt),
+            amount: Number.isFinite(Number(r.amount)) ? Number(r.amount) : 0
           }
         },
         upsert: true
@@ -1041,7 +1115,7 @@ router.post('/transactions', wrap(async (req, res) => {
 
   if (ops.length === 0) return res.status(400).json({ error: 'Không có bản ghi nào có orderId' });
 
-  const result = await req.db.collection('transactions').bulkWrite(ops);
+  const result = await req.db.collection('transactions').bulkWrite(ops, { ordered: false });
   invalidate();
 
   res.json({
@@ -1129,9 +1203,13 @@ router.post('/predict/refresh', wrap(async (req, res) => {
  * diễn đạt. Xem `services/chat_engine.js`.
  */
 router.post('/chat', wrap(async (req, res) => {
-  const { message, history, filters } = req.body;
-  if (!message || !String(message).trim()) {
-    return res.status(400).json({ success: false, message: 'Cần trường message' });
+  const { history, filters } = req.body || {};
+  const message = readText(req.body?.message);
+  if (!message) {
+    return res.status(400).json({ success: false, message: 'Cần trường message là chuỗi không rỗng' });
+  }
+  if (message.length > MAX_TEXT_CHARS) {
+    return res.status(413).json({ success: false, message: `Câu hỏi dài quá ${MAX_TEXT_CHARS} ký tự` });
   }
 
   const ctx = await getContext(req.db);
@@ -1139,9 +1217,9 @@ router.post('/chat', wrap(async (req, res) => {
 
   const result = await chatEngine.ask(
     ctx,
-    String(message).trim(),
+    message,
     Array.isArray(history) ? history : [],
-    filters || {}
+    filters && typeof filters === 'object' ? filters : {}
   );
 
   res.json({

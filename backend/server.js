@@ -8,6 +8,12 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
+// Express 5 để req.body là undefined khi request không có thân JSON; mọi route
+// viết `const { x } = req.body` khi đó ném TypeError thành lỗi 500
+app.use((req, res, next) => {
+  if (req.body === undefined) req.body = {};
+  next();
+});
 
 if (!process.env.MONGODB_URI) {
   console.error('Thiếu MONGODB_URI trong .env — không thể khởi động.');
@@ -29,14 +35,27 @@ process.on('unhandledRejection', (reason, promise) => {
  * không phải nhớ chạy tay sau mỗi lần triển khai mới.
  */
 async function ensureIndexes(db) {
-  await Promise.all([
-    db.collection('feedbacks').createIndex({ timestamp: -1 }),
-    db.collection('feedbacks').createIndex({ productName: 1, timestamp: -1 }),
-    db.collection('feedbacks').createIndex({ source: 1, timestamp: -1 }),
-    db.collection('transactions').createIndex({ orderId: 1 }, { unique: true }),
-    db.collection('review_labels').createIndex({ feedbackId: 1 }, { unique: true }),
-    db.collection('recommendation_log').createIndex({ alertId: 1 }, { unique: true })
-  ]);
+  const specs = [
+    ['feedbacks', { timestamp: -1 }],
+    ['feedbacks', { productName: 1, timestamp: -1 }],
+    ['feedbacks', { source: 1, timestamp: -1 }],
+    // Khóa chống trùng cho phản hồi thu thập (POST /scrape). Chỉ áp cho bản
+    // ghi CÓ khóa, nên dữ liệu seed cũ không có trường này không bị ảnh hưởng.
+    ['feedbacks', { dedupKey: 1 }, { unique: true, partialFilterExpression: { dedupKey: { $type: 'string' } } }],
+    ['transactions', { orderId: 1 }, { unique: true }],
+    ['review_labels', { feedbackId: 1 }, { unique: true }],
+    ['recommendation_log', { alertId: 1 }, { unique: true }]
+  ];
+  // Một chỉ mục tạo hỏng (ví dụ dữ liệu cũ đang trùng khóa) chỉ được cảnh báo,
+  // không được kéo sập cả máy chủ lúc khởi động như bản cũ
+  const results = await Promise.allSettled(
+    specs.map(([coll, keys, opts]) => db.collection(coll).createIndex(keys, opts))
+  );
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      console.warn(`[INDEX] Không tạo được chỉ mục ${specs[i][0]} ${JSON.stringify(specs[i][1])}:`, r.reason.message);
+    }
+  });
 }
 
 async function startServer() {
@@ -93,8 +112,14 @@ async function startServer() {
 
     // Bắt lỗi cuối đường: không để một lỗi chưa xử lý làm sập tiến trình
     app.use((err, req, res, _next) => {
-      console.error('[LỖI CHƯA XỬ LÝ]', err);
-      res.status(500).json({ error: err.message || 'Lỗi máy chủ' });
+      // JSON hỏng (400) và thân quá lớn (413) là lỗi của request, không phải của máy chủ
+      const status = Number.isInteger(err.status) && err.status >= 400 && err.status < 600 ? err.status : 500;
+      if (status >= 500) console.error('[LỖI CHƯA XỬ LÝ]', err);
+      const message =
+        err.type === 'entity.parse.failed' ? 'Thân request không phải JSON hợp lệ'
+          : err.type === 'entity.too.large' ? 'Thân request vượt quá 2MB'
+            : err.message || 'Lỗi máy chủ';
+      res.status(status).json({ error: message });
     });
 
     app.listen(PORT, () => {

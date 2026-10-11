@@ -16,7 +16,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const axios = require('axios');
 
 const taxonomy = require('./taxonomy');
-const { normalize } = require('./normalizer');
+const { normalize, maskPII, stripHtml } = require('./normalizer');
 const visobert = require('./visobert_client');
 
 /**
@@ -35,9 +35,16 @@ const visobert = require('./visobert_client');
 let _groq = null;
 let _genAI = null;
 
+/**
+ * Trần thời gian cho MỌI lần gọi mô hình ngôn ngữ. Mặc định của Groq SDK là
+ * 10 phút và tự thử lại 2 lần; axios và Gemini SDK không có trần nào. Một nhà
+ * cung cấp treo là request /scrape, /chat, /predict/refresh treo theo.
+ */
+const LLM_TIMEOUT_MS = Number(process.env.LLM_TIMEOUT_MS) || 45000;
+
 function getGroq() {
   if (!process.env.GROQ_API_KEY) throw new Error('Thiếu GROQ_API_KEY');
-  if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY, timeout: LLM_TIMEOUT_MS, maxRetries: 1 });
   return _groq;
 }
 
@@ -45,6 +52,24 @@ function getGenAI() {
   if (!process.env.GEMINI_API_KEY) throw new Error('Thiếu GEMINI_API_KEY');
   if (!_genAI) _genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   return _genAI;
+}
+
+/** Mô hình Gemini có trần thời gian */
+function getGeminiModel() {
+  return getGenAI().getGenerativeModel({ model: GEMINI_MODEL }, { timeout: LLM_TIMEOUT_MS });
+}
+
+/** Gọi OpenRouter có trần thời gian; thiếu khóa thì báo lỗi ngay thay vì gửi "Bearer undefined" */
+async function openRouterChat(body) {
+  if (!process.env.OPENROUTER_API_KEY) throw new Error('Thiếu OPENROUTER_API_KEY');
+  const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', body, {
+    headers: {
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    timeout: LLM_TIMEOUT_MS
+  });
+  return response.data.choices[0].message.content;
 }
 
 /** Cho phép các tầng khác biết tính năng nào đang khả dụng */
@@ -97,12 +122,20 @@ function classifyByRulesFallback(text) {
   const norm = normalize(text);
   const matches = taxonomy.classifyByRules(norm.normalized);
 
-  const NEGATIVE_MARKERS = /(chậm|hỏng|lỗi|tệ|xấu|kém|mất|thiếu|đắt|vỡ|móp|không|chưa|bực|thất vọng)/;
-  const POSITIVE_MARKERS = /(tốt|nhanh|đẹp|hài lòng|tuyệt|ưng|cẩn thận|nhiệt tình|đáng tiền)/;
+  const NEGATIVE_MARKERS = /(chậm|hỏng|lỗi|tệ|xấu|kém|mất|thiếu|đắt|vỡ|móp|không|chưa|bực|thất vọng|tiêu cực|lag)/;
+  const POSITIVE_MARKERS = /(tốt|nhanh|đẹp|hài lòng|tuyệt|ưng|cẩn thận|nhiệt tình|đáng tiền|tích cực|ổn|ngon|xịn|thân thiện|dễ thương|(?<!mất |bất )lịch sự|chuyên nghiệp|chu đáo|chắc chắn)/;
+  // Lời chê bị phủ định là lời khen: "hàng không lỗi", "chẳng bị móp gì".
+  // Thay cụm đó bằng "ổn" trước khi chấm, để chữ "lỗi"/"không" trong cụm
+  // không kéo cả câu thành Tiêu cực.
+  const NEGATED_NEGATIVE = /(?:không|chẳng|chả|đâu có)\s+(?:(?:bị|có|hề|thấy)\s+)*(?:chậm|hỏng|lỗi|tệ|xấu|kém|mất|thiếu|đắt|vỡ|móp|bực|thất vọng|lag|treo|đơ|trễ|sai|nhầm|rách|ướt)(?:\s+(?:gì|nào|cả|đâu|chút nào|tí nào))*/g;
+  // Từ khen bị phủ định là lời chê: "không tốt", "chẳng đẹp", "chưa hài lòng".
+  // Bản cũ thấy chữ "tốt" là gán Tích cực, kể cả trong "sản phẩm không tốt".
+  const NEGATED_POSITIVE = /(?:không|chẳng|chả|chưa|hổng|đâu có)\s+(?:(?:được|có|hề|quá|lắm|thấy|mấy)\s+)?(?:tốt|nhanh|đẹp|hài lòng|tuyệt|ưng|cẩn thận|nhiệt tình|đáng tiền|ổn|ngon|xịn|thân thiện)/;
 
+  const normText = norm.normalized.replace(NEGATED_NEGATIVE, ' ổn ');
   let sentiment = 'Neutral';
-  if (matches.length > 0 || NEGATIVE_MARKERS.test(norm.normalized)) sentiment = 'Negative';
-  if (POSITIVE_MARKERS.test(norm.normalized) && matches.length === 0) sentiment = 'Positive';
+  if (matches.length > 0 || NEGATIVE_MARKERS.test(normText) || NEGATED_POSITIVE.test(normText)) sentiment = 'Negative';
+  if (POSITIVE_MARKERS.test(normText) && matches.length === 0 && !NEGATED_POSITIVE.test(normText)) sentiment = 'Positive';
 
   const top = matches[0];
   return {
@@ -182,6 +215,25 @@ const analyzeFeedbackBatch = async (reviewsArray) => {
   const viaModel = await visobert.predictAnalysis(reviewsArray);
   if (viaModel) return viaModel;
 
+  // Chia lô: một prompt chứa vài trăm bình luận dễ vượt giới hạn token, và
+  // khi đó CẢ lô rơi về lớp luật. Lô nhỏ thì lỗi chỉ ảnh hưởng một phần.
+  const out = [];
+  for (let i = 0; i < reviewsArray.length; i += LLM_BATCH_SIZE) {
+    out.push(...(await analyzeChunkWithLLM(reviewsArray.slice(i, i + LLM_BATCH_SIZE))));
+  }
+  return out;
+};
+
+const LLM_BATCH_SIZE = 40;
+
+async function analyzeChunkWithLLM(reviewsArray) {
+  if (!process.env.GROQ_API_KEY) return reviewsArray.map((text) => classifyByRulesFallback(text));
+
+  // Che PII TRƯỚC khi văn bản rời khỏi tiến trình. Bản cũ gửi nguyên văn
+  // (kèm số điện thoại, email, mã đơn) sang Groq — trái với chính nguyên tắc
+  // "PII không bao giờ chạm tới mô hình" ở normalizer.js.
+  const maskedReviews = reviewsArray.map((t) => maskPII(stripHtml(t)).text);
+
   const prompt = `Bạn là hệ thống gán nhãn phản hồi khách hàng tiếng Việt cho sàn thương mại điện tử.
 
 TAXONOMY BẮT BUỘC (chỉ được dùng đúng các mã dưới đây, không tự tạo mã mới):
@@ -208,7 +260,7 @@ Một câu có thể chứa nhiều khía cạnh TRÁI DẤU — hãy tách đ�
 Trả về DUY NHẤT một mảng JSON đúng thứ tự đầu vào, không kèm giải thích.
 
 Dữ liệu:
-${JSON.stringify(reviewsArray)}`;
+${JSON.stringify(maskedReviews)}`;
 
   try {
     const completion = await getGroq().chat.completions.create({
@@ -227,7 +279,7 @@ ${JSON.stringify(reviewsArray)}`;
     // Lớp luật, KHÔNG phải nhãn ngẫu nhiên
     return reviewsArray.map((text) => classifyByRulesFallback(text));
   }
-};
+}
 
 /**
  * Dự báo xu hướng. Dữ liệu đưa vào ĐÃ qua Trust Layer (xem route
@@ -242,7 +294,8 @@ async function generatePrediction(feedbacks, timeFilter = 'All', productFilter =
   const scope = productFilter !== 'All' ? `sản phẩm ${productFilter}` : 'toàn bộ sản phẩm';
 
   const compact = feedbacks.slice(0, 300).map((f) => ({
-    text: String(f.originalText || '').slice(0, 200),
+    // PII không rời tiến trình, kể cả khi gửi đi để dự báo
+    text: maskPII(f.originalText).text.slice(0, 200),
     sentiment: f.sentiment,
     category: f.categoryLabel || f.category,
     cause: f.causeLabel || f.subCategory,
@@ -268,21 +321,12 @@ Dữ liệu (${compact.length} phản hồi hợp lệ):
 ${JSON.stringify(compact)}`;
 
   try {
-    const response = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
-      {
-        model: OPENROUTER_MODEL,
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' }
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    return JSON.parse(stripCodeFence(response.data.choices[0].message.content));
+    const content = await openRouterChat({
+      model: OPENROUTER_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' }
+    });
+    return JSON.parse(stripCodeFence(content));
   } catch (error) {
     console.warn('[OPENROUTER] Lỗi generatePrediction, thử GROQ:', error.message);
     try {
@@ -325,7 +369,7 @@ async function chatWithData(userMessage, feedbacks, context = {}) {
     : '';
 
   const compact = feedbacks.slice(0, 400).map((f) => ({
-    text: String(f.originalText || '').slice(0, 160),
+    text: maskPII(f.originalText).text.slice(0, 160),
     sentiment: f.sentiment,
     category: f.categoryLabel || f.category,
     cause: f.causeLabel || f.subCategory
@@ -347,23 +391,13 @@ Dữ liệu (${compact.length} phản hồi đầu):
 ${JSON.stringify(compact)}`;
 
   try {
-    const model = getGenAI().getGenerativeModel({ model: GEMINI_MODEL });
-    const result = await model.generateContent(prompt);
+    const result = await getGeminiModel().generateContent(prompt);
     return result.response.text().trim();
   } catch (error) {
     console.warn('[GEMINI] Lỗi chatWithData, thử OPENROUTER:', error.message);
     try {
-      const response = await axios.post(
-        'https://openrouter.ai/api/v1/chat/completions',
-        { model: OPENROUTER_MODEL, messages: [{ role: 'user', content: prompt }] },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      return response.data.choices[0].message.content.trim();
+      const content = await openRouterChat({ model: OPENROUTER_MODEL, messages: [{ role: 'user', content: prompt }] });
+      return content.trim();
     } catch (fallbackError) {
       console.error('[OPENROUTER] Lỗi fallback chatWithData:', fallbackError.message);
       return 'Hiện tôi không kết nối được tới mô hình ngôn ngữ. Các số liệu trên dashboard vẫn chính xác vì chúng được tính bằng thống kê, không phụ thuộc vào mô hình này.';
@@ -403,5 +437,8 @@ module.exports = {
   coerceResult,
   GEMINI_MODEL,
   GROQ_MODEL,
-  OPENROUTER_MODEL
+  OPENROUTER_MODEL,
+  LLM_TIMEOUT_MS,
+  getGeminiModel,
+  openRouterChat
 };

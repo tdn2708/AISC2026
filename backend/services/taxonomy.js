@@ -17,9 +17,9 @@ const TAXONOMY = {
     causes: {
       LateDelivery:         { label: 'Giao chậm',                   keywords: ['giao trễ', 'ship chậm', 'chờ mãi', 'mấy ngày rồi chưa', 'chưa thấy', 'chưa nhận được hàng', 'giữ hàng', 'bao giờ mới', 'vẫn chưa tới', 'tăm hơi', 'chưa giao', 'quá hẹn', 'trễ hẹn'] },
       LostPackage:          { label: 'Thất lạc',                    keywords: ['thất lạc', 'mất hàng', 'không nhận được', 'mất đơn', 'không có hàng'] },
-      DamagedInTransit:     { label: 'Hư hỏng khi vận chuyển',      keywords: ['móp', 'bẹp', 'hộp nát', 'rách nát', 'vỡ khi nhận', 'đóng gói ẩu', 'bể khi giao', 'nát bươm', 'thùng carton', 'quăng quật', 'dập nát', 'không còn nguyên', 'bẹp dúm'] },
+      DamagedInTransit:     { label: 'Hư hỏng khi vận chuyển',      keywords: ['móp', 'bẹp', 'hộp nát', 'rách nát', 'vỡ khi nhận', 'đóng gói ẩu', 'bể khi giao', 'nát bươm', 'quăng quật', 'dập nát', 'không còn nguyên', 'bẹp dúm'], mentions: [{ terms: ['thùng carton'], cues: 'damage' }] },
       WrongAddress:         { label: 'Sai địa chỉ',                 keywords: ['sai địa chỉ', 'giao nhầm', 'nhầm nhà', 'giao sai người', 'đưa nhầm', 'nhà người khác', 'tòa đối diện', 'nhầm địa chỉ'] },
-      CourierAttitude:      { label: 'Thái độ nhân viên giao hàng', keywords: ['shipper', 'tài xế', 'người giao hàng', 'ném hàng'] }
+      CourierAttitude:      { label: 'Thái độ nhân viên giao hàng', keywords: ['ném hàng'], mentions: [{ terms: ['shipper', 'tài xế', 'người giao hàng'], cues: 'attitude' }] }
     }
   },
   ProductQuality: {
@@ -28,7 +28,7 @@ const TAXONOMY = {
     impact: 0.70,
     causes: {
       NotAsDescribed:       { label: 'Không đúng mô tả',            keywords: ['không giống', 'khác ảnh', 'không đúng mô tả', 'khác quảng cáo', 'khác hình', 'size ghi', 'mặc vào chật', 'không như mô tả'] },
-      TechnicalDefect:      { label: 'Lỗi kỹ thuật',                keywords: ['hỏng', 'không lên nguồn', 'chết máy', 'không hoạt động', 'tụt pin', 'lỗi phần cứng', 'yếu pin', 'hết pin nhanh', 'cục gạch', 'đèn báo', 'không nhận sạc', 'chập chờn', 'dùng được mấy hôm', 'dùng được đúng'] },
+      TechnicalDefect:      { label: 'Lỗi kỹ thuật',                keywords: ['hỏng', 'không lên nguồn', 'chết máy', 'không hoạt động', 'tụt pin', 'lỗi phần cứng', 'yếu pin', 'hết pin nhanh', 'cục gạch', 'không nhận sạc', 'chập chờn', 'dùng được mấy hôm', 'dùng được đúng'], mentions: [{ terms: ['đèn báo'], cues: 'device' }] },
       ExpiredOrStale:       { label: 'Hết hạn / kém tươi',          keywords: ['hết hạn', 'mốc', 'ôi thiu', 'không tươi', 'cận date', 'quá date', 'quá hạn', 'héo', 'úa', 'hư thối', 'có mùi'] },
       MissingAccessory:     { label: 'Thiếu phụ kiện',              keywords: ['thiếu phụ kiện', 'thiếu cáp', 'thiếu sạc', 'thiếu quà', 'không có dây', 'chẳng có dây', 'thiếu đồ', 'không kèm', 'thiếu món', 'chẳng thấy'] },
       SuspectedCounterfeit: { label: 'Nghi ngờ hàng giả',           keywords: ['hàng giả', 'hàng nhái', 'hàng dựng', 'không chính hãng'] }
@@ -50,10 +50,10 @@ const TAXONOMY = {
     owner: 'Tài chính / Kỹ thuật',
     impact: 0.90,
     causes: {
-      GatewayError:         { label: 'Lỗi cổng thanh toán',         keywords: ['lỗi thanh toán', 'không thanh toán được', 'cổng thanh toán', 'giao dịch thất bại', 'thanh toán trục trặc', 'cổng cứ treo', 'không đặt được hàng', 'thẻ khác cũng không', /thanh toán[^.,;]{0,15}(lỗi|không được|thất bại|trục trặc)/] },
+      GatewayError:         { label: 'Lỗi cổng thanh toán',         keywords: ['lỗi thanh toán', 'không thanh toán được', 'giao dịch thất bại', 'thanh toán trục trặc', 'cổng cứ treo', 'không đặt được hàng', 'thẻ khác cũng không', /thanh toán[^.,;]{0,15}(lỗi|không được|thất bại|trục trặc)/], mentions: [{ terms: ['cổng thanh toán'], cues: 'payment' }] },
       DoubleCharge:         { label: 'Trừ tiền hai lần',            keywords: ['trừ hai lần', 'trừ 2 lần', 'trừ tiền thừa', 'mất tiền oan', 'trừ tiền hai'] },
       WrongPromotion:       { label: 'Sai khuyến mãi',              keywords: ['không áp mã', 'mã giảm giá lỗi', 'voucher không dùng được', 'chẳng thấy trừ', 'không được giảm', 'mã hết hạn'] },
-      WrongInvoice:         { label: 'Sai hóa đơn',                 keywords: ['sai hóa đơn', 'hóa đơn lỗi', 'xuất vat', 'sai số tiền', 'hóa đơn xuất ra', 'sai mã số thuế', 'sai tên công ty'] }
+      WrongInvoice:         { label: 'Sai hóa đơn',                 keywords: ['sai hóa đơn', 'hóa đơn lỗi', 'sai số tiền', 'sai mã số thuế', 'sai tên công ty'], mentions: [{ terms: ['xuất vat', 'hóa đơn xuất ra'], cues: 'invoice' }] }
     }
   },
   TechnicalApp: {
@@ -74,7 +74,7 @@ const TAXONOMY = {
     causes: {
       SlowRefund:           { label: 'Hoàn tiền chậm',              keywords: ['hoàn tiền chậm', 'chưa hoàn tiền', 'đợi hoàn tiền', 'chưa thấy tiền'] },
       ReturnRejected:       { label: 'Từ chối đổi trả',             keywords: ['không cho đổi', 'từ chối trả hàng', 'không đổi trả', 'không chịu đổi'] },
-      ComplexProcess:       { label: 'Quy trình phức tạp',          keywords: ['thủ tục rườm rà', 'quy trình phức tạp', 'nhiều bước quá', 'qua năm bước', 'rắc rối quá', 'rườm rà'] }
+      ComplexProcess:       { label: 'Quy trình phức tạp',          keywords: ['thủ tục rườm rà', 'quy trình phức tạp', 'nhiều bước quá', 'rắc rối quá', 'rườm rà'] }
     }
   },
   PricePromotion: {
@@ -211,7 +211,78 @@ function isNegatedAt(text, pos) {
   const before = text.slice(Math.max(0, pos - NEGATION_WINDOW), pos);
   for (const cue of NEGATION_CUES) if (before.includes(cue)) return true;
   for (const cue of HYPOTHETICAL_CUES) if (before.includes(cue)) return true;
-  return false;
+  // Phủ định đứng NGAY trước từ khóa: "không lag", "chưa hỏng", "không nói
+  // khác gì". Không dùng "không" bất kỳ trong cửa sổ, vì "không nhận được
+  // hàng, hộp móp" thì "móp" vẫn là lời chê thật.
+  return IMMEDIATE_NEGATION.test(before);
+}
+
+const IMMEDIATE_NEGATION = /(?:^|\s)(?:không|chẳng|chả|chưa|đâu có)(?:\s+(?:bị|có|hề|thấy|còn))?\s*$/;
+
+/**
+ * Từ khóa đứng ngay trước một lời khen thì không phải lời chê: "thái độ rất
+ * tốt", "thái độ phục vụ chuyên nghiệp". Cho phép xen tối đa hai từ, nhưng
+ * từ xen không được là từ phủ định ("thái độ không tốt" vẫn là chê).
+ */
+const PRAISE_AFTER = /^(?:\s+(?!(?:không|chẳng|chả|chưa)(?![\p{L}]))[\p{L}]+){0,2}?\s+(?:(?:rất|cực|khá|quá|siêu|luôn|cũng|vô cùng)\s+)?(?:tốt|thân thiện|nhiệt tình|vui vẻ|lịch sự|dễ thương|chuyên nghiệp|ổn|tuyệt|chu đáo|niềm nở|cẩn thận|hài lòng)(?![\p{L}])/u;
+
+function praiseFollows(text, end) {
+  return PRAISE_AFTER.test(text.slice(end, end + 48));
+}
+
+/**
+ * TỪ CHÊ dùng để xác nhận một DANH TỪ KHÍA CẠNH (mentions). Nhắc tới
+ * "shipper" hay "cổng thanh toán" chưa phải khiếu nại — "shipper thân thiện"
+ * là lời khen. Danh từ chỉ thành khiếu nại khi cùng mệnh đề có lời chê
+ * đúng loại, và lời chê đó không bị phủ định ("shipper không hề cáu gắt").
+ */
+const MENTION_CUES = {
+  attitude: ['thái độ', 'cáu', 'gắt', 'quát', 'chửi', 'hỗn', 'láo', 'thô lỗ', 'mất lịch sự', 'bất lịch sự',
+    'khó chịu', 'bực bội', 'hống hách', 'cọc', 'xấc', 'ném', 'quăng', 'vứt', 'không nghe máy', 'không gọi',
+    'bắt chờ', 'đòi thêm', 'tự ý', 'lừa', 'kém', 'tệ'],
+  damage: ['móp', 'bẹp', 'rách', 'nát', 'ướt', 'vỡ', 'bể', 'dập', 'thủng', 'méo', 'hư'],
+  device: ['nhấp nháy', 'không sáng', 'không lên', 'chớp', 'lỗi', 'tắt ngúm', 'báo đỏ'],
+  payment: ['lỗi', 'treo', 'đơ', 'trục trặc', 'thất bại', 'không vào được', 'không được', 'chậm', 'văng', 'quay mãi'],
+  invoice: ['sai', 'lỗi', 'nhầm', 'thiếu', 'chưa', 'không xuất', 'mãi', 'chậm', 'trễ']
+};
+
+/** Ranh giới mệnh đề quanh vị trí pos: dấu câu hoặc "nhưng" */
+function clauseAround(text, pos) {
+  const DELIM = /[.,;!?\n]|\snhưng\s/g;
+  let start = 0;
+  let end = text.length;
+  let m;
+  while ((m = DELIM.exec(text)) !== null) {
+    if (m.index < pos) start = m.index + m[0].length;
+    else {
+      end = m.index;
+      break;
+    }
+  }
+  return [start, end];
+}
+
+/** Khớp một nhóm danh từ khía cạnh; trả nhãn truy vết "danh từ+từ chê" hoặc null */
+function mentionHit(group, text) {
+  const cues = MENTION_CUES[group.cues] || [];
+  for (const term of group.terms) {
+    for (const form of keywordForms(term)) {
+      for (let pos = text.indexOf(form); pos !== -1; pos = text.indexOf(form, pos + 1)) {
+        if (isNegatedAt(text, pos)) continue;
+        const [cs, ce] = clauseAround(text, pos);
+        for (const cue of cues) {
+          for (const cueForm of keywordForms(cue)) {
+            for (let c = text.indexOf(cueForm, cs); c !== -1 && c + cueForm.length <= ce; c = text.indexOf(cueForm, c + 1)) {
+              const insideTerm = c >= pos && c < pos + form.length;
+              if (insideTerm || isNegatedAt(text, c) || praiseFollows(text, c + cueForm.length)) continue;
+              return `${term}+${cue}`;
+            }
+          }
+        }
+      }
+    }
+  }
+  return null;
 }
 
 /**
@@ -223,23 +294,42 @@ function keywordHit(kw, text) {
     const re = new RegExp(kw.source, kw.flags.replace('g', '') + 'g');
     let m;
     while ((m = re.exec(text)) !== null) {
-      if (!isNegatedAt(text, m.index)) return true;
+      if (!isNegatedAt(text, m.index) && !praiseFollows(text, m.index + m[0].length)) return true;
     }
     return false;
   }
 
-  let from = 0;
-  let pos = text.indexOf(kw, from);
-  while (pos !== -1) {
-    if (!isNegatedAt(text, pos)) return true;
-    from = pos + 1;
-    pos = text.indexOf(kw, from);
+  for (const form of keywordForms(kw)) {
+    let from = 0;
+    let pos = text.indexOf(form, from);
+    while (pos !== -1) {
+      if (!isNegatedAt(text, pos) && !praiseFollows(text, pos + form.length)) return true;
+      from = pos + 1;
+      pos = text.indexOf(form, from);
+    }
   }
   return false;
 }
 
+/**
+ * Luật chạy trên văn bản ĐÃ chuẩn hóa, nên từ khóa chứa teencode sẽ không bao
+ * giờ khớp: "ship chậm" trong câu đã bị dịch thành "giao hàng chậm". Mỗi từ
+ * khóa vì vậy được so ở cả dạng gốc lẫn dạng đã qua cùng bộ dịch teencode.
+ */
+const keywordFormCache = new Map();
+function keywordForms(kw) {
+  let forms = keywordFormCache.get(kw);
+  if (!forms) {
+    const { translateSlang } = require('./normalizer');
+    const translated = translateSlang(kw).text;
+    forms = translated && translated !== kw ? [kw, translated] : [kw];
+    keywordFormCache.set(kw, forms);
+  }
+  return forms;
+}
+
 function classifyByRules(normalizedText) {
-  const text = (normalizedText || '').toLowerCase();
+  const text = String(normalizedText || '').normalize('NFC').toLowerCase();
   const matches = [];
 
   for (const catKey of CATEGORY_KEYS) {
@@ -250,6 +340,13 @@ function classifyByRules(normalizedText) {
         if (keywordHit(kw, text)) {
           hits += 1;
           matchedKeywords.push(kw instanceof RegExp ? kw.source : kw);
+        }
+      }
+      for (const group of cause.mentions || []) {
+        const label = mentionHit(group, text);
+        if (label) {
+          hits += 1;
+          matchedKeywords.push(label);
         }
       }
       if (hits > 0) {
@@ -294,5 +391,6 @@ module.exports = {
   categoryImpact,
   categoryOwner,
   classifyByRules,
+  keywordForms,
   flatTaxonomy
 };

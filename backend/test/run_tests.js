@@ -171,8 +171,70 @@ test('Tắt chuẩn hóa tiếng lóng để chạy đối chứng ablation', ()
   assert.strictEqual(off.slangHits, 0, 'nhánh tắt không được đếm mục từ điển');
 });
 
+test('Văn bản tổ hợp dấu (NFD) cho kết quả y hệt dạng dựng sẵn (NFC)', () => {
+  const s = 'Giao hàng chậm quá, shop lừa đảo';
+  assert.strictEqual(normalizer.normalize(s.normalize('NFD')).normalized, normalizer.normalize(s).normalized);
+});
+
+test('Từ thật không bị dịch nhầm thành teencode', () => {
+  assert.ok(normalizer.normalize('hôm qua shop giao').normalized.includes('hôm qua'), '"qua" không được thành "quá"');
+  assert.ok(normalizer.normalize('ban đầu dùng ổn').normalized.includes('ban đầu'), '"ban" không được thành "bạn"');
+  assert.ok(normalizer.normalize('size m vừa').normalized.includes('size m'), '"size m" không được thành "size mình"');
+  assert.ok(normalizer.normalize('Sp tốt.giao nhanh').normalized.includes('tốt. giao'), 'thiếu dấu cách sau dấu chấm không được dính chữ');
+});
+
+test('Chữ kéo dài và Telex bị Unikey trả về được hiểu đúng từ', () => {
+  assert.strictEqual(normalizer.normalize('ngonnnnnn quáaaa').normalized, 'ngon quá');
+  assert.strictEqual(normalizer.normalize('chaamjmmmm').normalized, 'chậm');
+  assert.strictEqual(normalizer.normalize('ddepjppppp').normalized, 'đẹp');
+  for (const w of ['max', 'box', 'bus', 'good', 'free', 'wow', 'shop', 'size']) {
+    assert.strictEqual(normalizer.restoreTelex(w), null, `"${w}" không phải Telex`);
+  }
+});
+
+test('Số điện thoại được phát hiện ổn định qua nhiều lần gọi', () => {
+  const ad = 'Liên hệ mua sỉ giá gốc gọi ngay 0912345678 nhé';
+  const runs = [1, 2, 3, 4].map(() => normalizer.spamSignals(ad).hasPhone);
+  assert.deepStrictEqual(runs, [true, true, true, true]);
+});
+
+test('Chữ kéo dài mang cảm xúc không bị coi là rác; gõ phím bừa thì vẫn bị', () => {
+  const spam = (s) => trust.runSpamFilter({ originalText: s }, normalizer.normalize(s)).isSpam;
+  for (const s of ['ngonnnnnnn', 'chaamjmmmm', 'Giao chậmmmmmmm quá trời', 'đẹppppppp quá shop ơi', 'giao hang cham qua']) {
+    assert.strictEqual(spam(s), false, `"${s}" có nghĩa, không phải rác`);
+  }
+  for (const s of ['hhhhhhhhhhhh', 'ok', 'đẹp', '5 sao']) {
+    assert.strictEqual(spam(s), true, `"${s}" vẫn phải là rác`);
+  }
+});
+
 // ==================================================================
 console.log('\nTAXONOMY');
+
+test('Nhắc tới shipper hay khía cạnh khác trong lời KHEN không phải khiếu nại', () => {
+  const rules = (s) => taxonomy.classifyByRules(normalizer.normalize(s).normalized);
+  for (const s of ['Shipper thân thiện, giao nhanh', 'Anh shipper dễ thương lắm', 'Tài xế giao hàng nhiệt tình',
+    'Nhân viên thái độ rất tốt', 'Đóng gói kỹ, thùng carton dày chắc chắn', 'Cổng thanh toán nhanh gọn',
+    'Đèn báo sáng đẹp', 'App không lag chút nào', 'Shipper giao hàng nhanh, không hề cáu gắt']) {
+    assert.strictEqual(rules(s).length, 0, `"${s}" bị gán nhầm: ${rules(s).map((m) => m.cause).join(', ')}`);
+  }
+  const causes = (s) => rules(s).map((m) => m.cause);
+  assert.ok(causes('Shipper cáu gắt, quát khách').includes('CourierAttitude'));
+  assert.ok(causes('Anh shipper thân thiện nhưng hộp bị móp').includes('DamagedInTransit'));
+  assert.ok(!causes('Anh shipper thân thiện nhưng hộp bị móp').includes('CourierAttitude'), 'lời khen shipper ở mệnh đề khác');
+  assert.ok(causes('Nhân viên thái độ không tốt').includes('BadAttitude'));
+  assert.ok(causes('Thùng carton bị rách, ướt hết').includes('DamagedInTransit'));
+});
+
+test('Lời chê bị phủ định được hiểu là lời khen', () => {
+  const { classifyByRulesFallback } = require('../services/ai_analyzer');
+  for (const s of ['Không có gì để chê', 'Hết chỗ chê luôn', 'Chẳng có gì phải chê', 'Hàng không lỗi, đóng gói kỹ', 'App không lag chút nào']) {
+    assert.strictEqual(classifyByRulesFallback(s).sentiment, 'Positive', s);
+  }
+  for (const s of ['Sản phẩm không tốt', 'chẳng đẹp gì cả', 'Nhân viên mất lịch sự']) {
+    assert.strictEqual(classifyByRulesFallback(s).sentiment, 'Negative', s);
+  }
+});
 // ==================================================================
 
 test('Taxonomy có đủ 7 danh mục và mọi nguyên nhân đều có nhãn', () => {
