@@ -16,6 +16,8 @@ import TrustLayerPage from './components/TrustLayer';
 import Lab from './components/Lab';
 import UiKit from './components/UiKit';
 import { API_URL } from './config';
+import { readStorage, writeStorage } from './lib/storage';
+import ErrorBoundary from './components/ErrorBoundary';
 import './hooks/useTheme';
 
 axios.defaults.baseURL = API_URL;
@@ -32,11 +34,11 @@ const ProtectedRoute = ({ isAuthenticated, children }) =>
 const MainLayout = ({ children, onLogout }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
+  const [collapsed, setCollapsed] = useState(() => readStorage('sidebarCollapsed') === 'true');
   const location = useLocation();
 
   useEffect(() => setMenuOpen(false), [location.pathname]);
-  useEffect(() => localStorage.setItem('sidebarCollapsed', collapsed), [collapsed]);
+  useEffect(() => writeStorage('sidebarCollapsed', collapsed), [collapsed]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -64,7 +66,9 @@ const MainLayout = ({ children, onLogout }) => {
         />
         <main className={`main-content ${collapsed ? 'is-collapsed' : ''}`}>
           <Topbar onOpenMenu={() => setMenuOpen(true)} onOpenCommand={() => setCommandOpen(true)} />
-          <div key={location.pathname} className="animate-fade-in">{children}</div>
+          <div key={location.pathname} className="animate-fade-in">
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </div>
         </main>
       </div>
       <CommandPalette open={commandOpen} onClose={closeCommand} onLogout={onLogout} />
@@ -75,16 +79,16 @@ const MainLayout = ({ children, onLogout }) => {
 function App() {
   // Lần đầu mở vẫn vào thẳng bảng điều khiển (bản demo cho giám khảo), nhưng
   // đã đăng xuất thì phải nhớ — trước đây tải lại trang là tự đăng nhập lại.
-  const [isAuthenticated, setIsAuthenticated] = useState(() => localStorage.getItem('isAuthenticated') !== 'false');
+  const [isAuthenticated, setIsAuthenticated] = useState(() => readStorage('isAuthenticated') !== 'false');
 
   const handleLogin = () => {
     setIsAuthenticated(true);
-    localStorage.setItem('isAuthenticated', 'true');
+    writeStorage('isAuthenticated', 'true');
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    localStorage.setItem('isAuthenticated', 'false');
+    writeStorage('isAuthenticated', 'false');
   };
 
   const page = (el) => (

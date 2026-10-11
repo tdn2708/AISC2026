@@ -3,9 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover: dùng cả vùng tai thỏ; khoảng an toàn do CSS env(safe-area-inset-*) lo -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Customer Radar — phân tích phản hồi khách hàng đa kênh có tầng kiểm soát tin cậy dữ liệu. Đội LDS, Trường ĐH Công nghệ Thông tin – ĐHQG-HCM." />
+    <!-- Màu thanh trạng thái/thanh địa chỉ trên điện thoại; useTheme cập nhật khi đổi theme -->
     <meta name="theme-color" content="#E9EFEE" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="image" href="/images/uit-campus-mist.webp">
@@ -15,6 +19,7 @@
       try {
         var t = localStorage.getItem('cr-theme');
         document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#121B20' : '#E9EFEE');
         if (localStorage.getItem('cr-glass') === 'off') document.documentElement.setAttribute('data-glass', 'off');
       } catch (e) {}
     </script>

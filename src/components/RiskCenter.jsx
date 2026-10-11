@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -292,7 +292,15 @@ const RiskCenter = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, sorted]);
   const selected = visible.find((a) => a.id === selectedId) || visible[0] || null;
-  const select = (id) => setParams(id ? { alert: id } : {}, { replace: true });
+  const detailRef = useRef(null);
+  const select = (id) => {
+    setParams(id ? { alert: id } : {}, { replace: true });
+    // Màn hẹp: chi tiết nằm DƯỚI danh sách, chạm một cảnh báo mà không cuộn
+    // tới thì người dùng không thấy gì thay đổi
+    if (id && window.matchMedia('(max-width: 1023px)').matches) {
+      requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+  };
 
   const open = sorted.filter((a) => !statusOf(a));
   const sevOptions = [
@@ -349,7 +357,8 @@ const RiskCenter = () => {
               <Siren size={11} className="mr-1.5 inline" />
               <span className="font-mono">{visible.length}</span> cảnh báo · xếp theo mức độ
             </p>
-            <ul className="flex max-h-[calc(100vh-18rem)] list-none flex-col gap-2 overflow-y-auto">
+            {/* Cuộn riêng chỉ trên màn rộng; trên điện thoại cuộn lồng trong trang cuộn rất khó dùng */}
+            <ul className="flex list-none flex-col gap-2 lg:max-h-[calc(100vh-18rem)] lg:overflow-y-auto">
               {visible.map((a) => (
                 <AlertRow key={a.id} alert={a} status={statusOf(a)} active={selected?.id === a.id} onClick={() => select(a.id)} />
               ))}
@@ -357,7 +366,7 @@ const RiskCenter = () => {
           </GlassPanel>
 
           {selected && (
-            <div className="lg:sticky lg:top-20">
+            <div ref={detailRef} className="scroll-mt-20 lg:sticky lg:top-20">
               <Detail
                 alert={selected}
                 rec={recs[selected.id]}

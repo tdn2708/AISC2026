@@ -63,8 +63,8 @@ const StatusStrip = ({ stats, alerts = [], loading, error, lastUpdated }) => {
             <span className="size-2.5 rounded-[3px]" style={{ background: DOT[state] }} aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[0.98rem] font-semibold">{headline}</p>
-            {sub && <p className="truncate text-[0.8rem] text-white/76" title={sub}>{sub}</p>}
+            <p className="text-[0.98rem] leading-snug font-semibold sm:truncate">{headline}</p>
+            {sub && <p className="text-[0.8rem] text-white/76 sm:truncate" title={sub}>{sub}</p>}
           </div>
         </div>
 

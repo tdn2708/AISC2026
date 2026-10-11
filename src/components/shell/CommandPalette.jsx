@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, CornerDownLeft, Moon, Sun, LogOut, MessageSquareText, ArrowRight } from 'lucide-react';
 import { NAV, HIDDEN_PAGES } from '../../lib/nav';
 import { useTheme } from '../../hooks/useTheme';
+import { foldVi } from '../../lib/format';
 
 /**
  * BẢNG LỆNH Ctrl+K
@@ -13,7 +14,7 @@ import { useTheme } from '../../hooks/useTheme';
  * trong kho phản hồi. Bàn phím đi được hết: ↑ ↓ để chọn, Enter để mở.
  */
 
-const strip = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+const strip = foldVi;
 
 const CommandPalette = ({ open, onClose, onLogout }) => {
   const navigate = useNavigate();
@@ -89,6 +90,9 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
       e.preventDefault();
       setActive((a) => Math.max(a - 1, 0));
     } else if (e.key === 'Enter') {
+      // Bộ gõ tiếng Việt (Telex/VNI qua IME của hệ điều hành) dùng Enter để
+      // chốt chữ đang soạn; chạy lệnh lúc đó là tìm với từ cuối còn dở dang
+      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
       e.preventDefault();
       runAt(active);
     } else if (e.key === 'Escape') {
@@ -117,7 +121,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
             placeholder="Gõ tên trang, thao tác, hoặc nội dung phản hồi…"
             aria-label="Tìm lệnh"
             aria-activedescendant={items[active] ? `cmd-${items[active].id}` : undefined}
-            className="h-14 w-full bg-transparent text-[0.95rem] text-ink-hi outline-none placeholder:text-ink-lo"
+            className="h-14 w-full min-w-0 border-0 bg-transparent text-[0.95rem] text-ink-hi outline-none placeholder:text-ink-lo"
           />
           <kbd className="rounded-md border border-line px-1.5 py-0.5 font-mono text-[0.66rem] text-ink-lo">Esc</kbd>
         </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { CalendarRange, ChevronDown, Download, Package, Radio, Search, X, Check } from 'lucide-react';
 import { Chip, Button } from './ui';
+import { foldVi } from '../lib/format';
 
 /**
  * BỘ LỌC CHUNG — một hàng, đặt trên mọi thứ nó áp dụng.
@@ -132,7 +133,9 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
   };
 
   const close = () => setOpen(null);
-  const filteredProducts = productOptions.filter((p) => p.toLowerCase().includes(productQuery.toLowerCase()));
+  // Không phân biệt dấu: gõ "ao thun" vẫn ra "Áo thun cotton"
+  const productNeedle = foldVi(productQuery.trim());
+  const filteredProducts = productOptions.filter((p) => foldVi(p).includes(productNeedle));
 
   return (
     <div className="cx glass relative z-[100] mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl px-4 py-3">

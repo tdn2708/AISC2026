@@ -44,7 +44,7 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div className="cx relative min-h-screen overflow-hidden">
+    <div className="cx relative min-h-screen min-h-dvh overflow-hidden">
       {/* Ảnh nền + lớp sương: đậm dần sang phải để thẻ kính luôn đọc rõ */}
       <div
         className="absolute inset-0 scale-105 bg-cover bg-center"
@@ -60,7 +60,7 @@ const Login = ({ onLogin }) => {
         aria-hidden="true"
       />
 
-      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1320px] items-center gap-10 px-6 py-10 lg:grid-cols-[1.15fr_minmax(380px,460px)] lg:px-12">
+      <div className="relative z-10 mx-auto grid min-h-screen min-h-dvh max-w-[1320px] items-center gap-10 px-6 py-10 lg:grid-cols-[1.15fr_minmax(380px,460px)] lg:px-12">
         {/* Thương hiệu */}
         <section className="hidden text-white lg:block animate-fade-up">
           <div className="inline-flex items-center gap-3 rounded-lg border border-white/20 bg-white/12 p-2 pr-5 backdrop-blur-md">

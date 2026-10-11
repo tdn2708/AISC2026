@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { PageHeader, GlassPanel, PanelHeader, Tabs, Button, TextField, Select, Switch, Modal, Badge, EmptyState, Stat } from './ui';
 import { fmtInt } from '../lib/format';
+import { readStorage, writeStorage } from '../lib/storage';
 
 /**
  * NGUỒN DỮ LIỆU
@@ -22,8 +23,10 @@ const PLATFORM = {
 
 const loadLocal = (key, fallback) => {
   try {
-    const parsed = JSON.parse(localStorage.getItem(key) || 'null');
-    return Array.isArray(parsed) ? parsed : fallback;
+    const parsed = JSON.parse(readStorage(key) || 'null');
+    if (!Array.isArray(parsed)) return fallback;
+    // Lượt đồng bộ đang chạy dở khi đóng tab sẽ kẹt "Đang đồng bộ" mãi mãi
+    return parsed.map((r) => (r && r.status === 'Syncing...' ? { ...r, status: 'Failed', error: 'Phiên đồng bộ bị ngắt giữa chừng' } : r));
   } catch {
     return fallback;
   }
@@ -54,8 +57,8 @@ const DataSources = () => {
   const [confirm, setConfirm] = useState(null); // { type: 'shop' | 'history', id? }
   const [trackedProducts, setTrackedProducts] = useState(null);
 
-  useEffect(() => localStorage.setItem('syncHistory', JSON.stringify(history)), [history]);
-  useEffect(() => localStorage.setItem('connectedShops', JSON.stringify(shops)), [shops]);
+  useEffect(() => writeStorage('syncHistory', JSON.stringify(history)), [history]);
+  useEffect(() => writeStorage('connectedShops', JSON.stringify(shops)), [shops]);
 
   // Số sản phẩm THẬT, đếm từ dữ liệu đã thu thập
   useEffect(() => {
@@ -81,7 +84,7 @@ const DataSources = () => {
 
   const sync = async (e) => {
     e.preventDefault();
-    if (!url) return;
+    if (!url.trim()) return;
     setIsSyncing(true);
     const id = Date.now();
     setHistory((prev) => [
@@ -89,14 +92,20 @@ const DataSources = () => {
       ...prev
     ]);
     try {
-      const res = await axios.post('/scrape', { url });
+      const res = await axios.post('/scrape', { url: url.trim() });
       // Dùng đúng số bản ghi máy chủ báo về — không bao giờ bịa con số
-      setHistory((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'Success', items: res.data.count ?? 0 } : r)));
+      const dup = res.data.duplicatesSkipped || 0;
+      setHistory((prev) => prev.map((r) => (r.id === id
+        ? { ...r, status: 'Success', items: res.data.count ?? 0, note: dup ? `Bỏ qua ${dup} bình luận đã có trong kho` : undefined }
+        : r)));
       setUrl('');
     } catch (err) {
       // 422 = trang chặn truy cập hoặc không có bình luận: kết quả hợp lệ, không phải lỗi hệ thống
       const status = err.response?.status;
-      const reason = status === 422 ? err.response?.data?.hint || 'Trang không có bình luận công khai nào' : 'Không kết nối được máy chủ hoặc quá thời gian chờ';
+      const reason = status === 422
+        ? err.response?.data?.hint || 'Trang không có bình luận công khai nào'
+        // 400 = đường dẫn không hợp lệ: nêu đúng lý do máy chủ trả về
+        : err.response?.data?.error || 'Không kết nối được máy chủ hoặc quá thời gian chờ';
       setHistory((prev) => prev.map((r) => (r.id === id ? { ...r, status: status === 422 ? 'Empty' : 'Failed', items: 0, error: reason } : r)));
     } finally {
       setIsSyncing(false);
@@ -225,6 +234,7 @@ const DataSources = () => {
                         <td>
                           <Badge tone={st.tone} icon={st.icon}>{st.label}</Badge>
                           {r.error && <p className="mt-1 text-[0.7rem] text-crit">{r.error}</p>}
+                          {r.note && <p className="mt-1 text-[0.7rem] text-ink-lo">{r.note}</p>}
                         </td>
                         <td className="text-right font-mono">{fmtInt(r.items || 0)}</td>
                         <td className="font-mono text-xs text-ink-mid">{fmtTime(r.time)}</td>

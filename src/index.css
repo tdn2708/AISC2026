@@ -490,10 +490,109 @@ a { color: inherit; text-decoration: none; }
   /* Chọn theo tiền tố: lớp col-span nào cũng chiếm trọn hàng trên điện thoại */
   [class*="col-span-"] { grid-column: span 12; width: 100%; }
 
-  .main-content, .main-content.is-collapsed { margin-left: 0; padding: 0 1rem 2rem; }
+  .main-content, .main-content.is-collapsed {
+    margin-left: 0;
+    padding: 0 max(1rem, env(safe-area-inset-right)) calc(2rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  }
 
-  .sidebar-container { transform: translateX(calc(-100% - 2 * var(--shell-gap))); width: var(--sidebar-w) !important; }
+  .sidebar-container {
+    transform: translateX(calc(-100% - 2 * var(--shell-gap)));
+    width: min(var(--sidebar-w), calc(100vw - 2 * var(--shell-gap))) !important;
+    /* Tránh tai thỏ và thanh home của iPhone */
+    top: max(var(--shell-gap), env(safe-area-inset-top));
+    bottom: max(var(--shell-gap), env(safe-area-inset-bottom));
+    left: max(var(--shell-gap), env(safe-area-inset-left));
+  }
   .sidebar-container.open { transform: translateX(0); }
 
   .glass-panel { padding: 1rem; }
+
+  /* Kính mờ trên hàng chục panel là việc nặng với GPU điện thoại: giảm bán
+     kính làm mờ, nền panel vốn đã gần đặc nên khác biệt khó nhận ra */
+  .glass-panel, .sidebar-container { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+
+  /* Thanh phân trang bảng: nút đủ lớn cho ngón tay */
+  .fb-pager { padding: 0.75rem 1rem; }
+  .fb-page-btn { min-width: 40px; height: 40px; }
+  .fb-panel-head { padding: 1rem; flex-wrap: wrap; align-items: flex-start; }
+}
+
+/* ==================================================================
+   ĐIỆN THOẠI & MÀN CẢM ỨNG
+   ================================================================== */
+
+/* Lưới chưa khai báo số cột (vd. "grid lg:grid-cols-3" ở màn nhỏ) dùng một
+   cột ngầm co giãn theo phần tử con RỘNG NHẤT — chỉ một hàng chữ không xuống
+   dòng là cả trang tràn ngang (trang Tin cậy dữ liệu từng rộng 874px trên
+   màn 390px). Mặc định một cột co được về 0; :where() giữ độ đặc hiệu bằng 0
+   nên mọi lớp grid-cols-* khai báo rõ vẫn thắng. */
+:where(.grid) { grid-template-columns: minmax(0, 1fr); }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Thanh địa chỉ của trình duyệt di động thu/hiện làm 100vh cao hơn vùng nhìn
+   thấy thật — phần cuối trang bị che. dvh bám đúng vùng nhìn thấy. */
+@supports (height: 100dvh) {
+  .main-content { height: 100dvh; }
+}
+
+.main-content, .sidebar-container nav, .sidebar-container { overscroll-behavior: contain; }
+
+@media (pointer: coarse) {
+  /* Bỏ chớp xám khi chạm và độ trễ chạm-đúp-để-phóng */
+  a, button, [role='button'], summary, label { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+  /* iOS tự phóng to trang khi chạm vào ô nhập có chữ nhỏ hơn 16px */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea {
+    font-size: max(16px, 1em) !important;
+  }
+
+  /* Thanh cuộn ẩn khi không rê chuột không có ý nghĩa trên màn cảm ứng */
+  .table-responsive, [class*='overflow-x-auto'] { scrollbar-width: none; }
+}
+
+/* ---------- Bảng "Phản hồi gần đây" thành thẻ trên điện thoại ----------
+   Bảng 7 cột rộng tối thiểu 980px: trên màn 390px người đọc chỉ thấy hai cột
+   và phải vuốt ngang để đọc từng dòng. Dưới 640px mỗi dòng thành một thẻ. */
+@media (max-width: 640px) {
+  .fb-table { min-width: 0; table-layout: auto; }
+  .fb-table thead, .fb-table colgroup { display: none; }
+  .fb-table, .fb-table tbody, .fb-table tr, .fb-table td { display: block; width: 100%; }
+  .fb-table tbody tr {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'user user sent'
+      'text text text'
+      'prod prod prod'
+      'cat  trust src';
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.95rem 1rem;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  /* Bảng không có cột sản phẩm (trang Phản hồi): bỏ hàng trống của nó */
+  .fb-table tbody tr:not(:has(> .fb-c-product)) {
+    grid-template-areas:
+      'user user sent'
+      'text text text'
+      'cat  trust src';
+  }
+  .fb-table tbody tr:last-child { border-bottom: none; }
+  :where(.fb-table) td,
+  :where(.fb-table) :is(th, td):first-child,
+  :where(.fb-table) :is(th, td):last-child { padding: 0; border-bottom: none; }
+  .fb-c-user { grid-area: user; }
+  .fb-c-sent { grid-area: sent; justify-self: end; }
+  .fb-c-text { grid-area: text; }
+  .fb-c-text .fb-clamp { -webkit-line-clamp: 3; }
+  .fb-c-product { grid-area: prod; }
+  .fb-c-product .fb-product { -webkit-line-clamp: 1; font-size: 0.76rem; color: var(--text-lo); }
+  .fb-c-cat { grid-area: cat; }
+  .fb-c-trust { grid-area: trust; }
+  .fb-c-src { grid-area: src; justify-self: end; }
+  .fb-table tbody tr:has(> .fb-empty) { display: block; }
 }

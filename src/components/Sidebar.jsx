@@ -54,7 +54,11 @@ const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
   );
 };
 
-const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollapse }) => {
+const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, onToggleCollapse }) => {
+  // Trạng thái "thu gọn" là lựa chọn trên màn rộng. Menu trượt trên điện thoại
+  // (isOpen) luôn hiện đầy đủ chữ — nếu không, ai đã thu gọn trên máy tính
+  // sẽ thấy menu điện thoại chỉ còn biểu tượng trong một khung rộng 248px.
+  const collapsed = collapsedPref && !isOpen;
   const [showMenu, setShowMenu] = useState(false);
   const [status, setStatus] = useState(null);
   // undefined = đang kiểm tra lần đầu; null = không lấy được trạng thái
@@ -139,7 +143,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed = false, onToggleCollaps
             onClick={isOpen ? onClose : onToggleCollapse}
             aria-label={isOpen ? 'Đóng menu' : collapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
             title={collapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
-            className="grid size-8 place-items-center rounded-lg text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi"
+            className={`grid place-items-center rounded-lg text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi ${isOpen ? 'size-10' : 'size-8'}`}
           >
             {isOpen ? <X size={16} /> : collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           </button>

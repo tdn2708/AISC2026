@@ -17,6 +17,8 @@ import {
  */
 
 const SIZES = [50, 100, 200, 500];
+// Trần số phản hồi mỗi lượt, khớp BATCH_LIMIT của POST /analyze/batch
+const BATCH_LIMIT = 500;
 
 const Tile = ({ icon, label, value, unit, tone = 'var(--text-hi)' }) => (
   <div style={{
@@ -68,6 +70,11 @@ export default function BatchDemo() {
 
   const run = async () => {
     if (lines.length === 0) return;
+    // Báo ngay ở trình duyệt thay vì gửi lô lớn lên rồi mới nhận lỗi 400
+    if (lines.length > BATCH_LIMIT) {
+      setError(`Lô có ${lines.length} dòng, tối đa ${BATCH_LIMIT} phản hồi mỗi lượt.`);
+      return;
+    }
     setLoading('run');
     setError(null);
     try {

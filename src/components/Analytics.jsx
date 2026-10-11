@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { readStorage, writeStorage } from '../lib/storage';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, Package, MessageSquareQuote, ArrowRight } from 'lucide-react';
 import FilterBar from './FilterBar';
@@ -104,14 +105,22 @@ const RootCauses = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
-  const [timeFilter, setTimeFilter] = useState(localStorage.getItem('timeFilter') || 'All');
-  const [sourceFilter, setSourceFilter] = useState(localStorage.getItem('sourceFilter') || 'All');
-  const [productFilter, setProductFilter] = useState(localStorage.getItem('productFilter') || 'All');
+  const drillRef = useRef(null);
+  // Màn hẹp: phần bóc tách nằm DƯỚI danh sách nhóm — chọn xong phải cuộn tới đó
+  const pick = (key) => {
+    setSelected(key);
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      requestAnimationFrame(() => drillRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+  };
+  const [timeFilter, setTimeFilter] = useState(readStorage('timeFilter') || 'All');
+  const [sourceFilter, setSourceFilter] = useState(readStorage('sourceFilter') || 'All');
+  const [productFilter, setProductFilter] = useState(readStorage('productFilter') || 'All');
 
   useEffect(() => {
-    localStorage.setItem('timeFilter', timeFilter);
-    localStorage.setItem('sourceFilter', sourceFilter);
-    localStorage.setItem('productFilter', productFilter);
+    writeStorage('timeFilter', timeFilter);
+    writeStorage('sourceFilter', sourceFilter);
+    writeStorage('productFilter', productFilter);
   }, [timeFilter, sourceFilter, productFilter]);
 
   useEffect(() => {
@@ -187,7 +196,7 @@ const RootCauses = () => {
                 max={categories[0].count}
                 total={complaints.length}
                 active={c.key === current.key}
-                onClick={() => setSelected(c.key)}
+                onClick={() => pick(c.key)}
               />
             ))}
           </div>
@@ -199,7 +208,7 @@ const RootCauses = () => {
         </GlassPanel>
 
         {/* Cột phải — bóc tách nhóm đang chọn */}
-        <div className="flex flex-col gap-6" key={current.key}>
+        <div ref={drillRef} className="flex scroll-mt-20 flex-col gap-6" key={current.key}>
           <GlassPanel className="p-6 animate-fade-up">
             <p className="eyebrow mb-1.5">Đang bóc tách</p>
             <h2 className="text-2xl font-semibold text-ink-hi">{current.label}</h2>

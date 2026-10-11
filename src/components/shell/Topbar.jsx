@@ -157,7 +157,7 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
   const isMac = typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform);
 
   return (
-    <div ref={barRef} className="cx sticky top-0 z-[120] -mr-2 pt-3 pr-2 pb-3">
+    <div ref={barRef} className="cx sticky top-0 z-[120] -mr-2 pt-[max(0.75rem,env(safe-area-inset-top))] pr-2 pb-3">
       <div
         className={`flex items-center gap-3 rounded-lg px-2 py-2 transition-[background-color,box-shadow,backdrop-filter] duration-200 ${
           scrolled ? 'glass' : ''

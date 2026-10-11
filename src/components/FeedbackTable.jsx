@@ -132,7 +132,7 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
                 const category = item.categoryLabel || item.category;
                 return (
                   <tr key={item.id ?? `${startIdx}-${idx}`}>
-                    <td>
+                    <td className="fb-c-user">
                       <div className="fb-user">
                         <span className="fb-avatar" aria-hidden="true">{initials(author)}</span>
                         <div className="fb-user-text">
@@ -141,16 +141,16 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
                         </div>
                       </div>
                     </td>
-                    <td>
+                    <td className="fb-c-text">
                       <div className="fb-clamp" title={item.originalText}>{item.originalText}</div>
                     </td>
-                    <td>
+                    <td className="fb-c-product">
                       <div className="fb-clamp fb-product" title={item.productName}>{item.productName || '—'}</div>
                     </td>
-                    <td>{category ? <span className="fb-chip" title={category}>{category}</span> : '—'}</td>
-                    <td>{getSentiment(item.sentiment)}</td>
-                    <td>{getTrust(item.trust)}</td>
-                    <td><span className="fb-source">{item.source}</span></td>
+                    <td className="fb-c-cat">{category ? <span className="fb-chip" title={category}>{category}</span> : '—'}</td>
+                    <td className="fb-c-sent">{getSentiment(item.sentiment)}</td>
+                    <td className="fb-c-trust">{getTrust(item.trust)}</td>
+                    <td className="fb-c-src"><span className="fb-source">{item.source}</span></td>
                   </tr>
                 );
               })

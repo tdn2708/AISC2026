@@ -53,14 +53,14 @@ export const Modal = ({ open, onClose, title, description, icon: Icon, tone = 'a
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`glass-strong relative w-full ${width} rounded-xl p-6 outline-none animate-pop-in`}
+        className={`glass-strong relative max-h-[calc(100dvh-2rem)] w-full ${width} overflow-y-auto overscroll-contain rounded-xl p-5 outline-none animate-pop-in sm:p-6`}
       >
         <button
           type="button"
           data-close
           onClick={onClose}
           aria-label="Đóng"
-          className="absolute top-4 right-4 grid size-8 place-items-center rounded-md text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi"
+          className="absolute top-3 right-3 grid size-10 place-items-center rounded-md sm:top-4 sm:right-4 sm:size-8 text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi"
         >
           <X size={16} aria-hidden="true" />
         </button>
@@ -95,7 +95,7 @@ export const Drawer = ({ open, onClose, title, subtitle, children, footer, width
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="glass-strong absolute top-3 right-3 bottom-3 flex flex-col overflow-hidden rounded-xl outline-none animate-pop-in"
+        className="glass-strong absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col overflow-hidden rounded-xl outline-none animate-pop-in"
         style={{ width: `min(${width}px, calc(100vw - 24px))` }}
       >
         <header className="flex items-start justify-between gap-4 border-b border-line-soft px-6 py-5">

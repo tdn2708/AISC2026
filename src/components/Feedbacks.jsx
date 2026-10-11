@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Search, X, ChevronLeft, ChevronRight, Copy, Zap, UserX, Star, Receipt, HelpCircle } from 'lucide-react';
 import FilterBar from './FilterBar';
 import { PageHeader, GlassPanel, Chip, Drawer, EmptyState, SentimentFace, Badge, ProgressBar } from './ui';
-import { buildQuery, fmtInt, fmtDateTime, initials, SENTIMENT_MAP } from '../lib/format';
+import { buildQuery, fmtInt, fmtDateTime, initials, SENTIMENT_MAP, foldVi } from '../lib/format';
 
 /**
  * KHO PHẢN HỒI
@@ -34,7 +34,7 @@ const SIGNAL_ICONS = {
   'Bất nhất với dữ liệu giao dịch': Receipt
 };
 
-const strip = (s = '') => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').toLowerCase();
+const strip = foldVi;
 
 const tierTone = (w = 0) => (w >= 0.9 ? 'text-ok' : w >= 0.6 ? 'text-ink-mid' : w >= 0.4 ? 'text-high' : 'text-crit');
 
@@ -269,7 +269,7 @@ const Feedbacks = () => {
                       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setSelected(f))}
                       className="cursor-pointer focus-visible:bg-raised focus-visible:outline-none"
                     >
-                      <td>
+                      <td className="fb-c-user">
                         <div className="fb-user">
                           <span className="fb-avatar" aria-hidden="true">{initials(author)}</span>
                           <div className="fb-user-text">
@@ -278,16 +278,16 @@ const Feedbacks = () => {
                           </div>
                         </div>
                       </td>
-                      <td><div className="fb-clamp" title={f.originalText}>{f.originalText}</div></td>
-                      <td>{f.categoryLabel ? <span className="fb-chip" title={f.categoryLabel}>{f.categoryLabel}</span> : <span className="text-ink-lo">—</span>}</td>
-                      <td>
+                      <td className="fb-c-text"><div className="fb-clamp" title={f.originalText}>{f.originalText}</div></td>
+                      <td className="fb-c-cat">{f.categoryLabel ? <span className="fb-chip" title={f.categoryLabel}>{f.categoryLabel}</span> : <span className="text-ink-lo">—</span>}</td>
+                      <td className="fb-c-sent">
                         <span className="inline-flex items-center gap-2 text-[0.8rem] text-ink-mid">
                           <SentimentFace sentiment={f.sentiment} size={22} />
                           {s.label}
                         </span>
                       </td>
-                      <td><span className={`fb-trust-tier ${tierTone(f.trust?.tierWeight)}`}>{f.trust?.tier || '—'}</span></td>
-                      <td><span className="fb-source">{f.source}</span></td>
+                      <td className="fb-c-trust"><span className={`fb-trust-tier ${tierTone(f.trust?.tierWeight)}`}>{f.trust?.tier || '—'}</span></td>
+                      <td className="fb-c-src"><span className="fb-source">{f.source}</span></td>
                     </tr>
                   );
                 })}

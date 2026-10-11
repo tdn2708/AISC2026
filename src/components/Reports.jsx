@@ -449,7 +449,7 @@ const Reports = () => {
           label="Tên tệp"
           value={exportDialog?.name || ''}
           onChange={(e) => setExportDialog((d) => ({ ...d, name: e.target.value }))}
-          onKeyDown={(e) => e.key === 'Enter' && exportDialog?.name?.trim() && runExport()}
+          onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && exportDialog?.name?.trim() && runExport()}
           trailing={<span className="pr-2 font-mono text-xs text-ink-lo">.{exportDialog?.type?.toLowerCase()}</span>}
         />
       </Modal>

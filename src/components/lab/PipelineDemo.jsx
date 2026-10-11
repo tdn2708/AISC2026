@@ -759,6 +759,8 @@ export default function PipelineDemo() {
           id="lab-input"
           value={text}
           onChange={(e) => setText(e.target.value)}
+          // Khớp trần của máy chủ và nlp_service (2000 ký tự)
+          maxLength={2000}
           rows={2}
           style={{
             width: '100%', padding: '0.8rem 0.95rem', resize: 'vertical', boxSizing: 'border-box',

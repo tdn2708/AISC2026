@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FilterBar from './FilterBar';
 import FeedbackTable from './FeedbackTable';
 import { useDashboardData } from '../hooks/useDashboardData';
+import { readStorage, writeStorage } from '../lib/storage';
 import { PageHeader, SectionLabel } from './ui';
 import StatusStrip from './dashboard/StatusStrip';
 import KpiZone from './dashboard/KpiZone';
@@ -29,14 +30,14 @@ import ActionCenter from './dashboard/ActionCenter';
 const nowLabel = () => new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
 const Dashboard = () => {
-  const [timeFilter, setTimeFilter] = useState(localStorage.getItem('timeFilter') || 'All');
-  const [sourceFilter, setSourceFilter] = useState(localStorage.getItem('sourceFilter') || 'All');
-  const [productFilter, setProductFilter] = useState(localStorage.getItem('productFilter') || 'All');
+  const [timeFilter, setTimeFilter] = useState(readStorage('timeFilter') || 'All');
+  const [sourceFilter, setSourceFilter] = useState(readStorage('sourceFilter') || 'All');
+  const [productFilter, setProductFilter] = useState(readStorage('productFilter') || 'All');
 
   useEffect(() => {
-    localStorage.setItem('timeFilter', timeFilter);
-    localStorage.setItem('sourceFilter', sourceFilter);
-    localStorage.setItem('productFilter', productFilter);
+    writeStorage('timeFilter', timeFilter);
+    writeStorage('sourceFilter', sourceFilter);
+    writeStorage('productFilter', productFilter);
   }, [timeFilter, sourceFilter, productFilter]);
 
   const { stats, sentiments, alerts, trend, loading, error } = useDashboardData(timeFilter, sourceFilter, productFilter);

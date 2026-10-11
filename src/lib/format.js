@@ -99,3 +99,16 @@ export const growthOf = (alert) => {
   if (!baselineRate) return currentRate > 0 ? Infinity : null;
   return (currentRate - baselineRate) / baselineRate;
 };
+
+/**
+ * Gấp chuỗi tiếng Việt về dạng không dấu, chữ thường, để tìm kiếm không phân
+ * biệt dấu ("don hang" khớp "Đơn hàng"). Hạ chữ thường TRƯỚC khi đổi "đ": "Đ"
+ * không tách được bằng NFD, nên làm ngược thứ tự thì "Đơn" thành "đon" và
+ * không khớp với "don".
+ */
+export const foldVi = (s = '') =>
+  String(s ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/đ/g, 'd');

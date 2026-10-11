@@ -22,7 +22,13 @@ const read = () => {
 };
 
 let current = read();
-const apply = (t) => document.documentElement.setAttribute('data-theme', t);
+// Màu thanh trạng thái / thanh địa chỉ trên điện thoại đi theo theme — để cố
+// định màu sáng thì ở theme tối đầu màn hình là một dải sáng chói
+const THEME_COLOR = { light: '#E9EFEE', dark: '#121B20' };
+const apply = (t) => {
+  document.documentElement.setAttribute('data-theme', t);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[t] || THEME_COLOR.light);
+};
 apply(current);
 
 export const setTheme = (t) => {
