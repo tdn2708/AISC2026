@@ -90,14 +90,20 @@ function refresh(db, { onlyIfChanged }) {
 }
 
 async function doFetch(db, gen, onlyIfChanged) {
-  const [feedbackCount, txnCount] = await Promise.all([
+  const lastId = (name) =>
+    db.collection(name).find({}, { projection: { _id: 1 } }).sort({ _id: -1 }).limit(1).next();
+  const [feedbackCount, txnCount, lastFeedback, lastTxn] = await Promise.all([
     db.collection('feedbacks').estimatedDocumentCount(),
-    db.collection('transactions').estimatedDocumentCount()
+    db.collection('transactions').estimatedDocumentCount(),
+    lastId('feedbacks'),
+    lastId('transactions')
   ]);
 
-  // Khóa cache dựa trên khối lượng dữ liệu: dữ liệu mới nạp thì khóa
-  // đổi và Trust Layer chạy lại
-  const key = `${feedbackCount}:${txnCount}`;
+  // Khóa cache: số bản ghi + _id mới nhất của mỗi bảng. Chỉ đếm thì không
+  // nhận ra khi kho bị nạp lại bằng script bên ngoài với ĐÚNG số lượng cũ
+  // (seed lại cùng tham số) — _id mới thì luôn đổi. Truy vấn _id dùng chỉ
+  // mục mặc định nên gần như không tốn gì.
+  const key = `${feedbackCount}:${txnCount}:${lastFeedback?._id ?? ''}:${lastTxn?._id ?? ''}`;
   if (
     onlyIfChanged && cache.value && cache.generation === gen &&
     cache.key === key && Date.now() - cache.computedAt < MAX_AGE_MS
