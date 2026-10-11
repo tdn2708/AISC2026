@@ -5,6 +5,7 @@ import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X
 import Logo, { LogoMark } from './Logo';
 import { NAV } from '../lib/nav';
 import { initials } from '../lib/format';
+import { useBrowserModelStatus } from '../lib/analyze';
 
 /**
  * THANH BÊN — kính nổi cách mép, đồng thời là MỘT MẶT ĐỒNG HỒ: mở máy lên
@@ -113,8 +114,12 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
   const healthTone = health == null ? 'bg-ink-lo' : health >= 75 ? 'bg-ok' : health >= 50 ? 'bg-high' : 'bg-crit';
   const healthText = health == null ? 'text-ink-lo' : health >= 75 ? 'text-ok' : health >= 50 ? 'text-high' : 'text-crit';
 
+  // Máy chủ không có mô hình nhưng trình duyệt đã nạp bản ONNX: nói đúng điều đó
+  const browserModel = useBrowserModelStatus();
   const nlpView =
-    nlp === undefined
+    browserModel.phase === 'ready' && !nlp?.canLabel
+      ? { dot: 'bg-ok', label: 'ViSoBERT trên trình duyệt', title: 'Mô hình chạy ngay trên máy này, không qua máy chủ mô hình' }
+      : nlp === undefined
       ? { dot: 'bg-ink-lo', label: 'Đang kiểm tra…', title: 'Đang hỏi trạng thái dịch vụ mô hình' }
       : !nlp || !nlp.reachable
         ? { dot: 'bg-ink-lo', label: 'Đang dùng bộ luật', title: nlp?.reason || 'Chưa kết nối dịch vụ ViSoBERT' }
