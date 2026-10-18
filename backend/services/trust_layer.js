@@ -43,7 +43,7 @@ const PROVENANCE_TIERS = {
 };
 
 /** Kênh có khả năng đối soát giao dịch (có order_id) */
-const RECONCILABLE_SOURCES = ['Shopee', 'Lazada', 'TikTok', 'TikTokShop', 'CSKH', 'Email', 'Hotline', 'Form'];
+const RECONCILABLE_SOURCES = ['Shopee', 'Lazada', 'Tiki', 'TikTok', 'TikTokShop', 'CSKH', 'Email', 'Hotline', 'Form'];
 const IDENTIFIED_SOURCES = ['CSKH', 'Email', 'Hotline', 'Form', 'Ticket'];
 
 const NEW_ACCOUNT_DAYS = 7;
@@ -206,20 +206,23 @@ function termVector(text) {
   return v;
 }
 
-function cosineSimilarity(a, b) {
+/** Độ dài vector token — tính một lần cho mỗi phản hồi thay vì ở mỗi cặp */
+function vectorNorm(v) {
+  let n = 0;
+  for (const [, x] of v) n += x * x;
+  return Math.sqrt(n);
+}
+
+function cosineSimilarity(a, b, normA = vectorNorm(a), normB = vectorNorm(b)) {
   let dot = 0;
-  let na = 0;
-  let nb = 0;
-  for (const [, va] of a) na += va * va;
-  for (const [, vb] of b) nb += vb * vb;
   const smaller = a.size <= b.size ? a : b;
   const larger = a.size <= b.size ? b : a;
   for (const [k, v] of smaller) {
     const other = larger.get(k);
     if (other) dot += v * other;
   }
-  if (na === 0 || nb === 0) return 0;
-  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+  if (normA === 0 || normB === 0) return 0;
+  return dot / (normA * normB);
 }
 
 /** SimHash 64-bit để lọc thô trước khi tính cosine — giảm số cặp phải so */
@@ -272,14 +275,18 @@ function hammingDistance(a, b) {
 function detectNearDuplicateClusters(items, config = DUPLICATE_CONFIG) {
   const windowMs = config.windowHours * 3600 * 1000;
   const embeddingThreshold = config.embeddingSimilarityThreshold ?? DUPLICATE_CONFIG.embeddingSimilarityThreshold;
-  const prepared = items.map((it, idx) => ({
-    idx,
-    time: new Date(it.timestamp || Date.now()).getTime(),
-    hash: simHash(it._normalized),
-    vector: termVector(it._normalized),
-    embedding: it._embedding || null,
-    productName: it.productName || 'unknown'
-  }));
+  const prepared = items.map((it, idx) => {
+    const vector = termVector(it._normalized);
+    return {
+      idx,
+      time: new Date(it.timestamp || Date.now()).getTime(),
+      hash: simHash(it._normalized),
+      vector,
+      norm: vectorNorm(vector),
+      embedding: it._embedding || null,
+      productName: it.productName || 'unknown'
+    };
+  });
 
   const assigned = new Array(items.length).fill(-1);
   const clusters = [];
@@ -303,15 +310,17 @@ function detectNearDuplicateClusters(items, config = DUPLICATE_CONFIG) {
     }
     return lo;
   };
-  function* candidatesFor(seed, i) {
+  // Duyệt ứng viên bằng vòng lặp thường: bản dùng generator (yield) tốn
+  // phần lớn thời gian của cả hàm ở chính bước nhảy qua từng cặp
+  function forEachCandidate(seed, i, visit) {
     if (!Number.isFinite(seed.time)) {
-      for (let j = i + 1; j < prepared.length; j++) yield j;
+      for (let j = i + 1; j < prepared.length; j++) visit(j);
       return;
     }
     for (let k = lowerBound(seed.time - windowMs); k < timed.length && timedTimes[k] <= seed.time + windowMs; k++) {
-      if (timed[k] > i) yield timed[k];
+      if (timed[k] > i) visit(timed[k]);
     }
-    for (const j of untimed) if (j > i) yield j;
+    for (const j of untimed) if (j > i) visit(j);
   }
 
   for (let i = 0; i < prepared.length; i++) {
@@ -320,14 +329,14 @@ function detectNearDuplicateClusters(items, config = DUPLICATE_CONFIG) {
     const seed = prepared[i];
     const hits = [];
 
-    for (const j of candidatesFor(seed, i)) {
-      if (assigned[j] !== -1) continue;
+    forEachCandidate(seed, i, (j) => {
+      if (assigned[j] !== -1) return;
       const cand = prepared[j];
 
       // Lọc thô: SimHash cách nhau quá xa thì bỏ qua cosine của vector token
       const tokenSim = hammingDistance(seed.hash, cand.hash) > 12
         ? 0
-        : cosineSimilarity(seed.vector, cand.vector);
+        : cosineSimilarity(seed.vector, cand.vector, seed.norm, cand.norm);
       const embeddingSim = seed.embedding && cand.embedding
         ? dotProduct(seed.embedding, cand.embedding)
         : null;
@@ -335,7 +344,7 @@ function detectNearDuplicateClusters(items, config = DUPLICATE_CONFIG) {
       const embeddingHit = embeddingSim !== null && embeddingSim >= embeddingThreshold;
 
       if (tokenHit || embeddingHit) hits.push([j, tokenHit ? tokenSim : embeddingSim]);
-    }
+    });
 
     // Giữ thứ tự thành viên theo chỉ số như bản duyệt tuần tự
     hits.sort((a, b) => a[0] - b[0]);
@@ -826,6 +835,25 @@ function unifiedWeight(tierWeight, A, ageDays, halfLifeDays = DEFAULT_HALF_LIFE_
  *        Hàm này giữ ĐỒNG BỘ và không gọi mạng; tín hiệu mô hình được tính trước ở tầng gọi.
  * @returns {{ items: Array, clusters: Array, bursts: Array, funnel: object }}
  */
+/**
+ * Kết quả chuẩn hóa chỉ phụ thuộc câu chữ, mà mỗi lần làm mới ngữ cảnh lại chạy
+ * trên gần như cùng một kho: ghi nhớ theo nội dung để lần sau chỉ chuẩn hóa câu
+ * mới (đo trên 12 nghìn phản hồi: bước này chiếm hơn một phần ba thời gian chạy).
+ * Kết quả chỉ được đọc ở phía sau, nên các phản hồi dùng chung một đối tượng.
+ */
+const NORMALIZE_CACHE_MAX = 60000;
+const normalizeCache = new Map();
+function normalizeCached(text) {
+  const key = String(text ?? '');
+  let hit = normalizeCache.get(key);
+  if (!hit) {
+    if (normalizeCache.size >= NORMALIZE_CACHE_MAX) normalizeCache.clear();
+    hit = normalize(key);
+    normalizeCache.set(key, hit);
+  }
+  return hit;
+}
+
 function runTrustLayer(feedbacks, options = {}) {
   const now = options.now ? new Date(options.now) : new Date();
   const halfLife = options.halfLifeDays ?? DEFAULT_HALF_LIFE_DAYS;
@@ -843,7 +871,7 @@ function runTrustLayer(feedbacks, options = {}) {
   // --- Chuẩn hóa văn bản + T0 + T1 ---
   const modelSignals = Array.isArray(options.modelSignals) ? options.modelSignals : [];
   const items = feedbacks.map((fb, idx) => {
-    const normalized = normalize(fb.originalText);
+    const normalized = normalizeCached(fb.originalText);
     const provenance = assignProvenanceTier(fb);
     const ms = modelSignals[idx] || {};
     const spam = runSpamFilter(fb, normalized, ms.spamScore ?? null);

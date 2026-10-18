@@ -350,25 +350,51 @@ function detectSustainedDrift(feedbacks, options = {}) {
   const startMs = nowMs - spanDays * 86400000;
   const bucketMs = (nowMs - startMs) / buckets;
 
+  /**
+   * Chuỗi theo dõi là TỈ LỆ khiếu nại của từng danh mục trong mỗi chu kỳ, tính
+   * bằng trọng số tin cậy CHƯA suy giảm theo tuổi.
+   *
+   * Bản trước cộng thẳng trust.weight của khiếu nại. Trọng số đó đã nhân hệ số
+   * suy giảm theo tuổi (nửa chu kỳ 30 ngày), nên trong cửa sổ 56 ngày phản hồi
+   * cũ nhất chỉ còn ~0,27 so với 1,0 của phản hồi mới: chuỗi đi lên theo cấu
+   * trúc và MỌI danh mục đều bị báo "xấu đi đều đặn". Đếm số lượng thay vì tỉ
+   * lệ cũng sai theo cách tương tự khi doanh số tăng: nhiều đơn hơn thì nhiều
+   * khiếu nại hơn, không có nghĩa là dịch vụ tệ đi.
+   *
+   * Mẫu số là phản hồi KHÔNG khiếu nại cộng khiếu nại của chính danh mục đó,
+   * không phải toàn bộ phản hồi: một đợt tăng vọt khiếu nại giao hàng làm phình
+   * mẫu số chung và kéo tỉ lệ của mọi danh mục khác đi xuống, che mất suy giảm thật.
+   */
+  const baseWeight = (f) =>
+    f.trust.humanLabel === 'valid'
+      ? f.trust.tierWeight
+      : f.trust.tierWeight * (1 - (f.trust.authenticityScore ?? 0));
+  const bucketOf = (t) => Math.min(buckets - 1, Math.floor((t - startMs) / bucketMs));
+
+  const nonComplaint = new Array(buckets).fill(0);
   const byCategory = new Map();
   for (const f of feedbacks) {
-    if (!isCountable(f) || !isComplaint(f)) continue;
+    if (!isCountable(f)) continue;
     const t = new Date(f.timestamp).getTime();
     if (t < startMs || t > nowMs) continue;
-
+    const idx = bucketOf(t);
+    const w = baseWeight(f);
     const cat = taxonomy.normalizeCategory(f.category);
-    if (cat === 'Other') continue;
+    if (!isComplaint(f) || cat === 'Other') {
+      nonComplaint[idx] += w;
+      continue;
+    }
 
-    if (!byCategory.has(cat)) byCategory.set(cat, new Array(buckets).fill(0));
-    let idx = Math.floor((t - startMs) / bucketMs);
-    if (idx >= buckets) idx = buckets - 1;
-    byCategory.get(cat)[idx] += f.trust.weight;
+    if (!byCategory.has(cat)) byCategory.set(cat, { weights: new Array(buckets).fill(0), members: [] });
+    const entry = byCategory.get(cat);
+    entry.weights[idx] += w;
+    entry.members.push(f);
   }
 
   const out = [];
-  for (const [cat, series] of byCategory) {
-    const totalPoints = series.reduce((a, b) => a + b, 0);
-    if (totalPoints < 10) continue; // quá thưa để nói về xu hướng
+  for (const [cat, { weights, members }] of byCategory) {
+    if (members.length < 10) continue; // quá thưa để nói về xu hướng
+    const series = weights.map((w, i) => (w + nonComplaint[i] > 0 ? (w / (w + nonComplaint[i])) * 100 : 0));
 
     const chart = stats.ewmaControlChart(series, { lambda: 0.2, L: 3, runLength: 3 });
     // Đường nền không lập được thì không kết luận gì — xem ghi chú
@@ -397,18 +423,25 @@ function detectSustainedDrift(feedbacks, options = {}) {
       productName: null,
       owner: taxonomy.categoryOwner(cat),
       statistics: {
-        ewmaCurrent: Number(last.ewma.toFixed(3)),
-        controlLimit: Number(chart.ucl.toFixed(3)),
-        baselineMean: Number(chart.mu0.toFixed(3)),
+        // Đơn vị: % khiếu nại danh mục này trên (khiếu nại đó + phản hồi không khiếu nại) mỗi chu kỳ
+        unit: '%',
+        ewmaCurrent: Number(last.ewma.toFixed(2)),
+        controlLimit: Number(chart.ucl.toFixed(2)),
+        baselineMean: Number(chart.mu0.toFixed(2)),
         consecutiveBreaches: chart.consecutiveBreaches,
         lambda: chart.lambda,
         L: chart.L
       },
       wcr: null,
       affectedCustomers: null,
-      evidenceCount: Math.round(totalPoints),
+      evidenceCount: members.length,
       excludedByTrust: 0,
-      evidenceIds: [],
+      // Khiếu nại gần nhất trước: đề xuất xử lý và màn chi tiết đọc bằng chứng từ đây
+      evidenceIds: members
+        .slice()
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 200)
+        .map((f) => f._id),
       severityScore: Number(score.toFixed(3)),
       severity: band.level,
       severityVi: band.levelVi,

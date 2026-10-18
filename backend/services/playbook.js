@@ -241,7 +241,11 @@ function summarize(alert) {
   const scope = scopeParts.length ? ` ${scopeParts.join(' ')}` : '';
 
   if (alert.type === 'SUSTAINED_DRIFT') {
-    return `${what}${scope} đang xấu đi đều đặn: đường EWMA vượt giới hạn kiểm soát ${alert.statistics.consecutiveBreaches} chu kỳ liên tiếp. Không có ngày nào đột biến, nhưng xu hướng đã lệch khỏi nền.`;
+    const st = alert.statistics;
+    const level = st.unit === '%'
+      ? ` (tỉ lệ khiếu nại ${st.ewmaCurrent}% so với nền ${st.baselineMean}%)`
+      : '';
+    return `${what}${scope} đang xấu đi đều đặn${level}: đường EWMA vượt giới hạn kiểm soát ${st.consecutiveBreaches} chu kỳ liên tiếp. Không có ngày nào đột biến, nhưng xu hướng đã lệch khỏi nền.`;
   }
 
   const cur = (alert.statistics.currentRate * 100).toFixed(1);

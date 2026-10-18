@@ -29,6 +29,7 @@
  */
 
 const corpus = require('./corpus');
+const { vary, makeHandle, displayName } = require('./variation');
 
 // ==================================================================
 // BỘ SINH SỐ GIẢ NGẪU NHIÊN CÓ HẠT GIỐNG
@@ -98,7 +99,19 @@ const PRODUCTS = [
   { name: 'Đèn bàn LED chống cận', price: 215000, category: 'Gia dụng' },
   { name: 'Ốp lưng silicon trong suốt', price: 45000, category: 'Phụ kiện' },
   { name: 'Cáp sạc nhanh Type-C 1m', price: 89000, category: 'Phụ kiện' },
-  { name: 'Tất cổ ngắn cotton set 5 đôi', price: 69000, category: 'Thời trang' }
+  { name: 'Tất cổ ngắn cotton set 5 đôi', price: 69000, category: 'Thời trang' },
+  { name: 'Sạc dự phòng Anker 10000mAh', price: 549000, category: 'Phụ kiện' },
+  { name: 'Đồng hồ thông minh Xiaomi Redmi Watch 4', price: 1990000, category: 'Điện tử' },
+  { name: 'Robot hút bụi Ecovacs N10', price: 5490000, category: 'Gia dụng' },
+  { name: 'Váy babydoll hoa nhí', price: 259000, category: 'Thời trang' },
+  { name: 'Tẩy trang Bioderma 500ml', price: 395000, category: 'Mỹ phẩm' },
+  { name: 'Loa Bluetooth JBL Go 3', price: 990000, category: 'Điện tử' },
+  { name: 'Máy xay sinh tố Philips HR2041', price: 790000, category: 'Gia dụng' },
+  { name: 'Áo khoác gió nam chống nước', price: 349000, category: 'Thời trang' },
+  { name: 'Son kem lì Romand Juicy Lasting', price: 229000, category: 'Mỹ phẩm' },
+  { name: 'Giá đỡ laptop nhôm gấp gọn', price: 179000, category: 'Phụ kiện' },
+  { name: 'Ấm siêu tốc Sunhouse 1.8L', price: 299000, category: 'Gia dụng' },
+  { name: 'Kính cường lực iPhone 15', price: 59000, category: 'Phụ kiện' }
 ];
 
 const REGIONS = [
@@ -110,12 +123,19 @@ const REGIONS = [
   { name: 'Thừa Thiên Huế', weight: 2 }, { name: 'Bắc Ninh', weight: 1 }
 ];
 
+/**
+ * linkRate: tỉ lệ phản hồi gắn được mã đơn. Trên sàn chỉ người đã mua mới
+ * đánh giá được, nên kết nối API trả về mã đơn cho gần như mọi đánh giá (phần
+ * hụt là đơn chưa đồng bộ kịp). Tổng đài chỉ có mã đơn khi khách đọc cho nhân
+ * viên. Bình luận Facebook và video TikTok không gắn với đơn nào.
+ */
 const CHANNELS = [
-  { name: 'Shopee', weight: 40, reconcilable: true },
-  { name: 'Facebook', weight: 20, reconcilable: false },
-  { name: 'TikTok', weight: 17, reconcilable: false },
-  { name: 'Lazada', weight: 12, reconcilable: true },
-  { name: 'CSKH', weight: 11, reconcilable: true }
+  { name: 'Shopee', weight: 36, reconcilable: true, linkRate: 0.95 },
+  { name: 'Facebook', weight: 18, reconcilable: false, linkRate: 0 },
+  { name: 'TikTok', weight: 15, reconcilable: false, linkRate: 0 },
+  { name: 'Lazada', weight: 11, reconcilable: true, linkRate: 0.94 },
+  { name: 'Tiki', weight: 8, reconcilable: true, linkRate: 0.93 },
+  { name: 'CSKH', weight: 12, reconcilable: true, linkRate: 0.55 }
 ];
 
 const HO = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi', 'Đỗ', 'Hồ', 'Ngô', 'Dương', 'Lý'];
@@ -166,7 +186,10 @@ function fillTemplate(rng, template) {
     .replace(/\{intensity\}/g, () => rng.pick(corpus.SLOTS.intensity))
     .replace(/\{duration\}/g, () => rng.pick(corpus.SLOTS.duration))
     .replace(/\{timeRef\}/g, () => rng.pick(corpus.SLOTS.timeRef))
-    .replace(/\{positiveClose\}/g, () => rng.pick(corpus.SLOTS.positiveClose))
+    .replace(/\{positiveClose\}/g, () => {
+      const close = rng.pick(corpus.SLOTS.positiveClose);
+      return close ? ',' + close : '';
+    })
     .replace(/\{phone\}/g, () => '0' + rng.int(300000000, 989999999))
     .replace(/\s+/g, ' ')
     .replace(/\s+([,.])/g, '$1')
@@ -182,7 +205,7 @@ function toTeencode(rng, text) {
   return out;
 }
 
-function makeText(rng, kind, cause) {
+function makeText(rng, kind, cause, category) {
   let text;
   if (kind === 'complaint') {
     const templates = corpus.COMPLAINT_TEMPLATES[cause];
@@ -192,7 +215,8 @@ function makeText(rng, kind, cause) {
   } else {
     text = fillTemplate(rng, rng.pick(corpus.NEUTRAL_TEMPLATES));
   }
-  return rng.bool(0.18) ? toTeencode(rng, text) : text;
+  text = vary(rng, text, kind, category);
+  return rng.bool(0.15) ? toTeencode(rng, text) : text;
 }
 
 /**
@@ -246,15 +270,24 @@ function generateDataset(opts = {}) {
   const days = opts.days ?? 90;
   const targetReviews = opts.targetReviews ?? 6000;
   const reviewRate = opts.reviewRate ?? 0.09;
+  // futureDays > 0: sinh thêm dữ liệu cho các ngày SẮP TỚI. Máy chủ chỉ đọc
+  // phản hồi đã tới giờ (timestamp <= hiện tại), nên kho tự "chảy" như một
+  // luồng thu thập thật thay vì đứng yên ở ngày chạy seed (độ tươi về 0 sau
+  // một ngày, mục "Hôm nay" trống trơn).
+  const futureDays = Math.max(0, Math.round(opts.futureDays ?? 0));
   const rng = createRng(opts.seed ?? 20260911);
 
-  const now = opts.now ? new Date(opts.now) : new Date();
+  const seededAt = opts.now ? new Date(opts.now) : new Date();
   const dayMs = 86400000;
-  const startMs = now.getTime() - days * dayMs;
+  const startMs = seededAt.getTime() - days * dayMs;
+  const totalDays = days + futureDays;
+  // Mốc của các sự cố cài vào (mặc định: lúc chạy seed). Đặt bằng ngày demo
+  // để các sự cố "đang diễn ra" đúng vào hôm đó.
+  const now = opts.anchor ? new Date(opts.anchor) : seededAt;
 
   const feedbacks = [];
   const orders = [];
-  const manifest = { incidents: [], generatedAt: new Date().toISOString(), params: { days, targetReviews, reviewRate, seed: opts.seed ?? 20260911 } };
+  const manifest = { incidents: [], generatedAt: new Date().toISOString(), params: { days, futureDays, anchor: now.toISOString(), targetReviews, reviewRate, seed: opts.seed ?? 20260911 } };
 
   let orderSeq = 100000;
   const productWeights = zipfWeights(PRODUCTS.length, 1.05);
@@ -276,9 +309,11 @@ function generateDataset(opts = {}) {
    */
   const customerWeights = zipfWeights(CUSTOMER_COUNT, 0.35);
   for (let i = 0; i < CUSTOMER_COUNT; i++) {
+    const name = `${rng.pick(HO)} ${rng.pick(DEM)} ${rng.pick(TEN)}`;
     customers.push({
       id: 'CUS' + String(100000 + i),
-      name: `${rng.pick(HO)} ${rng.pick(DEM)} ${rng.pick(TEN)}`,
+      name,
+      handle: makeHandle(rng, name),
       accountAgeDays: Math.max(8, Math.round(rng.normal(420, 260))),
       region: rng.weighted(REGIONS.map((r) => r.name), REGIONS.map((r) => r.weight))
     });
@@ -320,17 +355,17 @@ function generateDataset(opts = {}) {
     else { kind = 'positive'; sentiment = 'Positive'; }
 
     const chosen = kind === 'complaint' ? rng.weighted(causeItems, causeWeights) : null;
-    const isReconcilable = CHANNELS.find((c) => c.name === channel).reconcilable;
+    const { linkRate } = CHANNELS.find((c) => c.name === channel);
     const deliveredAt = timestampMs - rng.int(4, 72) * 3600000;
-    const orderId = isReconcilable && rng.bool(0.72) ? makeOrder(product, region, deliveredAt) : null;
+    const orderId = rng.bool(linkRate) ? makeOrder(product, region, deliveredAt) : null;
 
     feedbacks.push({
       source: channel,
       productName: product.name,
       productCategory: product.category,
       region,
-      originalText: makeText(rng, kind, chosen ? chosen.cause : null),
-      author: customer.name,
+      originalText: makeText(rng, kind, chosen ? chosen.cause : null, product.category),
+      author: displayName(customer, channel),
       customerId: channel === 'CSKH' ? customer.id : null,
       orderId,
       accountAgeDays: customer.accountAgeDays,
@@ -346,10 +381,10 @@ function generateDataset(opts = {}) {
   // 1. NỀN — phân bổ theo mùa vụ ngày và giờ
   // ================================================================
   const dayFactors = [];
-  for (let d = 0; d < days; d++) {
+  for (let d = 0; d < totalDays; d++) {
     const date = new Date(startMs + d * dayMs);
     // Xu hướng tăng trưởng nhẹ theo thời gian, cộng nhiễu ngẫu nhiên
-    const growth = 0.82 + (d / days) * 0.36;
+    const growth = 0.82 + (Math.min(d, days) / days) * 0.36;
     const factor = DOW_FACTOR[date.getDay()] * paydayFactor(date.getDate()) * growth *
       Math.max(0.5, rng.normal(1, 0.12));
     dayFactors.push(factor);
@@ -357,8 +392,9 @@ function generateDataset(opts = {}) {
   const factorSum = dayFactors.reduce((s, f) => s + f, 0);
 
   // Chừa khoảng 12% hạn ngạch cho nhiễu và các sự cố cài vào
-  const backgroundTarget = Math.round(targetReviews * 0.88);
-  for (let d = 0; d < days; d++) {
+  const historyFactorSum = dayFactors.slice(0, days).reduce((s, f) => s + f, 0);
+  const backgroundTarget = Math.round(targetReviews * 0.88 * (factorSum / historyFactorSum));
+  for (let d = 0; d < totalDays; d++) {
     const count = Math.round((dayFactors[d] / factorSum) * backgroundTarget);
     for (let i = 0; i < count; i++) {
       const hour = pickHour(rng);
@@ -385,7 +421,7 @@ function generateDataset(opts = {}) {
         feedbacks.push({
           source: rng.weighted(['Shopee', 'Facebook', 'CSKH'], [55, 25, 20]),
           productName: product.name, productCategory: product.category, region: 'TP.HCM',
-          originalText: makeText(rng, 'complaint', 'LateDelivery'),
+          originalText: makeText(rng, 'complaint', 'LateDelivery', product.category),
           author: customer.name, customerId: null, orderId,
           accountAgeDays: customer.accountAgeDays,
           rating: makeRating(rng, 'Negative'),
@@ -415,7 +451,7 @@ function generateDataset(opts = {}) {
         source: rng.weighted(['Shopee', 'CSKH', 'Facebook'], [50, 35, 15]),
         productName: product.name, productCategory: product.category,
         region: customer.region,
-        originalText: makeText(rng, 'complaint', 'GatewayError'),
+        originalText: makeText(rng, 'complaint', 'GatewayError', product.category),
         author: customer.name, customerId: customer.id, orderId: null,
         accountAgeDays: customer.accountAgeDays,
         rating: makeRating(rng, 'Negative'),
@@ -445,7 +481,7 @@ function generateDataset(opts = {}) {
         feedbacks.push({
           source: rng.weighted(['Shopee', 'Lazada', 'CSKH'], [55, 25, 20]),
           productName: product.name, productCategory: product.category, region: customer.region,
-          originalText: makeText(rng, 'complaint', 'TechnicalDefect'),
+          originalText: makeText(rng, 'complaint', 'TechnicalDefect', product.category),
           author: customer.name, customerId: null, orderId,
           accountAgeDays: customer.accountAgeDays,
           rating: makeRating(rng, 'Negative'),
@@ -523,17 +559,23 @@ function generateDataset(opts = {}) {
 
   /** Sự cố 6: dịch vụ khách hàng suy giảm chậm và đều suốt 60 ngày */
   {
+    // Cường độ tỉ lệ theo lưu lượng mỗi ngày (thiết kế gốc: 6.000 phản hồi / 90 ngày),
+    // nếu không thì ở quy mô lớn sự cố bị pha loãng tới mức không còn là sự cố
+    const volumeFactor = (targetReviews / days) / (6000 / 90);
     let n = 0;
     for (let d = 59; d >= 0; d--) {
       const intensity = (59 - d) / 59;
-      const count = rng.bool(0.45 + intensity * 0.5) ? rng.int(1, 3) : 0;
+      // Tăng dần từ gần như không có lên vài phản hồi mỗi ngày: không ngày nào
+      // đủ nổi bật, nhưng tỉ lệ khiếu nại dịch vụ sau hai tháng đã gấp rưỡi
+      const count = Math.round(intensity * rng.int(1, 6) * volumeFactor);
       for (let k = 0; k < count; k++) {
         const customer = rng.weighted(customers, customerWeights);
+        const product = rng.weighted(PRODUCTS, productWeights);
         feedbacks.push({
           source: rng.weighted(['CSKH', 'Facebook', 'Shopee'], [45, 30, 25]),
-          productName: rng.weighted(PRODUCTS, productWeights).name,
+          productName: product.name, productCategory: product.category,
           region: customer.region,
-          originalText: makeText(rng, 'complaint', 'SlowResponse'),
+          originalText: makeText(rng, 'complaint', 'SlowResponse', product.category),
           author: customer.name, customerId: customer.id, orderId: null,
           accountAgeDays: customer.accountAgeDays,
           rating: makeRating(rng, 'Negative'),
@@ -555,7 +597,8 @@ function generateDataset(opts = {}) {
   // ================================================================
   // 3. NHIỄU — quảng cáo, bot, đánh giá rỗng nghĩa
   // ================================================================
-  const adCount = Math.round(targetReviews * 0.035);
+  const scale = totalDays / days;
+  const adCount = Math.round(targetReviews * 0.035 * scale);
   for (let i = 0; i < adCount; i++) {
     feedbacks.push({
       source: rng.weighted(['Facebook', 'TikTok'], [70, 30]),
@@ -565,16 +608,16 @@ function generateDataset(opts = {}) {
       author: 'shop_' + rng.int(1000, 9999), customerId: null, orderId: null,
       accountAgeDays: rng.int(5, 400), rating: null,
       category: 'Other', subCategory: null, sentiment: 'Neutral',
-      timestamp: new Date(startMs + rng.next() * days * dayMs),
+      timestamp: new Date(startMs + rng.next() * totalDays * dayMs),
       _plantedAs: 'spam'
     });
   }
 
-  const emptyCount = Math.round(targetReviews * 0.045);
+  const emptyCount = Math.round(targetReviews * 0.045 * scale);
   for (let i = 0; i < emptyCount; i++) {
     const customer = rng.weighted(customers, customerWeights);
     const product = rng.weighted(PRODUCTS, productWeights);
-    const ts = startMs + rng.next() * days * dayMs;
+    const ts = startMs + rng.next() * totalDays * dayMs;
     feedbacks.push({
       source: rng.weighted(['Shopee', 'Lazada'], [70, 30]),
       productName: product.name, productCategory: product.category, region: customer.region,
@@ -599,7 +642,7 @@ function generateDataset(opts = {}) {
       feedbacks.push({
         source: 'Shopee',
         productName: product.name, productCategory: product.category, region: customer.region,
-        originalText: makeText(rng, 'positive', null),
+        originalText: makeText(rng, 'positive', null, product.category),
         author: customer.name, customerId: null, orderId,
         accountAgeDays: customer.accountAgeDays, rating: 5,
         category: 'Other', subCategory: null, sentiment: 'Positive',
@@ -625,7 +668,7 @@ function generateDataset(opts = {}) {
   const targetOrders = Math.round(reviewedOrders / reviewRate);
   for (let i = reviewedOrders; i < targetOrders; i++) {
     const product = rng.weighted(PRODUCTS, productWeights);
-    const dayOffset = rng.next() * days;
+    const dayOffset = rng.next() * totalDays;
     const date = new Date(startMs + dayOffset * dayMs);
     const seasonal = DOW_FACTOR[date.getDay()] * paydayFactor(date.getDate());
     if (rng.next() > seasonal / 1.4) continue; // giữ lại mùa vụ ở mẫu số
@@ -641,6 +684,11 @@ function generateDataset(opts = {}) {
     });
   }
 
+  // Bình luận Facebook và TikTok không có chấm sao như đánh giá trên sàn
+  for (const f of feedbacks) {
+    if (f.source === 'Facebook' || f.source === 'TikTok') f.rating = null;
+  }
+
   // Sắp theo thời gian để dữ liệu trông tự nhiên khi mở bảng
   feedbacks.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
@@ -652,6 +700,7 @@ function generateDataset(opts = {}) {
     regions: REGIONS.length,
     channels: CHANNELS.length,
     days,
+    futureDays,
     reviewRate: Number((reviewedOrders / orders.length).toFixed(4)),
     plantedSpam: feedbacks.filter((f) => f._plantedAs === 'spam').length,
     plantedInauthentic: feedbacks.filter((f) => f._plantedAs === 'inauthentic').length,

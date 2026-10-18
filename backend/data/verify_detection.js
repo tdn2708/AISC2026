@@ -50,7 +50,17 @@ function main() {
   console.log('='.repeat(70));
 
   const t0 = Date.now();
-  const { feedbacks: raw, orders, manifest } = generateDataset();
+  // Cùng tham số mặc định với lệnh seed; đổi được: --reviews=6000 --days=90 --future=0
+  const arg = (name) => {
+    const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
+    return hit ? Number(hit.split('=')[1]) : undefined;
+  };
+  const generated = generateDataset({ targetReviews: arg('reviews') ?? 12000, days: arg('days') ?? 120, futureDays: arg('future') ?? 30 });
+  // Như máy chủ: phản hồi và giao dịch của các ngày sắp tới chưa được nhìn thấy
+  const nowMs = Date.now();
+  const raw = generated.feedbacks.filter((f) => new Date(f.timestamp).getTime() <= nowMs);
+  const orders = generated.orders.filter((o) => new Date(o.deliveredAt).getTime() <= nowMs);
+  const { manifest } = generated;
   const feedbacks = enrich(raw);
   console.log(`\nSinh dữ liệu: ${num(feedbacks.length)} phản hồi, ${num(orders.length)} giao dịch (${Date.now() - t0} ms)`);
 

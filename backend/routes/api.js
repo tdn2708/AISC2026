@@ -812,7 +812,12 @@ router.get('/analyze/batch/sample', wrap(async (req, res) => {
   // n âm hay 0 từng đi thẳng vào $sample và làm MongoDB báo lỗi
   const n = clampInt(req.query.n, 200, 1, BATCH_LIMIT);
   const docs = await req.db.collection('feedbacks')
-    .aggregate([{ $sample: { size: n } }, { $project: { originalText: 1, _id: 0 } }])
+    .aggregate([
+      // Bỏ qua dữ liệu phát lại chưa tới giờ (seed với --future)
+      { $match: { timestamp: { $not: { $gt: new Date() } } } },
+      { $sample: { size: n } },
+      { $project: { originalText: 1, _id: 0 } }
+    ])
     .toArray();
   res.json({ texts: docs.map((d) => d.originalText).filter(Boolean) });
 }));

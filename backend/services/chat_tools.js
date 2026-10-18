@@ -149,7 +149,7 @@ const TOOLS = {
         } else {
           facts.push(
             `[${a.severityVi}] Suy giảm kéo dài · ${a.categoryLabel}: ` +
-            `EWMA ${a.statistics.ewmaCurrent} vượt giới hạn ${a.statistics.controlLimit} ` +
+            `EWMA ${a.statistics.ewmaCurrent}${a.statistics.unit || ''} vượt giới hạn ${a.statistics.controlLimit}${a.statistics.unit || ''} ` +
             `trong ${a.statistics.consecutiveBreaches} chu kỳ liên tiếp, SLA ${a.sla}`
           );
         }

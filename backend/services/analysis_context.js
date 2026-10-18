@@ -35,6 +35,9 @@ const CACHE_TTL_MS = 30 * 1000;
 // chu kỳ 30 ngày: 3 giờ chỉ đổi ~0,3%). Không đặt ngắn: Trust Layer chạy đồng
 // bộ, trên CPU yếu của Render một lần tính mất hơn chục giây và chặn mọi request.
 const MAX_AGE_MS = 3 * 60 * 60 * 1000;
+// Kho có dữ liệu phát lại (seed với --future): phản hồi "tới giờ" liên tục nên
+// tính lại mỗi giờ. Độ tươi đạt tối đa khi phản hồi mới nhất trễ dưới 1 giờ.
+const REPLAY_MAX_AGE_MS = 60 * 60 * 1000;
 const FETCH_BATCH = 5000;
 // Chỉ các trường giao dịch thật sự được dùng (đối soát, doanh thu rủi ro, vùng)
 const TXN_PROJECTION = { _id: 0, orderId: 1, productName: 1, region: 1, orderedAt: 1, deliveredAt: 1, amount: 1 };
@@ -104,9 +107,10 @@ async function doFetch(db, gen, onlyIfChanged) {
   // (seed lại cùng tham số) — _id mới thì luôn đổi. Truy vấn _id dùng chỉ
   // mục mặc định nên gần như không tốn gì.
   const key = `${feedbackCount}:${txnCount}:${lastFeedback?._id ?? ''}:${lastTxn?._id ?? ''}`;
+  const maxAge = cache.value?.replay ? REPLAY_MAX_AGE_MS : MAX_AGE_MS;
   if (
     onlyIfChanged && cache.value && cache.generation === gen &&
-    cache.key === key && Date.now() - cache.computedAt < MAX_AGE_MS
+    cache.key === key && Date.now() - cache.computedAt < maxAge
   ) {
     cache.at = Date.now();
     return cache.value;
@@ -114,9 +118,14 @@ async function doFetch(db, gen, onlyIfChanged) {
 
   // batchSize lớn: mặc định driver kéo 101 tài liệu mỗi lượt, mỗi lượt là
   // một vòng mạng tới Atlas — riêng bước này đã tốn vài giây
-  const [rawFeedbacks, transactions] = await Promise.all([
-    db.collection('feedbacks').find({}).sort({ timestamp: -1 }).batchSize(FETCH_BATCH).toArray(),
-    db.collection('transactions').find({}, { projection: TXN_PROJECTION }).batchSize(FETCH_BATCH).toArray()
+  // Chỉ đọc những gì ĐÃ xảy ra. Dữ liệu seed có thể kéo sang các ngày sắp tới
+  // (phát lại theo thời gian thực); bản ghi không có mốc thời gian vẫn được đọc
+  // ($not $gt khớp cả trường thiếu hoặc null).
+  const asOf = new Date();
+  const [rawFeedbacks, transactions, upcoming] = await Promise.all([
+    db.collection('feedbacks').find({ timestamp: { $not: { $gt: asOf } } }).sort({ timestamp: -1 }).batchSize(FETCH_BATCH).toArray(),
+    db.collection('transactions').find({ deliveredAt: { $not: { $gt: asOf } } }, { projection: TXN_PROJECTION }).batchSize(FETCH_BATCH).toArray(),
+    db.collection('feedbacks').findOne({ timestamp: { $gt: asOf } }, { projection: { _id: 1 } })
   ]);
 
   const feedbacks = rawFeedbacks.map(normalizeLabels);
@@ -171,7 +180,8 @@ async function doFetch(db, gen, onlyIfChanged) {
     transactionCount: transactions.length,
     humanLabelCount: labels.length,
     modelSignals: { ...result.modelSignals, source: nlp ? 'visobert' : null, ...(nlp ? nlp.meta : {}) },
-    computedAt: new Date().toISOString()
+    computedAt: new Date().toISOString(),
+    replay: Boolean(upcoming)
   };
 
   // Dữ liệu đã bị invalidate trong lúc nạp: không ghi đè bộ đệm bằng bản cũ
