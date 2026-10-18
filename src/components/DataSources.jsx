@@ -46,6 +46,54 @@ const STATUS = {
   'Syncing...': { tone: 'accent', icon: RefreshCw, label: 'Đang đồng bộ' }
 };
 
+const LABELLER = { visobert: 'ViSoBERT', llm: 'mô hình ngôn ngữ lớn', rules: 'lớp luật từ khóa' };
+const SENT_TONE = { Negative: 'crit', Positive: 'ok', Neutral: 'neutral' };
+const SENT_LABEL = { Negative: 'Tiêu cực', Positive: 'Tích cực', Neutral: 'Trung tính' };
+
+/** Danh sách đánh giá vừa thu thập kèm nhãn hệ thống gán (lời chê lên trước) */
+const ScrapeResult = ({ result }) => {
+  const rows = result.data || [];
+  const complaints = rows.filter((r) => r.categoryLabel).length;
+  return (
+    <div className="mt-6 animate-fade-up">
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-semibold text-ink-hi">
+            {result.count > 0
+              ? <>{fmtInt(result.count)} đánh giá thật vừa được thu thập{result.duplicatesSkipped ? <span className="font-normal text-ink-lo"> · bỏ qua {fmtInt(result.duplicatesSkipped)} đã có</span> : null}</>
+              : <>Không có đánh giá mới <span className="font-normal text-ink-lo">· {fmtInt(result.duplicatesSkipped || 0)} đánh giá của sản phẩm này đã có trong kho</span></>}
+          </p>
+          {result.productName && <p className="truncate text-xs text-ink-lo">{result.productName}</p>}
+        </div>
+        <Badge tone="accent">Phân loại bằng {LABELLER[result.labelledBy] || 'hệ thống'}</Badge>
+      </div>
+      {rows.length > 0 && (
+        <ul className="flex max-h-[28rem] list-none flex-col gap-2 overflow-y-auto pr-1">
+          {rows.map((r, i) => (
+            <li key={i} className="rounded-lg bg-surface/70 px-3.5 py-3">
+              <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-lo">
+                {r.rating != null && <span className="font-mono text-high">{'★'.repeat(r.rating)}<span className="text-ink-lo/50">{'★'.repeat(5 - r.rating)}</span></span>}
+                <span>{r.author}</span>
+                <Badge tone={SENT_TONE[r.sentiment] || 'neutral'}>{SENT_LABEL[r.sentiment] || r.sentiment}</Badge>
+              </div>
+              <p className="fb-clamp text-sm text-ink-hi">{r.originalText}</p>
+              {r.categoryLabel && (
+                <p className="mt-1.5 text-xs text-ink-mid">
+                  <b className="font-semibold text-ink-hi">{r.categoryLabel}</b>{r.causeLabel ? ` → ${r.causeLabel}` : ''}
+                  {r.owner ? <span className="text-ink-lo"> · chuyển {r.owner}</span> : null}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-2 text-xs text-ink-lo">
+        Hiển thị {rows.length} đánh giá, lời chê lên trước · {complaints} có vấn đề được gắn nhóm. Toàn bộ đã nằm trong kho phản hồi và đi qua Trust Layer.
+      </p>
+    </div>
+  );
+};
+
 const DataSources = () => {
   const [tab, setTab] = useState('shops');
   const [url, setUrl] = useState('');
@@ -56,6 +104,9 @@ const DataSources = () => {
   const [form, setForm] = useState({ platform: 'Shopee', name: '', shopId: '' });
   const [confirm, setConfirm] = useState(null); // { type: 'shop' | 'history', id? }
   const [trackedProducts, setTrackedProducts] = useState(null);
+  // Kết quả lần đồng bộ gần nhất: cho người xem thấy NGAY dữ liệu thật vừa về
+  // và hệ thống đã phân loại ra sao, thay vì chỉ một con số trong lịch sử
+  const [lastResult, setLastResult] = useState(null);
 
   useEffect(() => writeStorage('syncHistory', JSON.stringify(history)), [history]);
   useEffect(() => writeStorage('connectedShops', JSON.stringify(shops)), [shops]);
@@ -86,9 +137,10 @@ const DataSources = () => {
     e.preventDefault();
     if (!url.trim()) return;
     setIsSyncing(true);
+    setLastResult(null);
     const id = Date.now();
     setHistory((prev) => [
-      { id, source: url.includes('shopee') ? 'Shopee' : url.includes('facebook') ? 'Facebook' : url.includes('tiktok') ? 'TikTok' : 'Website', url, status: 'Syncing...', items: 0, time: new Date().toISOString() },
+      { id, source: url.includes('tiki.vn') ? 'Tiki' : url.includes('shopee') ? 'Shopee' : url.includes('facebook') ? 'Facebook' : url.includes('tiktok') ? 'TikTok' : 'Website', url, status: 'Syncing...', items: 0, time: new Date().toISOString() },
       ...prev
     ]);
     try {
@@ -98,6 +150,7 @@ const DataSources = () => {
       setHistory((prev) => prev.map((r) => (r.id === id
         ? { ...r, status: 'Success', items: res.data.count ?? 0, note: dup ? `Bỏ qua ${dup} bình luận đã có trong kho` : undefined }
         : r)));
+      setLastResult(res.data);
       setUrl('');
     } catch (err) {
       // 422 = trang chặn truy cập hoặc không có bình luận: kết quả hợp lệ, không phải lỗi hệ thống
@@ -192,7 +245,7 @@ const DataSources = () => {
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://shopee.vn/…"
+              placeholder="https://tiki.vn/…"
               required
               disabled={isSyncing}
             />
@@ -202,8 +255,14 @@ const DataSources = () => {
           </form>
           <div className="mt-5 flex gap-3 rounded-lg bg-accent-dim p-4 text-sm text-ink-mid">
             <Clock size={18} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />
-            <p>Mỗi lần đồng bộ mất khoảng 15 giây và có giới hạn tần suất. Để theo dõi ổn định, hãy kết nối cả gian hàng ở tab <b className="text-ink-hi">Gian hàng</b> — hệ thống tự đồng bộ hằng đêm và tuân thủ robots.txt.</p>
+            <p>
+              Hỗ trợ trực tiếp <b className="text-ink-hi">Tiki</b> qua API đánh giá công khai: tối đa 100 đánh giá mỗi lần, mất khoảng 20–30 giây gồm cả bước phân loại bằng AI.
+              Shopee và Lazada chặn truy cập tự động — với gian hàng của chính doanh nghiệp, hãy kết nối ở tab <b className="text-ink-hi">Gian hàng</b>.
+              Mọi lần thu thập đều có giới hạn tần suất và tuân thủ robots.txt.
+            </p>
           </div>
+
+          {lastResult && <ScrapeResult result={lastResult} />}
         </GlassPanel>
       )}
 

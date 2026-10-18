@@ -166,8 +166,11 @@ function coerceResult(raw, originalText) {
     ? raw.sentiment
     : 'Neutral';
 
-  // Nhãn ngoài taxonomy => quay về lớp luật, không nhận bừa
-  if (category === 'Other' && !cause) {
+  // Nhãn ngoài taxonomy => quay về lớp luật, không nhận bừa. Nhưng mô hình
+  // trả ĐÚNG "Other" nghĩa là nó đã đọc và kết luận "không có khiếu nại" —
+  // đó là câu trả lời hợp lệ, không được thay bằng lớp luật
+  const explicitOther = String(raw.category || '').trim().toLowerCase() === 'other';
+  if (category === 'Other' && !cause && !explicitOther) {
     const fb = classifyByRulesFallback(originalText);
     return { ...fb, sentiment: sentiment !== 'Neutral' ? sentiment : fb.sentiment };
   }
@@ -217,17 +220,30 @@ const analyzeFeedbackBatch = async (reviewsArray) => {
 
   // Chia lô: một prompt chứa vài trăm bình luận dễ vượt giới hạn token, và
   // khi đó CẢ lô rơi về lớp luật. Lô nhỏ thì lỗi chỉ ảnh hưởng một phần.
-  const out = [];
-  for (let i = 0; i < reviewsArray.length; i += LLM_BATCH_SIZE) {
-    out.push(...(await analyzeChunkWithLLM(reviewsArray.slice(i, i + LLM_BATCH_SIZE))));
-  }
-  return out;
+  // Các lô chạy song song (tối đa LLM_CONCURRENCY cùng lúc): chạy lần lượt
+  // thì 50 bình luận mất gần 2 phút, quá lâu cho một lần đồng bộ
+  const chunks = [];
+  for (let i = 0; i < reviewsArray.length; i += LLM_BATCH_SIZE) chunks.push(reviewsArray.slice(i, i + LLM_BATCH_SIZE));
+  const results = new Array(chunks.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(LLM_CONCURRENCY, chunks.length) }, async () => {
+    while (next < chunks.length) {
+      const k = next++;
+      results[k] = await analyzeChunkWithLLM(chunks[k]);
+    }
+  }));
+  return results.flat();
 };
 
-const LLM_BATCH_SIZE = 40;
+// 10 bình luận mỗi lượt: lô 40 làm đầu ra JSON dài vượt giới hạn và bị cắt
+// cụt giữa chừng ("Unterminated string in JSON") — cả lô rơi về lớp luật
+const LLM_BATCH_SIZE = 10;
+const LLM_CONCURRENCY = 5;
 
 async function analyzeChunkWithLLM(reviewsArray) {
-  if (!process.env.GROQ_API_KEY) return reviewsArray.map((text) => classifyByRulesFallback(text));
+  if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) {
+    return reviewsArray.map((text) => classifyByRulesFallback(text));
+  }
 
   // Che PII TRƯỚC khi văn bản rời khỏi tiến trình. Bản cũ gửi nguyên văn
   // (kèm số điện thoại, email, mã đơn) sang Groq — trái với chính nguyên tắc
@@ -243,6 +259,11 @@ QUY TẮC PHÂN NHÁNH QUAN TRỌNG: hư hỏng trong quá trình vận chuyển
 nhánh Delivery (DamagedInTransit), KHÔNG thuộc ProductQuality — vì bộ
 phận chịu trách nhiệm khắc phục là khâu vận chuyển.
 
+TAXONOMY CHỈ GỒM NGUYÊN NHÂN KHIẾU NẠI. Chỉ ghi category/subCategory khi
+bình luận PHÀN NÀN về vấn đề đó. Bình luận chỉ khen, không chê điều gì thì
+category = "Other" và subCategory = null. Bình luận vừa khen vừa chê thì
+ghi vấn đề bị chê.
+
 Với MỖI bình luận trong mảng đầu vào, trả về một đối tượng JSON:
 {
   "category": "<một mã Level 1 ở trên, hoặc 'Other'>",
@@ -257,28 +278,44 @@ Trường "aspects" là đầu ra phân tích cảm xúc theo khía cạnh; trư
 "entities" là đầu ra nhận diện thực thể. KHÔNG trộn hai loại này vào nhau.
 Một câu có thể chứa nhiều khía cạnh TRÁI DẤU — hãy tách đủ.
 
-Trả về DUY NHẤT một mảng JSON đúng thứ tự đầu vào, không kèm giải thích.
+Trả về DUY NHẤT một đối tượng JSON dạng {"results": [ ... ]}, mảng results có
+đúng ${maskedReviews.length} phần tử theo đúng thứ tự đầu vào, không kèm giải thích.
 
 Dữ liệu:
 ${JSON.stringify(maskedReviews)}`;
 
-  try {
-    const completion = await getGroq().chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: GROQ_MODEL
-    });
-
-    const parsed = JSON.parse(stripCodeFence(completion.choices[0].message.content));
-    const arr = Array.isArray(parsed)
-      ? parsed
-      : Object.values(parsed).find((v) => Array.isArray(v)) || [];
-
-    return reviewsArray.map((text, i) => coerceResult(arr[i], text));
-  } catch (error) {
-    console.error('[GROQ] Lỗi analyzeFeedbackBatch, chuyển sang phân loại theo luật:', error.message);
-    // Lớp luật, KHÔNG phải nhãn ngẫu nhiên
-    return reviewsArray.map((text) => classifyByRulesFallback(text));
+  // Thử lần lượt từng nhà cung cấp có khóa; cả hai lỗi mới lùi về lớp luật.
+  // Gemini đứng trước: Groq gói miễn phí giới hạn 8.000 token/phút, các lô
+  // chạy song song bị chặn (429) và phải chờ — một lần đồng bộ mất gần 1 phút
+  const attempts = [];
+  if (process.env.GEMINI_API_KEY) {
+    attempts.push(['GEMINI', async () => (await getGenAI()
+      .getGenerativeModel({ model: GEMINI_MODEL, generationConfig: { responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } } }, { timeout: LLM_TIMEOUT_MS })
+      .generateContent(prompt)).response.text()]);
   }
+
+  if (process.env.GROQ_API_KEY) {
+    attempts.push(['GROQ', async () => (await getGroq().chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: GROQ_MODEL,
+      response_format: { type: 'json_object' },
+      max_tokens: 8192
+    })).choices[0].message.content]);
+  }
+  for (const [name, call] of attempts) {
+    try {
+      const parsed = JSON.parse(stripCodeFence(await call()));
+      const arr = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.results) ? parsed.results : Object.values(parsed || {}).find((v) => Array.isArray(v)) || [];
+      if (arr.length === 0) throw new Error('mô hình trả về mảng rỗng');
+      return reviewsArray.map((text, i) => coerceResult(arr[i], text));
+    } catch (error) {
+      console.error(`[${name}] Lỗi gán nhãn lô ${reviewsArray.length} bình luận:`, error.message);
+    }
+  }
+  // Lớp luật, KHÔNG phải nhãn ngẫu nhiên
+  return reviewsArray.map((text) => classifyByRulesFallback(text));
 }
 
 /**

@@ -1093,9 +1093,23 @@ router.post('/scrape', wrap(async (req, res) => {
       entities: ai.entities || null,
       // Giữ đủ khía cạnh: mô hình đa nhãn có thể nêu nhiều vấn đề trong một phản hồi,
       // `category` chỉ là danh mục chính dùng để đếm chỉ số
-      aspects: Array.isArray(ai.aspects) ? ai.aspects : []
+      aspects: Array.isArray(ai.aspects) ? ai.aspects : [],
+      // Nhãn do đâu gán (visobert / llm / rules) — để biết độ tin của nhãn
+      labelledBy: ai.labelledBy || null
     };
   });
+
+  // dryRun: thu thập và phân loại nhưng KHÔNG lưu — để kiểm tra kết nối tới
+  // nguồn dữ liệu trên máy chủ thật mà không đụng vào kho đang phục vụ web
+  if (req.body?.dryRun === true) {
+    return res.json({
+      dryRun: true,
+      count: analyzed.length,
+      productName: analyzed[0]?.productName || null,
+      labelledBy: [...new Set(analyzed.map((d) => d.labelledBy))],
+      complaints: analyzed.filter((d) => d.category && d.category !== 'Other').length
+    });
+  }
 
   // Ghi theo khóa chống trùng thay vì insertMany: cào lại cùng trang từng
   // chèn nguyên bản sao của mọi bình luận, và chính các bản sao cùng thời
@@ -1122,7 +1136,22 @@ router.post('/scrape', wrap(async (req, res) => {
     duplicatesSkipped: analyzed.length - inserted,
     dataHealthScore: ctx.funnel.dataHealthScore,
     funnel: ctx.funnel,
-    data: analyzed.slice(0, 20)
+    productName: analyzed[0]?.productName || null,
+    labelledBy: analyzed[0]?.labelledBy || null,
+    // Bản xem trước cho giao diện: chê trước, kèm nhãn tiếng Việt
+    data: [...analyzed]
+      .sort((a, b) => (a.rating ?? 6) - (b.rating ?? 6))
+      .slice(0, 20)
+      .map((d) => ({
+        author: d.author,
+        rating: d.rating,
+        timestamp: d.timestamp,
+        originalText: d.originalText,
+        sentiment: d.sentiment,
+        categoryLabel: d.category && d.category !== 'Other' ? taxonomy.categoryLabel(d.category) : null,
+        causeLabel: d.category && d.subCategory ? taxonomy.causeLabel(d.category, d.subCategory) : null,
+        owner: d.category && d.category !== 'Other' ? taxonomy.categoryOwner(d.category) : null
+      }))
   });
 }));
 

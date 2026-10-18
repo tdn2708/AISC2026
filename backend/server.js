@@ -61,7 +61,9 @@ async function ensureIndexes(db) {
 async function startServer() {
   try {
     await client.connect();
-    const db = client.db('customer_radar');
+    // Đặt MONGODB_DB khác để chạy thử trên một database riêng mà không đụng
+    // vào dữ liệu đang phục vụ web (cùng cụm Atlas)
+    const db = client.db(process.env.MONGODB_DB || 'customer_radar');
     console.log('Đã kết nối MongoDB.');
 
     await ensureIndexes(db);

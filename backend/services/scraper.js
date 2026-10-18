@@ -113,10 +113,85 @@ function parseReviewDate(v) {
 
 const MAX_SCROLL_STEPS = 60;
 
+/**
+ * KẾT NỐI TIKI QUA API ĐÁNH GIÁ CÔNG KHAI.
+ *
+ * Không cần trình duyệt không giao diện (Puppeteer cần ~300 MB RAM, máy chủ
+ * miễn phí không chạy nổi) và không cần mô hình ngôn ngữ để "đọc" trang: Tiki
+ * trả thẳng JSON có tên người viết, số sao, ngày. robots.txt của Tiki chỉ chặn
+ * /api/v2/me/ và /api/v2/reviews/writable — API đọc đánh giá được phép.
+ * Lịch sự với máy chủ: tối đa TIKI_MAX_PAGES trang, nghỉ giữa các lần gọi.
+ */
+const TIKI_MAX_PAGES = 5;
+const TIKI_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (compatible; CustomerRadar/1.0; +https://aisc-2026.vercel.app)',
+  Accept: 'application/json'
+};
+
+function tikiProductIds(u) {
+  if (!/(^|\.)tiki\.vn$/i.test(u.hostname)) return null;
+  const m = u.pathname.match(/-p(\d+)\.html$/i) || u.pathname.match(/^\/p\/(\d+)/i);
+  return m ? { productId: m[1], spid: u.searchParams.get('spid') } : null;
+}
+
+async function fetchTikiReviews(u) {
+  const axios = require('axios');
+  const { productId, spid } = tikiProductIds(u);
+  const q = spid ? `&spid=${encodeURIComponent(spid)}` : '';
+
+  let productName = null;
+  try {
+    const { data } = await axios.get(`https://tiki.vn/api/v2/products/${productId}?${q.slice(1)}`, { headers: TIKI_HEADERS, timeout: 15000 });
+    productName = data?.name || null;
+  } catch {
+    // không lấy được tên thì route dùng đoạn cuối đường dẫn
+  }
+
+  const reviews = [];
+  for (let page = 1; page <= TIKI_MAX_PAGES; page++) {
+    const { data } = await axios.get(
+      `https://tiki.vn/api/v2/reviews?product_id=${productId}${q}&page=${page}&limit=20&sort=${encodeURIComponent('score|desc,id|desc,stars|all')}`,
+      { headers: TIKI_HEADERS, timeout: 15000 }
+    );
+    const rows = Array.isArray(data?.data) ? data.data : [];
+    for (const r of rows) {
+      // Chỉ lấy đánh giá có nội dung viết. Phần tiêu đề ("Cực kì hài lòng") do
+      // Tiki tự sinh theo số sao, không mang thông tin để phân tích.
+      const text = String(r.content || '').trim();
+      if (!text) continue;
+      reviews.push({
+        source: 'Tiki',
+        rawText: canonicalize(text).slice(0, 5000),
+        author: r.created_by?.name ? canonicalize(r.created_by.name).trim().slice(0, 100) : 'Ẩn danh',
+        rating: parseRating(r.rating),
+        accountAgeDays: null,
+        orderId: null,
+        productName,
+        timestamp: parseReviewDate(r.created_at ? new Date(r.created_at * 1000) : null)
+      });
+    }
+    const last = data?.paging?.last_page ?? page;
+    if (page >= last || rows.length === 0) break;
+    await new Promise((resolve) => setTimeout(resolve, 600));
+  }
+  console.log(`[SCRAPER] Tiki: ${reviews.length} đánh giá có nội dung từ sản phẩm ${productId}`);
+  return reviews;
+}
+
 const scrapeShopeeReviews = async (productUrl) => {
-  const { hostname, href } = validateTargetUrl(productUrl);
+  const target = validateTargetUrl(productUrl);
+  const { hostname, href } = target;
   productUrl = href;
   await respectRateLimit(hostname);
+
+  if (tikiProductIds(target)) {
+    try {
+      return await fetchTikiReviews(target);
+    } catch (e) {
+      console.error('[SCRAPER] Lỗi khi gọi API đánh giá Tiki:', e.message);
+      return [];
+    }
+  }
 
   let rawText = '';
   let browser = null;
