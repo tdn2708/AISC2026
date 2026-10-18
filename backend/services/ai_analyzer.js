@@ -89,6 +89,12 @@ function llmAvailability() {
 const GROQ_MODEL = 'openai/gpt-oss-120b';
 const OPENROUTER_MODEL = 'openai/gpt-4o-mini';
 const GEMINI_MODEL = 'gemini-2.5-flash';
+// Gán nhãn theo lô dùng mô hình nhẹ: nhanh hơn nhiều (~1 giây/lượt so với ~4 giây)
+// và có hạn mức miễn phí riêng — gemini-2.5-flash từng hết hạn mức giữa ngày làm
+// mọi lô rơi về lớp luật. Đổi bằng GEMINI_LABEL_MODEL nếu Google gỡ mô hình này.
+const GEMINI_LABEL_MODEL = process.env.GEMINI_LABEL_MODEL || 'gemini-3.5-flash-lite';
+// Một lô treo không được kéo cả lần thu thập: gán nhãn có trần riêng, ngắn hơn
+const LABEL_TIMEOUT_MS = Number(process.env.LABEL_TIMEOUT_MS) || 20000;
 
 /** Gỡ rào markdown mà mô hình hay bọc quanh JSON */
 function stripCodeFence(text) {
@@ -290,7 +296,7 @@ ${JSON.stringify(maskedReviews)}`;
   const attempts = [];
   if (process.env.GEMINI_API_KEY) {
     attempts.push(['GEMINI', async () => (await getGenAI()
-      .getGenerativeModel({ model: GEMINI_MODEL, generationConfig: { responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } } }, { timeout: LLM_TIMEOUT_MS })
+      .getGenerativeModel({ model: GEMINI_LABEL_MODEL, generationConfig: { responseMimeType: 'application/json' } }, { timeout: LABEL_TIMEOUT_MS })
       .generateContent(prompt)).response.text()]);
   }
 

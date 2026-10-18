@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Link2, RefreshCw, Store, ShoppingBag, Music2, Globe, Plus, Trash2, Boxes, Activity, Clock, CircleCheck, CircleX, CircleDashed, Unplug, History
+  Link2, RefreshCw, Store, ShoppingBag, Music2, Globe, Plus, Trash2, Boxes, Activity, Clock, CircleCheck, CircleX, CircleDashed, Unplug, History, ArrowRight, Info
 } from 'lucide-react';
 import { PageHeader, GlassPanel, PanelHeader, Tabs, Button, TextField, Select, Switch, Modal, Badge, EmptyState, Stat } from './ui';
 import { fmtInt } from '../lib/format';
@@ -18,7 +19,18 @@ import { readStorage, writeStorage } from '../lib/storage';
 const PLATFORM = {
   Shopee: { icon: ShoppingBag, tile: 'bg-[#F6D9C9] text-[#9A4316]', label: 'Shopee' },
   TikTok: { icon: Music2, tile: 'bg-blush/55 text-[#8E2F45]', label: 'TikTok Shop' },
+  Tiki: { icon: ShoppingBag, tile: 'bg-sky/55 text-[#2F5E92]', label: 'Tiki' },
   Web: { icon: Globe, tile: 'bg-sky/55 text-[#2F5E92]', label: 'Website' }
+};
+
+const isLink = (v) => /^https?:\/\//i.test(String(v || '').trim());
+
+/** Đường dẫn tới kho phản hồi, lọc đúng nguồn + sản phẩm vừa thu thập, mọi thời gian */
+const feedbackLink = (source, productName) => {
+  const q = new URLSearchParams({ time: 'All', include: 'all' });
+  if (source) q.set('source', source);
+  if (productName) q.set('product', productName);
+  return `/feedbacks?${q.toString()}`;
 };
 
 const loadLocal = (key, fallback) => {
@@ -52,6 +64,7 @@ const SENT_LABEL = { Negative: 'Tiêu cực', Positive: 'Tích cực', Neutral: 
 
 /** Danh sách đánh giá vừa thu thập kèm nhãn hệ thống gán (lời chê lên trước) */
 const ScrapeResult = ({ result }) => {
+  const navigate = useNavigate();
   const rows = result.data || [];
   const complaints = rows.filter((r) => r.categoryLabel).length;
   return (
@@ -87,9 +100,14 @@ const ScrapeResult = ({ result }) => {
           ))}
         </ul>
       )}
-      <p className="mt-2 text-xs text-ink-lo">
-        Hiển thị {rows.length} đánh giá, lời chê lên trước · {complaints} có vấn đề được gắn nhóm. Toàn bộ đã nằm trong kho phản hồi và đi qua Trust Layer.
-      </p>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-ink-lo">
+          Hiển thị {rows.length} đánh giá, lời chê lên trước · {complaints} có vấn đề được gắn nhóm. Toàn bộ đã nằm trong kho phản hồi và đi qua Trust Layer.
+        </p>
+        <Button size="sm" iconRight={ArrowRight} onClick={() => navigate(feedbackLink(result.source, result.productName))}>
+          Xem trong kho phản hồi
+        </Button>
+      </div>
     </div>
   );
 };
@@ -99,9 +117,13 @@ const DataSources = () => {
   const [url, setUrl] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [history, setHistory] = useState(() => loadLocal('syncHistory', []));
-  const [shops, setShops] = useState(() => loadLocal('connectedShops', DEMO_SHOPS));
+  // Thẻ mẫu do phiên bản cũ lưu (có số sản phẩm bịa như "120") được thay bằng bản hiện hành
+  const [shops, setShops] = useState(() =>
+    loadLocal('connectedShops', DEMO_SHOPS).map((s) => (s && DEMO_SHOPS.find((d) => d.id === s.id)) || s)
+  );
+  const navigate = useNavigate();
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ platform: 'Shopee', name: '', shopId: '' });
+  const [form, setForm] = useState({ platform: 'Tiki', name: '', shopId: '' });
   const [confirm, setConfirm] = useState(null); // { type: 'shop' | 'history', id? }
   const [trackedProducts, setTrackedProducts] = useState(null);
   // Kết quả lần đồng bộ gần nhất: cho người xem thấy NGAY dữ liệu thật vừa về
@@ -119,12 +141,19 @@ const DataSources = () => {
   const addShop = (e) => {
     e.preventDefault();
     if (!form.name.trim() || !form.shopId.trim()) return;
+    const shopId = form.shopId.trim();
     setShops((prev) => [
-      { id: Date.now().toString(), name: form.name.trim(), platform: form.platform, shopId: form.shopId.trim(), productsCount: 0, autoSync: true, status: 'Active' },
+      { id: Date.now().toString(), name: form.name.trim(), platform: form.platform, shopId, productsCount: 0, autoSync: true, status: 'Active' },
       ...prev
     ]);
     setShowAdd(false);
-    setForm({ platform: 'Shopee', name: '', shopId: '' });
+    setForm({ platform: 'Tiki', name: '', shopId: '' });
+    // Nhập vào là đường dẫn sản phẩm: thu thập ngay và cho xem kết quả, thay vì
+    // chỉ lưu một thẻ gian hàng không có dữ liệu
+    if (isLink(shopId)) {
+      setTab('url');
+      runSync(shopId);
+    }
   };
 
   const runConfirm = () => {
@@ -133,22 +162,28 @@ const DataSources = () => {
     setConfirm(null);
   };
 
-  const sync = async (e) => {
+  const sync = (e) => {
     e.preventDefault();
-    if (!url.trim()) return;
+    runSync(url);
+  };
+
+  const runSync = async (raw) => {
+    const link = String(raw || '').trim();
+    if (!link || isSyncing) return;
+    setUrl(link);
     setIsSyncing(true);
     setLastResult(null);
     const id = Date.now();
     setHistory((prev) => [
-      { id, source: url.includes('tiki.vn') ? 'Tiki' : url.includes('shopee') ? 'Shopee' : url.includes('facebook') ? 'Facebook' : url.includes('tiktok') ? 'TikTok' : 'Website', url, status: 'Syncing...', items: 0, time: new Date().toISOString() },
+      { id, source: link.includes('tiki.vn') ? 'Tiki' : link.includes('shopee') ? 'Shopee' : link.includes('facebook') ? 'Facebook' : link.includes('tiktok') ? 'TikTok' : 'Website', url: link, status: 'Syncing...', items: 0, time: new Date().toISOString() },
       ...prev
     ]);
     try {
-      const res = await axios.post('/scrape', { url: url.trim() });
+      const res = await axios.post('/scrape', { url: link });
       // Dùng đúng số bản ghi máy chủ báo về — không bao giờ bịa con số
       const dup = res.data.duplicatesSkipped || 0;
       setHistory((prev) => prev.map((r) => (r.id === id
-        ? { ...r, status: 'Success', items: res.data.count ?? 0, note: dup ? `Bỏ qua ${dup} bình luận đã có trong kho` : undefined }
+        ? { ...r, status: 'Success', items: res.data.count ?? 0, note: dup ? `Bỏ qua ${dup} bình luận đã có trong kho` : undefined, dataSource: res.data.source, productName: res.data.productName }
         : r)));
       setLastResult(res.data);
       setUrl('');
@@ -225,7 +260,14 @@ const DataSources = () => {
                       <Switch size="sm" checked={s.autoSync} onChange={(v) => setShops((prev) => prev.map((x) => (x.id === s.id ? { ...x, autoSync: v } : x)))} label={`Tự đồng bộ ${s.name}`} />
                       {s.autoSync ? 'Tự đồng bộ hằng đêm' : 'Đã tạm dừng'}
                     </label>
-                    <Button size="sm" variant="ghost" icon={Unplug} onClick={() => setConfirm({ type: 'shop', id: s.id, name: s.name })}>Ngắt</Button>
+                    <div className="flex items-center gap-1">
+                      {isLink(s.shopId) && (
+                        <Button size="sm" variant="outline" icon={RefreshCw} loading={isSyncing} onClick={() => { setTab('url'); runSync(s.shopId); }}>
+                          Đồng bộ ngay
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" icon={Unplug} onClick={() => setConfirm({ type: 'shop', id: s.id, name: s.name })}>Ngắt</Button>
+                    </div>
                   </div>
                 </GlassPanel>
               );
@@ -294,6 +336,11 @@ const DataSources = () => {
                           <Badge tone={st.tone} icon={st.icon}>{st.label}</Badge>
                           {r.error && <p className="mt-1 text-[0.7rem] text-crit">{r.error}</p>}
                           {r.note && <p className="mt-1 text-[0.7rem] text-ink-lo">{r.note}</p>}
+                          {r.status === 'Success' && r.dataSource && (
+                            <button type="button" onClick={() => navigate(feedbackLink(r.dataSource, r.productName))} className="mt-1 inline-flex items-center gap-1 text-[0.72rem] font-medium text-accent hover:underline">
+                              Xem dữ liệu <ArrowRight size={12} />
+                            </button>
+                          )}
                         </td>
                         <td className="text-right font-mono">{fmtInt(r.items || 0)}</td>
                         <td className="font-mono text-xs text-ink-mid">{fmtTime(r.time)}</td>
@@ -317,20 +364,31 @@ const DataSources = () => {
         onClose={() => setShowAdd(false)}
         icon={Boxes}
         title="Kết nối gian hàng"
-        description="Doanh nghiệp cấp quyền truy cập gian hàng của chính mình qua API chính thức."
+        description="Kết nối API chính chủ của sàn (lấy cả mã đơn hàng) đang trong lộ trình. Hiện tại: dán đường dẫn sản phẩm Tiki để hệ thống thu thập và phân loại đánh giá ngay."
       >
         <form id="add-shop" onSubmit={addShop} className="flex flex-col gap-4">
           <Select
             label="Nền tảng"
             value={form.platform}
             onChange={(e) => setForm({ ...form, platform: e.target.value })}
-            options={[{ value: 'Shopee', label: 'Shopee' }, { value: 'TikTok', label: 'TikTok Shop' }, { value: 'Web', label: 'Website tự quản' }]}
+            options={[{ value: 'Tiki', label: 'Tiki' }, { value: 'Shopee', label: 'Shopee' }, { value: 'TikTok', label: 'TikTok Shop' }, { value: 'Web', label: 'Website tự quản' }]}
           />
           <TextField label="Tên gian hàng" icon={Store} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ví dụ: Cửa hàng chính hãng" required />
           <TextField label="Mã gian hàng hoặc URL" icon={Activity} value={form.shopId} onChange={(e) => setForm({ ...form, shopId: e.target.value })} placeholder="SHP-12345 hoặc https://…" required />
+          {isLink(form.shopId) ? (
+            <p className="flex gap-2 rounded-lg bg-accent-dim p-3 text-xs text-ink-mid">
+              <Info size={14} className="mt-0.5 shrink-0 text-accent" />
+              Đây là đường dẫn: hệ thống sẽ thu thập đánh giá công khai của sản phẩm này ngay (hỗ trợ Tiki; Shopee và Lazada chặn truy cập tự động).
+            </p>
+          ) : (
+            <p className="flex gap-2 rounded-lg bg-raised p-3 text-xs text-ink-mid">
+              <Info size={14} className="mt-0.5 shrink-0 text-ink-lo" />
+              Nhập mã gian hàng thì hệ thống chỉ lưu thông tin, chưa thu thập dữ liệu cho tới khi có kết nối API chính chủ.
+            </p>
+          )}
           <div className="mt-2 flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setShowAdd(false)}>Huỷ</Button>
-            <Button type="submit" icon={Plus}>Kết nối</Button>
+            <Button type="submit" icon={isLink(form.shopId) ? RefreshCw : Plus}>{isLink(form.shopId) ? 'Kết nối & thu thập ngay' : 'Lưu gian hàng'}</Button>
           </div>
         </form>
       </Modal>

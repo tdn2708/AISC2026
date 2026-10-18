@@ -5,6 +5,7 @@ import { Search, X, ChevronLeft, ChevronRight, Copy, Zap, UserX, Star, Receipt, 
 import FilterBar from './FilterBar';
 import { PageHeader, GlassPanel, Chip, Drawer, EmptyState, SentimentFace, Badge, ProgressBar } from './ui';
 import { buildQuery, fmtInt, fmtDateTime, initials, SENTIMENT_MAP, foldVi } from '../lib/format';
+import { readStorage, writeStorage } from '../lib/storage';
 
 /**
  * KHO PHẢN HỒI
@@ -131,14 +132,21 @@ const Feedbacks = () => {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
 
-  const [timeFilter, setTimeFilter] = useState(localStorage.getItem('timeFilter') || 'All');
-  const [sourceFilter, setSourceFilter] = useState(localStorage.getItem('sourceFilter') || 'All');
-  const [productFilter, setProductFilter] = useState(localStorage.getItem('productFilter') || 'All');
+  // Bộ lọc trên đường dẫn (?source=&product=&time=) thắng bộ lọc đã nhớ: trang
+  // Nguồn dữ liệu mở thẳng tới đúng lô phản hồi vừa thu thập theo cách này
+  const [timeFilter, setTimeFilter] = useState(params.get('time') || readStorage('timeFilter') || 'All');
+  const [sourceFilter, setSourceFilter] = useState(params.get('source') || readStorage('sourceFilter') || 'All');
+  const [productFilter, setProductFilter] = useState(params.get('product') || readStorage('productFilter') || 'All');
+  // ?include=all: xem ĐỦ lô vừa thu thập, kể cả phản hồi Trust Layer không tính vào
+  // chỉ số (rác, nghi không xác thực, hoặc quá cũ nên trọng số về 0). Mặc định
+  // trang chỉ hiện phản hồi được tính — mở từ trang Nguồn dữ liệu thì bật chế độ này,
+  // nếu không người xem chỉ thấy 11/47 đánh giá vừa cào và tưởng mất dữ liệu
+  const includeAll = params.get('include') === 'all';
 
   useEffect(() => {
-    localStorage.setItem('timeFilter', timeFilter);
-    localStorage.setItem('sourceFilter', sourceFilter);
-    localStorage.setItem('productFilter', productFilter);
+    writeStorage('timeFilter', timeFilter);
+    writeStorage('sourceFilter', sourceFilter);
+    writeStorage('productFilter', productFilter);
   }, [timeFilter, sourceFilter, productFilter]);
 
   // Đến từ bảng lệnh Ctrl+K với ?q=
@@ -150,16 +158,18 @@ const Feedbacks = () => {
   useEffect(() => {
     setLoading(true);
     axios
-      .get(`/feedbacks${buildQuery({ time: timeFilter, source: sourceFilter, product: productFilter })}`)
+      .get(`/feedbacks${buildQuery({ time: timeFilter, source: sourceFilter, product: productFilter }, { include: includeAll ? 'all' : null })}`)
       .then((res) => {
         setFeedbacks(Array.isArray(res.data) ? res.data : []);
         setError(null);
       })
       .catch(() => setError('Không tải được phản hồi. Kiểm tra máy chủ đã chạy chưa.'))
       .finally(() => setLoading(false));
-  }, [timeFilter, sourceFilter, productFilter]);
+  }, [timeFilter, sourceFilter, productFilter, includeAll]);
 
   useEffect(() => setPage(1), [search, mood, tier, timeFilter, sourceFilter, productFilter]);
+
+  const countedTotal = useMemo(() => feedbacks.filter((f) => f.trust?.weight > 0).length, [feedbacks]);
 
   const q = strip(search.trim());
   const searched = useMemo(
@@ -182,7 +192,9 @@ const Feedbacks = () => {
         section="Giám sát"
         title="Kho"
         accent="phản hồi"
-        subtitle="Chỉ hiển thị phản hồi đã qua tầng kiểm soát tin cậy. Bấm vào một dòng để xem chi tiết và các tín hiệu đã kích hoạt."
+        subtitle={includeAll
+          ? 'Đang xem toàn bộ phản hồi, kể cả phản hồi không được tính vào chỉ số. Bấm vào một dòng để xem chi tiết và các tín hiệu đã kích hoạt.'
+          : 'Chỉ hiển thị phản hồi đã qua tầng kiểm soát tin cậy. Bấm vào một dòng để xem chi tiết và các tín hiệu đã kích hoạt.'}
       />
 
       <FilterBar
@@ -191,6 +203,24 @@ const Feedbacks = () => {
         productFilter={productFilter} setProductFilter={setProductFilter}
         hideExportButton
       />
+
+      {includeAll && !loading && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/30 bg-accent-dim px-4 py-3 text-sm text-ink-mid">
+          <span>
+            <b className="text-ink-hi">{fmtInt(countedTotal)}</b> phản hồi được tính vào chỉ số
+            {feedbacks.length - countedTotal > 0 && (
+              <> · <b className="text-ink-hi">{fmtInt(feedbacks.length - countedTotal)}</b> không tính (rác, nghi không xác thực hoặc quá cũ) — vẫn hiển thị để đối chiếu</>
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={() => { const next = new URLSearchParams(params); next.delete('include'); setParams(next, { replace: true }); }}
+            className="text-xs font-medium text-accent hover:underline"
+          >
+            Chỉ xem phản hồi được tính
+          </button>
+        </div>
+      )}
 
       <GlassPanel tone="strong" className="overflow-hidden">
         <div className="flex flex-col gap-4 border-b border-line-soft p-5">
@@ -286,7 +316,16 @@ const Feedbacks = () => {
                           {s.label}
                         </span>
                       </td>
-                      <td className="fb-c-trust"><span className={`fb-trust-tier ${tierTone(f.trust?.tierWeight)}`}>{f.trust?.tier || '—'}</span></td>
+                      <td className="fb-c-trust">
+                        <span className={`fb-trust-tier ${tierTone(f.trust?.tierWeight)}`}>{f.trust?.tier || '—'}</span>
+                        {includeAll && !(f.trust?.weight > 0) && (
+                          <span className="ml-1.5" title={f.trust?.bandLabelVi || ''}>
+                            <Badge tone={f.trust?.band === 'SPAM' || f.trust?.band === 'LIKELY_INAUTHENTIC' ? 'crit' : 'neutral'}>
+                              {f.trust?.band === 'SPAM' ? 'Rác' : f.trust?.band === 'LIKELY_INAUTHENTIC' ? 'Nghi ảo' : 'Không tính'}
+                            </Badge>
+                          </span>
+                        )}
+                      </td>
                       <td className="fb-c-src"><span className="fb-source">{f.source}</span></td>
                     </tr>
                   );

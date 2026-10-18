@@ -1137,6 +1137,8 @@ router.post('/scrape', wrap(async (req, res) => {
     dataHealthScore: ctx.funnel.dataHealthScore,
     funnel: ctx.funnel,
     productName: analyzed[0]?.productName || null,
+    // Nguồn + sản phẩm để giao diện mở thẳng kho phản hồi đã lọc đúng lô vừa thu thập
+    source: analyzed[0]?.source || null,
     labelledBy: analyzed[0]?.labelledBy || null,
     // Bản xem trước cho giao diện: chê trước, kèm nhãn tiếng Việt
     data: [...analyzed]

@@ -18,12 +18,16 @@ const TIME_PRESETS = [
   { value: 'This Month', label: '30 ngày' }
 ];
 
+// Đúng các kênh có trong dữ liệu (bản cũ có "Website" — không bản ghi nào mang
+// nguồn này — và thiếu Lazada, Tổng đài, Tiki)
 const SOURCES = [
   { value: 'All', label: 'Mọi nguồn' },
   { value: 'Shopee', label: 'Shopee' },
   { value: 'Facebook', label: 'Facebook' },
   { value: 'TikTok', label: 'TikTok' },
-  { value: 'Web', label: 'Website' }
+  { value: 'Lazada', label: 'Lazada' },
+  { value: 'Tiki', label: 'Tiki' },
+  { value: 'CSKH', label: 'Tổng đài CSKH' }
 ];
 
 /** Menu thả xuống kính — đóng khi bấm ra ngoài hoặc Esc */
