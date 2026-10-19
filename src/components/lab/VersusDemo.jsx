@@ -168,9 +168,12 @@ const VersusDemo = () => {
             placeholder="Gõ một phản hồi bất kỳ, kể cả teencode…"
             className="min-h-[3.25rem] w-full resize-y rounded-lg border border-line bg-surface px-3.5 py-3 text-[0.95rem] leading-relaxed text-ink-hi outline-none focus:border-accent"
           />
+          {/* Không khóa nút khi đang chạy: câu mặc định chạy lúc mở trang có thể
+              chờ máy chủ vài giây, và cú bấm của người xem trong lúc đó từng bị
+              nuốt mất. Kết quả về muộn của câu trước đã bị chặn bởi `latest`. */}
           <button
             type="submit"
-            disabled={loading || !text.trim()}
+            disabled={!text.trim()}
             className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-on-accent transition-[filter] hover:brightness-110 disabled:opacity-50"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
