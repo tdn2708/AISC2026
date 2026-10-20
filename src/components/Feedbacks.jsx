@@ -143,11 +143,18 @@ const Feedbacks = () => {
   // nếu không người xem chỉ thấy 11/47 đánh giá vừa cào và tưởng mất dữ liệu
   const includeAll = params.get('include') === 'all';
 
+  // Mở bằng đường dẫn có sẵn bộ lọc (nút "Xem trong kho phản hồi") là xem một lô
+  // cụ thể, không phải chọn bộ lọc làm việc: không lưu lại. Bản trước lưu, và
+  // trang Tổng quan mở sau đó bị lọc theo đúng một sản phẩm vừa cào (toàn đánh
+  // giá cũ, trọng số 0) nên trắng trơn.
+  const [deepLinked] = useState(() => ['time', 'source', 'product'].some((k) => params.has(k)));
+
   useEffect(() => {
+    if (deepLinked) return;
     writeStorage('timeFilter', timeFilter);
     writeStorage('sourceFilter', sourceFilter);
     writeStorage('productFilter', productFilter);
-  }, [timeFilter, sourceFilter, productFilter]);
+  }, [timeFilter, sourceFilter, productFilter, deepLinked]);
 
   // Đến từ bảng lệnh Ctrl+K với ?q=
   useEffect(() => {
