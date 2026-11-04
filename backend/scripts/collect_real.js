@@ -84,6 +84,13 @@ async function main() {
     process.exit(1);
   }
 
+  // Mã khách của sàn là số tuần tự: băm với muối mặc định (công khai trong mã
+  // nguồn) thì thử ngược ra tài khoản thật được ngay. Ghi kho thật phải có muối bí mật.
+  if (!opts.dry && (!process.env.PII_SALT || process.env.PII_SALT === 'customer-radar')) {
+    console.error('Từ chối: chưa đặt PII_SALT bí mật (trong .env hoặc Secrets của GitHub Actions).');
+    process.exit(1);
+  }
+
   const client = opts.dry ? null : await MongoClient.connect(process.env.MONGODB_URI);
   const db = client ? client.db(dbName) : null;
   if (db) {

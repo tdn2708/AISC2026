@@ -1017,7 +1017,7 @@ function runTrustLayer(feedbacks, options = {}) {
     };
   }
 
-  const funnel = buildFunnel(items, clusters, now);
+  const funnel = buildFunnel(items, clusters, now, { ingestedAt: options.ingestedAt });
 
   return {
     items,
@@ -1054,7 +1054,7 @@ const EXPECTED_CHANNELS = 5;
 
 const HEALTH_WEIGHTS = { passRate: 0.4, channelCoverage: 0.2, freshness: 0.2, reconciliation: 0.2 };
 
-function buildFunnel(items, clusters, now = new Date()) {
+function buildFunnel(items, clusters, now = new Date(), options = {}) {
   const total = items.length;
   const spam = items.filter((it) => it.trust.band === 'SPAM');
   const inauthentic = items.filter((it) => it.trust.band === 'LIKELY_INAUTHENTIC');
@@ -1075,7 +1075,11 @@ function buildFunnel(items, clusters, now = new Date()) {
   // dữ liệu quá khứ là điểm mạnh chứ không phải điểm yếu; thứ đáng lo
   // là luồng dữ liệu đã ngừng chảy. Vì vậy đo theo phản hồi mới nhất.
   const newestAgeDays = ages.length ? Math.min(...ages) : Infinity;
-  const ingestionLagHours = Number.isFinite(newestAgeDays) ? newestAgeDays * 24 : null;
+  // Kho tính theo mốc dữ liệu: "now" là đánh giá mới nhất nên tuổi luôn ~0; độ
+  // trễ thật là từ lần thu thập gần nhất tới giờ thật
+  const ingestionLagHours = options.ingestedAt
+    ? Math.max(0, (Date.now() - new Date(options.ingestedAt).getTime()) / 3600000)
+    : Number.isFinite(newestAgeDays) ? newestAgeDays * 24 : null;
 
   const passRate = total ? (accepted.length + gray.length) / total : 0;
   const channelCoverage = Math.min(1, channels.size / EXPECTED_CHANNELS);

@@ -3,7 +3,7 @@ const router = express.Router();
 
 const { scrapeShopeeReviews } = require('../services/scraper');
 const { analyzeFeedbackBatch, generateRiskAlertsBatch, classifyByRulesFallback } = require('../services/ai_analyzer');
-const { getContext, invalidate, applyFilters } = require('../services/analysis_context');
+const { getContext, invalidate, applyFilters, ctxNow } = require('../services/analysis_context');
 const trustLayer = require('../services/trust_layer');
 const alertEngine = require('../services/alert_engine');
 const metrics = require('../services/metrics');
@@ -72,7 +72,7 @@ const filterKey = (q = {}) => ['source', 'time', 'product', 'region'].map((k) =>
 function detectAlertsCached(ctx, query, opts = {}) {
   const key = `detect|${ctx.dbName}|${ctx.computedAt}|${filterKey(query)}|${JSON.stringify(opts)}`;
   return memo(key, () =>
-    alertEngine.detectAlerts(applyFilters(ctx.items, query), { transactionCount: ctx.transactionCount, ...opts })
+    alertEngine.detectAlerts(applyFilters(ctx.items, query, ctx.asOf), { transactionCount: ctx.transactionCount, now: ctx.asOf || undefined, ...opts })
   );
 }
 
@@ -84,7 +84,7 @@ function buildRecommendationsCached(ctx, query, opts, result, decisions) {
     .join(',');
   const key = `build|${ctx.dbName}|${ctx.computedAt}|${filterKey(query)}|${JSON.stringify(opts)}|${decisionSig}`;
   return memo(key, () =>
-    recommender.buildAll(result.alerts, { items: ctx.items, transactions: ctx.transactions, decisions })
+    recommender.buildAll(result.alerts, { items: ctx.items, transactions: ctx.transactions, decisions, now: ctxNow(ctx) })
   );
 }
 
@@ -128,7 +128,7 @@ function publicItem(f) {
 
 router.get('/feedbacks', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  let items = applyFilters(ctx.items, req.query);
+  let items = applyFilters(ctx.items, req.query, ctx.asOf);
 
   // Mặc định CHỈ trả phản hồi đã qua Trust Layer. Muốn xem cả phần bị
   // loại thì phải hỏi rõ (?include=all) — để không ai vô tình phân tích
@@ -158,26 +158,31 @@ router.get('/regions', wrap(async (req, res) => {
 
 router.get('/stats', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query);
+  const items = applyFilters(ctx.items, req.query, ctx.asOf);
 
-  const cards = metrics.buildMetricCards(items, ctx.transactionCount);
+  const cards = metrics.buildMetricCards(items, ctx.transactionCount, ctxNow(ctx));
 
   res.json({
     ...cards,
     // So sánh hai kỳ liền nhau, để thẻ chỉ số nói được "đang tốt lên hay
     // xấu đi" thay vì chỉ đưa ra một con số trần trụi.
-    comparison: metrics.periodComparison(items, ctx.transactionCount),
+    comparison: metrics.periodComparison(items, ctx.transactionCount, ctxNow(ctx)),
     dataHealthScore: ctx.funnel.dataHealthScore,
     // Giữ các khóa cũ để giao diện chưa nâng cấp không vỡ
     totalComplaints: items.filter((f) => metrics.isCountable(f) && metrics.isComplaint(f)).length,
     complaintRate: cards.weightedComplaintRate.display,
-    computedAt: ctx.computedAt
+    computedAt: ctx.computedAt,
+    // Kho đang xem và mốc thời gian của nó: kho thật tính theo đánh giá mới nhất
+    // (asOf), giao diện phải ghi rõ "dữ liệu đến ngày…" thay vì ngầm hiểu là hôm nay
+    workspace: req.workspace,
+    asOf: ctx.asOf,
+    ingestedAt: ctx.ingestedAt
   });
 }));
 
 router.get('/categories', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query).filter(metrics.isCountable);
+  const items = applyFilters(ctx.items, req.query, ctx.asOf).filter(metrics.isCountable);
 
   const colorMap = {
     Delivery: 'var(--accent-blue)',
@@ -215,7 +220,7 @@ router.get('/categories', wrap(async (req, res) => {
 /** Bóc tách nguyên nhân cốt lõi trong một danh mục (Level 1 -> Level 2) */
 router.get('/root-causes', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query).filter(metrics.isCountable);
+  const items = applyFilters(ctx.items, req.query, ctx.asOf).filter(metrics.isCountable);
   const category = req.query.category;
 
   const scope = category
@@ -248,7 +253,7 @@ router.get('/root-causes', wrap(async (req, res) => {
 
 router.get('/sentiment', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query).filter(metrics.isCountable);
+  const items = applyFilters(ctx.items, req.query, ctx.asOf).filter(metrics.isCountable);
 
   const colorMap = {
     Negative: 'var(--risk-critical)',
@@ -275,11 +280,11 @@ router.get('/sentiment', wrap(async (req, res) => {
 
 router.get('/trend', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query);
+  const items = applyFilters(ctx.items, req.query, ctx.asOf);
   // Có trần: ?buckets=1e9 từng bắt máy chủ cấp phát một tỉ ô thời gian
   const spanDays = clampInt(req.query.spanDays, 28, 1, 3650);
   const buckets = clampInt(req.query.buckets, 14, 1, 366);
-  res.json(metrics.weightedTimeSeries(items, buckets, new Date(), spanDays));
+  res.json(metrics.weightedTimeSeries(items, buckets, ctxNow(ctx), spanDays));
 }));
 
 // ==================================================================
@@ -291,6 +296,9 @@ router.get('/trust/health', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   res.json({
     ...ctx.funnel,
+    workspace: req.workspace,
+    asOf: ctx.asOf,
+    ingestedAt: ctx.ingestedAt,
     provenanceTiers: trustLayer.PROVENANCE_TIERS,
     tierBreakdown: ['P1', 'P2', 'P3', 'P4', 'P5'].map((tier) => ({
       tier,
@@ -418,7 +426,7 @@ router.post('/trust/label', wrap(async (req, res) => {
  */
 router.get('/trust/impact', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query);
+  const items = applyFilters(ctx.items, req.query, ctx.asOf);
   const impact = alertEngine.trustLayerImpact(items, {
     transactionCount: ctx.transactionCount
   });
@@ -997,7 +1005,7 @@ router.post('/recommendations/decision', wrap(async (req, res) => {
 
 router.get('/segments', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  const items = applyFilters(ctx.items, req.query).filter(metrics.isCountable);
+  const items = applyFilters(ctx.items, req.query, ctx.asOf).filter(metrics.isCountable);
 
   const userMap = new Map();
   for (const fb of items) {
@@ -1238,7 +1246,7 @@ router.post('/predict/refresh', wrap(async (req, res) => {
   // CHỈ đưa phản hồi đã qua Trust Layer vào mô hình dự báo. Dự báo trên
   // dữ liệu chưa lọc là tái lập đúng cái sai mà cả hệ thống này sinh ra
   // để tránh.
-  const items = applyFilters(ctx.items, { source, time, product })
+  const items = applyFilters(ctx.items, { source, time, product }, ctx.asOf)
     .filter(metrics.isCountable)
     .slice(0, 500);
 

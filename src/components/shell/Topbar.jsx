@@ -6,6 +6,7 @@ import { IconButton } from '../ui';
 import { findPage } from '../../lib/nav';
 import { useTheme } from '../../hooks/useTheme';
 import { alertTitle } from '../../lib/format';
+import { WORKSPACES, getWorkspace, switchWorkspace } from '../../lib/workspace';
 
 /**
  * THANH TRÊN — dính theo cuộn, kính trong.
@@ -138,6 +139,38 @@ const Notifications = () => {
   );
 };
 
+/**
+ * Chuyển giữa kho mô phỏng và kho dữ liệu thật. Đặt ở thanh trên vì nó đổi
+ * nguồn số liệu của MỌI trang; kho thật tô màu nhấn để không ai nhầm hai kho.
+ */
+const WorkspaceSwitch = () => {
+  const current = getWorkspace();
+  return (
+    <div role="radiogroup" aria-label="Kho dữ liệu" className="flex h-10 shrink-0 items-center rounded-lg border border-line bg-surface p-1">
+      {Object.entries(WORKSPACES).map(([key, ws]) => {
+        const active = key === current;
+        return (
+          <button
+            key={key}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            title={ws.hint}
+            onClick={() => switchWorkspace(key)}
+            className={`h-full rounded-md px-2.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+              active
+                ? key === 'real' ? 'bg-accent text-on-accent' : 'bg-raised text-ink-hi'
+                : 'text-ink-mid hover:text-ink-hi'
+            }`}
+          >
+            {ws.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 const Topbar = ({ onOpenMenu, onOpenCommand }) => {
   const { pathname } = useLocation();
   const page = findPage(pathname);
@@ -176,6 +209,8 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
         </nav>
 
         <div className="flex-1" />
+
+        <WorkspaceSwitch />
 
         <button
           type="button"

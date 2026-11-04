@@ -39,6 +39,20 @@ const MAX_AGE_MS = 3 * 60 * 60 * 1000;
 // tính lại mỗi giờ. Độ tươi đạt tối đa khi phản hồi mới nhất trễ dưới 1 giờ.
 const REPLAY_MAX_AGE_MS = 60 * 60 * 1000;
 const FETCH_BATCH = 5000;
+
+/**
+ * Kho dữ liệu thật tính thời gian THEO MỐC DỮ LIỆU: đánh giá thật trên sàn thưa
+ * (sản phẩm bán chạy nhất có khi cả tháng mới có một đánh giá mới), nên "7 ngày
+ * tính đến hôm nay" gần như luôn trống và trọng số giảm theo tuổi về 0. Mọi cửa
+ * sổ thời gian, trọng số và kiểm định của kho này lấy mốc là đánh giá mới nhất
+ * trong kho (asOf), còn độ tươi đo theo lần thu thập gần nhất (ingestedAt) — để
+ * độ tươi không thành số đẹp giả.
+ */
+const REAL_DB = process.env.MONGODB_REAL_DB || 'customer_radar_real';
+const anchorsToData = (db) => db.databaseName === REAL_DB;
+
+/** "Bây giờ" của một ngữ cảnh: mốc dữ liệu với kho thật, giờ thật với kho mô phỏng */
+const ctxNow = (ctx) => (ctx && ctx.asOf ? new Date(ctx.asOf) : new Date());
 // Chỉ các trường giao dịch thật sự được dùng (đối soát, doanh thu rủi ro, vùng)
 const TXN_PROJECTION = { _id: 0, orderId: 1, productName: 1, region: 1, orderedAt: 1, deliveredAt: 1, amount: 1 };
 
@@ -144,6 +158,18 @@ async function doFetch(db, gen, onlyIfChanged) {
 
   const feedbacks = rawFeedbacks.map(normalizeLabels);
 
+  // rawFeedbacks đã sắp mới nhất trước
+  let dataAsOf = null;
+  let ingestedAt = null;
+  if (anchorsToData(db) && feedbacks.length) {
+    dataAsOf = new Date(feedbacks[0].timestamp);
+    if (Number.isNaN(dataAsOf.getTime())) dataAsOf = null;
+    ingestedAt = feedbacks.reduce((max, f) => {
+      const t = f.collectedAt ? new Date(f.collectedAt).getTime() : 0;
+      return t > max ? t : max;
+    }, 0) || null;
+  }
+
   // Tín hiệu ViSoBERT (vector nhúng cho T2, xác suất rác cho T1) nếu
   // được bật và dịch vụ đang chạy. Lỗi ở đây không được chặn Trust
   // Layer: không có tín hiệu mô hình thì chạy đúng như trước.
@@ -156,6 +182,8 @@ async function doFetch(db, gen, onlyIfChanged) {
 
   const result = runTrustLayer(feedbacks, {
     orders: transactions,
+    now: dataAsOf || undefined,
+    ingestedAt: ingestedAt ? new Date(ingestedAt) : undefined,
     modelSignals: nlp ? nlp.signals : undefined
   });
 
@@ -196,6 +224,8 @@ async function doFetch(db, gen, onlyIfChanged) {
     modelSignals: { ...result.modelSignals, source: nlp ? 'visobert' : null, ...(nlp ? nlp.meta : {}) },
     computedAt: new Date().toISOString(),
     dbName: db.databaseName,
+    asOf: dataAsOf ? dataAsOf.toISOString() : null,
+    ingestedAt: ingestedAt ? new Date(ingestedAt).toISOString() : null,
     replay: Boolean(upcoming)
   };
 
@@ -217,7 +247,7 @@ function invalidate(db) {
 }
 
 /** Bộ lọc dùng chung cho mọi endpoint (thời gian / nguồn / sản phẩm) */
-function applyFilters(items, query = {}) {
+function applyFilters(items, query = {}, nowRef = null) {
   // `?time=a&time=b` cho ra mảng; `time.startsWith` trên mảng từng ném TypeError
   const one = (v) => {
     const x = Array.isArray(v) ? v[0] : v;
@@ -235,7 +265,7 @@ function applyFilters(items, query = {}) {
   if (region && region !== 'All') out = out.filter((f) => f.region === region);
 
   if (time && time !== 'All') {
-    const now = new Date();
+    const now = nowRef ? new Date(nowRef) : new Date();
     let start = null;
     let end = null;
 
@@ -253,7 +283,7 @@ function applyFilters(items, query = {}) {
         }
       }
     } else if (time === 'Today') {
-      start = new Date();
+      start = new Date(now);
       start.setHours(0, 0, 0, 0);
     } else if (time === 'This Week') {
       start = new Date(now.getTime() - 7 * 86400000);
@@ -274,4 +304,4 @@ function applyFilters(items, query = {}) {
   return out;
 }
 
-module.exports = { getContext, invalidate, applyFilters, normalizeLabels };
+module.exports = { getContext, invalidate, applyFilters, normalizeLabels, ctxNow };

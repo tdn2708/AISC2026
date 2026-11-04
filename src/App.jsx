@@ -17,10 +17,12 @@ import Lab from './components/Lab';
 import UiKit from './components/UiKit';
 import { API_URL } from './config';
 import { readStorage, writeStorage } from './lib/storage';
+import { applyWorkspaceHeader } from './lib/workspace';
 import ErrorBoundary from './components/ErrorBoundary';
 import './hooks/useTheme';
 
 axios.defaults.baseURL = API_URL;
+applyWorkspaceHeader();
 
 const ProtectedRoute = ({ isAuthenticated, children }) =>
   isAuthenticated ? children : <Navigate to="/login" replace />;

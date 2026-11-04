@@ -3,6 +3,7 @@ import FilterBar from './FilterBar';
 import FeedbackTable from './FeedbackTable';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { readStorage, writeStorage } from '../lib/storage';
+import { fmtDate, fmtDateTime } from '../lib/format';
 import { PageHeader, SectionLabel } from './ui';
 import StatusStrip from './dashboard/StatusStrip';
 import KpiZone from './dashboard/KpiZone';
@@ -63,6 +64,16 @@ const Dashboard = () => {
         accent="vận hành"
         subtitle="Mọi con số được tính trên phản hồi đã qua tầng kiểm soát tin cậy dữ liệu."
       />
+
+      {/* Kho thật tính theo mốc dữ liệu chứ không theo hôm nay — phải nói rõ, nếu
+          không "7 ngày" trên thanh lọc bị hiểu là 7 ngày tính tới hôm nay */}
+      {stats?.workspace === 'real' && stats.asOf && (
+        <p className="mb-4 rounded-lg border border-accent/30 bg-accent-dim px-4 py-2.5 text-sm text-ink-mid">
+          <b className="text-ink-hi">Dữ liệu thật</b> thu thập từ sàn, tên người mua đã che · các khoảng thời gian tính đến đánh giá mới nhất
+          ngày <b className="text-ink-hi">{fmtDate(stats.asOf)}</b>
+          {stats.ingestedAt && <> · thu thập lần gần nhất {fmtDateTime(stats.ingestedAt)}</>}
+        </p>
+      )}
 
       <StatusStrip stats={stats} alerts={alerts} loading={loading} error={error} lastUpdated={lastUpdated} />
 

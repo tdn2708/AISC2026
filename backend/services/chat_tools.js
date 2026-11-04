@@ -21,7 +21,7 @@ const alertEngine = require('./alert_engine');
 const taxonomy = require('./taxonomy');
 const playbook = require('./playbook');
 const retrieval = require('./retrieval');
-const { applyFilters } = require('./analysis_context');
+const { applyFilters, ctxNow } = require('./analysis_context');
 
 const pct = (n) => `${(n * 100).toFixed(1)}%`;
 const num = (n) => new Intl.NumberFormat('vi-VN').format(n);
@@ -36,8 +36,8 @@ const TOOLS = {
   metrics_overview: {
     description: 'Chỉ số tổng quan: số phản hồi, WCR, tỉ trọng tiêu cực, sức khỏe dữ liệu',
     run(ctx, args = {}) {
-      const items = applyFilters(ctx.items, args.filters || {});
-      const cards = metrics.buildMetricCards(items, ctx.transactionCount);
+      const items = applyFilters(ctx.items, args.filters || {}, ctx.asOf);
+      const cards = metrics.buildMetricCards(items, ctx.transactionCount, ctxNow(ctx));
       const valid = items.filter(metrics.isCountable);
 
       const facts = [
@@ -70,7 +70,7 @@ const TOOLS = {
   root_causes: {
     description: 'Xếp hạng danh mục và nguyên nhân cốt lõi bị khiếu nại nhiều nhất',
     run(ctx, args = {}) {
-      const items = applyFilters(ctx.items, args.filters || {})
+      const items = applyFilters(ctx.items, args.filters || {}, ctx.asOf)
         .filter((f) => metrics.isCountable(f) && metrics.isComplaint(f));
 
       const byCategory = new Map();
@@ -119,14 +119,15 @@ const TOOLS = {
        * người dùng hỏi thành ĐỘ DÀI CỬA SỔ hiện tại.
        */
       const { time, ...scopeFilters } = args.filters || {};
-      const items = applyFilters(ctx.items, scopeFilters);
+      const items = applyFilters(ctx.items, scopeFilters, ctx.asOf);
 
       const windowDays =
         time === 'Today' ? 1 : time === 'This Week' ? 7 : time === 'This Month' ? 30 : undefined;
 
       const result = alertEngine.detectAlerts(items, {
         transactionCount: ctx.transactionCount,
-        windowDays
+        windowDays,
+        now: ctx.asOf || undefined
       });
 
       const facts = [
@@ -170,8 +171,8 @@ const TOOLS = {
   recommendations: {
     description: 'Các hành động được đề xuất cho cảnh báo đang mở, kèm yêu cầu phê duyệt',
     run(ctx, args = {}) {
-      const items = applyFilters(ctx.items, args.filters || {});
-      const result = alertEngine.detectAlerts(items, { transactionCount: ctx.transactionCount });
+      const items = applyFilters(ctx.items, args.filters || {}, ctx.asOf);
+      const result = alertEngine.detectAlerts(items, { transactionCount: ctx.transactionCount, now: ctx.asOf || undefined });
 
       const facts = [];
       for (const a of result.alerts.slice(0, 3)) {
@@ -219,7 +220,7 @@ const TOOLS = {
   channel_breakdown: {
     description: 'So sánh các kênh: số lượng, tỉ lệ tiêu cực, mức tin cậy',
     run(ctx, args = {}) {
-      const items = applyFilters(ctx.items, args.filters || {}).filter(metrics.isCountable);
+      const items = applyFilters(ctx.items, args.filters || {}, ctx.asOf).filter(metrics.isCountable);
       const byChannel = new Map();
 
       for (const f of items) {
@@ -247,8 +248,8 @@ const TOOLS = {
   time_trend: {
     description: 'Chuỗi thời gian số khiếu nại và phản hồi tích cực',
     run(ctx, args = {}) {
-      const items = applyFilters(ctx.items, args.filters || {});
-      const series = metrics.weightedTimeSeries(items, 14, new Date(), args.spanDays || 28);
+      const items = applyFilters(ctx.items, args.filters || {}, ctx.asOf);
+      const series = metrics.weightedTimeSeries(items, 14, ctxNow(ctx), args.spanDays || 28);
 
       const nonEmpty = series.filter((s) => s.total > 0);
       if (!nonEmpty.length) return { title: 'Diễn biến theo thời gian', facts: ['Không có dữ liệu trong khoảng thời gian này.'] };
@@ -272,7 +273,7 @@ const TOOLS = {
   segments: {
     description: 'Phân khúc khách hàng: nhóm có nguy cơ rời bỏ, nhóm ủng hộ',
     run(ctx, args = {}) {
-      const items = applyFilters(ctx.items, args.filters || {}).filter(metrics.isCountable);
+      const items = applyFilters(ctx.items, args.filters || {}, ctx.asOf).filter(metrics.isCountable);
       const byAuthor = new Map();
       for (const f of items) {
         const a = f.author || 'Ẩn danh';
@@ -396,7 +397,7 @@ const TOOLS = {
     description: 'Tìm các phản hồi cụ thể liên quan tới câu hỏi, dùng làm dẫn chứng',
     run(ctx, args = {}) {
       const query = args.query || '';
-      const items = applyFilters(ctx.items, args.filters || {});
+      const items = applyFilters(ctx.items, args.filters || {}, ctx.asOf);
       const index = retrieval.buildIndex(items.filter(metrics.isCountable));
       const hits = retrieval.search(query, index, { limit: args.limit || 12 });
 
