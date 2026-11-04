@@ -134,10 +134,61 @@ function tikiProductIds(u) {
   return m ? { productId: m[1], spid: u.searchParams.get('spid') } : null;
 }
 
-async function fetchTikiReviews(u) {
+/** "2024-07-23 15:20:59" (giờ Việt Nam, không ghi múi giờ) -> Date */
+function parseTikiLocalTime(v) {
+  if (!v || typeof v !== 'string') return null;
+  const d = new Date(v.replace(' ', 'T') + '+07:00');
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Dữ kiện do SÀN và CHÍNH KHÁCH HÀNG cung cấp kèm mỗi đánh giá — không do AI
+ * suy ra. Đây là phần trả lời câu hỏi "lấy gì chứng thực độ tin cậy":
+ *  - verifiedPurchase / purchasedAt / deliveredAt: Tiki xác nhận người viết đã mua
+ *    và mốc giao hàng, dùng để đối soát thay cho sổ đơn của doanh nghiệp
+ *  - customerRatings: câu khách TỰ chọn ("Giao trễ hẹn", "Cẩn thận"...), dùng để
+ *    đối chiếu với nhãn AI gán
+ *  - replies: nhà bán / Tiki Care đã phản hồi chưa
+ */
+function tikiPlatformFacts(r, productId) {
+  const by = r.created_by || {};
+  const replies = Array.isArray(r.comments) ? r.comments : [];
+  return {
+    platform: 'Tiki',
+    reviewId: r.id ?? null,
+    productId: Number(productId) || null,
+    spid: r.spid ?? null,
+    seller: r.seller?.name || null,
+    verifiedPurchase: by.purchased === true,
+    purchasedAt: by.purchased_at ? new Date(by.purchased_at * 1000) : null,
+    deliveredAt: parseTikiLocalTime(r.timeline?.delivery_date),
+    usedFor: r.timeline?.content || null,
+    customerRatings: Array.isArray(r.delivery_rating)
+      ? r.delivery_rating.map((q) => ({ question: String(q.question || ''), option: String(q.option || '') }))
+      : [],
+    accountCreatedAt: parseTikiLocalTime(by.created_time),
+    accountTotalReviews: Number.isFinite(by.contribute_info?.summary?.total_review)
+      ? by.contribute_info.summary.total_review
+      : null,
+    replies: replies.map((c) => ({
+      by: c.commentator === 'tikicare' ? 'Tiki Care' : c.commentator === 'seller' ? 'Nhà bán' : 'Khác',
+      at: c.create_at ? new Date(c.create_at * 1000) : null
+    })),
+    rawCustomerId: by.id ?? r.customer_id ?? null
+  };
+}
+
+/**
+ * @param {URL} u đường dẫn sản phẩm Tiki
+ * @param {{ sort?: string, maxPages?: number }} opts sort mặc định "hữu ích nhất";
+ *        bộ thu thập hàng loạt dùng 'id|desc' (mới nhất) để có dữ liệu gần đây
+ */
+async function fetchTikiReviews(u, opts = {}) {
   const axios = require('axios');
   const { productId, spid } = tikiProductIds(u);
   const q = spid ? `&spid=${encodeURIComponent(spid)}` : '';
+  const sort = opts.sort || 'score|desc,id|desc,stars|all';
+  const maxPages = opts.maxPages || TIKI_MAX_PAGES;
 
   let productName = null;
   try {
@@ -148,9 +199,9 @@ async function fetchTikiReviews(u) {
   }
 
   const reviews = [];
-  for (let page = 1; page <= TIKI_MAX_PAGES; page++) {
+  for (let page = 1; page <= maxPages; page++) {
     const { data } = await axios.get(
-      `https://tiki.vn/api/v2/reviews?product_id=${productId}${q}&page=${page}&limit=20&sort=${encodeURIComponent('score|desc,id|desc,stars|all')}`,
+      `https://tiki.vn/api/v2/reviews?product_id=${productId}${q}&page=${page}&limit=20&include=comments,contribute_info&sort=${encodeURIComponent(sort)}`,
       { headers: TIKI_HEADERS, timeout: 15000 }
     );
     const rows = Array.isArray(data?.data) ? data.data : [];
@@ -159,15 +210,20 @@ async function fetchTikiReviews(u) {
       // Tiki tự sinh theo số sao, không mang thông tin để phân tích.
       const text = String(r.content || '').trim();
       if (!text) continue;
+      const timestamp = parseReviewDate(r.created_at ? new Date(r.created_at * 1000) : null);
+      const facts = tikiPlatformFacts(r, productId);
       reviews.push({
         source: 'Tiki',
         rawText: canonicalize(text).slice(0, 5000),
         author: r.created_by?.name ? canonicalize(r.created_by.name).trim().slice(0, 100) : 'Ẩn danh',
         rating: parseRating(r.rating),
-        accountAgeDays: null,
+        accountAgeDays: facts.accountCreatedAt && timestamp
+          ? Math.max(0, Math.round((timestamp - facts.accountCreatedAt) / 86400000))
+          : null,
         orderId: null,
         productName,
-        timestamp: parseReviewDate(r.created_at ? new Date(r.created_at * 1000) : null)
+        timestamp,
+        platformFacts: facts
       });
     }
     const last = data?.paging?.last_page ?? page;
@@ -306,4 +362,4 @@ Trả về DUY NHẤT mảng JSON, không kèm giải thích:
   }
 };
 
-module.exports = { scrapeShopeeReviews, validateTargetUrl, parseRating, parseReviewDate };
+module.exports = { scrapeShopeeReviews, validateTargetUrl, parseRating, parseReviewDate, fetchTikiReviews, tikiProductIds };

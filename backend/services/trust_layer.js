@@ -35,7 +35,7 @@ const { isolationForestScores, variance } = require('./anomaly');
  * thay vì scraping diện rộng.
  */
 const PROVENANCE_TIERS = {
-  P1: { weight: 1.0,  reconciliation: 'Đầy đủ',  label: 'Đánh giá trên sàn gắn mã đơn hàng, đối soát được' },
+  P1: { weight: 1.0,  reconciliation: 'Đầy đủ',  label: 'Đánh giá trên sàn gắn mã đơn hàng hoặc được sàn xác nhận đã mua, đối soát được' },
   P2: { weight: 0.9,  reconciliation: 'Đầy đủ',  label: 'Ticket CSKH / email / biểu mẫu gắn tài khoản đã định danh' },
   P3: { weight: 0.6,  reconciliation: 'Một phần', label: 'Đánh giá trên sàn không đối soát được mã đơn' },
   P4: { weight: 0.4,  reconciliation: 'Không',   label: 'Bình luận mạng xã hội từ tài khoản có lịch sử bình thường' },
@@ -64,7 +64,9 @@ function assignProvenanceTier(fb) {
   let tier;
   if (isAnonymous || isNewAccount) {
     tier = 'P5';
-  } else if (fb.orderId && RECONCILABLE_SOURCES.includes(source)) {
+  } else if ((fb.orderId || fb.verifiedPurchase === true) && RECONCILABLE_SOURCES.includes(source)) {
+    // verifiedPurchase là dữ kiện do sàn cung cấp (Tiki: created_by.purchased),
+    // không phải suy luận của hệ thống — ngang giá trị với một mã đơn khớp sổ
     tier = 'P1';
   } else if (IDENTIFIED_SOURCES.includes(source) && fb.customerId) {
     tier = 'P2';
@@ -477,7 +479,8 @@ function detectBursts(items) {
 function detectAccountAnomalies(items) {
   const byAuthor = new Map();
   items.forEach((it, idx) => {
-    const key = (it.author || 'Anonymous').trim();
+    // Dữ liệu thật có mã khách ẩn danh (tên hiển thị đã che nên dễ trùng nhau)
+    const key = it.customerId || (it.author || 'Anonymous').trim();
     if (!byAuthor.has(key)) byAuthor.set(key, []);
     byAuthor.get(key).push({ idx, item: it });
   });
@@ -627,6 +630,14 @@ const ORDERBOOK_COVERAGE_FLOOR = 0.5;
 const TRANSACTION_TIME_TOLERANCE_HOURS = 12;
 
 function transactionMismatch(fb, orderIndex, orderBookCoverage = 1) {
+  // Không có mã đơn nhưng sàn cung cấp mốc giao hàng: đối soát thẳng với mốc đó
+  if (!fb.orderId && fb.deliveredAt) {
+    const hoursEarly = (new Date(fb.deliveredAt).getTime() - new Date(fb.timestamp || Date.now()).getTime()) / 3600000;
+    if (Number.isFinite(hoursEarly) && hoursEarly > TRANSACTION_TIME_TOLERANCE_HOURS) {
+      return { score: 0.95, available: true, note: `Đánh giá được viết trước mốc giao hàng do sàn ghi nhận ${Math.round(hoursEarly)} giờ` };
+    }
+    return { score: 0, available: true, note: 'Khớp mốc giao hàng do sàn ghi nhận' };
+  }
   if (!fb.orderId || !orderIndex) {
     return { score: 0, available: false, note: 'Không đối soát được giao dịch' };
   }

@@ -42,9 +42,19 @@ const FETCH_BATCH = 5000;
 // Chỉ các trường giao dịch thật sự được dùng (đối soát, doanh thu rủi ro, vùng)
 const TXN_PROJECTION = { _id: 0, orderId: 1, productName: 1, region: 1, orderedAt: 1, deliveredAt: 1, amount: 1 };
 
-let cache = { key: null, at: 0, computedAt: 0, value: null, generation: 0 };
-let generation = 0;
-let ongoing = null; // { generation, promise }
+/**
+ * Trạng thái bộ đệm RIÊNG cho từng database. Máy chủ phục vụ cùng lúc kho mô
+ * phỏng và kho dữ liệu thật (người xem chuyển qua lại), nên một bộ đệm dùng
+ * chung sẽ trả nhầm số liệu của kho này cho kho kia.
+ */
+const states = new Map();
+function stateFor(db) {
+  const name = db.databaseName;
+  if (!states.has(name)) {
+    states.set(name, { cache: { key: null, at: 0, computedAt: 0, value: null, generation: 0 }, generation: 0, ongoing: null });
+  }
+  return states.get(name);
+}
 
 /** Chuẩn hóa nhãn danh mục/nguyên nhân về taxonomy hiện hành */
 function normalizeLabels(fb) {
@@ -65,16 +75,17 @@ function normalizeLabels(fb) {
  * @param {{ force?: boolean }} opts
  */
 async function getContext(db, opts = {}) {
-  const valid = cache.value && cache.generation === generation;
+  const st = stateFor(db);
+  const valid = st.cache.value && st.cache.generation === st.generation;
 
   if (!opts.force && valid) {
-    if (Date.now() - cache.at >= CACHE_TTL_MS) {
+    if (Date.now() - st.cache.at >= CACHE_TTL_MS) {
       // Hết hạn: trả bản đang có ngay, làm mới ở nền
       refresh(db, { onlyIfChanged: true }).catch((e) =>
         console.warn('[CONTEXT] Làm mới nền thất bại, giữ bản cũ:', e.message)
       );
     }
-    return cache.value;
+    return st.cache.value;
   }
 
   return refresh(db, { onlyIfChanged: false });
@@ -82,17 +93,20 @@ async function getContext(db, opts = {}) {
 
 /** Một lần nạp duy nhất cho mỗi thế hệ dữ liệu; các request đồng thời dùng chung */
 function refresh(db, { onlyIfChanged }) {
-  if (ongoing && ongoing.generation === generation) return ongoing.promise;
+  const st = stateFor(db);
+  if (st.ongoing && st.ongoing.generation === st.generation) return st.ongoing.promise;
 
-  const gen = generation;
+  const gen = st.generation;
   const promise = doFetch(db, gen, onlyIfChanged).finally(() => {
-    if (ongoing && ongoing.promise === promise) ongoing = null;
+    if (st.ongoing && st.ongoing.promise === promise) st.ongoing = null;
   });
-  ongoing = { generation: gen, promise };
+  st.ongoing = { generation: gen, promise };
   return promise;
 }
 
 async function doFetch(db, gen, onlyIfChanged) {
+  const st = stateFor(db);
+  const { cache } = st;
   const lastId = (name) =>
     db.collection(name).find({}, { projection: { _id: 1 } }).sort({ _id: -1 }).limit(1).next();
   const [feedbackCount, txnCount, lastFeedback, lastTxn] = await Promise.all([
@@ -181,20 +195,25 @@ async function doFetch(db, gen, onlyIfChanged) {
     humanLabelCount: labels.length,
     modelSignals: { ...result.modelSignals, source: nlp ? 'visobert' : null, ...(nlp ? nlp.meta : {}) },
     computedAt: new Date().toISOString(),
+    dbName: db.databaseName,
     replay: Boolean(upcoming)
   };
 
   // Dữ liệu đã bị invalidate trong lúc nạp: không ghi đè bộ đệm bằng bản cũ
-  if (gen === generation) {
+  if (gen === st.generation) {
     const now = Date.now();
-    cache = { key, at: now, computedAt: now, value, generation: gen };
+    st.cache = { key, at: now, computedAt: now, value, generation: gen };
   }
   return value;
 }
 
-function invalidate() {
-  generation += 1;
-  cache = { key: null, at: 0, computedAt: 0, value: null, generation };
+/** Bỏ bộ đệm của một database (sau khi ghi vào nó); không truyền db thì bỏ hết */
+function invalidate(db) {
+  const targets = db ? [stateFor(db)] : [...states.values()];
+  for (const st of targets) {
+    st.generation += 1;
+    st.cache = { key: null, at: 0, computedAt: 0, value: null, generation: st.generation };
+  }
 }
 
 /** Bộ lọc dùng chung cho mọi endpoint (thời gian / nguồn / sản phẩm) */

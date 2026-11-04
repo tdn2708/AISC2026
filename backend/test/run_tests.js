@@ -1165,6 +1165,48 @@ test('Trust Layer dùng tín hiệu mô hình rồi gỡ vector nhúng khỏi k�
 });
 
 // ==================================================================
+// DỮ LIỆU THẬT: che thông tin cá nhân, chống trùng, dữ kiện sàn xác nhận
+// ==================================================================
+const ingest = require('../services/ingest');
+
+test('Tên người mua bị che, mã khách ẩn danh ổn định và không lộ mã gốc', () => {
+  assert.strictEqual(ingest.maskName('Quang Duy Ha'), 'Quang D. H.');
+  assert.strictEqual(ingest.maskName('Linh'), 'L***');
+  assert.strictEqual(ingest.maskName(''), 'Ẩn danh');
+  const a = ingest.pseudoCustomerId('Tiki', 1769036);
+  assert.strictEqual(a, ingest.pseudoCustomerId('Tiki', 1769036), 'cùng khách phải ra cùng mã');
+  assert.notStrictEqual(a, ingest.pseudoCustomerId('Tiki', 1769037));
+  assert.ok(a.startsWith('tiki:') && !a.includes('1769036'), 'mã ẩn danh không được chứa mã gốc');
+});
+
+test('Bản ghi từ sàn: che tên, giữ dữ kiện sàn, không lưu mã khách gốc, chống trùng theo mã đánh giá', () => {
+  const raw = {
+    source: 'Tiki', rawText: 'Chuột hay mất kết nối', author: 'Quang Duy Ha', rating: 1,
+    productName: 'Chuột HXSJ', timestamp: new Date('2024-07-27T02:41:46Z'), accountAgeDays: 2846,
+    platformFacts: {
+      platform: 'Tiki', reviewId: 19937935, verifiedPurchase: true,
+      deliveredAt: new Date('2024-07-23T08:20:59Z'), customerRatings: [], replies: [], rawCustomerId: 1769036
+    }
+  };
+  const [doc] = ingest.buildFeedbackDocs([raw], [{ category: 'ProductQuality', subCategory: 'TechnicalDefect', sentiment: 'Negative' }], { collectedVia: 'test' });
+  assert.strictEqual(doc.author, 'Quang D. H.');
+  assert.strictEqual(doc.verifiedPurchase, true);
+  assert.ok(!('rawCustomerId' in doc.platformFacts), 'mã khách gốc không được lưu');
+  const edited = { ...doc, originalText: 'nội dung đã sửa', author: 'tên khác' };
+  assert.strictEqual(ingest.dedupKey(doc), ingest.dedupKey(edited), 'cùng mã đánh giá thì cùng khóa');
+});
+
+test('Sàn xác nhận đã mua -> P1; viết trước mốc giao do sàn ghi nhận -> bất nhất', () => {
+  const base = { source: 'Tiki', author: 'Quang D. H.', accountAgeDays: 400, verifiedPurchase: true };
+  assert.strictEqual(trust.assignProvenanceTier(base).tier, 'P1');
+  assert.strictEqual(trust.assignProvenanceTier({ ...base, verifiedPurchase: false }).tier, 'P3');
+  const early = trust.transactionMismatch({ ...base, timestamp: new Date('2024-07-20T00:00:00Z'), deliveredAt: new Date('2024-07-23T08:00:00Z') }, new Map());
+  assert.ok(early.score >= 0.9 && early.available, 'đánh giá trước ngày giao 3 ngày phải bị đánh dấu');
+  const ok = trust.transactionMismatch({ ...base, timestamp: new Date('2024-07-27T00:00:00Z'), deliveredAt: new Date('2024-07-23T08:00:00Z') }, new Map());
+  assert.strictEqual(ok.score, 0);
+});
+
+// ==================================================================
 console.log(`\n${'='.repeat(52)}`);
 console.log(`Kết quả: ${passed} đạt, ${failed} lỗi`);
 console.log('='.repeat(52));

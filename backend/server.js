@@ -6,6 +6,7 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// cors() mặc định phản chiếu header trình duyệt xin gửi, nên X-Workspace tự được cho phép
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 // Express 5 để req.body là undefined khi request không có thân JSON; mọi route
@@ -64,13 +65,25 @@ async function startServer() {
     // Đặt MONGODB_DB khác để chạy thử trên một database riêng mà không đụng
     // vào dữ liệu đang phục vụ web (cùng cụm Atlas)
     const db = client.db(process.env.MONGODB_DB || 'customer_radar');
+    /**
+     * Hai kho chạy song song trên cùng cụm Atlas:
+     *  - demo: dữ liệu mô phỏng có cài sẵn sự cố (để chứng minh hệ thống bắt được)
+     *  - real: chỉ dữ liệu thật thu thập từ sàn, không trộn một bản ghi mô phỏng nào
+     * Giao diện chọn kho bằng header X-Workspace; không gửi thì là kho demo như trước.
+     */
+    const workspaces = {
+      demo: db,
+      real: client.db(process.env.MONGODB_REAL_DB || 'customer_radar_real')
+    };
     console.log('Đã kết nối MongoDB.');
 
-    await ensureIndexes(db);
+    await Promise.all(Object.values(workspaces).map(ensureIndexes));
     console.log('Đã kiểm tra chỉ mục.');
 
     app.use((req, res, next) => {
-      req.db = db;
+      const ws = String(req.get('X-Workspace') || req.query.workspace || 'demo').toLowerCase();
+      req.workspace = workspaces[ws] ? ws : 'demo';
+      req.db = workspaces[req.workspace];
       next();
     });
 
@@ -131,11 +144,20 @@ async function startServer() {
       // người mở trang ĐẦU TIÊN sau mỗi lần triển khai hay Render đánh thức máy
       // chủ phải tự chờ toàn bộ việc đó (đo trên Render: ~18 giây). Request đến
       // trong lúc đang nạp sẽ dùng chung lần nạp này, không nạp lại.
-      const t0 = Date.now();
-      require('./services/analysis_context')
-        .getContext(db)
-        .then(() => console.log(`Đã nạp sẵn ngữ cảnh phân tích (${Date.now() - t0} ms).`))
-        .catch((e) => console.warn('Không nạp sẵn được ngữ cảnh, sẽ nạp ở request đầu tiên:', e.message));
+      // Nạp lần lượt (không song song): Trust Layer chạy đồng bộ, hai kho cùng
+      // tính một lúc chỉ làm cả hai chậm gấp đôi trên CPU yếu của Render
+      const { getContext } = require('./services/analysis_context');
+      (async () => {
+        for (const [name, wsDb] of Object.entries(workspaces)) {
+          const t0 = Date.now();
+          try {
+            await getContext(wsDb);
+            console.log(`Đã nạp sẵn ngữ cảnh kho ${name} (${Date.now() - t0} ms).`);
+          } catch (e) {
+            console.warn(`Không nạp sẵn được kho ${name}, sẽ nạp ở request đầu tiên:`, e.message);
+          }
+        }
+      })();
     });
   } catch (e) {
     console.error('Không kết nối được MongoDB:', e.message);

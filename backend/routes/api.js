@@ -10,6 +10,7 @@ const metrics = require('../services/metrics');
 const playbook = require('../services/playbook');
 const recommender = require('../services/recommender');
 const taxonomy = require('../services/taxonomy');
+const { buildFeedbackDocs, saveFeedbacks } = require('../services/ingest');
 const normalizer = require('../services/normalizer');
 const visobert = require('../services/visobert_client');
 
@@ -69,7 +70,7 @@ const filterKey = (q = {}) => ['source', 'time', 'product', 'region'].map((k) =>
 
 /** detectAlerts có ghi nhớ; `opts` là tùy chọn cửa sổ của kiểm định */
 function detectAlertsCached(ctx, query, opts = {}) {
-  const key = `detect|${ctx.computedAt}|${filterKey(query)}|${JSON.stringify(opts)}`;
+  const key = `detect|${ctx.dbName}|${ctx.computedAt}|${filterKey(query)}|${JSON.stringify(opts)}`;
   return memo(key, () =>
     alertEngine.detectAlerts(applyFilters(ctx.items, query), { transactionCount: ctx.transactionCount, ...opts })
   );
@@ -81,23 +82,12 @@ function buildRecommendationsCached(ctx, query, opts, result, decisions) {
     .map((d) => `${d.alertId}:${d.decision}:${d.at ? new Date(d.at).getTime() : ''}`)
     .sort()
     .join(',');
-  const key = `build|${ctx.computedAt}|${filterKey(query)}|${JSON.stringify(opts)}|${decisionSig}`;
+  const key = `build|${ctx.dbName}|${ctx.computedAt}|${filterKey(query)}|${JSON.stringify(opts)}|${decisionSig}`;
   return memo(key, () =>
     recommender.buildAll(result.alerts, { items: ctx.items, transactions: ctx.transactions, decisions })
   );
 }
 
-/** Khóa chống trùng cho phản hồi thu thập: cào lại cùng trang không được nhân đôi kho dữ liệu */
-function dedupKey(doc) {
-  const crypto = require('crypto');
-  const day = doc.timestamp instanceof Date && !Number.isNaN(doc.timestamp.getTime())
-    ? doc.timestamp.toISOString().slice(0, 10)
-    : '';
-  const text = normalizer.canonicalize(doc.originalText).toLowerCase().replace(/\s+/g, ' ').trim();
-  return crypto.createHash('sha1')
-    .update([doc.source, doc.productName, doc.author, day, text].join('\u0001'))
-    .digest('hex');
-}
 
 /** Chỉ trả ra phần trust cần cho giao diện, bỏ các trường nội bộ nặng */
 function publicItem(f) {
@@ -410,7 +400,7 @@ router.post('/trust/label', wrap(async (req, res) => {
     { upsert: true }
   );
 
-  invalidate();
+  invalidate(req.db);
   const total = await req.db.collection('review_labels').countDocuments();
   res.json({
     success: true,
@@ -1079,30 +1069,8 @@ router.post('/scrape', wrap(async (req, res) => {
   const fallbackProduct =
     url.split('/').pop()?.split('?')[0]?.replace(/-/g, ' ') || 'Sản phẩm chưa xác định';
 
-  const analyzed = rawReviews.map((review, index) => {
-    const ai = aiResults[index] || {};
-    const category = taxonomy.normalizeCategory(ai.category);
-    return {
-      source: review.source,
-      originalText: review.rawText,
-      author: review.author,
-      timestamp: review.timestamp,
-      productName: review.productName || fallbackProduct,
-      accountAgeDays: review.accountAgeDays ?? null,
-      rating: review.rating ?? null,
-      orderId: review.orderId ?? null,
-      category,
-      subCategory: taxonomy.normalizeCause(category, ai.subCategory),
-      sentiment: ai.sentiment || 'Neutral',
-      aiSummary: ai.aiSummary || null,
-      entities: ai.entities || null,
-      // Giữ đủ khía cạnh: mô hình đa nhãn có thể nêu nhiều vấn đề trong một phản hồi,
-      // `category` chỉ là danh mục chính dùng để đếm chỉ số
-      aspects: Array.isArray(ai.aspects) ? ai.aspects : [],
-      // Nhãn do đâu gán (visobert / llm / rules) — để biết độ tin của nhãn
-      labelledBy: ai.labelledBy || null
-    };
-  });
+  // Che tên người mua, giữ dữ kiện sàn xác nhận (đã mua, mốc giao, câu khách tự chọn)
+  const analyzed = buildFeedbackDocs(rawReviews, aiResults, { fallbackProduct, collectedVia: 'scrape', sourceUrl: url });
 
   // dryRun: thu thập và phân loại nhưng KHÔNG lưu — để kiểm tra kết nối tới
   // nguồn dữ liệu trên máy chủ thật mà không đụng vào kho đang phục vụ web
@@ -1119,17 +1087,10 @@ router.post('/scrape', wrap(async (req, res) => {
   // Ghi theo khóa chống trùng thay vì insertMany: cào lại cùng trang từng
   // chèn nguyên bản sao của mọi bình luận, và chính các bản sao cùng thời
   // điểm đó bị Trust Layer bắt thành "cụm đánh giá ảo".
-  for (const doc of analyzed) doc.dedupKey = dedupKey(doc);
-  const write = await req.db.collection('feedbacks').bulkWrite(
-    analyzed.map((doc) => ({
-      updateOne: { filter: { dedupKey: doc.dedupKey }, update: { $setOnInsert: doc }, upsert: true }
-    })),
-    { ordered: false }
-  );
-  const inserted = write.upsertedCount;
+  const { inserted } = await saveFeedbacks(req.db, analyzed);
   if (inserted > 0) {
     await req.db.collection('predictions').deleteMany({});
-    invalidate();
+    invalidate(req.db);
   }
 
   // Chạy lại Trust Layer để báo ngay lô mới ảnh hưởng thế nào tới chất lượng dữ liệu
@@ -1174,7 +1135,7 @@ router.post('/seed', wrap(async (req, res) => {
 
   await req.db.collection('feedbacks').insertMany(feedbacks);
   await req.db.collection('transactions').insertMany(orders);
-  invalidate();
+  invalidate(req.db);
 
   const ctx = await getContext(req.db, { force: true });
   res.json({
@@ -1223,7 +1184,7 @@ router.post('/transactions', wrap(async (req, res) => {
   if (ops.length === 0) return res.status(400).json({ error: 'Không có bản ghi nào có orderId' });
 
   const result = await req.db.collection('transactions').bulkWrite(ops, { ordered: false });
-  invalidate();
+  invalidate(req.db);
 
   res.json({
     success: true,
