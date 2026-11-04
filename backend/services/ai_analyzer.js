@@ -244,7 +244,30 @@ const analyzeFeedbackBatch = async (reviewsArray) => {
 // 10 bình luận mỗi lượt: lô 40 làm đầu ra JSON dài vượt giới hạn và bị cắt
 // cụt giữa chừng ("Unterminated string in JSON") — cả lô rơi về lớp luật
 const LLM_BATCH_SIZE = 10;
-const LLM_CONCURRENCY = 5;
+// Trang web cần nhanh (5 lô song song, không chờ); bộ thu thập hàng loạt chạy
+// hàng trăm lô nên đặt LLM_CONCURRENCY=1, LLM_MIN_INTERVAL_MS và LLM_RETRY_429
+// để nằm trong hạn mức miễn phí (Gemini 15 lượt/phút, Groq 8.000 token/phút)
+const LLM_CONCURRENCY = Number(process.env.LLM_CONCURRENCY) || 5;
+const LLM_MIN_INTERVAL_MS = Number(process.env.LLM_MIN_INTERVAL_MS) || 0;
+const LLM_RETRY_429 = Number(process.env.LLM_RETRY_429) || 0;
+
+let nextLlmSlotAt = 0;
+/** Giãn cách tối thiểu giữa hai lượt gọi mô hình (dùng chung cho mọi lô) */
+async function waitForLlmSlot() {
+  if (!LLM_MIN_INTERVAL_MS) return;
+  const now = Date.now();
+  const at = Math.max(now, nextLlmSlotAt);
+  nextLlmSlotAt = at + LLM_MIN_INTERVAL_MS;
+  if (at > now) await new Promise((r) => setTimeout(r, at - now));
+}
+
+/** Lỗi 429 -> số mili giây nên chờ (đọc "retry in 31.1s" / "try again in 13.2s"); lỗi khác -> null */
+function rateLimitDelayMs(error) {
+  const msg = String(error?.message || '');
+  if (!/429|quota|rate limit/i.test(msg)) return null;
+  const m = msg.match(/(?:retry in|try again in)\s*([\d.]+)\s*s/i);
+  return Math.min(90000, Math.ceil((m ? Number(m[1]) : 20) * 1000) + 1000);
+}
 
 async function analyzeChunkWithLLM(reviewsArray) {
   if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) {
@@ -309,15 +332,26 @@ ${JSON.stringify(maskedReviews)}`;
     })).choices[0].message.content]);
   }
   for (const [name, call] of attempts) {
-    try {
-      const parsed = JSON.parse(stripCodeFence(await call()));
-      const arr = Array.isArray(parsed)
-        ? parsed
-        : Array.isArray(parsed?.results) ? parsed.results : Object.values(parsed || {}).find((v) => Array.isArray(v)) || [];
-      if (arr.length === 0) throw new Error('mô hình trả về mảng rỗng');
-      return reviewsArray.map((text, i) => coerceResult(arr[i], text));
-    } catch (error) {
-      console.error(`[${name}] Lỗi gán nhãn lô ${reviewsArray.length} bình luận:`, error.message);
+    for (let retry = 0; ; retry++) {
+      try {
+        await waitForLlmSlot();
+        const parsed = JSON.parse(stripCodeFence(await call()));
+        const arr = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray(parsed?.results) ? parsed.results : Object.values(parsed || {}).find((v) => Array.isArray(v)) || [];
+        if (arr.length === 0) throw new Error('mô hình trả về mảng rỗng');
+        return reviewsArray.map((text, i) => coerceResult(arr[i], text));
+      } catch (error) {
+        // Bị giới hạn tốc độ (429): khi thu thập hàng loạt thì chờ đúng thời gian
+        // nhà cung cấp yêu cầu rồi thử lại, thay vì để cả lô rơi về lớp luật
+        const wait = rateLimitDelayMs(error);
+        if (wait !== null && retry < LLM_RETRY_429) {
+          await new Promise((r) => setTimeout(r, wait));
+          continue;
+        }
+        console.error(`[${name}] Lỗi gán nhãn lô ${reviewsArray.length} bình luận:`, error.message);
+        break;
+      }
     }
   }
   // Lớp luật, KHÔNG phải nhãn ngẫu nhiên
