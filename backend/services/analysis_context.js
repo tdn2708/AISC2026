@@ -11,7 +11,7 @@
  * dùng lại trong một khoảng ngắn.
  */
 
-const { runTrustLayer } = require('./trust_layer');
+const { runTrustLayer, DEFAULT_HALF_LIFE_DAYS } = require('./trust_layer');
 const taxonomy = require('./taxonomy');
 const visobert = require('./visobert_client');
 
@@ -50,6 +50,15 @@ const FETCH_BATCH = 5000;
  */
 const REAL_DB = process.env.MONGODB_REAL_DB || 'customer_radar_real';
 const anchorsToData = (db) => db.databaseName === REAL_DB;
+
+/**
+ * Chu kỳ bán rã của trọng số theo kho. Kho mô phỏng giữ 30 ngày (mặc định
+ * của Trust Layer). Kho thật trên sàn rất thưa — đánh giá Tiki phần lớn từ
+ * 2021–2023, cả năm gần nhất chỉ vài chục — nên với 30 ngày, mọi đánh giá cũ
+ * hơn ~14 tháng về trọng số 0 và trang Tổng quan chỉ còn tính 62/3.783.
+ * 180 ngày vẫn ưu tiên phản hồi mới mà không xoá trắng lịch sử.
+ */
+const REAL_HALF_LIFE_DAYS = Number(process.env.REAL_HALF_LIFE_DAYS) || 180;
 
 /** "Bây giờ" của một ngữ cảnh: mốc dữ liệu với kho thật, giờ thật với kho mô phỏng */
 const ctxNow = (ctx) => (ctx && ctx.asOf ? new Date(ctx.asOf) : new Date());
@@ -180,8 +189,10 @@ async function doFetch(db, gen, onlyIfChanged) {
     console.warn('[VISOBERT] Bỏ qua tín hiệu mô hình cho Trust Layer:', e.message);
   }
 
+  const halfLifeDays = anchorsToData(db) ? REAL_HALF_LIFE_DAYS : DEFAULT_HALF_LIFE_DAYS;
   const result = runTrustLayer(feedbacks, {
     orders: transactions,
+    halfLifeDays,
     now: dataAsOf || undefined,
     ingestedAt: ingestedAt ? new Date(ingestedAt) : undefined,
     modelSignals: nlp ? nlp.signals : undefined
@@ -225,6 +236,7 @@ async function doFetch(db, gen, onlyIfChanged) {
     computedAt: new Date().toISOString(),
     dbName: db.databaseName,
     asOf: dataAsOf ? dataAsOf.toISOString() : null,
+    halfLifeDays,
     ingestedAt: ingestedAt ? new Date(ingestedAt).toISOString() : null,
     replay: Boolean(upcoming)
   };

@@ -110,6 +110,7 @@ const FeedbackDetail = ({ item, onClose }) => {
                 <EvidenceSwatch kind={ev.kind} size={12} />
                 {ev.label}
                 {!ev.counted && <Badge tone="crit">{exclusionLabel(t)}</Badge>}
+                {ev.counted && t.lowInfo && <Badge>Đánh giá ngắn, ít thông tin</Badge>}
               </p>
               <ProgressBar
                 className="mt-4"

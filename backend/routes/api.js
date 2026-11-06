@@ -121,7 +121,8 @@ function publicItem(f) {
           bandLabelVi: f.trust.bandLabelVi,
           authenticityScore: f.trust.authenticityScore,
           triggeredSignals: f.trust.triggeredSignals || [],
-          humanLabel: f.trust.humanLabel || null
+          humanLabel: f.trust.humanLabel || null,
+          lowInfo: Boolean(f.trust.lowInfo)
         }
       : null
   };
@@ -184,6 +185,7 @@ router.get('/stats', wrap(async (req, res) => {
     // (asOf), giao diện phải ghi rõ "dữ liệu đến ngày…" thay vì ngầm hiểu là hôm nay
     workspace: req.workspace,
     asOf: ctx.asOf,
+    halfLifeDays: ctx.halfLifeDays,
     ingestedAt: ctx.ingestedAt
   });
 }));
@@ -306,6 +308,7 @@ router.get('/trust/health', wrap(async (req, res) => {
     ...ctx.funnel,
     workspace: req.workspace,
     asOf: ctx.asOf,
+    halfLifeDays: ctx.halfLifeDays,
     ingestedAt: ctx.ingestedAt,
     provenanceTiers: trustLayer.PROVENANCE_TIERS,
     tierBreakdown: ['P1', 'P2', 'P3', 'P4', 'P5'].map((tier) => ({

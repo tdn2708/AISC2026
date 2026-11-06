@@ -134,19 +134,20 @@ function runSpamFilter(fb, normalized, modelScore = null) {
   if (onlyEmojiOrPunct) {
     reasons.push('Nội dung chỉ gồm biểu tượng cảm xúc');
   }
-  // Câu ngắn có từ được KÉO DÀI ("ngonnnn", "chậmmmm") không rỗng nghĩa: kéo
-  // dài một từ thật là người viết đang nhấn mạnh cảm xúc, khác hẳn kiểu "ok",
-  // "đẹp", "5 sao" gõ cho đủ thủ tục nhận xu.
-  const isEmptyMeaning =
+  // ĐÁNH GIÁ NGẮN, ÍT THÔNG TIN ("ok", "hàng tốt", "5 sao"): KHÔNG phải rác.
+  // Bản cũ loại chúng như rác. Trên dữ liệu thật của Tiki, cả 1.110 đánh giá bị
+  // loại theo luật này đều do người đã mua viết, 99% là 4–5 sao — loại đi thì
+  // mẫu số mất toàn lời khen và tỉ lệ khiếu nại bị thổi phồng; có cả lời chê
+  // thật bị loại oan ("Âm thanh nhỏ quá"). Nay chỉ gắn cờ `lowInfo` để giao
+  // diện nói rõ, còn phản hồi vẫn được tính với cảm xúc đã gán.
+  // Câu ngắn có từ được KÉO DÀI ("ngonnnn") hoặc nêu khía cạnh thì không bị gắn cờ.
+  const lowInfo =
     normalized.syllables > 0 &&
     normalized.syllables < MIN_MEANINGFUL_SYLLABLES &&
     !(normalized.emphasis > 0) &&
-    !/(chậm|hỏng|lỗi|tệ|xấu|kém|mất|thiếu|đắt|vỡ|móp)/.test(normalized.normalized) &&
+    !/(chậm|hỏng|lỗi|tệ|xấu|kém|mất|thiếu|đắt|vỡ|móp|nhỏ|ồn|nóng|rè)/.test(normalized.normalized) &&
     // Cùng danh sách nhưng gõ không dấu ("giao hang cham qua")
     !/\b(cham|hong|loi|te|xau|kem|mat|thieu|dat|vo|mop)\b/.test(foldDiacritics(normalized.normalized));
-  if (isEmptyMeaning) {
-    reasons.push(`Văn bản dưới ${MIN_MEANINGFUL_SYLLABLES} âm tiết, không chứa khía cạnh nào`);
-  }
 
   // Gõ phím bừa: chuỗi lặp không rút gọn được về từ thật và chiếm phần lớn
   // nội dung. Bản cũ chặn MỌI chữ cái lặp từ 6 lần, kể cả "ngonnnnnn".
@@ -167,6 +168,7 @@ function runSpamFilter(fb, normalized, modelScore = null) {
   return {
     isSpam: reasons.length > 0,
     reasons,
+    lowInfo: reasons.length === 0 && lowInfo,
     signals: sig,
     modelScore: hasModelScore ? Number(modelScore.toFixed(4)) : null
   };
@@ -1012,6 +1014,8 @@ function runTrustLayer(feedbacks, options = {}) {
       clusterId: clusterId >= 0 ? clusterId : null,
       features,
       triggeredSignals: triggered,
+      // Đánh giá ngắn, ít thông tin: vẫn được tính, chỉ gắn cờ để giao diện nói rõ
+      lowInfo: Boolean(it.spam.lowInfo),
       // Entropy dự đoán: dùng để sắp xếp hàng đợi kiểm duyệt ở T4
       uncertainty: Number((1 - Math.abs(A - 0.5) * 2).toFixed(4))
     };
@@ -1107,6 +1111,12 @@ function buildFunnel(items, clusters, now = new Date(), options = {}) {
     },
     pendingReview: { count: gray.length, pct: pct(gray.length) },
     validForAnalysis: accepted.length,
+    // Nằm TRONG số được tính: đánh giá ngắn kiểu "ok", "hàng tốt" — công khai
+    // con số để không ai nghĩ hệ thống lặng lẽ giữ hay bỏ chúng
+    lowInformation: {
+      count: accepted.filter((it) => it.trust.lowInfo).length,
+      pct: pct(accepted.filter((it) => it.trust.lowInfo).length)
+    },
     // Tổng trọng số: mẫu số thật của mọi chỉ số phía sau
     effectiveWeight: Number(
       items.reduce((sum, it) => sum + (it.trust.weight || 0), 0).toFixed(2)

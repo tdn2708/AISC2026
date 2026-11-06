@@ -93,12 +93,18 @@ function main() {
     return b === 'LIKELY_INAUTHENTIC' || b === 'SPAM';
   });
 
+  // Đánh giá ngắn kiểu "ok", "5 sao": không phải rác, phải được TÍNH (trừ loại
+  // chỉ có biểu tượng cảm xúc như "👍", vẫn bị lọc)
+  const plantedLowInfo = feedbacks.filter((f) => f._plantedAs === 'lowInfo');
+  const keptLowInfo = plantedLowInfo.filter((f) => byId.get(f._id).trust.weight > 0).length;
+
   const recallInauth = caughtInauthentic / Math.max(1, plantedInauthentic.length);
   const recallSpam = caughtSpam / Math.max(1, plantedSpam.length);
   const falseRejectRate = wronglyRejected.length / Math.max(1, background.length);
 
   console.log(`Đánh giá không xác thực cài vào : ${plantedInauthentic.length} — bắt được ${caughtInauthentic} (${pct(recallInauth)})`);
   console.log(`Nội dung rác cài vào            : ${plantedSpam.length} — bắt được ${caughtSpam} (${pct(recallSpam)})`);
+  console.log(`Đánh giá ngắn ít thông tin cài vào: ${plantedLowInfo.length} — vẫn được tính ${keptLowInfo} (${pct(keptLowInfo / Math.max(1, plantedLowInfo.length))})`);
   console.log(`Phản hồi nền                    : ${num(background.length)} — loại nhầm ${wronglyRejected.length} (${pct(falseRejectRate)})`);
   console.log(`Cụm trùng lặp gần phát hiện     : ${trust.clusters.length}`);
   console.log(`Điểm Sức khỏe Dữ liệu           : ${trust.funnel.dataHealthScore}/100`);

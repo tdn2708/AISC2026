@@ -156,6 +156,15 @@ const TrustLayerPage = () => {
           <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-line-soft pt-4 text-xs">
             <div className="flex gap-1.5"><dt className="text-ink-lo">Số kênh có dữ liệu</dt><dd className="font-mono font-semibold text-ink-hi">{health.channelCoverage.covered}/{health.channelCoverage.expected}</dd></div>
             <div className="flex gap-1.5"><dt className="text-ink-lo">Đối soát được với đơn hàng</dt><dd className="font-mono font-semibold text-ink-hi">{pct1(health.reconciliationRate)}</dd></div>
+            {health.lowInformation?.count > 0 && (
+              <div className="flex gap-1.5" title="Đánh giá ngắn kiểu “ok”, “hàng tốt”: không phải rác, vẫn được tính vào chỉ số">
+                <dt className="text-ink-lo">Đánh giá ngắn, vẫn được tính</dt>
+                <dd className="font-mono font-semibold text-ink-hi">{fmtInt(health.lowInformation.count)}</dd>
+              </div>
+            )}
+            {health.halfLifeDays && (
+              <div className="flex gap-1.5"><dt className="text-ink-lo">Trọng số giảm một nửa sau</dt><dd className="font-mono font-semibold text-ink-hi">{health.halfLifeDays} ngày</dd></div>
+            )}
             <div className="flex gap-1.5"><dt className="text-ink-lo">Độ trễ thu thập</dt><dd className="font-mono font-semibold text-ink-hi">{health.ingestionLagMinutes != null ? `${fmtInt(health.ingestionLagMinutes)} phút` : 'chưa rõ'}</dd></div>
           </dl>
         </GlassPanel>

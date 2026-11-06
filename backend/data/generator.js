@@ -627,7 +627,7 @@ function generateDataset(opts = {}) {
       accountAgeDays: customer.accountAgeDays, rating: 5,
       category: 'Other', subCategory: null, sentiment: 'Positive',
       timestamp: new Date(ts),
-      _plantedAs: 'spam'
+      _plantedAs: 'lowInfo'
     });
   }
 

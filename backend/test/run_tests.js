@@ -203,9 +203,28 @@ test('Chữ kéo dài mang cảm xúc không bị coi là rác; gõ phím bừa 
   for (const s of ['ngonnnnnnn', 'chaamjmmmm', 'Giao chậmmmmmmm quá trời', 'đẹppppppp quá shop ơi', 'giao hang cham qua']) {
     assert.strictEqual(spam(s), false, `"${s}" có nghĩa, không phải rác`);
   }
-  for (const s of ['hhhhhhhhhhhh', 'ok', 'đẹp', '5 sao']) {
+  for (const s of ['hhhhhhhhhhhh', '👍', '.']) {
     assert.strictEqual(spam(s), true, `"${s}" vẫn phải là rác`);
   }
+});
+
+test('Đánh giá ngắn ít thông tin KHÔNG bị coi là rác, chỉ gắn cờ; lời chê ngắn không bị gắn cờ', () => {
+  const run = (s) => trust.runSpamFilter({ originalText: s }, normalizer.normalize(s));
+  for (const s of ['ok', 'Hàng tốt.', '5 sao', 'Nghe tốt']) {
+    const r = run(s);
+    assert.strictEqual(r.isSpam, false, `"${s}" là lời khen ngắn của người mua, không phải rác`);
+    assert.strictEqual(r.lowInfo, true, `"${s}" phải được gắn cờ ít thông tin`);
+  }
+  assert.strictEqual(run('Âm thanh nhỏ quá').lowInfo, false, 'lời chê ngắn nêu khía cạnh không phải "ít thông tin"');
+});
+
+test('Chu kỳ bán rã dài giữ được đánh giá cũ trong chỉ số; 30 ngày thì về 0', () => {
+  const now = new Date('2026-10-30T00:00:00Z');
+  const old = [{ _id: 'a', source: 'Tiki', author: 'A', verifiedPurchase: true, accountAgeDays: 900, rating: 2,
+    originalText: 'Giao hàng chậm quá, hộp bị móp méo hết cả', timestamp: new Date('2025-06-01T00:00:00Z') }];
+  const w = (h) => trust.runTrustLayer(JSON.parse(JSON.stringify(old)).map((f) => ({ ...f, timestamp: new Date(f.timestamp) })), { now, halfLifeDays: h }).items[0].trust.weight;
+  assert.strictEqual(w(30), 0, '500 ngày tuổi với chu kỳ 30 ngày phải về 0');
+  assert.ok(w(180) > 0.1, `chu kỳ 180 ngày phải giữ trọng số đáng kể, nhận ${w(180)}`);
 });
 
 // ==================================================================

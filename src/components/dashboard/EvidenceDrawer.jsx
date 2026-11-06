@@ -26,7 +26,7 @@ const METRICS = {
     formula: (s) => {
       const w = s?.weightedComplaintRate;
       if (!w?.available) return w?.reason || 'Chưa có dữ liệu giao dịch làm mẫu số, nên chỉ số này không được tính.';
-      return `Cộng trọng số tin cậy của các khiếu nại trên kênh gắn được đơn hàng (được ${nf2(w.numerator)}), rồi chia cho ${fmtInt(w.denominator)} giao dịch. Khiếu nại của người mua đã xác nhận có trọng số 1; bình luận ẩn danh chỉ 0,15; phản hồi càng cũ trọng số càng giảm.`;
+      return `Cộng trọng số tin cậy của các khiếu nại trên kênh gắn được đơn hàng (được ${nf2(w.numerator)}), rồi chia cho ${fmtInt(w.denominator)} giao dịch. Khiếu nại của người mua đã xác nhận có trọng số 1; bình luận ẩn danh chỉ 0,15; trọng số giảm một nửa sau mỗi ${s?.halfLifeDays ?? 30} ngày.`;
     },
     stats: (s) => {
       const w = s?.weightedComplaintRate;
@@ -44,7 +44,7 @@ const METRICS = {
     scope: 'phản hồi tiêu cực',
     formula: (s) => {
       const n = s?.shareOfNegative;
-      return `Tổng trọng số phản hồi tiêu cực (${nf2(n?.numerator)}) chia cho tổng trọng số mọi phản hồi hợp lệ (${nf2(n?.denominator)}). Dùng được cho cả kênh không gắn đơn hàng như Facebook hay TikTok.`;
+      return `Tổng trọng số phản hồi tiêu cực (${nf2(n?.numerator)}) chia cho tổng trọng số mọi phản hồi hợp lệ (${nf2(n?.denominator)}), kể cả lời khen ngắn kiểu “hàng tốt”. Trọng số giảm một nửa sau mỗi ${s?.halfLifeDays ?? 30} ngày. Dùng được cho cả kênh không gắn đơn hàng như Facebook hay TikTok.`;
     },
     stats: (s) => {
       const n = s?.shareOfNegative;
