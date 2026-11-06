@@ -24,12 +24,10 @@ export const PageHeader = ({ title, accent, subtitle, actions, meta }) => (
   </header>
 );
 
-/** Nhãn khu vực có đường kẻ: "BÁO CÁO MÔ TẢ ───────" */
+/** Tiêu đề khu vực: một dòng chữ đậm vừa, không trang trí; `right` cho thao tác phụ */
 export const SectionLabel = ({ children, right, className = '' }) => (
-  <div className={`mb-4 flex items-center gap-3 ${className}`}>
-    <span className="size-2 shrink-0 rounded-[2px] bg-accent" aria-hidden="true" />
-    <span className="font-mono text-[0.76rem] font-semibold tracking-[0.04em] whitespace-nowrap text-ink-hi uppercase">{children}</span>
-    <span className="h-px flex-1 bg-line-soft" aria-hidden="true" />
+  <div className={`mb-3 flex items-baseline justify-between gap-3 ${className}`}>
+    <h2 className="text-[0.95rem] font-semibold text-ink-hi">{children}</h2>
     {right}
   </div>
 );

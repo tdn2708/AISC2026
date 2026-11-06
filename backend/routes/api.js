@@ -168,6 +168,9 @@ router.get('/stats', wrap(async (req, res) => {
     // xấu đi" thay vì chỉ đưa ra một con số trần trụi.
     comparison: metrics.periodComparison(items, ctx.transactionCount, ctxNow(ctx)),
     dataHealthScore: ctx.funnel.dataHealthScore,
+    // Thành phần bằng chứng của từng thẻ: đối soát được / người duyệt / suy luận
+    evidence: metrics.buildEvidence(items, ctxNow(ctx)),
+    healthComponents: ctx.funnel.components,
     // Giữ các khóa cũ để giao diện chưa nâng cấp không vỡ
     totalComplaints: items.filter((f) => metrics.isCountable(f) && metrics.isComplaint(f)).length,
     complaintRate: cards.weightedComplaintRate.display,

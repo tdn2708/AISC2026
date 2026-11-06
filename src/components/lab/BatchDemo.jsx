@@ -173,7 +173,7 @@ export default function BatchDemo() {
           <div className="glass-panel">
             <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
               <div style={{ flex: '2 1 320px', minWidth: 0 }}>
-                <div style={{ fontSize: '0.66rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-lo)', marginBottom: '0.7rem' }}>
+                <div style={{ fontSize: '0.66rem', fontWeight: 600, color: 'var(--text-lo)', marginBottom: '0.7rem' }}>
                   Khiếu nại theo danh mục
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -185,7 +185,7 @@ export default function BatchDemo() {
                 </div>
               </div>
               <div style={{ flex: '1 1 220px', minWidth: 0 }}>
-                <div style={{ fontSize: '0.66rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-lo)', marginBottom: '0.7rem' }}>
+                <div style={{ fontSize: '0.66rem', fontWeight: 600, color: 'var(--text-lo)', marginBottom: '0.7rem' }}>
                   Cảm xúc
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

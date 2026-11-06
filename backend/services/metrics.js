@@ -292,7 +292,73 @@ function periodComparison(feedbacks, transactionCount, now = new Date(), windowD
   };
 }
 
+/**
+ * THÀNH PHẦN BẰNG CHỨNG CỦA MỘT CON SỐ
+ * ------------------------------------------------------------------
+ * Trả lời câu hỏi "con số này đứng trên cái gì": trong các phản hồi được
+ * tính, bao nhiêu có dữ kiện đối soát được (mã đơn hàng, sàn xác nhận đã
+ * mua, tài khoản định danh — hạng P1/P2), bao nhiêu đã được người kiểm
+ * duyệt xác nhận, và bao nhiêu chỉ dựa trên phán đoán của Trust Layer.
+ * Ba nhóm loại trừ nhau, ưu tiên người duyệt > đối soát > suy luận.
+ *
+ * Đếm theo SỐ PHẢN HỒI chứ không theo trọng số: "2.100 trên 3.576 phản
+ * hồi" đọc và kiểm lại được bằng tay, còn tổng trọng số thì không.
+ *
+ * `labels` tách riêng ai đã GÁN NHÃN nội dung (khiếu nại gì, cảm xúc gì) —
+ * một câu hỏi khác với "phản hồi có thật không".
+ */
+function evidenceMix(items) {
+  const scope = items.filter(isCountable);
+  const mix = { total: scope.length, human: 0, verified: 0, inferred: 0 };
+  const labels = {};
+  for (const f of scope) {
+    if (f.trust.humanLabel) mix.human += 1;
+    else if (RECONCILABLE_TIERS.includes(f.trust.tier)) mix.verified += 1;
+    else mix.inferred += 1;
+    const by = f.labelledBy || 'synthetic';
+    labels[by] = (labels[by] || 0) + 1;
+  }
+  return { ...mix, labels };
+}
+
+/** Bằng chứng cho các thẻ trên trang Tổng quan, kèm vài phản hồi gốc để đọc thử */
+function buildEvidence(items, now = new Date(), sampleSize = 5) {
+  const nowMs = new Date(now).getTime();
+  const weekAgo = nowMs - 7 * 86400000;
+  const complaints = items.filter((f) => isCountable(f) && isComplaint(f));
+  const recentComplaints = complaints.filter((f) => {
+    const t = new Date(f.timestamp).getTime();
+    return t >= weekAgo && t <= nowMs;
+  });
+  const samples = [...complaints]
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .slice(0, sampleSize)
+    .map((f) => ({
+      _id: f._id,
+      text: f.originalText,
+      source: f.source,
+      productName: f.productName,
+      timestamp: f.timestamp,
+      rating: f.rating ?? null,
+      tier: f.trust.tier,
+      verifiedPurchase: f.verifiedPurchase === true,
+      hasOrder: Boolean(f.orderId),
+      humanLabel: f.trust.humanLabel || null,
+      labelledBy: f.labelledBy || 'synthetic'
+    }));
+  return {
+    all: evidenceMix(items),
+    complaints: evidenceMix(complaints),
+    // WCR chỉ tính trên kênh đối soát được — mẫu số của bằng chứng cũng vậy
+    reconcilableComplaints: evidenceMix(complaints.filter((f) => RECONCILABLE_TIERS.includes(f.trust.tier))),
+    recentComplaints: evidenceMix(recentComplaints),
+    samples
+  };
+}
+
 module.exports = {
+  evidenceMix,
+  buildEvidence,
   isComplaint,
   isCountable,
   weightedComplaintRate,

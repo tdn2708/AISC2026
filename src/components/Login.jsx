@@ -70,7 +70,7 @@ const Login = ({ onLogin }) => {
               <span className="font-semibold text-[#CFE6DE]">Radar</span>
             </span>
           </div>
-          <p className="mt-10 text-xs font-semibold tracking-[0.22em] text-white/75 uppercase">Customer intelligence · đa kênh</p>
+          <p className="mt-10 text-xs font-semibold text-white/75">Customer intelligence · đa kênh</p>
           <h1 className="mt-3 max-w-xl text-[3.4rem] leading-[1.08] font-semibold tracking-tight">
             Nghe đúng tiếng nói
             <span className="block">của khách hàng thật.</span>
@@ -100,7 +100,7 @@ const Login = ({ onLogin }) => {
           <p className="mt-1 text-sm text-ink-mid">Đăng nhập để vào bảng điều khiển.</p>
 
           <div className="mt-6 rounded-lg bg-accent-dim p-4">
-            <p className="flex items-center gap-2 text-[0.7rem] font-semibold tracking-[0.12em] text-accent-hi uppercase">
+            <p className="flex items-center gap-2 text-[0.7rem] font-semibold text-accent-hi">
               <KeyRound size={13} aria-hidden="true" /> Tài khoản dùng thử
             </p>
             <p className="mt-1.5 font-mono text-[0.82rem] leading-relaxed text-ink-hi">

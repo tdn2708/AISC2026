@@ -65,20 +65,16 @@
   }
 }
 
-/* Kính mờ: viền trắng mảnh + vệt sáng mép trên như UI-kit tham chiếu */
+/* Bề mặt: nền đặc + viền 1px. Tên "glass" giữ lại cho các trang cũ;
+   không còn làm mờ nền vì không còn ảnh nền nào phía sau. */
 @utility glass {
-  background: linear-gradient(180deg, var(--glass-hi), transparent 38%), var(--glass-bg);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  background: var(--glass-bg);
   border: 1px solid var(--glass-line);
   box-shadow: var(--glass-shade);
 }
 
-/* Kính đặc hơn cho panel chứa dữ liệu dày — chữ nhỏ phải đọc rõ */
 @utility glass-strong {
   background: var(--glass-strong);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
   border: 1px solid var(--glass-line);
   box-shadow: var(--glass-shade);
 }
@@ -92,13 +88,11 @@
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--sev-high) 50%, transparent), var(--glass-shade);
 }
 
-/* Nhãn khu vực kiểu kỹ thuật: "01 · CHỈ SỐ" */
+/* Nhãn nhỏ phía trên một con số hoặc khối — viết thường, chỉ hoa chữ đầu */
 @utility eyebrow {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--text-mid);
 }
 

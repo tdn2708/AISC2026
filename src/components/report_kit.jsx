@@ -105,7 +105,7 @@ export const SeverityDot = ({ level }) => {
       <span style={{ width: 9, height: 9, borderRadius: 99, background: m.c, flexShrink: 0 }} />
       <span style={{
         fontSize: '10px', fontWeight: 700, letterSpacing: '0.09em',
-        textTransform: 'uppercase', color: m.c
+ color: m.c
       }}>
         {m.t}
       </span>

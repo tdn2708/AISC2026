@@ -498,7 +498,7 @@ const Reports = () => {
           <div data-block="header" style={{ borderBottom: `1px solid ${REPORT.border}`, paddingBottom: '18px', marginBottom: '26px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '24px' }}>
             <div>
               <h1 style={{ fontSize: '26px', fontWeight: 700, color: REPORT.hi, margin: '0 0 6px 0', letterSpacing: '-0.4px', lineHeight: 1.25 }}>Báo cáo phân tích phản hồi khách hàng</h1>
-              <p style={{ color: REPORT.lo, fontSize: '12px', margin: 0, textTransform: 'uppercase', letterSpacing: '1.4px', fontWeight: 600 }}>Bản tóm tắt dành cho cấp quản lý</p>
+              <p style={{ color: REPORT.lo, fontSize: '12px', margin: 0, fontWeight: 600 }}>Bản tóm tắt dành cho cấp quản lý</p>
             </div>
             <div style={{ textAlign: 'right' }}>
               <p style={{ color: REPORT.hi, fontWeight: 600, margin: '0 0 4px 0', fontSize: '13px' }}>
@@ -637,7 +637,7 @@ const Reports = () => {
           )}
           <div data-block="kpi" style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
             <div style={{ flex: 1, background: REPORT.surface, border: `1px solid ${REPORT.border}`, padding: '18px 20px', borderRadius: '10px' }}>
-              <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: REPORT.lo, textTransform: 'uppercase', letterSpacing: '0.9px', fontWeight: 600 }}>Phản hồi hợp lệ</p>
+              <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: REPORT.lo, fontWeight: 600 }}>Phản hồi hợp lệ</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
                 <h2 style={{ margin: 0, fontSize: '30px', fontWeight: 600, color: REPORT.hi, fontFamily: "'Geist Mono', monospace", lineHeight: 1 }}>
                   {fmtInt(pdfData?.stats?.totalFeedbacks?.valid)}
@@ -649,7 +649,7 @@ const Reports = () => {
               </p>
             </div>
             <div style={{ flex: 1, background: REPORT.surface, border: `1px solid ${REPORT.border}`, padding: '18px 20px', borderRadius: '10px' }}>
-              <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: REPORT.lo, textTransform: 'uppercase', letterSpacing: '0.9px', fontWeight: 600 }}>Tỉ lệ khiếu nại có trọng số</p>
+              <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: REPORT.lo, fontWeight: 600 }}>Tỉ lệ khiếu nại có trọng số</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
                 <h2 style={{ margin: 0, fontSize: '30px', fontWeight: 600, color: REPORT.hi, fontFamily: "'Geist Mono', monospace", lineHeight: 1 }}>
                   {pdfData?.stats?.weightedComplaintRate?.available
@@ -672,7 +672,7 @@ const Reports = () => {
               thực sự tính được.
             */}
             <div style={{ flex: 1, background: REPORT.surface, border: `1px solid ${REPORT.border}`, padding: '18px 20px', borderRadius: '10px' }}>
-              <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: REPORT.lo, textTransform: 'uppercase', letterSpacing: '0.9px', fontWeight: 600 }}>Sức khỏe dữ liệu</p>
+              <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: REPORT.lo, fontWeight: 600 }}>Sức khỏe dữ liệu</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
                 <h2 style={{
                   margin: 0, fontSize: '30px', fontWeight: 600, lineHeight: 1,
@@ -863,7 +863,7 @@ const Reports = () => {
                               textAlign: k >= 2 ? 'right' : 'left',
                               padding: '0 10px 8px 0',
                               fontSize: '10px', fontWeight: 700, letterSpacing: '0.09em',
-                              textTransform: 'uppercase', color: REPORT.lo,
+ color: REPORT.lo,
                               borderBottom: `1px solid ${REPORT.border}`
                             }}>{h}</th>
                           ))}

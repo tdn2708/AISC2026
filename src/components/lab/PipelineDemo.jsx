@@ -120,7 +120,7 @@ const TextBox = ({ children, mono }) => (
 
 const Label = ({ children }) => (
   <div style={{
-    fontSize: '0.66rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em',
+    fontSize: '0.66rem', fontWeight: 600,
     color: 'var(--text-lo)', margin: '0.9rem 0 0.4rem'
   }}>
     {children}

@@ -1206,6 +1206,22 @@ test('Sàn xác nhận đã mua -> P1; viết trước mốc giao do sàn ghi nh
   assert.strictEqual(ok.score, 0);
 });
 
+test('Thành phần bằng chứng: người duyệt > đối soát > suy luận, bỏ phản hồi bị loại', () => {
+  const fb = (tier, extra = {}) => ({ sentiment: 'Negative', timestamp: new Date(), trust: { tier, weight: 0.5, ...extra }, labelledBy: 'llm' });
+  const mix = metrics.evidenceMix([
+    fb('P1'), fb('P2'), fb('P3'), fb('P4', { humanLabel: 'valid' }), fb('P1', { humanLabel: 'valid' }),
+    fb('P1', { weight: 0 })
+  ]);
+  assert.deepStrictEqual(
+    { total: mix.total, human: mix.human, verified: mix.verified, inferred: mix.inferred },
+    { total: 5, human: 2, verified: 2, inferred: 1 }
+  );
+  assert.strictEqual(mix.labels.llm, 5);
+  const ev = metrics.buildEvidence([fb('P1'), fb('P3')]);
+  assert.strictEqual(ev.reconcilableComplaints.total, 1);
+  assert.strictEqual(ev.samples.length, 2);
+});
+
 // ==================================================================
 console.log(`\n${'='.repeat(52)}`);
 console.log(`Kết quả: ${passed} đạt, ${failed} lỗi`);

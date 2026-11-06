@@ -3,9 +3,7 @@ import FilterBar from './FilterBar';
 import FeedbackTable from './FeedbackTable';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { readStorage, writeStorage } from '../lib/storage';
-import { fmtDate, fmtDateTime } from '../lib/format';
-import { PageHeader, SectionLabel } from './ui';
-import StatusStrip from './dashboard/StatusStrip';
+import SummaryHeader from './dashboard/SummaryHeader';
 import KpiZone from './dashboard/KpiZone';
 import SentimentTrendChart from './dashboard/SentimentTrendChart';
 import SentimentDonut from './dashboard/SentimentDonut';
@@ -13,19 +11,17 @@ import RisingIssues from './dashboard/RisingIssues';
 import ActionCenter from './dashboard/ActionCenter';
 
 /**
- * TỔNG QUAN — bố cục lưới 12 cột
+ * TỔNG QUAN — câu trả lời trước, số liệu sau
  * ------------------------------------------------------------------
- *   [ Tiêu đề trang                                              12 ]
- *   [ DẢI TRẠNG THÁI (khối tối) — có việc gì cần làm không?      12 ]
- *   [ Bộ lọc — một hàng, áp cho mọi thứ bên dưới                 12 ]
- *   [ Tỷ lệ khiếu nại (tối) 5 ][ Mức độ nghiêm trọng 4 ][ 3 chỉ số phụ 3 ]
- *   [ 02 Diễn biến cảm xúc (line)             8 ][ 03 HÀNH ĐỘNG  4 ]
- *   [ Phân bổ cảm xúc (donut) ][ Top tăng nhanh ][                 ]
- *   [ 04 Bảng phản hồi gần đây                                   12 ]
+ *   [ Câu tóm tắt: hôm nay có gì phải quyết (khối mực duy nhất)   12 ]
+ *   [ Bộ lọc                                                      12 ]
+ *   [ Khiếu nại ][ Tiêu cực ][ Tốc độ tăng ][ Sức khỏe dữ liệu       ]  mỗi thẻ có thanh bằng chứng
+ *   [ Diễn biến cảm xúc                          8 ][ Việc cần quyết 4 ]
+ *   [ Phân bổ cảm xúc ][ Vấn đề tăng nhanh         ][                 ]
+ *   [ Phản hồi gần đây                                            12 ]
  *
- * Dưới 1280px, Trung tâm hành động nhảy lên ngay sau hàng chỉ số: trên
- * màn hình hẹp không có cột bên cạnh, và việc cần quyết phải đứng trước
- * số liệu mô tả.
+ * Dưới 1280px, "Việc cần quyết" nhảy lên ngay sau hàng chỉ số: trên màn
+ * hẹp không có cột bên cạnh, và việc cần quyết phải đứng trước số liệu mô tả.
  */
 
 const nowLabel = () => new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
@@ -57,25 +53,8 @@ const Dashboard = () => {
   }, [loading]);
 
   return (
-    <div className="cx">
-      <PageHeader
-        section="Giám sát"
-        title="Tổng quan"
-        accent="vận hành"
-        subtitle="Mọi con số được tính trên phản hồi đã qua tầng kiểm soát tin cậy dữ liệu."
-      />
-
-      {/* Kho thật tính theo mốc dữ liệu chứ không theo hôm nay — phải nói rõ, nếu
-          không "7 ngày" trên thanh lọc bị hiểu là 7 ngày tính tới hôm nay */}
-      {stats?.workspace === 'real' && stats.asOf && (
-        <p className="mb-4 rounded-lg border border-accent/30 bg-accent-dim px-4 py-2.5 text-sm text-ink-mid">
-          <b className="text-ink-hi">Dữ liệu thật</b> thu thập từ sàn, tên người mua đã che · các khoảng thời gian tính đến đánh giá mới nhất
-          ngày <b className="text-ink-hi">{fmtDate(stats.asOf)}</b>
-          {stats.ingestedAt && <> · thu thập lần gần nhất {fmtDateTime(stats.ingestedAt)}</>}
-        </p>
-      )}
-
-      <StatusStrip stats={stats} alerts={alerts} loading={loading} error={error} lastUpdated={lastUpdated} />
+    <div className="cx pt-2">
+      <SummaryHeader stats={stats} alerts={alerts} loading={loading} error={error} lastUpdated={lastUpdated} />
 
       <FilterBar
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}
@@ -85,9 +64,9 @@ const Dashboard = () => {
 
       {/* Bộ lọc được lưu qua các lần mở trang: lọc trúng một nhóm không có phản hồi
           nào được tính (vd. một sản phẩm vừa cào, toàn đánh giá cũ) thì mọi thẻ về
-          0 và dải trạng thái báo "an toàn" — phải nói rõ là do bộ lọc */}
+          0 — phải nói rõ là do bộ lọc */}
       {!loading && hasFilter && stats?.totalFeedbacks?.valid === 0 && (
-        <div role="status" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-high/40 bg-high/10 px-4 py-3 text-sm text-ink-hi">
+        <div role="status" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-high/40 bg-high/10 px-4 py-3 text-sm text-ink-hi">
           <span>
             Bộ lọc đang chọn không có phản hồi nào được tính vào chỉ số
             {stats.totalFeedbacks.value > 0 && ` (${stats.totalFeedbacks.value} phản hồi thô đều quá cũ hoặc bị Trust Layer loại)`}
@@ -102,17 +81,15 @@ const Dashboard = () => {
       {/* Tải lại thì giữ khung cũ ở độ mờ thấp: không nháy, không nhảy bố cục */}
       <div className={`transition-opacity duration-200 ${loading ? 'opacity-60' : ''}`} aria-busy={loading}>
         <section aria-label="Chỉ số chính" className="mb-8">
-          <SectionLabel>Chỉ số thời gian thực</SectionLabel>
-          <KpiZone stats={stats} trend={trend} alerts={alerts} />
+          <KpiZone stats={stats} trend={trend} />
         </section>
 
         <div className="mb-8 grid grid-cols-12 items-start gap-6">
-          <section aria-label="Hành động đề xuất" className="col-span-12 xl:sticky xl:top-20 xl:order-2 xl:col-span-4">
+          <section aria-label="Việc cần quyết" className="col-span-12 xl:sticky xl:top-20 xl:order-2 xl:col-span-4">
             <ActionCenter alerts={alerts} />
           </section>
 
-          <section aria-label="Báo cáo mô tả" className="col-span-12 xl:order-1 xl:col-span-8">
-            <SectionLabel>Báo cáo mô tả</SectionLabel>
+          <section aria-label="Diễn biến và phân bổ" className="col-span-12 xl:order-1 xl:col-span-8">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_3fr]">
               <div className="lg:col-[1/-1]">
                 <SentimentTrendChart data={trend} />
@@ -124,7 +101,6 @@ const Dashboard = () => {
         </div>
 
         <section aria-label="Phản hồi gần đây">
-          <SectionLabel>Phản hồi gần đây</SectionLabel>
           <FeedbackTable timeFilter={timeFilter} sourceFilter={sourceFilter} productFilter={productFilter} />
         </section>
       </div>

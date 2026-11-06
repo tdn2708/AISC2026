@@ -1,102 +1,104 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
 
 /* ==================================================================
-   HỆ THIẾT KẾ "CALM TECH"
+   HỆ THIẾT KẾ "SỔ KIỂM CHỨNG"
    ------------------------------------------------------------------
-   Kính mờ sáng đặt trên nền khuôn viên UIT phủ sương: phần KHUNG thì
-   êm và thoáng, còn phần DỮ LIỆU thì sắc nét — chữ số đơn cách, đường
-   lưới mảnh, thang màu trạng thái riêng và đậm hơn hẳn bảng pastel.
+   Phần mềm cho doanh nghiệp đọc mỗi sáng: nền đặc, viền 1px, không ảnh
+   nền, không kính mờ, không bóng đổ mềm. Sự chú ý dành cho đúng một thứ:
+   thanh bằng chứng dưới mỗi con số (xem components/ui/EvidenceBar.jsx).
 
-   Mọi cặp chữ/nền dưới đây đã đo tương phản WCAG trên hai nền thật của
-   mỗi theme (canvas và panel kính):
-     · Chữ thường ≥ 4.5:1 · Dấu biểu đồ ≥ 3:1
-   Bảng màu gốc của ảnh tham chiếu KHÔNG dùng nguyên được: chữ trắng trên
-   sage #5E8B7E chỉ đạt 3.84:1, blush và sky chỉ đạt 1.6–1.7:1 — nên sage
-   được làm đậm cho nút, còn blush/sky chỉ còn là màu nền và dấu biểu đồ.
+   Chữ: Be Vietnam Pro — họ chữ do người Việt thiết kế, dấu chồng hai
+   tầng (Ệ, ữ) hiển thị chuẩn. Số liệu dùng chữ số đều cột (tabular-nums)
+   thay cho font đơn cách; nhãn viết thường, chỉ hoa chữ đầu câu, vì tiếng
+   Việt viết HOA chồng dấu rất khó đọc.
 
-   Tên biến cũ được giữ làm bí danh ở cuối khối :root, nên các trang chưa
-   chuyển sang Tailwind vẫn tự đổi diện mạo theo token mới.
+   Tương phản đo trên nền #F3F5F4 và bề mặt #FFFFFF:
+     chữ #13232B 15.6:1 · #3A4A52 9.1:1 · #56656C 5.6:1
+     nhấn #0E6B5E 6.3:1, chữ trắng trên nhấn 6.6:1
+   Tên biến cũ (glass-*, hero-*) được giữ để các trang chưa chuyển đổi
+   vẫn tự đổi diện mạo theo token mới.
    ================================================================== */
 
-/* ---------- MIST — theme sáng, mặc định ---------- */
+/* ---------- SÁNG — mặc định ---------- */
 :root {
   color-scheme: light;
 
   /* Nền & bề mặt */
-  --canvas:        #E9EFEE;
-  --surface:       rgb(255 255 255 / 0.92);   /* panel */
-  --surface-solid: #FBFCFC;                   /* menu, đầu bảng dính, modal */
-  --raised:        rgb(15 30 35 / 0.055);      /* nền hover, rãnh thanh tiến trình */
-  --border:        rgb(15 30 35 / 0.15);
-  --border-soft:   rgb(15 30 35 / 0.08);
+  --canvas:        #F3F5F4;
+  --surface:       #FFFFFF;
+  --surface-solid: #FFFFFF;
+  --raised:        rgb(19 35 43 / 0.05);
+  --border:        #D9DFDD;
+  --border-soft:   #E7ECEA;
 
-  /* Kính */
-  --glass-bg:     rgb(251 252 252 / 0.90);
-  --glass-strong: rgb(252 253 253 / 0.96);
-  --glass-line:   rgb(15 30 35 / 0.12);
+  /* "Kính" cũ nay là bề mặt đặc — giữ tên để không phải sửa từng trang */
+  --glass-bg:     #FFFFFF;
+  --glass-strong: #FFFFFF;
+  --glass-line:   #D9DFDD;
   --glass-hi:     rgb(255 255 255 / 0);
-  --glass-shade:  0 1px 2px rgb(15 30 35 / 0.06), 0 10px 28px -14px rgb(15 30 35 / 0.22);
-  --backdrop-img: url('/images/uit-campus-mist.webp');
-  --backdrop-veil: linear-gradient(180deg, rgb(238 242 241 / 0.45), rgb(233 239 238 / 0.68) 70%);
-  --grid-line:    rgb(15 30 35 / 0.05);
+  --glass-shade:  0 1px 0 rgb(19 35 43 / 0.03);
+  --backdrop-img: none;
+  --backdrop-veil: none;
+  --grid-line:    transparent;
 
-  /* Khối tối duy nhất trên trang sáng — nơi mắt nhìn vào đầu tiên */
-  --strip-bg:     #13222A;
-  /* Thẻ chủ đạo theme sáng: xanh sương cùng họ với nền — nhẹ, không nặng khối */
-  --hero-bg:      #DCE9E4;
-  --hero-fg:      #0E191F;
-  --hero-mid:     #33434B;
-  --hero-lo:      #4A5960;
-  --hero-line:    rgb(61 107 95 / 0.28);
-  --hero-grid:    rgb(61 107 95 / 0.08);
-  --hero-stroke:  #3D6B5F;
-  --hero-fill:    rgb(61 107 95 / 0.14);
-  --hero-ring:    rgb(61 107 95 / 0.22);
-  --hero-shadow:  0 1px 2px rgb(15 30 35 / 0.06), 0 10px 28px -14px rgb(15 30 35 / 0.18);
-  --sidebar-bg:   rgb(247 250 249 / 0.74);
+  /* Khối mực duy nhất — dành cho câu tóm tắt đầu trang */
+  --strip-bg:     #13232B;
+  --hero-bg:      #FFFFFF;
+  --hero-fg:      #13232B;
+  --hero-mid:     #3A4A52;
+  --hero-lo:      #56656C;
+  --hero-line:    #D9DFDD;
+  --hero-grid:    transparent;
+  --hero-stroke:  #0E6B5E;
+  --hero-fill:    rgb(14 107 94 / 0.10);
+  --hero-ring:    rgb(14 107 94 / 0.18);
+  --hero-shadow:  none;
+  --sidebar-bg:   #FFFFFF;
 
-  /* Chữ — đo trên #E9EFEE / #F6F8F8 */
-  --text-hi:  #0E191F;   /* 16.9:1 */
-  --text-mid: #33434B;   /*  9.6:1 */
-  --text-lo:  #4F5E65;   /*  6.3:1 */
+  /* Chữ */
+  --text-hi:  #13232B;
+  --text-mid: #3A4A52;
+  --text-lo:  #56656C;
 
-  /* Nhấn — chỉ cho tương tác */
-  --accent:     #3D6B5F;            /* 5.2:1 làm chữ · chữ trắng trên nó 6.1:1 */
-  --accent-hi:  #2F574D;            /* 7.0:1 — chữ nhấn trên nền accent-dim */
-  --accent-dim: rgb(94 139 126 / 0.15);
+  /* Nhấn — chỉ cho tương tác và thanh bằng chứng */
+  --accent:     #0E6B5E;
+  --accent-hi:  #0A5449;
+  --accent-dim: rgb(14 107 94 / 0.10);
   --on-accent:  #FFFFFF;
-  --blush:      #E8AEB7;            /* trang trí, KHÔNG mang nghĩa rủi ro */
+  --blush:      #E8AEB7;
   --sky:        #A7C7E7;
 
   /* Trạng thái — chỉ cho mức độ */
-  --sev-crit: #B03A4F;   /* 5.1:1 */
-  --sev-high: #8F5509;   /* 5.2:1 */
-  --sev-med:  #806500;   /* 4.8:1 */
+  --sev-crit: #B42335;
+  --sev-high: #B45309;
+  --sev-med:  #8A6D00;
   --sev-low:  #5A6A71;
-  --sev-ok:   #2E7350;   /* 4.9:1 */
-  --sev-crit-dim: rgb(176 58 79 / 0.10);
-  --sev-high-dim: rgb(143 85 9 / 0.10);
-  --sev-ok-dim:   rgb(46 115 80 / 0.10);
+  --sev-ok:   #2E7350;
+  --sev-crit-dim: rgb(180 35 53 / 0.08);
+  --sev-high-dim: rgb(180 83 9 / 0.08);
+  --sev-ok-dim:   rgb(46 115 80 / 0.08);
 
-  /* Biểu đồ — cảm xúc là thang phân kỳ: blush (xấu) ↔ xám ↔ sky (tốt),
-     lấy từ hàng mặt cười của UI-kit tham chiếu */
-  --viz-neg:  #C4566B;   /* 3.7:1 */
+  /* Biểu đồ — cảm xúc là thang phân kỳ đỏ hồng ↔ xám ↔ xanh lam */
+  --viz-neg:  #C4566B;
   --viz-neu:  #98A6A4;
-  --viz-pos:  #4A80BE;   /* 3.5:1 */
-  --viz-grid: rgb(47 62 70 / 0.08);
+  --viz-pos:  #4A80BE;
+  --viz-grid: rgb(19 35 43 / 0.07);
 
-  /* Hình dạng & chuyển động */
-  --r-ctrl: 8px;
-  --r-surf: 12px;
-  --sidebar-w: 248px;
+  /* Hình dạng & chuyển động — bo góc theo cấp: điều khiển 6, bề mặt 10 */
+  --r-ctrl: 6px;
+  --r-surf: 10px;
+  --sidebar-w: 240px;
   --sidebar-w-collapsed: 72px;
-  --shell-gap: 12px;
+  --shell-gap: 0px;
   --ease: cubic-bezier(.2, .8, .2, 1);
   --dur-fast: 120ms;
   --dur-base: 200ms;
 
-  --font-sans: 'Geist', 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, Consolas, monospace;
+  --font-sans: 'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif;
+  /* Lớp font-mono cũ nay trỏ về chữ chính + chữ số đều cột (xem .font-mono bên dưới);
+     font đơn cách thật chỉ còn cho chuỗi thống kê trong ngăn kéo bằng chứng */
+  --font-mono: var(--font-sans);
+  --font-code: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
   /* ---- Bí danh tương thích ngược (Lab và style nội tuyến cũ) ---- */
   --bg-dark:        var(--canvas);
@@ -120,49 +122,47 @@
   --radius-lg:      var(--r-surf);
 }
 
-/* ---------- DUSK — theme tối ---------- */
+/* ---------- TỐI ---------- */
 [data-theme='dark'] {
   color-scheme: dark;
 
-  --canvas:        #121B20;
-  --surface:       rgb(24 34 40 / 0.94);
-  --surface-solid: #1C272D;
+  --canvas:        #0F1A1F;
+  --surface:       #16232A;
+  --surface-solid: #16232A;
   --raised:        rgb(255 255 255 / 0.06);
-  --border:        rgb(255 255 255 / 0.11);
-  --border-soft:   rgb(255 255 255 / 0.06);
+  --border:        rgb(255 255 255 / 0.12);
+  --border-soft:   rgb(255 255 255 / 0.07);
 
-  --glass-bg:     rgb(22 31 36 / 0.90);
-  --glass-strong: rgb(24 34 40 / 0.96);
-  --glass-line:   rgb(255 255 255 / 0.10);
+  --glass-bg:     #16232A;
+  --glass-strong: #16232A;
+  --glass-line:   rgb(255 255 255 / 0.12);
   --glass-hi:     rgb(255 255 255 / 0);
-  --glass-shade:  0 1px 2px rgb(0 0 0 / 0.3), 0 12px 30px -14px rgb(0 0 0 / 0.65);
-  --backdrop-img: url('/images/uit-campus-dusk.webp');
-  --backdrop-veil: linear-gradient(180deg, rgb(18 27 32 / 0.45), rgb(18 27 32 / 0.7) 70%);
-  --grid-line:    rgb(255 255 255 / 0.03);
+  --glass-shade:  none;
+  --backdrop-img: none;
+  --backdrop-veil: none;
+  --grid-line:    transparent;
 
-  /* Theme tối: khối nhấn phải SÁNG hơn xung quanh (ngược với theme sáng),
-     nếu không nó chìm hẳn — đo ΔL OKLCH ≥ 0.15 so với nền */
-  --strip-bg:     #2F434B;
-  --hero-bg:      #235246;
-  --hero-fg:      #FFFFFF;
-  --hero-mid:     rgb(255 255 255 / 0.78);
-  --hero-lo:      rgb(255 255 255 / 0.72);
-  --hero-line:    rgb(255 255 255 / 0.14);
-  --hero-grid:    rgb(255 255 255 / 0.04);
-  --hero-stroke:  rgb(255 255 255 / 0.9);
-  --hero-fill:    rgb(255 255 255 / 0.10);
-  --hero-ring:    rgb(255 255 255 / 0.15);
-  --hero-shadow:  0 14px 34px -18px rgb(0 0 0 / 0.6);
-  --sidebar-bg:   rgb(17 25 29 / 0.82);
+  --strip-bg:     #23363F;
+  --hero-bg:      #16232A;
+  --hero-fg:      #E6EEED;
+  --hero-mid:     #BAC7C7;
+  --hero-lo:      #9AABAD;
+  --hero-line:    rgb(255 255 255 / 0.12);
+  --hero-grid:    transparent;
+  --hero-stroke:  #6CC2AF;
+  --hero-fill:    rgb(108 194 175 / 0.14);
+  --hero-ring:    rgb(108 194 175 / 0.22);
+  --hero-shadow:  none;
+  --sidebar-bg:   #131F25;
 
   --text-hi:  #E6EEED;
   --text-mid: #BAC7C7;
   --text-lo:  #9AABAD;
 
-  --accent:     #84B9A9;
-  --accent-hi:  #A6D3C4;
-  --accent-dim: rgb(132 185 169 / 0.16);
-  --on-accent:  #0F1E19;
+  --accent:     #6CC2AF;
+  --accent-hi:  #9ADBCB;
+  --accent-dim: rgb(108 194 175 / 0.14);
+  --on-accent:  #06201B;
 
   --sev-crit: #F08A9B;
   --sev-high: #E8B46A;
@@ -209,10 +209,18 @@ h1, h2, h3, h4, h5 { line-height: 1.3; letter-spacing: -0.015em; }
 /* Không nạp preflight nên phải tự bỏ gạch chân mặc định của liên kết */
 a { color: inherit; text-decoration: none; }
 
-.data-num {
-  font-family: var(--font-mono);
+/* Số liệu: chữ chính, chữ số đều cột để các hàng số thẳng cột với nhau */
+.data-num, .font-mono {
+  font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.005em;
+}
+
+/* Chuỗi thống kê (z, p, n) — nơi duy nhất còn font đơn cách */
+.font-code {
+  font-family: var(--font-code);
+  font-size: 0.92em;
+  letter-spacing: 0;
 }
 
 /* ==================================================================
@@ -310,9 +318,7 @@ a { color: inherit; text-decoration: none; }
   padding: 0.75rem 1rem;
   color: var(--text-lo);
   font-weight: 600;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.78rem;
   border-bottom: 1px solid var(--border-soft);
   white-space: nowrap;
 }
@@ -342,8 +348,7 @@ a { color: inherit; text-decoration: none; }
 .fb-table { width: 100%; min-width: 980px; border-collapse: collapse; table-layout: fixed; }
 :where(.fb-table) th {
   padding: 0.65rem 1rem;
-  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; text-align: left;
+  font-size: 0.78rem; font-weight: 600; text-align: left;
   color: var(--text-lo);
   border-bottom: 1px solid var(--border-soft);
   white-space: nowrap;
@@ -450,12 +455,10 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   z-index: 1000;
-  border-radius: 14px;
+  /* Thanh bên áp sát mép, ngăn với nội dung bằng một đường kẻ — khung của
+     phần mềm doanh nghiệp đứng yên, không trôi nổi */
   background: var(--sidebar-bg);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-line);
-  box-shadow: var(--glass-shade);
+  border-right: 1px solid var(--border);
   transition: width 0.3s var(--ease), transform 0.3s var(--ease);
 }
 

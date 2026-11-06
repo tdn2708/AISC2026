@@ -47,8 +47,8 @@ export const LogoWordmark = ({ size = 'md', showTagline = true, tagline = 'Radar
       </div>
       {showTagline && (
         <div
-          className="truncate font-semibold text-ink-lo uppercase"
-          style={{ fontSize: `${0.5 * scale}rem`, letterSpacing: '0.14em' }}
+          className="truncate font-semibold text-ink-lo"
+          style={{ fontSize: `${0.62 * scale}rem` }}
         >
           {tagline}
         </div>

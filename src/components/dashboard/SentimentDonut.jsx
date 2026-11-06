@@ -65,7 +65,7 @@ const SentimentDonut = ({ data = [] }) => {
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
               <span className="text-3xl font-semibold leading-none text-ink-hi proportional-nums">{fmtPct(negShare, 0)}</span>
-              <span className="mt-1 text-[0.68rem] uppercase tracking-[0.1em] text-ink-lo">tiêu cực</span>
+              <span className="mt-1 text-[0.68rem] text-ink-lo">tiêu cực</span>
             </div>
           </div>
 

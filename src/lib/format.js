@@ -92,6 +92,23 @@ export const alertTitle = (a) =>
  * tăng là vô hạn — trả Infinity để giao diện ghi "Mới xuất hiện" thay vì
  * bịa ra một phần trăm.
  */
+/** Diễn biến của một cảnh báo bằng lời thường — không z, không p — cho người quản lý */
+export const alertInWords = (a) => {
+  const st = a.statistics || {};
+  if (a.type === 'SUSTAINED_DRIFT') {
+    return `tăng chậm nhưng đều, vượt ngưỡng kiểm soát${st.consecutiveBreaches ? ` ${st.consecutiveBreaches} kỳ liên tiếp` : ''}`;
+  }
+  if (st.baselineRate != null && st.currentRate != null) {
+    // Tỉ lệ dưới 1% cần thêm một chữ số, nếu không 0,04% hiện thành "0,0%"
+    const p = (v) => fmtPct(v, v > 0 && v < 0.01 ? 2 : 1);
+    return st.baselineRate > 0
+      ? `tỉ lệ khiếu nại tăng từ ${p(st.baselineRate)} lên ${p(st.currentRate)}`
+      : `mới xuất hiện, chiếm ${p(st.currentRate)} phản hồi`;
+  }
+  const t = a.typeVi || 'biến động bất thường';
+  return t.charAt(0).toLowerCase() + t.slice(1);
+};
+
 export const growthOf = (alert) => {
   if (alert?.type !== 'SPIKE') return null;
   const { currentRate, baselineRate } = alert.statistics || {};
