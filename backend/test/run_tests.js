@@ -1241,6 +1241,74 @@ test('Thành phần bằng chứng: người duyệt > đối soát > suy luận
   assert.strictEqual(ev.samples.length, 2);
 });
 
+console.log('\nTÍNH NĂNG MỚI: KIỂM TRA, HIỆU QUẢ, SO SÁNH, TRẢ LỜI');
+const insights = require('../services/insights');
+
+test('Khoảng Wilson không sụp về 100% khi mẫu nhỏ toàn đúng', () => {
+  const w = stats.wilsonInterval(30, 30);
+  assert.strictEqual(w.p, 1);
+  assert.ok(w.low > 0.88 && w.low < 0.89, `cận dưới ~0,886, nhận ${w.low}`);
+  const h = stats.wilsonInterval(45, 50);
+  assert.ok(h.low < 0.9 && h.high > 0.9 && h.high < 1);
+  assert.strictEqual(stats.wilsonInterval(0, 0).p, null);
+});
+
+test('Kiểm tra ngẫu nhiên: lấy đúng phản hồi được tính, bỏ phản hồi đã kiểm; tổng hợp đúng', () => {
+  const items = Array.from({ length: 50 }, (_, i) => ({ _id: `f${i}`, trust: { weight: i < 40 ? 0.5 : 0 } }));
+  const { items: s, remaining } = insights.auditSample(items, new Set(['f0', 'f1']), 10, () => 0.3);
+  assert.strictEqual(remaining, 38);
+  assert.strictEqual(s.length, 10);
+  assert.ok(s.every((f) => f.trust.weight > 0 && f._id !== 'f0' && f._id !== 'f1'));
+  const sum = insights.auditSummary([
+    { categoryCorrect: true, sentimentCorrect: true, by: 'A', labelledBy: 'llm' },
+    { categoryCorrect: false, sentimentCorrect: true, by: 'B', labelledBy: 'llm', aiCategory: 'Delivery', correctCategory: 'ProductQuality' }
+  ]);
+  assert.strictEqual(sum.n, 2);
+  assert.strictEqual(sum.category.p, 0.5);
+  assert.strictEqual(sum.sentiment.p, 1);
+  assert.strictEqual(sum.reviewers, 2);
+  assert.strictEqual(sum.topConfusions[0].count, 1);
+});
+
+test('Hiệu quả sau quyết định: so đúng phạm vi 7 ngày trước / sau', () => {
+  const at = new Date('2026-10-19T00:00:00Z');
+  const mk = (d, cat) => ({ productName: 'P', category: cat, subCategory: 'LateDelivery', sentiment: 'Negative', trust: { weight: 1 }, timestamp: new Date(at.getTime() + d * 86400000) });
+  const items = [
+    ...[-6, -5, -4, -3].map((d) => mk(d, 'Delivery')), mk(-2, 'Other'), mk(-1, 'Other'),
+    mk(2, 'Delivery'), ...[3, 4, 5].map((d) => mk(d, 'Other'))
+  ];
+  const e = insights.decisionEffect(items, { decision: 'ACCEPTED', at, alertId: 'Delivery|LateDelivery|P|*|2026-10-19' }, new Date('2026-10-30'));
+  assert.strictEqual(e.status, 'done');
+  assert.strictEqual(e.before.rate, 4 / 6);
+  assert.strictEqual(e.after.rate, 1 / 4);
+  assert.ok(e.change < 0);
+  const pending = insights.decisionEffect(items, { decision: 'ACCEPTED', at, alertId: 'Delivery|*|*|*|x' }, new Date('2026-10-22'));
+  assert.strictEqual(pending.status, 'pending');
+  assert.strictEqual(insights.decisionEffect(items, { decision: 'DISMISSED', at, alertId: 'x' }, new Date()), null);
+});
+
+test('So sánh hai sản phẩm có kiểm định khác biệt', () => {
+  const mk = (p, neg, i) => ({ _id: `${p}${i}`, productName: p, sentiment: neg ? 'Negative' : 'Positive', category: neg ? 'Delivery' : 'Other', subCategory: neg ? 'LateDelivery' : null, rating: neg ? 1 : 5, trust: { weight: 1, tier: 'P1' } });
+  const items = [
+    ...Array.from({ length: 200 }, (_, i) => mk('A', i < 80, i)),
+    ...Array.from({ length: 200 }, (_, i) => mk('B', i < 20, i))
+  ];
+  const r = insights.compareProducts(items, 'A', 'B');
+  assert.strictEqual(r.a.n, 200);
+  assert.strictEqual(r.a.negativeShare.p, 0.4);
+  assert.ok(r.difference.significant, '40% so với 10% trên 200 mẫu phải có ý nghĩa');
+  assert.strictEqual(r.categories[0].key, 'Delivery');
+  assert.strictEqual(insights.productList(items).length, 2);
+});
+
+test('Bản trả lời dự phòng nhắc đúng vấn đề và không hứa hẹn', () => {
+  const t = insights.fallbackReply({ causeLabel: 'Giao chậm' }, 'formal');
+  assert.ok(t.includes('giao chậm'));
+  assert.ok(!/hoàn tiền|mã giảm|voucher/i.test(t));
+  const p = insights.buildReplyPrompt({ originalText: 'giao trễ quá', rating: 1, causeLabel: 'Giao chậm' }, null, 'friendly');
+  assert.ok(p.includes('KHÔNG hứa hoàn tiền') && p.includes('giao trễ quá'));
+});
+
 // ==================================================================
 console.log(`\n${'='.repeat(52)}`);
 console.log(`Kết quả: ${passed} đạt, ${failed} lỗi`);

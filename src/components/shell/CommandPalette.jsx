@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Search, CornerDownLeft, Moon, Sun, LogOut, MessageSquareText, ArrowRight } from 'lucide-react';
+import { Search, CornerDownLeft, Moon, Sun, LogOut, MessageSquareText, ArrowRight, Sparkles } from 'lucide-react';
+import { askAssistant } from '../../lib/assistant';
 import { NAV, HIDDEN_PAGES } from '../../lib/nav';
 import { useTheme } from '../../hooks/useTheme';
 import { foldVi } from '../../lib/format';
@@ -9,9 +10,9 @@ import { foldVi } from '../../lib/format';
 /**
  * BẢNG LỆNH Ctrl+K
  * ------------------------------------------------------------------
- * Thay cho khung chat nổi cũ: thuần điều hướng và thao tác, không có
- * văn bản sinh tự do. Gõ vài chữ là tới trang cần đến, hoặc tìm thẳng
- * trong kho phản hồi. Bàn phím đi được hết: ↑ ↓ để chọn, Enter để mở.
+ * Gõ vài chữ là tới trang cần đến, tìm thẳng trong phản hồi, hoặc gửi
+ * nguyên câu gõ cho trợ lý "Hỏi dữ liệu". Bàn phím đi được hết: ↑ ↓ để
+ * chọn, Enter để mở.
  */
 
 const strip = foldVi;
@@ -45,7 +46,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
       {
         id: 'theme',
         section: 'Thao tác',
-        label: theme === 'dark' ? 'Chuyển sang giao diện sáng (Mist)' : 'Chuyển sang giao diện tối (Dusk)',
+        label: theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối',
         icon: theme === 'dark' ? Sun : Moon,
         run: () => setTheme(theme === 'dark' ? 'light' : 'dark')
       },
@@ -56,6 +57,13 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
     const match = (it) => !q || strip(`${it.label} ${it.hint || ''}`).includes(q);
     const list = [...pages.filter(match), ...actions.filter(match)];
     if (query.trim()) {
+      list.push({
+        id: 'ask',
+        section: 'Hỏi dữ liệu',
+        label: `Hỏi trợ lý: “${query.trim()}”`,
+        icon: Sparkles,
+        run: () => askAssistant(query.trim())
+      });
       list.push({
         id: 'search',
         section: 'Tìm trong phản hồi',
@@ -118,7 +126,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Gõ tên trang, thao tác, hoặc nội dung phản hồi…"
+            placeholder="Gõ tên trang, nội dung phản hồi, hoặc một câu hỏi…"
             aria-label="Tìm lệnh"
             aria-activedescendant={items[active] ? `cmd-${items[active].id}` : undefined}
             className="h-14 w-full min-w-0 border-0 bg-transparent text-[0.95rem] text-ink-hi outline-none placeholder:text-ink-lo"

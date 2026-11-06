@@ -3,9 +3,10 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { readStorage, writeStorage } from '../lib/storage';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, ArrowRight } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, ArrowRight, GitCompareArrows } from 'lucide-react';
 import FilterBar from './FilterBar';
 import Segments from './Segments';
+import Compare from './analytics/Compare';
 import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat } from './ui';
 import { buildQuery, fmtInt, fmtPct, fmtSignedPct, fmtDate } from '../lib/format';
 
@@ -325,24 +326,29 @@ const RootCauses = () => {
 
 const Analytics = () => {
   const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') === 'segments' ? 'segments' : 'causes';
+  const tab = ['segments', 'compare'].includes(params.get('tab')) ? params.get('tab') : 'causes';
 
   return (
     <div className="cx">
       <PageHeader
         title="Phân tích nguyên nhân"
-        subtitle="Chọn một nhóm vấn đề để xem nguyên nhân, sản phẩm bị chê và phản hồi gốc."
+        subtitle={{
+          causes: 'Chọn một nhóm vấn đề để xem nguyên nhân, sản phẩm bị chê và phản hồi gốc.',
+          compare: 'Đặt sản phẩm của bạn cạnh sản phẩm đối thủ, xem bên nào bị chê nhiều hơn và vì sao.',
+          segments: 'Nhóm khách hàng theo cảm xúc trong các phản hồi của họ.'
+        }[tab]}
       />
       <Tabs
         className="mb-6"
         value={tab}
-        onChange={(v) => setParams(v === 'segments' ? { tab: 'segments' } : {}, { replace: true })}
+        onChange={(v) => setParams(v === 'causes' ? {} : { tab: v }, { replace: true })}
         tabs={[
           { value: 'causes', label: 'Theo nhóm vấn đề', icon: ScanSearch },
+          { value: 'compare', label: 'So sánh sản phẩm', icon: GitCompareArrows },
           { value: 'segments', label: 'Phân khúc khách hàng', icon: Users }
         ]}
       />
-      {tab === 'segments' ? <Segments /> : <RootCauses />}
+      {tab === 'segments' ? <Segments /> : tab === 'compare' ? <Compare /> : <RootCauses />}
     </div>
   );
 };

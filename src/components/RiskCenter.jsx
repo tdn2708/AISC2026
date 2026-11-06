@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Check, CircleSlash, Clock, FileSearch, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Check, CircleSlash, Clock, FileSearch, RotateCcw, ShieldCheck, MessageSquareText, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
+import { askAssistant } from '../lib/assistant';
 import {
   PageHeader, GlassPanel, SeverityBadge, Button, ChipGroup, Drawer, EmptyState, Badge, SentimentFace, Toast, Tabs
 } from './ui';
 import { Evidence, ConfidenceMeter, DismissModal } from './alerts/AlertParts';
 import { useDecisions } from '../hooks/useDecisions';
-import { alertTitle, alertInWords, fmtInt, fmtDate, fmtDateTime, SEVERITY, SEVERITY_ORDER } from '../lib/format';
+import { alertTitle, alertInWords, fmtInt, fmtPct, fmtDateTime, SEVERITY, SEVERITY_ORDER } from '../lib/format';
 
 /**
  * CẢNH BÁO
@@ -142,7 +143,15 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
             </>
           )
         )}
-        <Button variant="secondary" icon={FileSearch} onClick={onEvidence} className="sm:ml-auto">Xem phản hồi gốc</Button>
+        <Button
+          variant="ghost"
+          icon={MessageSquareText}
+          className="sm:ml-auto"
+          onClick={() => askAssistant(`Vì sao ${alertTitle(alert)}${alert.productName ? ` ở ${alert.productName}` : ''} lại bị cảnh báo?`)}
+        >
+          Hỏi trợ lý
+        </Button>
+        <Button variant="secondary" icon={FileSearch} onClick={onEvidence}>Xem phản hồi gốc</Button>
       </div>
 
       <p className="mt-4 flex gap-2 text-xs leading-relaxed text-ink-lo">
@@ -203,6 +212,35 @@ const SourceDrawer = ({ alert, onClose }) => {
   );
 };
 
+/** Tỉ lệ dưới 1% giữ hai chữ số, để 0,04% không thành 0,0% */
+const pctSmart = (v) => fmtPct(v, v != null && v > 0 && v < 0.01 ? 2 : 1);
+
+/**
+ * Hiệu quả sau khi chấp nhận: tỉ lệ khiếu nại đúng phạm vi cảnh báo, 7 ngày
+ * trước so với 7 ngày sau. Ghi rõ là so sánh trước/sau, chưa loại trừ yếu tố khác.
+ */
+const Effect = ({ e }) => {
+  if (!e) return <span className="text-ink-lo">—</span>;
+  if (e.status === 'pending') {
+    return <span className="text-ink-lo">Còn {e.daysLeft} ngày nữa mới đủ 7 ngày để đo</span>;
+  }
+  if (e.change == null) return <span className="text-ink-lo">Chưa đủ phản hồi để so</span>;
+  const better = e.change < -0.0005;
+  const worse = e.change > 0.0005;
+  const Icon = better ? ArrowDownRight : worse ? ArrowUpRight : Minus;
+  return (
+    <span className="inline-flex flex-col">
+      <span className={`inline-flex items-center gap-1 font-semibold ${better ? 'text-ok' : worse ? 'text-crit' : 'text-ink-mid'}`}>
+        <Icon size={14} aria-hidden="true" />
+        {pctSmart(e.before.rate)} → {pctSmart(e.after.rate)}
+      </span>
+      <span className="text-xs text-ink-lo">
+        {better ? 'Giảm' : worse ? 'Tăng' : 'Gần như không đổi'}, trên {fmtInt(e.before.n)} và {fmtInt(e.after.n)} phản hồi
+      </span>
+    </span>
+  );
+};
+
 /** Nhật ký quyết định: mới nhất trước */
 const DecisionLog = () => {
   const [rows, setRows] = useState(null);
@@ -227,6 +265,10 @@ const DecisionLog = () => {
 
   return (
     <GlassPanel tone="strong" className="overflow-hidden">
+      <p className="border-b border-line-soft px-5 py-3 text-xs leading-relaxed text-ink-lo">
+        Hiệu quả là tỉ lệ khiếu nại đúng vấn đề đó trong 7 ngày trước và 7 ngày sau khi chấp nhận. Đây là so sánh trước và sau,
+        chưa loại trừ các yếu tố khác như mùa vụ hay khuyến mãi.
+      </p>
       <div className="table-responsive">
         <table className="data-table">
           <thead>
@@ -235,7 +277,8 @@ const DecisionLog = () => {
               <th>Vấn đề</th>
               <th>Quyết định</th>
               <th>Người quyết</th>
-              <th>Lý do / theo dõi</th>
+              <th>Lý do bỏ qua</th>
+              <th>Hiệu quả sau 7 ngày</th>
             </tr>
           </thead>
           <tbody>
@@ -254,9 +297,8 @@ const DecisionLog = () => {
                   )}
                 </td>
                 <td className="whitespace-nowrap">{d.by}</td>
-                <td className="text-ink-mid">
-                  {d.decision === 'DISMISSED' ? d.reason || '—' : d.followUpAt ? `Đo lại hiệu quả ngày ${fmtDate(d.followUpAt)}` : '—'}
-                </td>
+                <td className="text-ink-mid">{d.decision === 'DISMISSED' ? d.reason || '—' : '—'}</td>
+                <td><Effect e={d.effect} /></td>
               </tr>
             ))}
           </tbody>

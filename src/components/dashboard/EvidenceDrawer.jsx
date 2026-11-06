@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, ArrowUpRight } from 'lucide-react';
 import { Drawer, Button, EvidenceBar, EvidenceLegend } from '../ui';
@@ -106,6 +107,12 @@ const sampleBadge = (s) => {
 };
 
 const EvidenceDrawer = ({ metric, stats, onClose }) => {
+  // Kết quả kiểm tra ngẫu nhiên do người làm: bằng chứng độc lập với AI
+  const [audit, setAudit] = useState(null);
+  useEffect(() => {
+    if (!metric) return;
+    axios.get('/audit/summary').then((r) => setAudit(r.data)).catch(() => setAudit(null));
+  }, [metric]);
   const navigate = useNavigate();
   const m = METRICS[metric];
   const ev = stats?.evidence;
@@ -144,6 +151,21 @@ const EvidenceDrawer = ({ metric, stats, onClose }) => {
                 ? `Người kiểm duyệt đã đọc lại ${fmtInt(mix.human)} phản hồi trong phạm vi này.`
                 : 'Chưa có phản hồi nào trong phạm vi này được người kiểm duyệt đọc lại. Duyệt ở hàng chờ để phần gạch chéo nhỏ lại.'}
             </p>
+          </Section>
+
+          <Section title="Người kiểm tra lại AI">
+            {audit?.n ? (
+              <p className="text-sm leading-relaxed text-ink-mid">
+                Người đã đọc <b className="text-ink-hi">{fmtInt(audit.n)}</b> phản hồi lấy ngẫu nhiên: AI xếp đúng nhóm vấn đề{' '}
+                <b className="text-ink-hi">{fmtPct(audit.category.p, 0)}</b> (khoảng tin cậy 95%: {fmtPct(audit.category.low, 0)} – {fmtPct(audit.category.high, 0)}),
+                đoán đúng cảm xúc <b className="text-ink-hi">{fmtPct(audit.sentiment.p, 0)}</b> ({fmtPct(audit.sentiment.low, 0)} – {fmtPct(audit.sentiment.high, 0)}).
+              </p>
+            ) : (
+              <p className="text-sm leading-relaxed text-ink-mid">Chưa có đợt kiểm tra nào. Người kiểm tra phản hồi ngẫu nhiên ở trang Tin cậy dữ liệu, tab Kiểm tra ngẫu nhiên.</p>
+            )}
+            <button type="button" onClick={() => go('/trust?tab=audit')} className="mt-2 text-xs font-semibold text-accent hover:underline">
+              Mở trang kiểm tra ngẫu nhiên
+            </button>
           </Section>
 
           <Section title="Ai gán nhãn nội dung">

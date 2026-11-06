@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Search, X, ChevronLeft, ChevronRight, Copy, Zap, UserX, Star, Receipt, HelpCircle } from 'lucide-react';
 import FilterBar from './FilterBar';
+import ReplyDraft from './feedback/ReplyDraft';
 import { PageHeader, GlassPanel, Chip, Drawer, EmptyState, SentimentFace, Badge, ProgressBar, EvidenceTag, EvidenceSwatch } from './ui';
 import { buildQuery, fmtInt, fmtDateTime, initials, SENTIMENT_MAP, foldVi, evidenceOf, exclusionLabel, LABELLER_LABEL } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
@@ -134,6 +135,9 @@ const FeedbackDetail = ({ item, onClose }) => {
               )}
             </div>
           )}
+
+          {/* Chỉ phản hồi chê mới cần trả lời xin lỗi / xử lý */}
+          {item.sentiment === 'Negative' && <ReplyDraft feedbackId={item._id} />}
         </div>
       )}
     </Drawer>

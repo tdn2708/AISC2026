@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Bell, Menu, Moon, Search, Sun } from 'lucide-react';
+import { Bell, Menu, Moon, Search, Sun, MessageSquareText } from 'lucide-react';
+import { openAssistant } from '../../lib/assistant';
 import { IconButton } from '../ui';
 import { findPage } from '../../lib/nav';
 import { useTheme } from '../../hooks/useTheme';
@@ -184,6 +185,17 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
         </button>
 
         <div className="hidden flex-1 md:block" />
+
+        {/* Trợ lý: nút có chữ trên màn rộng, chỉ biểu tượng trên điện thoại */}
+        <button
+          type="button"
+          onClick={openAssistant}
+          aria-label="Hỏi dữ liệu"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-accent px-3 text-sm font-semibold text-on-accent transition-[filter] hover:brightness-110"
+        >
+          <MessageSquareText size={16} aria-hidden="true" />
+          <span className="hidden sm:inline">Hỏi dữ liệu</span>
+        </button>
 
         {/* Màn điện thoại không đủ chỗ cho năm nút; đổi giao diện vẫn có trong Cài đặt */}
         <span className="hidden sm:contents">

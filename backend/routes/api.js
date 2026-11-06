@@ -13,6 +13,7 @@ const taxonomy = require('../services/taxonomy');
 const { buildFeedbackDocs, saveFeedbacks } = require('../services/ingest');
 const normalizer = require('../services/normalizer');
 const visobert = require('../services/visobert_client');
+const insights = require('../services/insights');
 
 /** Bọc handler async để lỗi không làm treo request */
 const wrap = (fn) => (req, res) => {
@@ -993,9 +994,129 @@ router.get('/decisions', wrap(async (req, res) => {
         followUpAt: d.followUpAt,
         title,
         productName: d.snapshot?.productName ?? a?.productName ?? (product && product !== '*' ? product : null),
-        severity: d.snapshot?.severity ?? a?.severity ?? null
+        severity: d.snapshot?.severity ?? a?.severity ?? null,
+        // Tỉ lệ khiếu nại đúng phạm vi cảnh báo, 7 ngày trước và sau khi chấp nhận
+        effect: insights.decisionEffect(ctx.items, d, ctxNow(ctx))
       };
     })
+  });
+}));
+
+// ==================================================================
+// KIỂM TRA NGẪU NHIÊN DO NGƯỜI LÀM
+// Đo độ chính xác thật của nhãn AI: người đọc phản hồi lấy ngẫu nhiên và
+// chấm AI đúng hay sai. Kết quả kèm khoảng tin cậy 95%.
+// ==================================================================
+
+const SENTIMENTS = ['Positive', 'Neutral', 'Negative'];
+
+router.get('/audit/sample', wrap(async (req, res) => {
+  const ctx = await getContext(req.db);
+  const done = await req.db.collection('audit_labels').find({}, { projection: { feedbackId: 1 } }).toArray();
+  const n = Math.min(20, Math.max(1, Number(req.query.n) || 10));
+  const { items, remaining } = insights.auditSample(ctx.items, new Set(done.map((d) => d.feedbackId)), n);
+  res.json({
+    items: items.map(publicItem),
+    remaining,
+    categories: ['Other', ...taxonomy.CATEGORY_KEYS].map((key) => ({ key, label: key === 'Other' ? 'Không nêu vấn đề' : taxonomy.categoryLabel(key) }))
+  });
+}));
+
+router.post('/audit/label', wrap(async (req, res) => {
+  const { feedbackId, sentimentCorrect, categoryCorrect, correctSentiment, correctCategory, by } = req.body || {};
+  if (!feedbackId || typeof sentimentCorrect !== 'boolean' || typeof categoryCorrect !== 'boolean') {
+    return res.status(400).json({ error: 'Cần feedbackId, sentimentCorrect và categoryCorrect (true/false)' });
+  }
+  const ctx = await getContext(req.db);
+  const item = ctx.items.find((f) => String(f._id) === String(feedbackId));
+  if (!item) return res.status(404).json({ error: 'Không tìm thấy phản hồi' });
+  if (!sentimentCorrect && !SENTIMENTS.includes(correctSentiment)) {
+    return res.status(400).json({ error: 'AI sai cảm xúc thì phải chọn cảm xúc đúng' });
+  }
+  if (!categoryCorrect && !(correctCategory === 'Other' || taxonomy.CATEGORY_KEYS.includes(correctCategory))) {
+    return res.status(400).json({ error: 'AI sai nhóm vấn đề thì phải chọn nhóm đúng' });
+  }
+  await req.db.collection('audit_labels').updateOne(
+    { feedbackId: String(feedbackId) },
+    {
+      $set: {
+        feedbackId: String(feedbackId),
+        sentimentCorrect,
+        categoryCorrect,
+        correctSentiment: sentimentCorrect ? item.sentiment : correctSentiment,
+        correctCategory: categoryCorrect ? item.category || 'Other' : correctCategory,
+        // Nhãn AI lúc chấm — để biết sau này AI nào sai, sai thành gì
+        aiSentiment: item.sentiment,
+        aiCategory: item.category || 'Other',
+        labelledBy: item.labelledBy || 'synthetic',
+        by: typeof by === 'string' ? by.slice(0, 80) : 'admin',
+        at: new Date()
+      }
+    },
+    { upsert: true }
+  );
+  const labels = await req.db.collection('audit_labels').find({}).toArray();
+  res.json({ success: true, summary: insights.auditSummary(labels) });
+}));
+
+router.get('/audit/summary', wrap(async (req, res) => {
+  const labels = await req.db.collection('audit_labels').find({}).toArray();
+  res.json(insights.auditSummary(labels));
+}));
+
+// ==================================================================
+// SO SÁNH HAI SẢN PHẨM (của mình và của đối thủ, hoặc hai sản phẩm bất kỳ)
+// ==================================================================
+
+router.get('/compare/products', wrap(async (req, res) => {
+  const ctx = await getContext(req.db);
+  res.json({ products: insights.productList(ctx.items) });
+}));
+
+router.get('/compare', wrap(async (req, res) => {
+  const a = readText(req.query.a);
+  const b = readText(req.query.b);
+  if (!a || !b) return res.status(400).json({ error: 'Cần hai tham số a và b là tên sản phẩm' });
+  const ctx = await getContext(req.db);
+  res.json(insights.compareProducts(ctx.items, a, b));
+}));
+
+// ==================================================================
+// SOẠN NHÁP TRẢ LỜI KHÁCH — người duyệt và tự gửi, hệ thống không gửi
+// ==================================================================
+
+router.post('/reply/draft', wrap(async (req, res) => {
+  const { feedbackId, tone } = req.body || {};
+  const ctx = await getContext(req.db);
+  const item = ctx.items.find((f) => String(f._id) === String(feedbackId));
+  if (!item) return res.status(404).json({ error: 'Không tìm thấy phản hồi' });
+  const t = insights.TONES[tone] ? tone : 'formal';
+
+  // Hướng xử lý đã được người duyệt cho đúng nhóm vấn đề này (nếu có): chỉ khi
+  // đó câu trả lời mới được nhắc tới hành động cụ thể
+  const accepted = await req.db.collection('recommendation_log').find({ decision: 'ACCEPTED' }).toArray();
+  const match = accepted.find((d) => {
+    const [cat, cause] = String(d.alertId).split('|');
+    return cat === item.category && (!cause || cause === '*' || cause === item.subCategory);
+  });
+  let plan = null;
+  if (match) {
+    const alert = detectAlertsCached(ctx, {}, {}).alerts.find((a) => a.id === match.alertId);
+    plan = alert?.recommendation?.steps?.[0]?.text || null;
+  }
+
+  const enriched = {
+    ...item,
+    categoryLabel: item.categoryLabel || taxonomy.categoryLabel(item.category),
+    causeLabel: item.causeLabel || taxonomy.causeLabel(item.category, item.subCategory)
+  };
+  const chatEngine = require('../services/chat_engine');
+  const llm = await chatEngine.synthesize(insights.buildReplyPrompt(enriched, plan, t));
+  res.json({
+    text: llm ? llm.text.replace(/^["“]|["”]$/g, '').trim() : insights.fallbackReply(enriched, t),
+    provider: llm ? llm.provider : 'template',
+    tone: t,
+    grounding: { issue: enriched.causeLabel || enriched.categoryLabel, plan }
   });
 }));
 
@@ -1353,6 +1474,7 @@ router.post('/chat', wrap(async (req, res) => {
     success: true,
     text: result.text,
     evidence: result.evidence,
+    facts: result.facts,
     meta: result.meta,
     // Bản trả lời tính bằng JavaScript, để người dùng đối chiếu khi nghi
     // ngờ mô hình nói khác dữ liệu

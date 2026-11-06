@@ -3,7 +3,9 @@ import axios from 'axios';
 import {
   Copy, Zap, UserX, Star, Receipt, HelpCircle, CheckCircle2, XCircle, Ban, ChevronDown, ShieldCheck, ShieldOff
 } from 'lucide-react';
-import { PageHeader, GlassPanel, PanelHeader, Stepper, Switch, Badge, ProgressBar, EmptyState, Button } from './ui';
+import { useSearchParams } from 'react-router-dom';
+import { PageHeader, GlassPanel, PanelHeader, Stepper, Switch, Badge, ProgressBar, EmptyState, Button, Tabs } from './ui';
+import Audit from './trust/Audit';
 import { fmtInt, fmtDateTime } from '../lib/format';
 
 /**
@@ -58,7 +60,7 @@ const HealthDial = ({ score = 0 }) => {
   );
 };
 
-const TrustLayerPage = () => {
+const TrustOverview = () => {
   const [health, setHealth] = useState(null);
   const [clusters, setClusters] = useState([]);
   const [queue, setQueue] = useState([]);
@@ -108,17 +110,13 @@ const TrustLayerPage = () => {
     }
   };
 
-  const header = (
-    <PageHeader
-      title="Tin cậy dữ liệu"
-      subtitle="Phản hồi nào được tính vào chỉ số, phản hồi nào bị loại, và vì sao."
-    />
-  );
+  // Tiêu đề trang và thanh tab do TrustLayerPage dựng
+  const header = null;
 
-  if (error) return <div className="cx">{header}<GlassPanel><EmptyState variant="error" title="Không tải được" description={error} action={<Button onClick={load}>Thử lại</Button>} /></GlassPanel></div>;
+  if (error) return <div>{header}<GlassPanel><EmptyState variant="error" title="Không tải được" description={error} action={<Button onClick={load}>Thử lại</Button>} /></GlassPanel></div>;
   if (loading && !health) {
     return (
-      <div className="cx">
+      <div>
         {header}
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="h-[260px] animate-pulse rounded-xl bg-raised lg:col-span-2" />
@@ -132,7 +130,7 @@ const TrustLayerPage = () => {
   const comps = health.components || {};
 
   return (
-    <div className="cx">
+    <div>
       {header}
 
       <div className="mb-6 grid items-start gap-6 lg:grid-cols-3">
@@ -326,6 +324,32 @@ const TrustLayerPage = () => {
           </ul>
         )}
       </GlassPanel>
+    </div>
+  );
+};
+
+/** Trang Tin cậy dữ liệu: tab tổng quan và tab kiểm tra ngẫu nhiên do người làm */
+const TrustLayerPage = () => {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') === 'audit' ? 'audit' : 'overview';
+  return (
+    <div className="cx">
+      <PageHeader
+        title="Tin cậy dữ liệu"
+        subtitle={tab === 'audit'
+          ? 'Người kiểm tra lại nhãn AI trên phản hồi lấy ngẫu nhiên, để biết AI đúng tới đâu.'
+          : 'Phản hồi nào được tính vào chỉ số, phản hồi nào bị loại, và vì sao.'}
+      />
+      <Tabs
+        className="mb-6"
+        value={tab}
+        onChange={(v) => setParams(v === 'audit' ? { tab: 'audit' } : {}, { replace: true })}
+        tabs={[
+          { value: 'overview', label: 'Tổng quan' },
+          { value: 'audit', label: 'Kiểm tra ngẫu nhiên' }
+        ]}
+      />
+      {tab === 'audit' ? <Audit /> : <TrustOverview />}
     </div>
   );
 };

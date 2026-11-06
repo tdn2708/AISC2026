@@ -298,7 +298,24 @@ function velocityRatio(current, baseline) {
   return Math.min((current - baseline) / baseline, 3);
 }
 
+/**
+ * KHOẢNG TIN CẬY WILSON cho một tỉ lệ (k thành công trên n lần).
+ * Dùng thay cho khoảng Wald p ± 1,96·√(p(1−p)/n) vì Wald vỡ ở hai đầu: 30/30
+ * đúng cho khoảng [100%, 100%] — tức là "chắc chắn tuyệt đối" sau 30 mẫu.
+ * Wilson cho [88,6%, 100%], đúng với mức hiểu biết thật sau 30 mẫu.
+ */
+function wilsonInterval(k, n, z = 1.96) {
+  if (!n) return { p: null, low: null, high: null, n: 0 };
+  const p = k / n;
+  const z2 = z * z;
+  const denom = 1 + z2 / n;
+  const center = (p + z2 / (2 * n)) / denom;
+  const half = (z * Math.sqrt((p * (1 - p)) / n + z2 / (4 * n * n))) / denom;
+  return { p, low: Math.max(0, center - half), high: Math.min(1, center + half), n };
+}
+
 module.exports = {
+  wilsonInterval,
   erf,
   normalCdf,
   twoSidedP,

@@ -213,6 +213,41 @@ function gatherBriefing(ctx, question, intent, filters) {
     }
   }
 
+  // Câu hỏi kiểu "khách chê gì nhiều nhất" không chứa từ khoá nào trùng nội
+  // dung phản hồi, nên tìm BM25 trả rỗng. Khi đó lấy các khiếu nại mới nhất
+  // thuộc nhóm bị chê nhiều nhất làm dẫn chứng, và nói rõ đó là cách chọn.
+  if (!evidence.length && intent.id !== 'model_performance' && intent.id !== 'business' && intent.id !== 'taxonomy') {
+    const { applyFilters } = require('./analysis_context');
+    const metrics = require('./metrics');
+    const complaints = applyFilters(ctx.items, filters || {}, ctx.asOf)
+      .filter((f) => metrics.isCountable(f) && metrics.isComplaint(f) && f.category && f.category !== 'Other');
+    const counts = {};
+    for (const f of complaints) counts[f.category] = (counts[f.category] || 0) + 1;
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const picked = complaints
+      .filter((f) => f.category === top)
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .slice(0, 5);
+    if (picked.length) {
+      sections.push({
+        title: 'Dẫn chứng',
+        facts: [`Không có phản hồi trùng từ khoá câu hỏi; dẫn chứng là ${picked.length} khiếu nại mới nhất của nhóm bị chê nhiều nhất.`]
+      });
+      evidence.push(...picked.map((f) => ({
+        id: String(f._id),
+        text: f.originalText,
+        category: f.categoryLabel || null,
+        cause: f.causeLabel || null,
+        sentiment: f.sentiment,
+        source: f.source,
+        product: f.productName,
+        date: f.timestamp,
+        trustTier: f.trust ? f.trust.tier : null,
+        relevance: null
+      })));
+    }
+  }
+
   return { sections, evidence, toolsUsed };
 }
 
@@ -253,10 +288,9 @@ function deterministicAnswer(question, intent, briefing) {
     return 'Tôi chưa tìm được dữ liệu phù hợp với câu hỏi này trong phạm vi đang xét.';
   }
 
-  lines.push('_Trả lời bằng tầng tính toán xác định (chưa cấu hình mô hình ngôn ngữ). ' +
-    'Mọi con số ở trên được tính trực tiếp từ dữ liệu, không phải ước lượng._');
-
-  return lines.join('\n');
+  // Nguồn của câu trả lời (tính trực tiếp hay qua mô hình) đi trong meta.provider,
+  // giao diện tự ghi rõ — không chèn vào nội dung
+  return lines.join('\n').trim();
 }
 
 // ==================================================================
@@ -296,8 +330,9 @@ function buildPrompt(question, intent, briefing, history, ctx, filters) {
 1. CHỈ dùng các dữ kiện được cung cấp bên dưới. Tuyệt đối không bịa thêm số.
 2. Các con số đã được hệ thống tính sẵn trên TOÀN BỘ dữ liệu. Hãy dùng lại
    nguyên văn, KHÔNG tự cộng trừ hay ước lượng lại.
-3. Khi nêu một phát hiện, hãy trích dẫn bằng [số] tương ứng với danh sách
-   dẫn chứng, nếu có dẫn chứng phù hợp.
+3. ${briefing.evidence.length
+    ? 'Khi nêu một phát hiện có phản hồi minh hoạ, trích dẫn bằng [số] tương ứng với danh sách dẫn chứng. KHÔNG dùng [số] để chỉ dữ kiện đã tính.'
+    : 'KHÔNG có dẫn chứng nào, nên KHÔNG được dùng ký hiệu [số] trong câu trả lời.'}
 4. Nếu dữ kiện không đủ để trả lời, nói thẳng là không đủ dữ liệu và chỉ ra
    cần thêm gì. Không suy đoán.
 5. Nếu một chỉ số được ghi là KHÔNG tính được (ví dụ WCR khi chưa có dữ liệu
@@ -306,6 +341,9 @@ function buildPrompt(question, intent, briefing, history, ctx, filters) {
    tiếp, rồi mới tới số liệu. Tối đa khoảng 200 từ trừ khi được hỏi chi tiết.
 7. Không tự đề xuất hành động phát sinh chi phí hoặc chạm tới khách hàng cuối
    như thể hệ thống sẽ tự làm. Mọi hành động đều là đề xuất chờ người duyệt.
+8. Người đọc là quản lý, không phải nhà thống kê: viết số thập phân kiểu Việt
+   (5,5% chứ không phải 5.5%), KHÔNG nêu z, p, EWMA trừ khi được hỏi; thay bằng
+   lời thường như "tăng đủ lớn để chắc chắn không phải ngẫu nhiên".
 
 ## Phạm vi đang xét
 ${scope.length ? scope.join(', ') : 'toàn bộ dữ liệu'}
@@ -414,6 +452,10 @@ async function ask(ctx, question, history = [], baseFilters = {}) {
       dataHealthScore: ctx.funnel.dataHealthScore,
       elapsedMs: Date.now() - started
     },
+    // Dữ kiện đã tính: giao diện hiện riêng để người đọc đối chiếu với câu trả lời
+    facts: briefing.sections
+      .filter((s) => s.facts && s.facts.length && s.title !== 'Dẫn chứng')
+      .map((s) => ({ title: s.title, facts: s.facts.slice(0, 8) })),
     evidence: briefing.evidence.slice(0, 10)
   };
 }
@@ -450,6 +492,7 @@ function suggestedQuestions(ctx) {
 
 module.exports = {
   ask,
+  synthesize,
   routeIntent,
   inferFilters,
   gatherBriefing,

@@ -4,6 +4,7 @@ import axios from 'axios';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/shell/Topbar';
 import CommandPalette from './components/shell/CommandPalette';
+import Assistant from './components/shell/Assistant';
 import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
 import Feedbacks from './components/Feedbacks';
@@ -72,6 +73,7 @@ const MainLayout = ({ children, onLogout }) => {
         </main>
       </div>
       <CommandPalette open={commandOpen} onClose={closeCommand} onLogout={onLogout} />
+      <Assistant />
     </>
   );
 };
