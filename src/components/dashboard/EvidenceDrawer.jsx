@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, ArrowUpRight } from 'lucide-react';
 import { Drawer, Button, EvidenceBar, EvidenceLegend } from '../ui';
-import { fmtInt, fmtPct, fmtDate } from '../../lib/format';
+import { fmtInt, fmtPct, fmtDate, LABELLER_LABEL } from '../../lib/format';
 
 /**
  * NGĂN KÉO "VÌ SAO TIN ĐƯỢC?"
@@ -17,13 +17,6 @@ import { fmtInt, fmtPct, fmtDate } from '../../lib/format';
 
 const nf2fmt = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const nf2 = (v) => (v == null || !Number.isFinite(v) ? '—' : nf2fmt.format(v));
-
-const LABELLERS = {
-  llm: 'Mô hình ngôn ngữ lớn (Gemini, dự phòng Groq)',
-  visobert: 'ViSoBERT tinh chỉnh cho tiếng Việt',
-  rules: 'Bộ luật từ khoá',
-  synthetic: 'Nhãn có sẵn của bộ dữ liệu mô phỏng'
-};
 
 const METRICS = {
   wcr: {
@@ -160,7 +153,7 @@ const EvidenceDrawer = ({ metric, stats, onClose }) => {
             <ul className="flex list-none flex-col gap-1.5">
               {labels.map(([by, n]) => (
                 <li key={by} className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="text-ink-mid">{LABELLERS[by] || by}</span>
+                  <span className="text-ink-mid">{LABELLER_LABEL[by] || by}</span>
                   <span className="font-mono text-ink-hi">
                     {fmtInt(n)} <span className="text-ink-lo">({mix.total ? Math.round((n / mix.total) * 100) : 0}%)</span>
                   </span>

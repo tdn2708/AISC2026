@@ -8,7 +8,7 @@ export const Evidence = ({ alert, className = '' }) => {
   const st = alert.statistics || {};
   if (alert.type === 'SUSTAINED_DRIFT') {
     return (
-      <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.7rem] text-ink-lo ${className}`}>
+      <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 font-code text-xs text-ink-lo ${className}`}>
         <span className="inline-flex items-center gap-1 text-ink-mid">
           <Activity size={11} aria-hidden="true" /> EWMA {st.ewmaCurrent}{st.unit || ''}
         </span>
@@ -19,7 +19,7 @@ export const Evidence = ({ alert, className = '' }) => {
   }
   const g = growthOf(alert);
   return (
-    <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.7rem] text-ink-lo ${className}`}>
+    <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 font-code text-xs text-ink-lo ${className}`}>
       <span className="font-semibold text-ink-hi">{g == null ? alert.typeVi : Number.isFinite(g) ? fmtSignedPct(g) : 'mới'}</span>
       <span>{fmtPct(st.baselineRate)} → {fmtPct(st.currentRate)}</span>
       {st.z != null && <span>z={st.z}</span>}

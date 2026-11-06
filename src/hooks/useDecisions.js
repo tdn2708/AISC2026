@@ -1,5 +1,15 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
+import { alertTitle } from '../lib/format';
+
+/** Tên người đang dùng (Cài đặt → Hồ sơ) — để nhật ký quyết định ghi đúng người */
+const currentUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('crSettings') || '{}').name || 'Admin User';
+  } catch {
+    return 'Admin User';
+  }
+};
 
 /**
  * Ghi quyết định cho một khuyến nghị: Chấp nhận / Bỏ qua.
@@ -22,7 +32,9 @@ export const useDecisions = (initial = {}) => {
         decision,
         reason: reason || undefined,
         actionIds: rec?.steps?.map((st) => st.actionId) ?? [],
-        scopeKey: rec?.scopeKey
+        scopeKey: rec?.scopeKey,
+        by: currentUser(),
+        snapshot: { title: alertTitle(alert), productName: alert.productName || null, severity: alert.severity }
       });
       setStates((s) => ({ ...s, [alert.id]: decision }));
       return true;

@@ -1,20 +1,100 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X, Database, Check } from 'lucide-react';
 import Logo, { LogoMark } from './Logo';
 import { NAV } from '../lib/nav';
+import { WORKSPACES, getWorkspace, switchWorkspace } from '../lib/workspace';
 import { initials } from '../lib/format';
 import { useBrowserModelStatus } from '../lib/analyze';
 
 /**
- * THANH BÊN — kính nổi cách mép, đồng thời là MỘT MẶT ĐỒNG HỒ: mở máy lên
- * là thấy ngay bao nhiêu cảnh báo đang chờ, hàng đợi kiểm duyệt còn bao
- * nhiêu, dữ liệu khoẻ tới đâu và bộ phân loại đang chạy bằng gì.
+ * THANH BÊN — áp sát mép trái: kho dữ liệu đang xem, sáu trang chính (kèm
+ * số cảnh báo chờ và hàng đợi kiểm duyệt), sức khỏe dữ liệu, bộ phân loại
+ * đang chạy bằng gì, và menu người dùng.
  * Số liệu lấy từ /api/nav/status — endpoint nhẹ, chỉ trả số đếm.
  */
 
 const STATUS_POLL_MS = 60000;
+
+/**
+ * CHỌN KHO DỮ LIỆU — đặt ngay dưới logo như ô chọn tổ chức của phần mềm
+ * doanh nghiệp: nó đổi nguồn số liệu của MỌI trang. Sau này mỗi doanh
+ * nghiệp là một kho. Kho thật có chấm màu nhấn để không ai nhầm hai kho.
+ */
+const WorkspacePicker = ({ collapsed }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const current = getWorkspace();
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);
+    const onKey = (e) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const dot = (key) => (key === 'real' ? 'bg-accent' : 'bg-ink-lo');
+
+  return (
+    <div ref={ref} className={`relative shrink-0 ${collapsed ? 'px-3' : 'px-3'} pb-2`}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        title={collapsed ? `Kho dữ liệu: ${WORKSPACES[current].label}` : undefined}
+        className={`flex w-full items-center rounded-lg border border-line bg-surface text-left transition-colors hover:border-ink-lo ${collapsed ? 'h-10 justify-center' : 'gap-2.5 px-3 py-2'}`}
+      >
+        <Database size={15} className="shrink-0 text-ink-lo" aria-hidden="true" />
+        {!collapsed && (
+          <>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[0.7rem] text-ink-lo">Kho dữ liệu</span>
+              <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink-hi">
+                <span className={`size-1.5 shrink-0 rounded-full ${dot(current)}`} aria-hidden="true" />
+                {WORKSPACES[current].label}
+              </span>
+            </span>
+            <ChevronsUpDown size={14} className="shrink-0 text-ink-lo" aria-hidden="true" />
+          </>
+        )}
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label="Kho dữ liệu"
+          className="glass-strong absolute top-[calc(100%-2px)] left-3 z-20 w-[248px] list-none rounded-lg p-1.5 animate-pop-in"
+        >
+          {Object.entries(WORKSPACES).map(([key, ws]) => (
+            <li key={key} role="option" aria-selected={key === current}>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  switchWorkspace(key);
+                }}
+                className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left hover:bg-raised"
+              >
+                <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${dot(key)}`} aria-hidden="true" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-ink-hi">{ws.label}</span>
+                  <span className="mt-0.5 block text-xs leading-snug text-ink-lo">{ws.hint}</span>
+                </span>
+                {key === current && <Check size={15} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
   const Icon = item.icon;
@@ -142,7 +222,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
       >
         {/* Thương hiệu + thu gọn */}
         <div className={`flex shrink-0 items-center pt-4 pb-3 ${collapsed ? 'flex-col gap-3 px-0' : 'justify-between pr-3 pl-4'}`}>
-          {collapsed ? <LogoMark size={36} /> : <Logo size="sm" />}
+          {collapsed ? <LogoMark size={36} /> : <Logo size="sm" showTagline={false} />}
           <button
             type="button"
             onClick={isOpen ? onClose : onToggleCollapse}
@@ -154,15 +234,12 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
           </button>
         </div>
 
-        {/* Điều hướng */}
-        <nav className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-3 ${collapsed ? 'px-3' : 'px-3'}`}>
-          {NAV.map((g, gi) => (
-            <div key={g.group} className={gi === 0 ? 'mt-1' : 'mt-5'}>
-              {collapsed ? (
-                gi > 0 && <div className="mx-2 mb-3 h-px bg-line-soft" />
-              ) : (
-                <p className="eyebrow mb-1.5 px-3">{g.group}</p>
-              )}
+        <WorkspacePicker collapsed={collapsed} />
+
+        {/* Điều hướng — sáu mục, không cần nhãn nhóm */}
+        <nav aria-label="Trang" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-3">
+          {NAV.map((g) => (
+            <div key={g.group} className="mt-2">
               <div className="flex flex-col gap-0.5">
                 {g.items.map((item) => (
                   <NavItem
@@ -187,25 +264,28 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
               <span className={`size-2 rounded-full ${nlpView.dot}`} />
             </div>
           ) : (
-            <div className="rounded-lg border border-line-soft bg-surface/55 p-3">
-              <div className="flex items-center justify-between text-[0.72rem]">
-                <span className="text-ink-mid">Sức khoẻ dữ liệu</span>
-                <span className={`font-mono font-semibold ${healthText}`}>{health ?? '—'}<span className="text-ink-lo">/100</span></span>
-              </div>
-              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-raised">
-                <div className={`h-full rounded-full ${healthTone} transition-[width] duration-700`} style={{ width: `${health ?? 0}%` }} />
-              </div>
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => navigate('/trust')}
+                title={updatedAt ? `Tính lúc ${updatedAt}` : undefined}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-xs text-ink-mid hover:bg-raised hover:text-ink-hi"
+              >
+                <span className={`size-1.5 shrink-0 rounded-full ${healthTone}`} aria-hidden="true" />
+                <span className="flex-1">Sức khỏe dữ liệu</span>
+                <span className={`font-mono font-semibold ${healthText}`}>{health ?? '—'}</span>
+              </button>
+              {/* Lối vào Phòng thí nghiệm: ai quan tâm mô hình đang chạy bằng gì thì bấm vào đây */}
               <button
                 type="button"
                 onClick={() => navigate('/lab')}
                 title={nlpView.title}
-                className="mt-2.5 flex w-full items-center gap-2 text-left text-[0.72rem] text-ink-mid hover:text-ink-hi"
+                className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-xs text-ink-mid hover:bg-raised hover:text-ink-hi"
               >
-                <Cpu size={12} className="shrink-0 text-ink-lo" aria-hidden="true" />
+                <span className={`size-1.5 shrink-0 rounded-full ${nlpView.dot}`} aria-hidden="true" />
                 <span className="flex-1 truncate">{nlpView.label}</span>
-                <span className={`size-1.5 shrink-0 rounded-full ${nlpView.dot}`} />
+                <Cpu size={12} className="shrink-0 text-ink-lo" aria-hidden="true" />
               </button>
-              {updatedAt && <p className="mt-1 font-mono text-[0.66rem] text-ink-lo">cập nhật {updatedAt}</p>}
             </div>
           )}
         </div>

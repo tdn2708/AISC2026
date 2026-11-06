@@ -98,6 +98,14 @@ export const EvidenceBar = ({ mix, height = 6, showCaption = true, className = '
   );
 };
 
+/** Nhãn bằng chứng của MỘT phản hồi trong bảng: mẫu tô + chữ ngắn */
+export const EvidenceTag = ({ evidence, className = '' }) => (
+  <span className={`inline-flex items-center gap-1.5 text-xs whitespace-nowrap text-ink-mid ${className}`} title={evidence.label}>
+    <EvidenceSwatch kind={evidence.kind} />
+    {evidence.label}
+  </span>
+);
+
 /** Chú giải đầy đủ: mẫu tô, tên, số lượng, tỉ lệ, giải thích — dùng trong ngăn kéo */
 export const EvidenceLegend = ({ mix }) => (
   <ul className="flex list-none flex-col gap-3">

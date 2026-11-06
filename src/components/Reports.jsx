@@ -326,10 +326,8 @@ const Reports = () => {
   return (
     <div className="cx relative">
       <PageHeader
-        section="Hệ thống"
         title="Báo cáo"
-        accent="& xuất dữ liệu"
-        subtitle="Mọi tệp xuất ra được tính trên đúng phạm vi bộ lọc bên dưới, và chỉ gồm phản hồi đã qua tầng kiểm soát tin cậy."
+        subtitle="Tệp xuất ra theo đúng bộ lọc bên dưới và chỉ gồm phản hồi được tính vào chỉ số."
         actions={<Button variant="secondary" icon={Eye} onClick={() => window.location.assign('/reports?preview=1')}>Xem trước bản in</Button>}
       />
 
@@ -347,8 +345,8 @@ const Reports = () => {
             icon: FileText,
             tile: 'bg-accent-dim text-accent',
             title: 'Báo cáo điều hành',
-            ext: 'PDF · A4 · nhiều trang',
-            text: 'Điểm nhấn cần quyết, chỉ số so với kỳ trước, diễn biến theo thời gian, Pareto nhóm vấn đề và nguyên nhân gốc rễ. Kế hoạch hành động lấy từ bộ đề xuất theo playbook — không có đoạn văn nào được viết tự do.',
+            ext: 'PDF, khổ A4',
+            text: 'Việc cần quyết, chỉ số so với kỳ trước, diễn biến theo thời gian, nhóm vấn đề và nguyên nhân. Kế hoạch hành động lấy từ thư viện hành động đã chuẩn hoá, không có đoạn nào do AI viết tự do.',
             loading: generatingPdf,
             cta: generatingPdf ? 'Đang dựng PDF…' : 'Tạo báo cáo PDF'
           },
@@ -357,8 +355,8 @@ const Reports = () => {
             icon: FileSpreadsheet,
             tile: 'bg-sky/50 text-[#2F5E92]',
             title: 'Dữ liệu thô',
-            ext: 'CSV · UTF-8',
-            text: 'Toàn bộ phản hồi trong phạm vi lọc: thời điểm, nguồn, nội dung gốc, cảm xúc, nhóm vấn đề, hạng và trọng số tin cậy. Mở được bằng Excel hoặc công cụ BI.',
+            ext: 'CSV, mở được bằng Excel',
+            text: 'Toàn bộ phản hồi trong phạm vi lọc: thời điểm, nguồn, nội dung gốc, cảm xúc, nhóm vấn đề và mức tin cậy.',
             loading: downloadingCsv,
             cta: downloadingCsv ? 'Đang xuất CSV…' : 'Tải tệp CSV'
           }

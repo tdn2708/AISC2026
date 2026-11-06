@@ -23,7 +23,7 @@ export const fmtDate = (ts) => {
 export const fmtDateTime = (ts) => {
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return '—';
-  return `${fmtDate(d)} · ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+  return `${fmtDate(d)} ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
 };
 
 /** "3 phút trước", "2 ngày trước" — dùng cho mốc cập nhật và lịch sử */
@@ -92,6 +92,35 @@ export const alertTitle = (a) =>
  * tăng là vô hạn — trả Infinity để giao diện ghi "Mới xuất hiện" thay vì
  * bịa ra một phần trăm.
  */
+/**
+ * Một phản hồi đứng trên bằng chứng gì — cùng ba nhóm với thanh bằng chứng:
+ *   human    — người kiểm duyệt đã xác nhận
+ *   verified — có chứng từ: sàn xác nhận đã mua, có mã đơn, tài khoản định danh
+ *   inferred — chỉ dựa trên phán đoán của Trust Layer
+ * `counted` = phản hồi có được tính vào chỉ số hay không.
+ */
+export const evidenceOf = (f) => {
+  const t = f?.trust || {};
+  const counted = t.weight > 0;
+  if (t.humanLabel) return { kind: 'human', label: 'Người đã duyệt', counted };
+  if (f?.verifiedPurchase) return { kind: 'verified', label: 'Sàn xác nhận đã mua', counted };
+  if (f?.hasOrder || t.tier === 'P1') return { kind: 'verified', label: 'Có mã đơn hàng', counted };
+  if (t.tier === 'P2') return { kind: 'verified', label: 'Tài khoản đã định danh', counted };
+  return { kind: 'inferred', label: 'AI suy luận', counted };
+};
+
+/** Ai đã gán nhãn nội dung (nhóm vấn đề, cảm xúc) cho phản hồi */
+export const LABELLER_LABEL = {
+  llm: 'Mô hình ngôn ngữ lớn (Gemini, dự phòng Groq)',
+  visobert: 'ViSoBERT tinh chỉnh cho tiếng Việt',
+  rules: 'Bộ luật từ khoá',
+  synthetic: 'Nhãn có sẵn của bộ dữ liệu mô phỏng'
+};
+
+/** Nhãn ngắn cho phản hồi KHÔNG được tính vào chỉ số */
+export const exclusionLabel = (t = {}) =>
+  t.band === 'SPAM' ? 'Rác, quảng cáo' : t.band === 'LIKELY_INAUTHENTIC' ? 'Nghi đánh giá ảo' : 'Quá cũ, không tính';
+
 /** Diễn biến của một cảnh báo bằng lời thường — không z, không p — cho người quản lý */
 export const alertInWords = (a) => {
   const st = a.statistics || {};

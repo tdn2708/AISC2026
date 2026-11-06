@@ -49,9 +49,8 @@ const UiKit = () => {
   return (
     <div className="cx">
       <PageHeader
-        section="Hệ thiết kế"
-        title="UI kit"
-        subtitle="Bộ thành phần của Customer Radar — bề mặt gần đặc, viền mảnh, font Geist và Geist Mono. Mọi cặp màu chữ/nền đã đo đạt WCAG AA."
+        title="Bộ giao diện"
+        subtitle="Thành phần giao diện của Customer Radar: nền đặc, viền 1px, chữ Be Vietnam Pro, thanh bằng chứng."
       />
 
       <div className="grid gap-5 lg:grid-cols-12">

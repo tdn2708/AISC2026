@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
+import { EvidenceTag } from './ui';
+import { evidenceOf } from '../lib/format';
 
 const SENTIMENT = {
   Positive: { label: 'Tích cực', cls: 'fb-pos' },
@@ -15,7 +18,7 @@ const formatDateTime = (ts) => {
   if (Number.isNaN(d.getTime())) return '—';
   const date = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-  return `${date} · ${time}`;
+  return `${date} ${time}`;
 };
 
 const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
@@ -55,28 +58,8 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
     return <span className={`fb-status ${s.cls}`}>{s.label}</span>;
   };
 
-  /**
-   * Cột này trước đây hiển thị "Severity" của từng phản hồi. Mức nghiêm
-   * trọng không phải thuộc tính của một câu văn — nó là kết quả kiểm
-   * định thống kê trên cả cụm phản hồi, phụ thuộc quy mô và xu hướng.
-   * Thay bằng hạng tin cậy của nguồn, thứ thật sự thuộc về từng phản hồi.
-   */
-  const getTrust = (trust) => {
-    if (!trust) return <span className="fb-source">—</span>;
-    const w = trust.tierWeight ?? 0;
-    const color =
-      w >= 0.9 ? 'var(--sev-ok)' :
-      w >= 0.6 ? 'var(--text-mid)' :
-      w >= 0.4 ? 'var(--sev-high)' : 'var(--sev-crit)';
-    return (
-      <div className="fb-trust" style={{ color }} title={`Trọng số tin cậy ${trust.weight}`}>
-        <span className="fb-trust-tier">{trust.tier}</span>
-        <span className="fb-trust-bar">
-          <span style={{ width: `${Math.round(Math.min(Math.max(w, 0), 1) * 100)}%` }} />
-        </span>
-      </div>
-    );
-  };
+  // Bằng chứng của từng phản hồi — cùng ngôn ngữ với thanh bằng chứng phía trên
+  const getTrust = (item) => (item.trust ? <EvidenceTag evidence={evidenceOf(item)} /> : <span className="fb-source">—</span>);
 
   const pageItems = (() => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -90,10 +73,12 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
       <div className="fb-panel-head">
         <div>
           <h3>Phản hồi gần đây</h3>
-          <p>Chỉ hiển thị phản hồi đã qua tầng kiểm soát tin cậy</p>
+          <p>Mới nhất trước, chỉ gồm phản hồi được tính vào chỉ số</p>
         </div>
         {!loading && feedbacks.length > 0 && (
-          <span className="fb-count"><b>{feedbacks.length.toLocaleString('vi-VN')}</b> phản hồi</span>
+          <Link to="/feedbacks" className="fb-count hover:underline">
+            <b>{feedbacks.length.toLocaleString('vi-VN')}</b> phản hồi, xem tất cả
+          </Link>
         )}
       </div>
 
@@ -101,21 +86,21 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
         <table className="fb-table">
           <colgroup>
             <col style={{ width: '19%' }} />
-            <col style={{ width: '31%' }} />
-            <col style={{ width: '15%' }} />
+            <col style={{ width: '28%' }} />
+            <col style={{ width: '14%' }} />
             <col style={{ width: '11%' }} />
             <col style={{ width: '9%' }} />
-            <col style={{ width: '8%' }} />
+            <col style={{ width: '12%' }} />
             <col style={{ width: '7%' }} />
           </colgroup>
           <thead>
             <tr>
               <th>Khách hàng</th>
-              <th>Nội dung phản hồi</th>
+              <th>Nội dung</th>
               <th>Sản phẩm</th>
-              <th>Danh mục</th>
+              <th>Nhóm vấn đề</th>
               <th>Cảm xúc</th>
-              <th>Tin cậy</th>
+              <th>Bằng chứng</th>
               <th>Nguồn</th>
             </tr>
           </thead>
@@ -123,12 +108,12 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
             {loading || feedbacks.length === 0 ? (
               <tr>
                 <td colSpan="7" className="fb-empty">
-                  {loading ? 'Đang tải dữ liệu...' : 'Không có phản hồi nào khớp bộ lọc'}
+                  {loading ? 'Đang tải…' : 'Không có phản hồi nào khớp bộ lọc'}
                 </td>
               </tr>
             ) : (
               currentFeedbacks.map((item, idx) => {
-                const author = item.author || `user_${startIdx + idx}`;
+                const author = item.author || 'Ẩn danh';
                 const category = item.categoryLabel || item.category;
                 return (
                   <tr key={item.id ?? `${startIdx}-${idx}`}>
@@ -147,9 +132,9 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
                     <td className="fb-c-product">
                       <div className="fb-clamp fb-product" title={item.productName}>{item.productName || '—'}</div>
                     </td>
-                    <td className="fb-c-cat">{category ? <span className="fb-chip" title={category}>{category}</span> : '—'}</td>
+                    <td className="fb-c-cat">{category && item.category !== 'Other' ? <span className="fb-chip" title={category}>{category}</span> : <span className="text-xs text-ink-lo">Không nêu vấn đề</span>}</td>
                     <td className="fb-c-sent">{getSentiment(item.sentiment)}</td>
-                    <td className="fb-c-trust">{getTrust(item.trust)}</td>
+                    <td className="fb-c-trust">{getTrust(item)}</td>
                     <td className="fb-c-src"><span className="fb-source">{item.source}</span></td>
                   </tr>
                 );

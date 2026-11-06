@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp } from 'lucide-react';
 import { GlassPanel, PanelHeader, SeverityBadge, EmptyState } from '../ui';
-import { alertTitle, fmtInt, fmtPct, fmtSignedPct, growthOf } from '../../lib/format';
+import { alertTitle, fmtPct, fmtSignedPct, growthOf } from '../../lib/format';
 
 /**
  * HORIZONTAL BAR — Top vấn đề tăng nhanh.
@@ -26,8 +26,8 @@ const RisingIssues = ({ alerts = [] }) => {
   return (
     <GlassPanel className="flex h-full flex-col p-6">
       <PanelHeader
-        title="Top vấn đề đang tăng nhanh"
-        subtitle="Mức tăng tỉ trọng khiếu nại so với nền 28 ngày · chỉ gồm biến động đã qua kiểm định"
+        title="Vấn đề đang tăng nhanh"
+        subtitle="Mức tăng tỉ lệ khiếu nại so với 28 ngày trước đó"
         right={
           spikes.length > MAX_ROWS && (
             <span className="text-xs text-ink-lo">
@@ -43,7 +43,7 @@ const RisingIssues = ({ alerts = [] }) => {
           variant="calm"
           className="flex-1"
           title="Không có vấn đề nào đang tăng"
-          description="Không có biến động nào đạt ý nghĩa thống kê trong kỳ này."
+          description="Chưa có biến động nào đủ lớn để chắc chắn không phải ngẫu nhiên."
         />
       ) : (
         <ol className="flex list-none flex-col gap-4">
@@ -81,9 +81,8 @@ const RisingIssues = ({ alerts = [] }) => {
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] text-ink-lo">
                   <SeverityBadge level={alert.severity} />
                   <span className="tabular-nums">
-                    {fmtPct(st.baselineRate)} → <span className="text-ink-mid">{fmtPct(st.currentRate)}</span>
+                    từ {fmtPct(st.baselineRate, st.baselineRate > 0 && st.baselineRate < 0.01 ? 2 : 1)} lên <span className="text-ink-mid">{fmtPct(st.currentRate, st.currentRate < 0.01 ? 2 : 1)}</span>
                   </span>
-                  <span className="tabular-nums">n = {fmtInt(st.sampleCurrent)}</span>
                   {alert.productName && <span className="truncate">{alert.productName}</span>}
                 </div>
               </li>
@@ -94,7 +93,7 @@ const RisingIssues = ({ alerts = [] }) => {
 
       {driftCount > 0 && (
         <p className="mt-auto border-t border-line/40 pt-3 text-xs text-ink-lo">
-          Thêm <span className="tabular-nums text-ink-mid">{driftCount}</span> vấn đề suy giảm kéo dài — theo dõi bằng biểu đồ kiểm soát, không quy ra được phần trăm tăng.
+          Thêm <span className="tabular-nums text-ink-mid">{driftCount}</span> vấn đề đang tăng chậm nhưng đều, xem ở trang Cảnh báo.
         </p>
       )}
     </GlassPanel>

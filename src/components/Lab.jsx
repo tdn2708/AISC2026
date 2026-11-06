@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
-  Loader2, FlaskConical, AlertTriangle, CheckCircle2, XCircle
+  Loader2, AlertTriangle, CheckCircle2, XCircle
 } from 'lucide-react';
 import PipelineDemo from './lab/PipelineDemo';
 import BatchDemo from './lab/BatchDemo';
 import VersusDemo from './lab/VersusDemo';
 import { preloadBrowserModel } from '../lib/analyze';
+import { PageHeader } from './ui';
 
 /**
  * PHÒNG THÍ NGHIỆM
@@ -304,22 +305,12 @@ const Lab = () => {
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '3rem' }}>
-      <header style={{ marginBottom: '1.5rem' }}>
-        {/* Cùng cỡ chữ và cùng nhịp với màn hình Tổng quan. Bản cũ đặt
-            1.75rem kèm một biểu tượng lớn nên mỗi trang một kiểu mở đầu. */}
-        <h2 style={{ margin: '0 0 0.3rem 0', fontSize: '1.6rem', fontWeight: 700 }}>
-          Phòng thí nghiệm
-        </h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-            fontSize: '0.75rem', color: 'var(--text-lo)', whiteSpace: 'nowrap'
-          }}>
-            <FlaskConical size={12} />
-            <span className="data-num">8 bước · ViSoBERT</span>
-          </span>
-        </div>
-      </header>
+      <div className="cx">
+        <PageHeader
+          title="Phòng thí nghiệm mô hình"
+          subtitle="Thử bộ phân loại tiếng Việt với câu của bạn, và xem kết quả đo trên tập kiểm tra."
+        />
+      </div>
 
       <div style={{
         // Màn hẹp: cuộn ngang thay vì ép mỗi tab thành ba dòng chữ

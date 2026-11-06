@@ -7,4 +7,4 @@ export { Modal, Drawer } from './Overlay';
 export { PageHeader, SectionLabel, Badge, ProgressBar, Stepper, SentimentFace, Toast, Stat } from './Display';
 export { EmptyState } from './EmptyState';
 export { AnimatedNumber } from './AnimatedNumber';
-export { EvidenceBar, EvidenceLegend, EvidenceSwatch, EVIDENCE_KINDS, evidenceSentence } from './EvidenceBar';
+export { EvidenceBar, EvidenceLegend, EvidenceSwatch, EvidenceTag, EVIDENCE_KINDS, evidenceSentence } from './EvidenceBar';

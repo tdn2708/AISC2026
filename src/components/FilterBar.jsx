@@ -230,7 +230,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
             className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs text-ink-mid transition-colors hover:bg-crit/10 hover:text-crit"
           >
             <X size={13} aria-hidden="true" />
-            <span className="font-mono">{activeCount}</span> điều kiện · xoá
+            Xoá {activeCount} bộ lọc
           </button>
         )}
       </div>

@@ -1,33 +1,23 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { Check, CircleSlash, Clock, FileSearch, RotateCcw, ShieldCheck } from 'lucide-react';
 import {
-  Check, CircleSlash, Clock, FileSearch, Lightbulb, ShieldCheck, Siren, UserRound, Users, Wallet, RotateCcw
-} from 'lucide-react';
-import {
-  PageHeader, GlassPanel, SeverityBadge, Button, ChipGroup, Drawer, EmptyState, Badge, SentimentFace, Stat, Toast
+  PageHeader, GlassPanel, SeverityBadge, Button, ChipGroup, Drawer, EmptyState, Badge, SentimentFace, Toast, Tabs
 } from './ui';
 import { Evidence, ConfidenceMeter, DismissModal } from './alerts/AlertParts';
 import { useDecisions } from '../hooks/useDecisions';
-import { alertTitle, fmtInt, fmtDateTime, SEVERITY, SEVERITY_ORDER } from '../lib/format';
+import { alertTitle, alertInWords, fmtInt, fmtDate, fmtDateTime, SEVERITY, SEVERITY_ORDER } from '../lib/format';
 
 /**
- * CẢNH BÁO & HÀNH ĐỘNG
+ * CẢNH BÁO
  * ------------------------------------------------------------------
- * Bản cũ ghi "đã xử lý" vào localStorage của trình duyệt: người khác mở
- * máy khác thì không thấy, và hệ thống không bao giờ biết quyết định đó.
- * Bản này đọc và ghi quyết định thật qua /recommendations — chấp nhận
- * hay bỏ qua đều về máy chủ, đi vào vòng lặp học của bộ đề xuất.
- *
- * Bố cục: danh sách bên trái (quét nhanh), chi tiết bên phải (quyết định).
+ * Tab "Cảnh báo": danh sách bên trái (quét nhanh, viết bằng lời thường),
+ * chi tiết bên phải (quyết định). Quyết định ghi về máy chủ qua
+ * /recommendations, đi vào vòng lặp học của bộ đề xuất.
+ * Tab "Nhật ký quyết định": ai đã quyết gì, lúc nào, vì sao — thứ doanh
+ * nghiệp cần để kiểm toán.
  */
-
-const STATUS_FILTERS = [
-  { value: 'open', label: 'Đang chờ' },
-  { value: 'ACCEPTED', label: 'Đã chấp nhận' },
-  { value: 'DISMISSED', label: 'Đã bỏ qua' },
-  { value: 'all', label: 'Tất cả' }
-];
 
 const AlertRow = ({ alert, status, active, onClick }) => {
   const meta = SEVERITY[alert.severity] || SEVERITY.Low;
@@ -37,96 +27,88 @@ const AlertRow = ({ alert, status, active, onClick }) => {
         type="button"
         onClick={onClick}
         aria-current={active || undefined}
-        className={`relative w-full rounded-lg border p-4 pl-5 text-left transition-[background-color,border-color,box-shadow] ${
-          active ? 'border-accent/40 bg-surface shadow-[0_0_0_3px_var(--accent-dim)]' : 'border-transparent bg-surface/45 hover:bg-surface/80'
+        className={`relative w-full rounded-lg border p-4 pl-5 text-left transition-colors ${
+          active ? 'border-accent bg-surface' : 'border-transparent hover:bg-raised'
         }`}
         style={{ '--sev': meta.color }}
       >
         <span aria-hidden="true" className="absolute inset-y-3 left-0 w-[3px] rounded-r-full bg-(--sev)" />
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm leading-snug font-semibold text-ink-hi">{alertTitle(alert)}</p>
           <SeverityBadge level={alert.severity} />
-          {status === 'ACCEPTED' ? (
-            <Badge tone="ok" icon={Check}>Đã chấp nhận</Badge>
-          ) : status === 'DISMISSED' ? (
-            <Badge icon={CircleSlash}>Đã bỏ qua</Badge>
-          ) : (
-            alert.sla && <span className="inline-flex items-center gap-1 font-mono text-[0.68rem] text-ink-lo"><Clock size={11} />{alert.sla}</span>
-          )}
         </div>
-        <p className="mt-2 text-sm leading-snug font-semibold text-ink-hi">{alertTitle(alert)}</p>
         {alert.productName && <p className="mt-0.5 truncate text-xs text-ink-lo">{alert.productName}</p>}
-        <Evidence alert={alert} className="mt-2" />
+        <p className="mt-1.5 text-xs text-ink-mid">{alertInWords(alert)}</p>
+        <p className="mt-1.5 text-xs text-ink-lo">
+          {status === 'ACCEPTED' ? (
+            <span className="inline-flex items-center gap-1 text-ok"><Check size={12} aria-hidden="true" /> Đã chấp nhận</span>
+          ) : status === 'DISMISSED' ? (
+            <span className="inline-flex items-center gap-1"><CircleSlash size={12} aria-hidden="true" /> Đã bỏ qua</span>
+          ) : (
+            alert.sla && <span className="inline-flex items-center gap-1"><Clock size={12} aria-hidden="true" /> Xử lý trong {alert.sla}</span>
+          )}
+        </p>
       </button>
     </li>
   );
 };
 
-const Fact = ({ icon: Icon, label, children }) => (
-  <div className="flex items-start gap-3 rounded-lg bg-surface/55 p-3">
-    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-dim text-accent">
-      <Icon size={15} aria-hidden="true" />
-    </span>
-    <div className="min-w-0">
-      <p className="text-[0.7rem] text-ink-lo">{label}</p>
-      <p className="text-sm font-medium text-ink-hi">{children}</p>
-    </div>
-  </div>
-);
-
 const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence }) => {
   const steps = rec?.steps || alert.recommendation?.steps || [];
   const confidence = rec?.confidence ?? alert.recommendation?.confidence;
   const evidence = rec?.evidence || {};
+  const facts = [
+    ['Khách bị ảnh hưởng', evidence.affectedCustomers != null ? fmtInt(evidence.affectedCustomers) : '—'],
+    [
+      'Phản hồi làm bằng chứng',
+      <>
+        {fmtInt(evidence.evidenceCount ?? alert.evidenceCount)}
+        {alert.excludedByTrust > 0 && <span className="font-normal text-ink-lo">, đã loại {fmtInt(alert.excludedByTrust)} không đáng tin</span>}
+      </>
+    ],
+    ['Bộ phận phụ trách', alert.owner || '—'],
+    ['Doanh thu chịu rủi ro', rec?.dataProfile?.slots?.revenue || 'Chưa đối soát được']
+  ];
+
   return (
-    <GlassPanel tone="strong" glow={alert.severity === 'Critical' && !status ? 'crit' : null} className="p-6 animate-fade-up" key={alert.id}>
+    <GlassPanel tone="strong" className="p-6" key={alert.id}>
       <div className="flex flex-wrap items-center gap-2">
         <SeverityBadge level={alert.severity} />
-        <Badge tone="neutral">{alert.typeVi || 'Cảnh báo'}</Badge>
+        {alert.typeVi && <Badge tone="neutral">{alert.typeVi}</Badge>}
         {alert.sla && <Badge tone="neutral" icon={Clock}>Xử lý trong {alert.sla}</Badge>}
       </div>
       <h2 className="mt-3 text-xl leading-snug font-semibold text-ink-hi">{alertTitle(alert)}</h2>
       {alert.productName && <p className="mt-1 text-sm text-ink-mid">{alert.productName}</p>}
 
-      {alert.summary && (
-        <div className="mt-4 rounded-lg bg-surface/55 p-4">
-          <p className="eyebrow mb-1.5">Diễn giải</p>
-          <p className="text-sm leading-relaxed text-ink-hi">{alert.summary}</p>
-          <Evidence alert={alert} className="mt-3" />
-        </div>
-      )}
+      {alert.summary && <p className="mt-4 text-sm leading-relaxed text-ink-hi">{alert.summary}</p>}
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <Fact icon={Users} label="Khách bị ảnh hưởng">
-          {evidence.affectedCustomers != null ? fmtInt(evidence.affectedCustomers) : '—'}
-        </Fact>
-        <Fact icon={FileSearch} label="Phản hồi làm bằng chứng">
-          {fmtInt(evidence.evidenceCount ?? alert.evidenceCount)}
-          {alert.excludedByTrust > 0 && <span className="font-normal text-ink-lo"> · đã loại {fmtInt(alert.excludedByTrust)}</span>}
-        </Fact>
-        <Fact icon={UserRound} label="Bộ phận phụ trách">{alert.owner || '—'}</Fact>
-        <Fact icon={Wallet} label="Doanh thu chịu rủi ro">
-          {rec?.dataProfile?.slots?.revenue || 'Chưa đối soát được'}
-        </Fact>
-      </div>
+      <dl className="mt-5 grid gap-x-6 gap-y-3 border-y border-line-soft py-4 sm:grid-cols-2">
+        {facts.map(([k, v]) => (
+          <div key={k}>
+            <dt className="text-xs text-ink-lo">{k}</dt>
+            <dd className="mt-0.5 text-sm font-medium text-ink-hi">{v}</dd>
+          </div>
+        ))}
+      </dl>
 
-      <div className="mt-6">
-        <p className="eyebrow mb-3 flex items-center gap-1.5"><Lightbulb size={12} /> Kế hoạch hành động đề xuất</p>
+      <div className="mt-5">
+        <h3 className="mb-3 text-sm font-semibold text-ink-hi">Kế hoạch đề xuất</h3>
         {steps.length === 0 ? (
-          <p className="text-sm text-ink-lo">Chưa có hành động nào phù hợp với hồ sơ dữ liệu của cảnh báo này.</p>
+          <p className="text-sm text-ink-lo">Chưa có hành động nào khớp với dữ liệu của cảnh báo này.</p>
         ) : (
           <ol className="flex list-none flex-col gap-2">
             {steps.map((s, i) => (
-              <li key={s.actionId || i} className={`flex gap-3 rounded-lg p-3.5 ${i === 0 ? 'bg-accent-dim' : 'bg-surface/50'}`}>
-                <span className={`grid size-7 shrink-0 place-items-center rounded-md font-mono text-xs font-semibold ${i === 0 ? 'bg-accent text-on-accent' : 'bg-raised text-ink-mid'}`}>
+              <li key={s.actionId || i} className="flex gap-3 rounded-lg border border-line-soft p-3.5">
+                <span className={`grid size-6 shrink-0 place-items-center rounded-md font-mono text-xs font-semibold ${i === 0 ? 'bg-accent text-on-accent' : 'bg-raised text-ink-mid'}`}>
                   {i + 1}
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm leading-snug text-ink-hi">{s.text}</p>
-                  <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[0.7rem] text-ink-mid">
+                  <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-lo">
                     {s.kindLabel && <span>{s.kindLabel}</span>}
-                    <span>~{s.effortDays} ngày công</span>
+                    <span>Khoảng {s.effortDays} ngày công</span>
                     {s.reversible === false && <span className="text-high">Không đảo ngược được</span>}
-                    {s.requiresApproval && s.approvalRole && <span>Duyệt: {s.approvalRole}</span>}
+                    {s.requiresApproval && s.approvalRole && <span>Cần {s.approvalRole} duyệt</span>}
                   </p>
                 </div>
               </li>
@@ -136,33 +118,42 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
         <ConfidenceMeter value={confidence} className="mt-4" />
       </div>
 
+      <details className="group mt-5 rounded-lg border border-line-soft">
+        <summary className="cursor-pointer list-none px-4 py-2.5 text-xs font-semibold text-ink-mid hover:text-ink-hi">
+          Số liệu kiểm định
+        </summary>
+        <div className="border-t border-line-soft px-4 py-3">
+          <Evidence alert={alert} />
+        </div>
+      </details>
+
       <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-line-soft pt-5">
         {status === 'ACCEPTED' ? (
-          <p className="inline-flex items-center gap-2 text-sm font-medium text-ok"><Check size={16} /> Đã chấp nhận — hệ thống sẽ đo lại hiệu quả sau 7 ngày</p>
+          <p className="inline-flex items-center gap-2 text-sm font-medium text-ok"><Check size={16} /> Đã chấp nhận. Hệ thống đo lại hiệu quả sau 7 ngày.</p>
         ) : status === 'DISMISSED' ? (
           <p className="inline-flex items-center gap-2 text-sm text-ink-mid">
-            <CircleSlash size={16} /> Đã bỏ qua{rec?.dismissReason ? ` — ${rec.dismissReason}` : ''}
+            <CircleSlash size={16} /> Đã bỏ qua{rec?.dismissReason ? `: ${rec.dismissReason}` : ''}
           </p>
         ) : (
           steps.length > 0 && (
             <>
               <Button icon={Check} onClick={onAccept} loading={saving}>Chấp nhận kế hoạch</Button>
-              <Button variant="ghost" onClick={onDismiss} disabled={saving}>Bỏ qua…</Button>
+              <Button variant="ghost" onClick={onDismiss} disabled={saving}>Bỏ qua</Button>
             </>
           )
         )}
         <Button variant="secondary" icon={FileSearch} onClick={onEvidence} className="sm:ml-auto">Xem phản hồi gốc</Button>
       </div>
 
-      <p className="mt-4 flex gap-2 text-[0.72rem] leading-relaxed text-ink-lo">
+      <p className="mt-4 flex gap-2 text-xs leading-relaxed text-ink-lo">
         <ShieldCheck size={14} className="mt-0.5 shrink-0" />
-        Hệ thống không tự thực thi hành động phát sinh chi phí hoặc chạm tới khách hàng. Quyết định thuộc về người có thẩm quyền.
+        Hệ thống chỉ đề xuất. Việc tốn chi phí hoặc chạm tới khách hàng luôn cần người có thẩm quyền duyệt.
       </p>
     </GlassPanel>
   );
 };
 
-const EvidenceDrawer = ({ alert, onClose }) => {
+const SourceDrawer = ({ alert, onClose }) => {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 
@@ -177,12 +168,7 @@ const EvidenceDrawer = ({ alert, onClose }) => {
   }, [alert]);
 
   return (
-    <Drawer
-      open={Boolean(alert)}
-      onClose={onClose}
-      title="Phản hồi gốc"
-      subtitle={alert ? alertTitle(alert) : undefined}
-    >
+    <Drawer open={Boolean(alert)} onClose={onClose} title="Phản hồi gốc" subtitle={alert ? alertTitle(alert) : undefined}>
       {error ? (
         <EmptyState variant="error" compact title="Không tải được" description={error} />
       ) : !data ? (
@@ -190,31 +176,93 @@ const EvidenceDrawer = ({ alert, onClose }) => {
           {[0, 1, 2].map((i) => <div key={i} className="h-24 animate-pulse rounded-lg bg-raised" />)}
         </div>
       ) : data.evidence?.length === 0 ? (
-        <EmptyState compact title="Không có phản hồi đính kèm" description="Cảnh báo dạng suy giảm kéo dài được phát hiện trên chuỗi thời gian, không gắn với từng phản hồi." />
+        <EmptyState compact title="Không có phản hồi đính kèm" description="Cảnh báo tăng chậm được phát hiện trên chuỗi thời gian, không gắn với từng phản hồi riêng." />
       ) : (
         <>
           {data.excludedByTrust > 0 && (
             <p className="mb-4 rounded-lg bg-accent-dim px-3 py-2 text-xs text-accent-hi">
-              Đã loại {fmtInt(data.excludedByTrust)} phản hồi không đạt ngưỡng tin cậy khỏi bằng chứng của cảnh báo này.
+              Đã loại {fmtInt(data.excludedByTrust)} phản hồi không đáng tin khỏi bằng chứng của cảnh báo này.
             </p>
           )}
           <ul className="flex list-none flex-col gap-3">
             {data.evidence.map((f) => (
-              <li key={f._id} className="rounded-lg bg-surface/60 p-4">
+              <li key={f._id} className="rounded-lg border border-line-soft p-4">
                 <div className="flex items-center gap-2.5">
                   <SentimentFace sentiment={f.sentiment} size={26} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-ink-hi">{f.author || 'Ẩn danh'}</p>
-                    <p className="font-mono text-[0.68rem] text-ink-lo">{fmtDateTime(f.timestamp)} · {f.source} · {f.trust?.tier}</p>
-                  </div>
+                  <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink-hi">{f.author || 'Ẩn danh'}</p>
+                  <p className="shrink-0 text-xs text-ink-lo">{f.source}, hạng {f.trust?.tier}</p>
                 </div>
                 <p className="mt-2.5 text-sm leading-relaxed text-ink-hi">{f.originalText}</p>
+                <p className="mt-2 font-mono text-xs text-ink-lo">{fmtDateTime(f.timestamp)}</p>
               </li>
             ))}
           </ul>
         </>
       )}
     </Drawer>
+  );
+};
+
+/** Nhật ký quyết định: mới nhất trước */
+const DecisionLog = () => {
+  const [rows, setRows] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get('/decisions')
+      .then((r) => setRows(r.data?.decisions || []))
+      .catch(() => setError('Không tải được nhật ký quyết định.'));
+  }, []);
+
+  if (error) return <GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel>;
+  if (!rows) return <div className="h-64 animate-pulse rounded-xl bg-raised" />;
+  if (!rows.length) {
+    return (
+      <GlassPanel>
+        <EmptyState title="Chưa có quyết định nào" description="Khi ai đó chấp nhận hoặc bỏ qua một đề xuất, quyết định sẽ được ghi lại ở đây cùng người quyết và lý do." />
+      </GlassPanel>
+    );
+  }
+
+  return (
+    <GlassPanel tone="strong" className="overflow-hidden">
+      <div className="table-responsive">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Thời điểm</th>
+              <th>Vấn đề</th>
+              <th>Quyết định</th>
+              <th>Người quyết</th>
+              <th>Lý do / theo dõi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((d) => (
+              <tr key={`${d.alertId}-${d.at}`}>
+                <td className="font-mono whitespace-nowrap text-ink-mid">{fmtDateTime(d.at)}</td>
+                <td>
+                  <p className="font-medium">{d.title || 'Cảnh báo không còn trong dữ liệu hiện tại'}</p>
+                  {d.productName && <p className="text-xs text-ink-lo">{d.productName}</p>}
+                </td>
+                <td>
+                  {d.decision === 'ACCEPTED' ? (
+                    <Badge tone="ok" icon={Check}>Chấp nhận</Badge>
+                  ) : (
+                    <Badge icon={CircleSlash}>Bỏ qua</Badge>
+                  )}
+                </td>
+                <td className="whitespace-nowrap">{d.by}</td>
+                <td className="text-ink-mid">
+                  {d.decision === 'DISMISSED' ? d.reason || '—' : d.followUpAt ? `Đo lại hiệu quả ngày ${fmtDate(d.followUpAt)}` : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </GlassPanel>
   );
 };
 
@@ -229,6 +277,7 @@ const RiskCenter = () => {
   const [dismissing, setDismissing] = useState(null);
   const [evidenceFor, setEvidenceFor] = useState(null);
   const [toast, setToast] = useState(null);
+  const tab = params.get('tab') === 'log' ? 'log' : 'alerts';
   // Cảnh báo vừa quyết định trong phiên này vẫn ở lại danh sách "Đang chờ"
   // để người dùng thấy kết quả, thay vì biến mất ngay dưới tay họ
   const [recent, setRecent] = useState(() => new Set());
@@ -275,7 +324,7 @@ const RiskCenter = () => {
 
   const visible = sorted.filter((a) => {
     const st = statusOf(a);
-    const okStatus = statusFilter === 'all' || (statusFilter === 'open' ? !st || recent.has(a.id) : st === statusFilter);
+    const okStatus = statusFilter === 'all' || (statusFilter === 'open' ? !st || recent.has(a.id) : Boolean(st));
     return okStatus && (severity === 'all' || a.severity === severity);
   });
 
@@ -303,83 +352,84 @@ const RiskCenter = () => {
   };
 
   const open = sorted.filter((a) => !statusOf(a));
+  const statusOptions = [
+    { value: 'open', label: 'Đang chờ', count: open.length },
+    { value: 'decided', label: 'Đã quyết định', count: sorted.length - open.length },
+    { value: 'all', label: 'Tất cả', count: sorted.length }
+  ];
   const sevOptions = [
-    { value: 'all', label: 'Mọi mức', count: open.length },
-    ...SEVERITY_ORDER.map((k) => ({ value: k, label: SEVERITY[k].label, count: open.filter((a) => a.severity === k).length })).filter((o) => o.count > 0)
+    { value: 'all', label: 'Mọi mức' },
+    ...SEVERITY_ORDER.map((k) => ({ value: k, label: SEVERITY[k].label, count: sorted.filter((a) => a.severity === k).length })).filter((o) => o.count > 0)
   ];
 
   return (
     <div className="cx">
       <PageHeader
-        section="Giám sát"
         title="Cảnh báo"
-        accent="& hành động"
-        subtitle="Chỉ gồm biến động đã qua kiểm định thống kê và hiệu chỉnh đa kiểm định. Mỗi cảnh báo đi kèm một kế hoạch đề xuất chờ quyết định."
-        actions={<Button variant="secondary" icon={RotateCcw} onClick={load} loading={loading}>Làm mới</Button>}
+        subtitle="Những biến động đủ lớn để chắc chắn không phải ngẫu nhiên, kèm kế hoạch chờ bạn quyết định."
+        actions={tab === 'alerts' && <Button variant="secondary" icon={RotateCcw} onClick={load} loading={loading}>Làm mới</Button>}
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {/* Chỉ tô màu khi con số khác 0 — một số 0 màu đỏ đọc ra là báo động giả */}
-        {[
-          ['Đang chờ quyết định', open.length, null],
-          ['Nghiêm trọng', open.filter((a) => a.severity === 'Critical').length, 'crit'],
-          ['Mức cao', open.filter((a) => a.severity === 'High').length, 'high'],
-          ['Đã quyết định', sorted.length - open.length, 'ok']
-        ].map(([label, n, tone]) => (
-          <Stat key={label} label={label} value={fmtInt(n)} tone={n > 0 ? tone : null} />
-        ))}
-      </div>
+      <Tabs
+        className="mb-5"
+        value={tab}
+        onChange={(v) => setParams(v === 'log' ? { tab: 'log' } : {}, { replace: true })}
+        tabs={[
+          { value: 'alerts', label: 'Danh sách' },
+          { value: 'log', label: 'Nhật ký quyết định' }
+        ]}
+      />
 
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <ChipGroup label="Lọc theo trạng thái" options={STATUS_FILTERS} value={statusFilter} onChange={setStatusFilter} />
-        <ChipGroup label="Lọc theo mức độ" options={sevOptions} value={severity} onChange={setSeverity} />
-      </div>
-
-      {error ? (
-        <GlassPanel><EmptyState variant="error" title="Không tải được cảnh báo" description={error} action={<Button onClick={load}>Thử lại</Button>} /></GlassPanel>
-      ) : loading && alerts.length === 0 ? (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-          <div className="flex flex-col gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-pulse rounded-lg bg-surface/50" />)}</div>
-          <div className="h-[520px] animate-pulse rounded-xl bg-surface/50" />
-        </div>
-      ) : visible.length === 0 ? (
-        <GlassPanel>
-          <EmptyState
-            variant="calm"
-            title={statusFilter === 'open' ? 'Không còn cảnh báo nào chờ quyết định' : 'Không có cảnh báo khớp bộ lọc'}
-            description="Không có biến động nào đạt đồng thời ý nghĩa thống kê và ý nghĩa nghiệp vụ trong phạm vi này."
-          />
-        </GlassPanel>
+      {tab === 'log' ? (
+        <DecisionLog />
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-          <GlassPanel className="p-2.5">
-            <p className="eyebrow px-2.5 pt-2 pb-2.5">
-              <Siren size={11} className="mr-1.5 inline" />
-              <span className="font-mono">{visible.length}</span> cảnh báo · xếp theo mức độ
-            </p>
-            {/* Cuộn riêng chỉ trên màn rộng; trên điện thoại cuộn lồng trong trang cuộn rất khó dùng */}
-            <ul className="flex list-none flex-col gap-2 lg:max-h-[calc(100vh-18rem)] lg:overflow-y-auto">
-              {visible.map((a) => (
-                <AlertRow key={a.id} alert={a} status={statusOf(a)} active={selected?.id === a.id} onClick={() => select(a.id)} />
-              ))}
-            </ul>
-          </GlassPanel>
+        <>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <ChipGroup label="Lọc theo trạng thái" options={statusOptions} value={statusFilter} onChange={setStatusFilter} />
+            {sevOptions.length > 2 && <ChipGroup label="Lọc theo mức độ" options={sevOptions} value={severity} onChange={setSeverity} />}
+          </div>
 
-          {selected && (
-            <div ref={detailRef} className="scroll-mt-20 lg:sticky lg:top-20">
-              <Detail
-                alert={selected}
-                rec={recs[selected.id]}
-                status={statusOf(selected)}
-                saving={states[selected.id] === 'saving'}
-                onAccept={() => decide(selected, 'ACCEPTED')}
-                onDismiss={() => setDismissing(selected)}
-                onEvidence={() => setEvidenceFor(selected)}
+          {error ? (
+            <GlassPanel><EmptyState variant="error" title="Không tải được cảnh báo" description={error} action={<Button onClick={load}>Thử lại</Button>} /></GlassPanel>
+          ) : loading && alerts.length === 0 ? (
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+              <div className="flex flex-col gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-pulse rounded-lg bg-raised" />)}</div>
+              <div className="h-[520px] animate-pulse rounded-xl bg-raised" />
+            </div>
+          ) : visible.length === 0 ? (
+            <GlassPanel>
+              <EmptyState
+                variant="calm"
+                title={statusFilter === 'open' ? 'Không còn cảnh báo nào chờ quyết định' : 'Không có cảnh báo khớp bộ lọc'}
+                description="Chưa có biến động nào vừa đủ lớn về số liệu vừa đáng kể về kinh doanh trong phạm vi này."
               />
-              {states[selected.id] === 'error' && <p className="mt-2 text-sm text-crit">Không lưu được quyết định — thử lại sau.</p>}
+            </GlassPanel>
+          ) : (
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+              {/* Cuộn riêng chỉ trên màn rộng; trên điện thoại cuộn lồng trong trang cuộn rất khó dùng */}
+              <ul className="flex list-none flex-col gap-1 rounded-[10px] border border-line bg-surface p-2 lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto" aria-label="Danh sách cảnh báo">
+                {visible.map((a) => (
+                  <AlertRow key={a.id} alert={a} status={statusOf(a)} active={selected?.id === a.id} onClick={() => select(a.id)} />
+                ))}
+              </ul>
+
+              {selected && (
+                <div ref={detailRef} className="scroll-mt-20 lg:sticky lg:top-20">
+                  <Detail
+                    alert={selected}
+                    rec={recs[selected.id]}
+                    status={statusOf(selected)}
+                    saving={states[selected.id] === 'saving'}
+                    onAccept={() => decide(selected, 'ACCEPTED')}
+                    onDismiss={() => setDismissing(selected)}
+                    onEvidence={() => setEvidenceFor(selected)}
+                  />
+                  {states[selected.id] === 'error' && <p className="mt-2 text-sm text-crit">Không lưu được quyết định. Thử lại.</p>}
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
 
       <DismissModal
@@ -388,7 +438,7 @@ const RiskCenter = () => {
         onClose={() => setDismissing(null)}
         onConfirm={(reason) => decide(dismissing, 'DISMISSED', reason)}
       />
-      <EvidenceDrawer alert={evidenceFor} onClose={() => setEvidenceFor(null)} />
+      <SourceDrawer alert={evidenceFor} onClose={() => setEvidenceFor(null)} />
       <Toast show={Boolean(toast)}>{toast}</Toast>
     </div>
   );

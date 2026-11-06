@@ -223,30 +223,6 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0;
 }
 
-/* ==================================================================
-   NỀN ỨNG DỤNG — khuôn viên UIT phủ sương + lưới kỹ thuật mảnh
-   Ảnh đã được làm mờ sẵn lúc build (4 KB) nên không tốn blur thời gian thực.
-   ================================================================== */
-.app-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-color: var(--canvas);
-  background-image: var(--backdrop-veil), var(--backdrop-img);
-  background-size: cover;
-  background-position: center;
-}
-.app-backdrop::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse at 70% 0%, #000 0%, transparent 75%);
-}
-
 /* Panel kính dùng chung — tên lớp cũ được giữ để các trang chưa chuyển đổi
    (Lab) tự nhận diện mạo mới. */
 .glass-panel {

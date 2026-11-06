@@ -1,17 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Bell, Menu, Moon, Search, Sun, ChevronRight } from 'lucide-react';
+import { Bell, Menu, Moon, Search, Sun } from 'lucide-react';
 import { IconButton } from '../ui';
 import { findPage } from '../../lib/nav';
 import { useTheme } from '../../hooks/useTheme';
 import { alertTitle } from '../../lib/format';
-import { WORKSPACES, getWorkspace, switchWorkspace } from '../../lib/workspace';
 
 /**
  * THANH TRÊN — dính theo cuộn, kính trong.
- * Chứa đúng bốn thứ dùng ở mọi trang: vị trí hiện tại, ô lệnh Ctrl+K,
- * đổi theme, và thông báo. Mọi thao tác riêng của trang nằm ở tiêu đề trang.
+ * Chứa đúng ba thứ dùng ở mọi trang: ô lệnh Ctrl+K, đổi giao diện sáng/tối
+ * và thông báo. Tên trang không lặp ở đây vì mỗi trang đã có tiêu đề riêng;
+ * kho dữ liệu nằm ở thanh bên.
  */
 
 const POLL_MS = 60000;
@@ -139,38 +139,6 @@ const Notifications = () => {
   );
 };
 
-/**
- * Chuyển giữa kho mô phỏng và kho dữ liệu thật. Đặt ở thanh trên vì nó đổi
- * nguồn số liệu của MỌI trang; kho thật tô màu nhấn để không ai nhầm hai kho.
- */
-const WorkspaceSwitch = () => {
-  const current = getWorkspace();
-  return (
-    <div role="radiogroup" aria-label="Kho dữ liệu" className="flex h-10 shrink-0 items-center rounded-lg border border-line bg-surface p-1">
-      {Object.entries(WORKSPACES).map(([key, ws]) => {
-        const active = key === current;
-        return (
-          <button
-            key={key}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            title={ws.hint}
-            onClick={() => switchWorkspace(key)}
-            className={`h-full rounded-md px-2.5 text-xs font-semibold whitespace-nowrap transition-colors ${
-              active
-                ? key === 'real' ? 'bg-accent text-on-accent' : 'bg-raised text-ink-hi'
-                : 'text-ink-mid hover:text-ink-hi'
-            }`}
-          >
-            {ws.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-};
-
 const Topbar = ({ onOpenMenu, onOpenCommand }) => {
   const { pathname } = useLocation();
   const page = findPage(pathname);
@@ -198,19 +166,8 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
       >
         <IconButton icon={Menu} label="Mở menu" onClick={onOpenMenu} className="md:hidden" />
 
-        <nav aria-label="Vị trí" className="hidden min-w-0 items-center gap-1.5 text-sm sm:flex">
-          <span className="text-ink-lo">{page?.group || 'Customer Radar'}</span>
-          {page && (
-            <>
-              <ChevronRight size={14} className="text-ink-lo/70" aria-hidden="true" />
-              <span className="truncate font-medium text-ink-hi">{page.label}</span>
-            </>
-          )}
-        </nav>
-
-        <div className="flex-1" />
-
-        <WorkspaceSwitch />
+        {/* Điện thoại: tên trang hiện tại, vì thanh bên đã ẩn sau nút menu */}
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink-hi md:hidden">{page?.label}</span>
 
         <button
           type="button"
@@ -225,6 +182,8 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
             {isMac ? '⌘' : 'Ctrl'} K
           </kbd>
         </button>
+
+        <div className="hidden flex-1 md:block" />
 
         {/* Màn điện thoại không đủ chỗ cho năm nút; đổi giao diện vẫn có trong Cài đặt */}
         <span className="hidden sm:contents">

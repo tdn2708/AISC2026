@@ -107,6 +107,11 @@ function publicItem(f) {
     sentiment: f.sentiment,
     aiSummary: f.aiSummary,
     entities: f.entities || null,
+    // Dữ kiện đối soát và nguồn gán nhãn — để giao diện nói được phản hồi này
+    // đứng trên chứng từ gì, và ai đã xếp nó vào nhóm vấn đề
+    verifiedPurchase: f.verifiedPurchase === true,
+    hasOrder: Boolean(f.orderId),
+    labelledBy: f.labelledBy || 'synthetic',
     trust: f.trust
       ? {
           tier: f.trust.tier,
@@ -958,9 +963,48 @@ router.get('/recommendations', wrap(async (req, res) => {
  * Chấp nhận / Bỏ qua một khuyến nghị. Bỏ qua thì BẮT BUỘC chọn lý do —
  * lý do bỏ qua chính là dữ liệu để cải thiện playbook.
  */
+/**
+ * NHẬT KÝ QUYẾT ĐỊNH — ai đã chấp nhận hay bỏ qua đề xuất nào, lúc nào, vì
+ * sao. Doanh nghiệp cần đúng thứ này để kiểm toán: hệ thống chỉ đề xuất,
+ * và mọi quyết định đều có người chịu trách nhiệm.
+ */
+router.get('/decisions', wrap(async (req, res) => {
+  const ctx = await getContext(req.db);
+  const log = await req.db.collection('recommendation_log').find({}).sort({ at: -1 }).limit(200).toArray();
+  // Bản ghi cũ chưa có ảnh chụp: thử ghép với cảnh báo hiện tại để lấy tên vấn đề
+  const current = new Map(detectAlertsCached(ctx, {}, {}).alerts.map((a) => [a.id, a]));
+  res.json({
+    decisions: log.map((d) => {
+      const a = current.get(d.alertId);
+      // Mã cảnh báo có dạng "Nhóm|Nguyên nhân|Sản phẩm|Khu vực|Ngày": đọc tên từ đó
+      // khi cảnh báo đã không còn và bản ghi cũ chưa có ảnh chụp
+      const [cat, cause, product] = String(d.alertId).split('|');
+      const fromId = cat ? [taxonomy.categoryLabel(cat), cause && cause !== '*' ? taxonomy.causeLabel(cat, cause) : null].filter(Boolean).join(' — ') : null;
+      const title = d.snapshot?.title || (a ? (a.causeLabel ? `${a.categoryLabel} — ${a.causeLabel}` : a.categoryLabel) : fromId);
+      return {
+        alertId: d.alertId,
+        decision: d.decision,
+        by: d.by,
+        reason: d.reason,
+        at: d.at,
+        followUpAt: d.followUpAt,
+        title,
+        productName: d.snapshot?.productName ?? a?.productName ?? (product && product !== '*' ? product : null),
+        severity: d.snapshot?.severity ?? a?.severity ?? null
+      };
+    })
+  });
+}));
+
 router.post('/recommendations/decision', wrap(async (req, res) => {
-  const { alertId, decision, by, reason, actionIds, scopeKey } = req.body;
+  const { alertId, decision, by, reason, actionIds, scopeKey, snapshot } = req.body;
   const allowed = ['ACCEPTED', 'DISMISSED'];
+  // Ảnh chụp vấn đề lúc quyết định: cảnh báo có thể biến mất khỏi danh sách
+  // sau vài ngày, nhưng nhật ký quyết định vẫn phải đọc được "đã quyết về cái gì"
+  const clip = (v, n = 200) => (typeof v === 'string' ? v.slice(0, n) : null);
+  const snap = snapshot && typeof snapshot === 'object'
+    ? { title: clip(snapshot.title), productName: clip(snapshot.productName), severity: clip(snapshot.severity, 20) }
+    : null;
   if (!alertId || !allowed.includes(decision)) {
     return res.status(400).json({ error: `Cần alertId và decision thuộc: ${allowed.join(', ')}` });
   }
@@ -975,8 +1019,9 @@ router.post('/recommendations/decision', wrap(async (req, res) => {
       $set: {
         alertId,
         decision,
-        by: by || 'admin',
-        reason: reason || null,
+        by: clip(by, 80) || 'admin',
+        reason: clip(reason, 500) || null,
+        ...(snap ? { snapshot: snap } : {}),
         // Ghi ở mức HÀNH ĐỘNG, không chỉ mức cảnh báo. Không có hai
         // trường này thì không quy được quyết định về mẫu hành động nào,
         // và vòng lặp học không có gì để học.

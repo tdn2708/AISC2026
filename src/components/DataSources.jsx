@@ -4,7 +4,7 @@ import axios from 'axios';
 import {
   Link2, RefreshCw, Store, ShoppingBag, Music2, Globe, Plus, Trash2, Boxes, Activity, Clock, CircleCheck, CircleX, CircleDashed, Unplug, History, ArrowRight, Info
 } from 'lucide-react';
-import { PageHeader, GlassPanel, PanelHeader, Tabs, Button, TextField, Select, Switch, Modal, Badge, EmptyState, Stat } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Tabs, Button, TextField, Select, Modal, Badge, EmptyState } from './ui';
 import { fmtInt } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
 
@@ -38,24 +38,18 @@ const loadLocal = (key, fallback) => {
     const parsed = JSON.parse(readStorage(key) || 'null');
     if (!Array.isArray(parsed)) return fallback;
     // Lượt đồng bộ đang chạy dở khi đóng tab sẽ kẹt "Đang đồng bộ" mãi mãi
-    return parsed.map((r) => (r && r.status === 'Syncing...' ? { ...r, status: 'Failed', error: 'Phiên đồng bộ bị ngắt giữa chừng' } : r));
+    return parsed.map((r) => (r && r.status === 'Syncing...' ? { ...r, status: 'Failed', error: 'Lần thu thập bị ngắt giữa chừng' } : r));
   } catch {
     return fallback;
   }
 };
 
-const DEMO_SHOPS = [
-  // Gian hàng mẫu để minh hoạ giao diện — productsCount để null vì không có
-  // nguồn số nào đứng sau, số sản phẩm thật lấy từ API
-  { id: 'shp1', name: 'Gian hàng mẫu Shopee', platform: 'Shopee', shopId: 'SHP-982341', productsCount: null, autoSync: true, status: 'Active', isDemo: true },
-  { id: 'tik1', name: 'Gian hàng mẫu TikTok Shop', platform: 'TikTok', shopId: 'TIK-44122', productsCount: null, autoSync: false, status: 'Active', isDemo: true }
-];
 
 const STATUS = {
   Success: { tone: 'ok', icon: CircleCheck, label: 'Thành công' },
   Failed: { tone: 'crit', icon: CircleX, label: 'Thất bại' },
   Empty: { tone: 'med', icon: CircleDashed, label: 'Không có dữ liệu' },
-  'Syncing...': { tone: 'accent', icon: RefreshCw, label: 'Đang đồng bộ' }
+  'Syncing...': { tone: 'accent', icon: RefreshCw, label: 'Đang thu thập' }
 };
 
 const LABELLER = { visobert: 'ViSoBERT', llm: 'mô hình ngôn ngữ lớn', rules: 'lớp luật từ khóa' };
@@ -73,8 +67,8 @@ const ScrapeResult = ({ result }) => {
         <div className="min-w-0">
           <p className="font-semibold text-ink-hi">
             {result.count > 0
-              ? <>{fmtInt(result.count)} đánh giá thật vừa được thu thập{result.duplicatesSkipped ? <span className="font-normal text-ink-lo"> · bỏ qua {fmtInt(result.duplicatesSkipped)} đã có</span> : null}</>
-              : <>Không có đánh giá mới <span className="font-normal text-ink-lo">· {fmtInt(result.duplicatesSkipped || 0)} đánh giá của sản phẩm này đã có trong kho</span></>}
+              ? <>Đã thu thập {fmtInt(result.count)} đánh giá mới{result.duplicatesSkipped ? <span className="font-normal text-ink-lo">, bỏ qua {fmtInt(result.duplicatesSkipped)} đánh giá đã có</span> : null}</>
+              : <>Không có đánh giá mới <span className="font-normal text-ink-lo">({fmtInt(result.duplicatesSkipped || 0)} đánh giá của sản phẩm này đã có sẵn)</span></>}
           </p>
           {result.productName && <p className="truncate text-xs text-ink-lo">{result.productName}</p>}
         </div>
@@ -83,7 +77,7 @@ const ScrapeResult = ({ result }) => {
       {rows.length > 0 && (
         <ul className="flex max-h-[28rem] list-none flex-col gap-2 overflow-y-auto pr-1">
           {rows.map((r, i) => (
-            <li key={i} className="rounded-lg bg-surface/70 px-3.5 py-3">
+            <li key={i} className="rounded-lg border border-line-soft px-3.5 py-3">
               <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-lo">
                 {r.rating != null && <span className="font-mono text-high">{'★'.repeat(r.rating)}<span className="text-ink-lo/50">{'★'.repeat(5 - r.rating)}</span></span>}
                 <span>{r.author}</span>
@@ -92,8 +86,8 @@ const ScrapeResult = ({ result }) => {
               <p className="fb-clamp text-sm text-ink-hi">{r.originalText}</p>
               {r.categoryLabel && (
                 <p className="mt-1.5 text-xs text-ink-mid">
-                  <b className="font-semibold text-ink-hi">{r.categoryLabel}</b>{r.causeLabel ? ` → ${r.causeLabel}` : ''}
-                  {r.owner ? <span className="text-ink-lo"> · chuyển {r.owner}</span> : null}
+                  <b className="font-semibold text-ink-hi">{r.categoryLabel}</b>{r.causeLabel ? ` (${r.causeLabel})` : ''}
+                  {r.owner ? <span className="text-ink-lo">, chuyển cho {r.owner}</span> : null}
                 </p>
               )}
             </li>
@@ -102,10 +96,10 @@ const ScrapeResult = ({ result }) => {
       )}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-ink-lo">
-          Hiển thị {rows.length} đánh giá, lời chê lên trước · {complaints} có vấn đề được gắn nhóm. Toàn bộ đã nằm trong kho phản hồi và đi qua Trust Layer.
+          Lời chê lên trước. {complaints} trên {rows.length} đánh giá nêu vấn đề cụ thể.
         </p>
         <Button size="sm" iconRight={ArrowRight} onClick={() => navigate(feedbackLink(result.source, result.productName))}>
-          Xem trong kho phản hồi
+          Xem trong trang Phản hồi
         </Button>
       </div>
     </div>
@@ -113,14 +107,14 @@ const ScrapeResult = ({ result }) => {
 };
 
 const DataSources = () => {
-  const [tab, setTab] = useState('shops');
+  // Thu thập theo liên kết là đường duy nhất đang chạy thật, nên mở trước
+  const [tab, setTab] = useState('url');
   const [url, setUrl] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [history, setHistory] = useState(() => loadLocal('syncHistory', []));
-  // Thẻ mẫu do phiên bản cũ lưu (có số sản phẩm bịa như "120") được thay bằng bản hiện hành
-  const [shops, setShops] = useState(() =>
-    loadLocal('connectedShops', DEMO_SHOPS).map((s) => (s && DEMO_SHOPS.find((d) => d.id === s.id)) || s)
-  );
+  // Bản cũ cài sẵn hai "gian hàng mẫu" không có dữ liệu thật đứng sau: bỏ
+  // khỏi danh sách đã lưu, chỉ giữ gian hàng người dùng tự thêm
+  const [shops, setShops] = useState(() => loadLocal('connectedShops', []).filter((s) => s && !s.isDemo));
   const navigate = useNavigate();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ platform: 'Tiki', name: '', shopId: '' });
@@ -143,7 +137,7 @@ const DataSources = () => {
     if (!form.name.trim() || !form.shopId.trim()) return;
     const shopId = form.shopId.trim();
     setShops((prev) => [
-      { id: Date.now().toString(), name: form.name.trim(), platform: form.platform, shopId, productsCount: 0, autoSync: true, status: 'Active' },
+      { id: Date.now().toString(), name: form.name.trim(), platform: form.platform, shopId },
       ...prev
     ]);
     setShowAdd(false);
@@ -208,33 +202,31 @@ const DataSources = () => {
   return (
     <div className="cx">
       <PageHeader
-        section="Hệ thống"
-        title="Nguồn"
-        accent="dữ liệu"
-        subtitle="Kết nối gian hàng của chính doanh nghiệp để có mã đơn hàng — đó là mẫu số của tỉ lệ khiếu nại thật."
-        actions={<Button icon={Plus} onClick={() => setShowAdd(true)}>Kết nối gian hàng</Button>}
+        title="Nguồn dữ liệu"
+        subtitle={`Thu thập phản hồi từ sàn.${trackedProducts ? ` Đang theo dõi ${fmtInt(trackedProducts)} sản phẩm.` : ''}`}
+        actions={<Button variant="secondary" icon={Plus} onClick={() => setShowAdd(true)}>Thêm gian hàng</Button>}
       />
-
-      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Stat label="Gian hàng đã kết nối" value={fmtInt(shops.length)} sub="tối đa 10 trong gói hiện tại" />
-        <Stat label="Sản phẩm đang theo dõi" value={trackedProducts == null ? '—' : fmtInt(trackedProducts)} sub="đếm từ phản hồi đã thu thập" />
-        <Stat label="Luồng tự đồng bộ" value={fmtInt(shops.filter((s) => s.autoSync).length)} sub="chạy hằng đêm" tone={shops.some((s) => s.autoSync) ? 'ok' : null} />
-      </div>
 
       <Tabs
         className="mb-6"
         value={tab}
         onChange={setTab}
         tabs={[
-          { value: 'shops', label: 'Gian hàng', icon: Store, count: shops.length },
-          { value: 'url', label: 'Đồng bộ theo liên kết', icon: Link2 },
-          { value: 'history', label: 'Lịch sử đồng bộ', icon: History, count: history.length }
+          { value: 'url', label: 'Thu thập theo liên kết', icon: Link2 },
+          { value: 'shops', label: 'Gian hàng', icon: Store, count: shops.length || undefined },
+          { value: 'history', label: 'Lịch sử', icon: History, count: history.length || undefined }
         ]}
       />
 
       {tab === 'shops' && (
         shops.length === 0 ? (
-          <GlassPanel><EmptyState title="Chưa kết nối gian hàng nào" description="Kết nối gian hàng Shopee, TikTok Shop hoặc website của bạn để bắt đầu thu thập phản hồi." action={<Button icon={Plus} onClick={() => setShowAdd(true)}>Kết nối gian hàng</Button>} /></GlassPanel>
+          <GlassPanel>
+            <EmptyState
+              title="Chưa có gian hàng nào"
+              description="Kết nối trực tiếp với API của sàn (để lấy cả mã đơn hàng) đang được phát triển. Hiện tại, thêm đường dẫn sản phẩm Tiki để thu thập đánh giá."
+              action={<Button icon={Plus} onClick={() => setShowAdd(true)}>Thêm gian hàng</Button>}
+            />
+          </GlassPanel>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
             {shops.map((s) => {
@@ -249,24 +241,17 @@ const DataSources = () => {
                       <p className="truncate font-semibold text-ink-hi">{s.name}</p>
                       <p className="font-mono text-xs text-ink-lo">{s.shopId}</p>
                     </div>
-                    {s.isDemo ? <Badge tone="sky">Mẫu</Badge> : <Badge tone="ok">Hoạt động</Badge>}
+                    {isLink(s.shopId) ? <Badge tone="ok">Thu thập được</Badge> : <Badge>Chờ kết nối API</Badge>}
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded-lg bg-surface/60 px-3 py-2"><p className="text-ink-lo">Nền tảng</p><p className="font-medium text-ink-hi">{p.label}</p></div>
-                    <div className="rounded-lg bg-surface/60 px-3 py-2"><p className="text-ink-lo">Sản phẩm</p><p className="font-mono font-medium text-ink-hi">{s.isDemo ? 'chưa kết nối thật' : fmtInt(s.productsCount ?? 0)}</p></div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between border-t border-line-soft pt-4">
-                    <label className="flex items-center gap-2.5 text-sm text-ink-mid">
-                      <Switch size="sm" checked={s.autoSync} onChange={(v) => setShops((prev) => prev.map((x) => (x.id === s.id ? { ...x, autoSync: v } : x)))} label={`Tự đồng bộ ${s.name}`} />
-                      {s.autoSync ? 'Tự đồng bộ hằng đêm' : 'Đã tạm dừng'}
-                    </label>
+                  <p className="mt-3 text-xs text-ink-lo">{p.label}</p>
+                  <div className="mt-4 flex items-center justify-end border-t border-line-soft pt-4">
                     <div className="flex items-center gap-1">
                       {isLink(s.shopId) && (
                         <Button size="sm" variant="outline" icon={RefreshCw} loading={isSyncing} onClick={() => { setTab('url'); runSync(s.shopId); }}>
-                          Đồng bộ ngay
+                          Thu thập ngay
                         </Button>
                       )}
-                      <Button size="sm" variant="ghost" icon={Unplug} onClick={() => setConfirm({ type: 'shop', id: s.id, name: s.name })}>Ngắt</Button>
+                      <Button size="sm" variant="ghost" icon={Unplug} onClick={() => setConfirm({ type: 'shop', id: s.id, name: s.name })}>Gỡ</Button>
                     </div>
                   </div>
                 </GlassPanel>
@@ -278,7 +263,7 @@ const DataSources = () => {
 
       {tab === 'url' && (
         <GlassPanel tone="strong" className="max-w-3xl p-6">
-          <PanelHeader title="Đồng bộ một sản phẩm" subtitle="Dán liên kết sản phẩm (kể cả của đối thủ) để thu thập bình luận công khai, chuẩn hoá tiếng Việt, che thông tin cá nhân và phân loại ngay." />
+          <PanelHeader title="Thu thập đánh giá của một sản phẩm" subtitle="Dán liên kết sản phẩm, kể cả của đối thủ. Tên người mua được che trước khi lưu." />
           <form onSubmit={sync} className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <TextField
               className="flex-1"
@@ -292,17 +277,13 @@ const DataSources = () => {
               disabled={isSyncing}
             />
             <Button type="submit" size="lg" icon={RefreshCw} loading={isSyncing} disabled={!url}>
-              {isSyncing ? 'Đang đồng bộ…' : 'Đồng bộ & phân loại'}
+              {isSyncing ? 'Đang thu thập…' : 'Thu thập và phân loại'}
             </Button>
           </form>
-          <div className="mt-5 flex gap-3 rounded-lg bg-accent-dim p-4 text-sm text-ink-mid">
-            <Clock size={18} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />
-            <p>
-              Hỗ trợ trực tiếp <b className="text-ink-hi">Tiki</b> qua API đánh giá công khai: tối đa 100 đánh giá mỗi lần, mất khoảng 20–30 giây gồm cả bước phân loại bằng AI.
-              Shopee và Lazada chặn truy cập tự động — với gian hàng của chính doanh nghiệp, hãy kết nối ở tab <b className="text-ink-hi">Gian hàng</b>.
-              Mọi lần thu thập đều có giới hạn tần suất và tuân thủ robots.txt.
-            </p>
-          </div>
+          <p className="mt-4 flex gap-2 text-xs leading-relaxed text-ink-lo">
+            <Clock size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+            Hỗ trợ Tiki: tối đa 100 đánh giá mới nhất mỗi lần, khoảng 20–30 giây. Shopee và Lazada chặn truy cập tự động.
+          </p>
 
           {lastResult && <ScrapeResult result={lastResult} />}
         </GlassPanel>
@@ -312,13 +293,13 @@ const DataSources = () => {
         <GlassPanel tone="strong" className="overflow-hidden">
           <div className="flex items-center justify-between gap-3 border-b border-line-soft px-5 py-4">
             <div>
-              <h3 className="text-[0.98rem] font-semibold text-ink-hi">Lịch sử đồng bộ</h3>
-              <p className="text-xs text-ink-lo">Xoá nhật ký không xoá dữ liệu đã thu thập trong cơ sở dữ liệu</p>
+              <h3 className="text-[0.98rem] font-semibold text-ink-hi">Lịch sử thu thập trên máy này</h3>
+              <p className="text-xs text-ink-lo">Xoá lịch sử không xoá dữ liệu đã thu thập</p>
             </div>
-            {history.length > 0 && <Button size="sm" variant="danger" icon={Trash2} onClick={() => setConfirm({ type: 'history' })}>Xoá nhật ký</Button>}
+            {history.length > 0 && <Button size="sm" variant="danger" icon={Trash2} onClick={() => setConfirm({ type: 'history' })}>Xoá lịch sử</Button>}
           </div>
           {history.length === 0 ? (
-            <EmptyState compact title="Chưa có lần đồng bộ nào" description="Các lần đồng bộ theo liên kết sẽ xuất hiện ở đây." />
+            <EmptyState compact title="Chưa thu thập lần nào" description="Mỗi lần thu thập theo liên kết sẽ được ghi lại ở đây." />
           ) : (
             <div className="overflow-x-auto">
               <table className="data-table min-w-[680px]">
@@ -363,8 +344,8 @@ const DataSources = () => {
         open={showAdd}
         onClose={() => setShowAdd(false)}
         icon={Boxes}
-        title="Kết nối gian hàng"
-        description="Kết nối API chính chủ của sàn (lấy cả mã đơn hàng) đang trong lộ trình. Hiện tại: dán đường dẫn sản phẩm Tiki để hệ thống thu thập và phân loại đánh giá ngay."
+        title="Thêm gian hàng"
+        description="Dán đường dẫn sản phẩm Tiki để thu thập ngay. Kết nối trực tiếp API của sàn (lấy cả mã đơn hàng) đang được phát triển."
       >
         <form id="add-shop" onSubmit={addShop} className="flex flex-col gap-4">
           <Select
@@ -383,12 +364,12 @@ const DataSources = () => {
           ) : (
             <p className="flex gap-2 rounded-lg bg-raised p-3 text-xs text-ink-mid">
               <Info size={14} className="mt-0.5 shrink-0 text-ink-lo" />
-              Nhập mã gian hàng thì hệ thống chỉ lưu thông tin, chưa thu thập dữ liệu cho tới khi có kết nối API chính chủ.
+              Với mã gian hàng, hệ thống chỉ lưu lại; chưa thu thập được cho tới khi có kết nối API của sàn.
             </p>
           )}
           <div className="mt-2 flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setShowAdd(false)}>Huỷ</Button>
-            <Button type="submit" icon={isLink(form.shopId) ? RefreshCw : Plus}>{isLink(form.shopId) ? 'Kết nối & thu thập ngay' : 'Lưu gian hàng'}</Button>
+            <Button type="submit" icon={isLink(form.shopId) ? RefreshCw : Plus}>{isLink(form.shopId) ? 'Thêm và thu thập ngay' : 'Lưu gian hàng'}</Button>
           </div>
         </form>
       </Modal>
@@ -399,16 +380,16 @@ const DataSources = () => {
         icon={confirm?.type === 'shop' ? Unplug : Trash2}
         tone="crit"
         size="sm"
-        title={confirm?.type === 'shop' ? 'Ngắt kết nối gian hàng?' : 'Xoá toàn bộ nhật ký?'}
+        title={confirm?.type === 'shop' ? 'Gỡ gian hàng?' : 'Xoá toàn bộ lịch sử?'}
         description={
           confirm?.type === 'shop'
-            ? `“${confirm?.name}” sẽ ngừng tự đồng bộ. Phản hồi đã thu thập vẫn được giữ lại.`
-            : 'Chỉ xoá nhật ký trên máy này — dữ liệu đã đồng bộ trong cơ sở dữ liệu không bị ảnh hưởng.'
+            ? `Gỡ “${confirm?.name}” khỏi danh sách. Phản hồi đã thu thập vẫn được giữ lại.`
+            : 'Chỉ xoá lịch sử trên máy này. Dữ liệu đã thu thập không bị ảnh hưởng.'
         }
         footer={
           <>
             <Button variant="ghost" onClick={() => setConfirm(null)}>Huỷ</Button>
-            <Button variant="danger" onClick={runConfirm}>{confirm?.type === 'shop' ? 'Ngắt kết nối' : 'Xoá nhật ký'}</Button>
+            <Button variant="danger" onClick={runConfirm}>{confirm?.type === 'shop' ? 'Gỡ gian hàng' : 'Xoá lịch sử'}</Button>
           </>
         }
       />

@@ -75,8 +75,8 @@ const SentimentTrendChart = ({ data = [] }) => {
   return (
     <GlassPanel className="p-6">
       <PanelHeader
-        title="Diễn biến cảm xúc theo thời gian"
-        subtitle="Số phản hồi hợp lệ mỗi kỳ · 14 kỳ trong 28 ngày gần nhất"
+        title="Cảm xúc theo thời gian"
+        subtitle="Số phản hồi mỗi 2 ngày, 28 ngày gần nhất"
         right={toggle}
       />
 
@@ -112,7 +112,7 @@ const SentimentTrendChart = ({ data = [] }) => {
                   stroke="var(--surface-solid)"
                   strokeWidth={2}
                   isFront
-                  label={{ value: `Đỉnh ${peak.name} · ${fmtInt(peak.complaints)} tiêu cực`, position: peakPos, offset: 10, fill: 'var(--text-hi)', fontSize: 11, fontWeight: 600 }}
+                  label={{ value: `Đỉnh ${peak.name}: ${fmtInt(peak.complaints)} tiêu cực`, position: peakPos, offset: 10, fill: 'var(--text-hi)', fontSize: 11, fontWeight: 600 }}
                 />
               )}
             </LineChart>

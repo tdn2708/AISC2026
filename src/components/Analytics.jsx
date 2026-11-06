@@ -3,10 +3,10 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { readStorage, writeStorage } from '../lib/storage';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, Package, MessageSquareQuote, ArrowRight } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, ArrowRight } from 'lucide-react';
 import FilterBar from './FilterBar';
 import Segments from './Segments';
-import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, SentimentFace, Button, Stat } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat } from './ui';
 import { buildQuery, fmtInt, fmtPct, fmtSignedPct, fmtDate } from '../lib/format';
 
 /**
@@ -24,9 +24,23 @@ const AXIS = { fontSize: 11, fill: 'var(--text-lo)' };
 
 const dayKey = (d) => d.toISOString().slice(0, 10);
 
-/** Đếm khiếu nại theo ngày trong 28 ngày gần nhất */
-const dailySeries = (items) => {
-  const now = new Date();
+/**
+ * Mốc "hôm nay" của phân tích: phản hồi mới nhất, nếu nó cũ hơn hôm nay.
+ * Kho dữ liệu thật trên sàn thưa (đánh giá mới nhất có khi cách cả tháng);
+ * neo theo đồng hồ thì "28 ngày gần nhất" trống trơn dù kho có hàng nghìn khiếu nại.
+ */
+const anchorOf = (items) => {
+  let latest = 0;
+  for (const f of items) {
+    const t = new Date(f.timestamp).getTime();
+    if (t > latest) latest = t;
+  }
+  return latest && latest < Date.now() ? latest : Date.now();
+};
+
+/** Đếm khiếu nại theo ngày trong 28 ngày tính tới mốc */
+const dailySeries = (items, anchor) => {
+  const now = new Date(anchor);
   const days = Array.from({ length: DAYS }, (_, i) => {
     const d = new Date(now);
     d.setHours(0, 0, 0, 0);
@@ -44,8 +58,8 @@ const dailySeries = (items) => {
 };
 
 /** So 7 ngày gần nhất với 7 ngày liền trước */
-const weekDelta = (items) => {
-  const now = Date.now();
+const weekDelta = (items, anchor) => {
+  const now = anchor;
   const W = 7 * 86400000;
   let cur = 0;
   let prev = 0;
@@ -81,7 +95,7 @@ const RankBar = ({ label, count, max, total, active, onClick, tone = 'bg-neg' })
     <div className="flex items-baseline justify-between gap-3">
       <span className={`min-w-0 truncate text-sm ${active ? 'font-semibold text-ink-hi' : 'text-ink-hi'}`}>{label}</span>
       <span className="shrink-0 font-mono text-xs text-ink-mid">
-        {fmtInt(count)} <span className="text-ink-lo">· {fmtPct(total ? count / total : null, 0)}</span>
+        {fmtInt(count)} <span className="text-ink-lo">({fmtPct(total ? count / total : null, 0)})</span>
       </span>
     </div>
     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-raised">
@@ -142,8 +156,9 @@ const RootCauses = () => {
   const scoped = useMemo(() => (current ? complaints.filter((f) => f.category === current.key) : []), [complaints, current]);
   const causes = useMemo(() => groupCount(scoped, (f) => f.subCategory, (f) => f.causeLabel || f.subCategory), [scoped]);
   const products = useMemo(() => groupCount(scoped, (f) => f.productName, (f) => f.productName).slice(0, 5), [scoped]);
-  const series = useMemo(() => dailySeries(scoped), [scoped]);
-  const delta = useMemo(() => weekDelta(scoped), [scoped]);
+  const anchor = useMemo(() => anchorOf(items), [items]);
+  const series = useMemo(() => dailySeries(scoped, anchor), [scoped, anchor]);
+  const delta = useMemo(() => weekDelta(scoped, anchor), [scoped, anchor]);
   const samples = useMemo(
     () => [...scoped].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 4),
     [scoped]
@@ -183,10 +198,7 @@ const RootCauses = () => {
       <div className={`grid items-start gap-6 transition-opacity lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] ${loading ? 'opacity-60' : ''}`}>
         {/* Cột trái — nhóm vấn đề xếp hạng */}
         <GlassPanel tone="strong" className="p-5 lg:sticky lg:top-20">
-          <PanelHeader
-            title="Nhóm vấn đề"
-            subtitle={`${fmtInt(complaints.length)} khiếu nại đã phân loại · chọn một nhóm để bóc tách`}
-          />
+          <PanelHeader title="Nhóm vấn đề" subtitle={`${fmtInt(complaints.length)} khiếu nại đã phân loại`} />
           <div className="flex flex-col gap-1">
             {categories.map((c) => (
               <RankBar
@@ -202,28 +214,27 @@ const RootCauses = () => {
           </div>
           {unclassified > 0 && (
             <p className="mt-4 border-t border-line-soft pt-3 text-xs leading-relaxed text-ink-lo">
-              <span className="font-mono text-ink-mid">{fmtInt(unclassified)}</span> phản hồi tiêu cực chưa gắn được nhóm nào — đây là phần taxonomy đang bỏ sót.
+              <span className="font-mono text-ink-mid">{fmtInt(unclassified)}</span> phản hồi tiêu cực khác chưa xếp được vào nhóm nào.
             </p>
           )}
         </GlassPanel>
 
         {/* Cột phải — bóc tách nhóm đang chọn */}
         <div ref={drillRef} className="flex scroll-mt-20 flex-col gap-6" key={current.key}>
-          <GlassPanel className="p-6 animate-fade-up">
-            <p className="eyebrow mb-1.5">Đang bóc tách</p>
+          <GlassPanel className="p-6">
             <h2 className="text-2xl font-semibold text-ink-hi">{current.label}</h2>
-            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Stat label="Khiếu nại" value={fmtInt(current.count)} />
-              <Stat label="Tỉ trọng" value={fmtPct(current.count / complaints.length, 1)} sub="trong mọi khiếu nại" />
-              <Stat label="7 ngày qua" value={fmtInt(delta.cur)} sub={`trước đó ${fmtInt(delta.prev)}`} />
-              <div className="rounded-lg bg-surface/55 p-4">
-                <p className="eyebrow">Xu hướng tuần</p>
+              <Stat label="Tỉ trọng trong mọi khiếu nại" value={fmtPct(current.count / complaints.length, 1)} />
+              <div className="rounded-lg border border-line-soft bg-surface p-4">
+                <p className="eyebrow">7 ngày gần nhất</p>
+                <p className="mt-1.5 font-mono text-2xl font-semibold text-ink-hi">{fmtInt(delta.cur)}</p>
                 {delta.rel == null ? (
-                  <p className="mt-1.5 text-sm text-ink-lo">Chưa đủ dữ liệu</p>
+                  <p className="mt-0.5 text-xs text-ink-lo">Chưa đủ dữ liệu tuần trước để so</p>
                 ) : (
-                  <p className={`mt-1.5 inline-flex items-center gap-1 font-mono text-2xl font-semibold ${up ? 'text-crit' : 'text-ok'}`}>
-                    {up ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
-                    {fmtSignedPct(delta.rel)}
+                  <p className={`mt-0.5 inline-flex items-center gap-1 text-xs font-semibold ${up ? 'text-crit' : 'text-ok'}`}>
+                    {up ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
+                    {fmtSignedPct(delta.rel)} <span className="font-normal text-ink-lo">so với {fmtInt(delta.prev)} ở tuần trước</span>
                   </p>
                 )}
               </div>
@@ -232,7 +243,7 @@ const RootCauses = () => {
 
           <div className="grid gap-6 xl:grid-cols-2">
             <GlassPanel tone="strong" className="p-5">
-              <PanelHeader title="Nguyên nhân cốt lõi" subtitle="Bóc tách cấp 2 trong nhóm đang chọn" />
+              <PanelHeader title="Nguyên nhân" />
               {causes.length === 0 ? (
                 <p className="text-sm text-ink-lo">Nhóm này chưa có nguyên nhân cấp 2 nào được gán.</p>
               ) : (
@@ -245,7 +256,7 @@ const RootCauses = () => {
             </GlassPanel>
 
             <GlassPanel tone="strong" className="p-5">
-              <PanelHeader title="Diễn biến theo ngày" subtitle={`Số khiếu nại mỗi ngày · ${DAYS} ngày gần nhất`} />
+              <PanelHeader title={`Khiếu nại mỗi ngày, ${DAYS} ngày gần nhất`} />
               <div className="h-[230px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={series} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
@@ -268,10 +279,10 @@ const RootCauses = () => {
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <GlassPanel tone="strong" className="p-5">
-              <PanelHeader title="Sản phẩm bị ảnh hưởng" subtitle="Năm sản phẩm có nhiều khiếu nại nhất trong nhóm" right={<Package size={16} className="text-ink-lo" />} />
-              <ol className="flex list-none flex-col gap-2">
+              <PanelHeader title="Sản phẩm bị chê nhiều nhất" />
+              <ol className="flex list-none flex-col gap-1">
                 {products.map((p, i) => (
-                  <li key={p.key} className="flex items-center gap-3 rounded-lg bg-surface/55 px-3 py-2.5">
+                  <li key={p.key} className="flex items-center gap-3 rounded-lg px-1 py-2">
                     <span className="grid size-6 shrink-0 place-items-center rounded bg-raised font-mono text-[0.68rem] text-ink-mid">{i + 1}</span>
                     <span className="min-w-0 flex-1 truncate text-sm text-ink-hi" title={p.label}>{p.label}</span>
                     <span className="font-mono text-xs text-ink-mid">{fmtInt(p.count)}</span>
@@ -282,15 +293,16 @@ const RootCauses = () => {
             </GlassPanel>
 
             <GlassPanel tone="strong" className="p-5">
-              <PanelHeader title="Tiếng nói khách hàng" subtitle="Phản hồi mới nhất trong nhóm" right={<MessageSquareQuote size={16} className="text-ink-lo" />} />
+              <PanelHeader title="Phản hồi mới nhất" />
               <ul className="flex list-none flex-col gap-2.5">
                 {samples.map((f) => (
-                  <li key={f._id} className="flex gap-3 rounded-lg bg-surface/55 p-3">
-                    <SentimentFace sentiment={f.sentiment} size={26} />
-                    <div className="min-w-0">
-                      <p className="line-clamp-2 text-sm leading-relaxed text-ink-hi">{f.originalText}</p>
-                      <p className="mt-1 font-mono text-[0.68rem] text-ink-lo">{f.causeLabel || '—'} · {fmtDate(f.timestamp)} · {f.source}</p>
-                    </div>
+                  <li key={f._id} className="rounded-lg border border-line-soft p-3">
+                    <p className="line-clamp-2 text-sm leading-relaxed text-ink-hi">{f.originalText}</p>
+                    <p className="mt-1.5 flex flex-wrap gap-x-3 text-xs text-ink-lo">
+                      {f.causeLabel && <span>{f.causeLabel}</span>}
+                      <span className="font-mono">{fmtDate(f.timestamp)}</span>
+                      <span>{f.source}</span>
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -301,7 +313,7 @@ const RootCauses = () => {
                 className="mt-3"
                 onClick={() => navigate(`/feedbacks?q=${encodeURIComponent(causes[0]?.label || current.label)}`)}
               >
-                Mở trong kho phản hồi
+                Xem thêm phản hồi như thế này
               </Button>
             </GlassPanel>
           </div>
@@ -318,17 +330,15 @@ const Analytics = () => {
   return (
     <div className="cx">
       <PageHeader
-        section="Phân tích"
-        title="Phân tích"
-        accent="nguyên nhân"
-        subtitle="Dựng hoàn toàn từ phản hồi đã qua tầng kiểm soát tin cậy — mọi con số đều truy ngược được về phản hồi gốc."
+        title="Phân tích nguyên nhân"
+        subtitle="Chọn một nhóm vấn đề để xem nguyên nhân, sản phẩm bị chê và phản hồi gốc."
       />
       <Tabs
         className="mb-6"
         value={tab}
         onChange={(v) => setParams(v === 'segments' ? { tab: 'segments' } : {}, { replace: true })}
         tabs={[
-          { value: 'causes', label: 'Nguyên nhân cốt lõi', icon: ScanSearch },
+          { value: 'causes', label: 'Theo nhóm vấn đề', icon: ScanSearch },
           { value: 'segments', label: 'Phân khúc khách hàng', icon: Users }
         ]}
       />

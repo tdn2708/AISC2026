@@ -245,12 +245,13 @@ function summarize(alert) {
     const level = st.unit === '%'
       ? ` (tỉ lệ khiếu nại ${st.ewmaCurrent}% so với nền ${st.baselineMean}%)`
       : '';
-    return `${what}${scope} đang xấu đi đều đặn${level}: đường EWMA vượt giới hạn kiểm soát ${st.consecutiveBreaches} chu kỳ liên tiếp. Không có ngày nào đột biến, nhưng xu hướng đã lệch khỏi nền.`;
+    return `${what}${scope} đang xấu đi đều đặn${level}, vượt ngưỡng kiểm soát ${st.consecutiveBreaches} kỳ liên tiếp. Không có ngày nào tăng vọt, nhưng xu hướng đã lệch khỏi mức bình thường.`;
   }
 
-  const cur = (alert.statistics.currentRate * 100).toFixed(1);
-  const base = (alert.statistics.baselineRate * 100).toFixed(1);
-  return `${what}${scope} tăng từ ${base}% lên ${cur}% so với nền ${alert.baselineDays} ngày (z = ${alert.statistics.z}, ${alert.statistics.pValueDisplay}). Ước tính ${alert.affectedCustomers} khách hàng bị ảnh hưởng, dựa trên ${alert.evidenceCount} phản hồi hợp lệ${alert.excludedByTrust > 0 ? ` (đã loại ${alert.excludedByTrust} phản hồi không đạt ngưỡng tin cậy)` : ''}.`;
+  // Câu cho người quản lý đọc: không z, không p (đã có ở phần "Số liệu kiểm
+  // định"), số thập phân kiểu Việt, tỉ lệ dưới 1% giữ hai chữ số để 0,04% không thành 0,0%
+  const pct = (v) => `${(v * 100).toFixed(v > 0 && v < 0.01 ? 2 : 1).replace('.', ',')}%`;
+  return `${what}${scope} tăng từ ${pct(alert.statistics.baselineRate)} lên ${pct(alert.statistics.currentRate)} so với ${alert.baselineDays} ngày trước đó. Ước tính ${alert.affectedCustomers} khách hàng bị ảnh hưởng, dựa trên ${alert.evidenceCount} phản hồi hợp lệ${alert.excludedByTrust > 0 ? ` (đã loại ${alert.excludedByTrust} phản hồi không đáng tin)` : ''}.`;
 }
 
 const PLAYBOOK_COUNT = Object.keys(PLAYBOOKS).length;

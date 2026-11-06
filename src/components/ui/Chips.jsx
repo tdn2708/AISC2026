@@ -16,7 +16,7 @@ export const Chip = ({ active, onClick, icon: Icon, count, children, className =
     {Icon && <Icon size={13} aria-hidden="true" />}
     {children}
     {count != null && (
-      <span className={`font-mono text-[0.68rem] ${active ? 'opacity-80' : 'text-ink-lo'}`}>{count}</span>
+      <span className={`font-mono text-[0.68rem] ${active ? 'opacity-80' : 'text-ink-lo'}`}>{typeof count === 'number' ? count.toLocaleString('vi-VN') : count}</span>
     )}
   </button>
 );

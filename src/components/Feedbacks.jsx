@@ -3,22 +3,19 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Search, X, ChevronLeft, ChevronRight, Copy, Zap, UserX, Star, Receipt, HelpCircle } from 'lucide-react';
 import FilterBar from './FilterBar';
-import { PageHeader, GlassPanel, Chip, Drawer, EmptyState, SentimentFace, Badge, ProgressBar } from './ui';
-import { buildQuery, fmtInt, fmtDateTime, initials, SENTIMENT_MAP, foldVi } from '../lib/format';
+import { PageHeader, GlassPanel, Chip, Drawer, EmptyState, SentimentFace, Badge, ProgressBar, EvidenceTag, EvidenceSwatch } from './ui';
+import { buildQuery, fmtInt, fmtDateTime, initials, SENTIMENT_MAP, foldVi, evidenceOf, exclusionLabel, LABELLER_LABEL } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
 
 /**
- * KHO PHẢN HỒI
+ * PHẢN HỒI
  * ------------------------------------------------------------------
- * Bộ lọc "mức độ" của bản cũ lọc theo Critical/High trên một trường
- * không tồn tại — chọn gì cũng ra rỗng. Mức nghiêm trọng là thuộc tính
- * của một CỤM phản hồi đã qua kiểm định, không phải của một câu văn;
- * thứ thuộc về từng phản hồi là HẠNG TIN CẬY của nguồn, nên lọc theo đó.
+ * Lọc theo cảm xúc và theo BẰNG CHỨNG (đối soát được / người đã duyệt / AI
+ * suy luận) — cùng ngôn ngữ với thanh bằng chứng trên Tổng quan, thay cho
+ * ký hiệu hạng P1–P5 mà người dùng doanh nghiệp không có lý do để thuộc.
  */
 
 const PAGE_SIZE = 20;
-const TIERS = ['P1', 'P2', 'P3', 'P4', 'P5'];
-// Dấu màu thay cho biểu tượng mặt cười — cùng màu với biểu đồ cảm xúc
 const PosMark = () => <SentimentFace sentiment="Positive" size={24} />;
 const NeuMark = () => <SentimentFace sentiment="Neutral" size={24} />;
 const NegMark = () => <SentimentFace sentiment="Negative" size={24} />;
@@ -26,6 +23,11 @@ const MOODS = [
   { value: 'Positive', label: 'Tích cực', icon: PosMark },
   { value: 'Neutral', label: 'Trung tính', icon: NeuMark },
   { value: 'Negative', label: 'Tiêu cực', icon: NegMark }
+];
+const EVIDENCE_FILTERS = [
+  { value: 'verified', label: 'Đối soát được' },
+  { value: 'human', label: 'Người đã duyệt' },
+  { value: 'inferred', label: 'AI suy luận' }
 ];
 const SIGNAL_ICONS = {
   'Trùng lặp gần về nội dung': Copy,
@@ -35,28 +37,30 @@ const SIGNAL_ICONS = {
   'Bất nhất với dữ liệu giao dịch': Receipt
 };
 
-const strip = foldVi;
-
-const tierTone = (w = 0) => (w >= 0.9 ? 'text-ok' : w >= 0.6 ? 'text-ink-mid' : w >= 0.4 ? 'text-high' : 'text-crit');
+const nf2 = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const FeedbackDetail = ({ item, onClose }) => {
   const t = item?.trust;
+  const ev = item ? evidenceOf(item) : null;
   return (
-    <Drawer open={Boolean(item)} onClose={onClose} title="Chi tiết phản hồi" subtitle={item ? `${item.source} · ${fmtDateTime(item.timestamp)}` : ''}>
+    <Drawer open={Boolean(item)} onClose={onClose} title="Chi tiết phản hồi" subtitle={item ? `${item.source}, ${fmtDateTime(item.timestamp)}` : ''}>
       {item && (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
           <div className="flex items-center gap-3">
             <span className="grid size-11 place-items-center rounded-full bg-accent-dim text-sm font-semibold text-accent-hi">
               {initials(item.author || 'Ẩn danh')}
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold text-ink-hi">{item.author || 'Ẩn danh'}</p>
-              <p className="truncate text-xs text-ink-lo">{item.productName || 'Không gắn sản phẩm'}{item.region ? ` · ${item.region}` : ''}</p>
+              <p className="truncate text-xs text-ink-lo">{item.productName || 'Không gắn sản phẩm'}{item.region ? `, ${item.region}` : ''}</p>
             </div>
-            <SentimentFace sentiment={item.sentiment} size={36} />
+            <span className="inline-flex items-center gap-1.5 text-sm text-ink-mid">
+              <SentimentFace sentiment={item.sentiment} size={28} />
+              {(SENTIMENT_MAP[item.sentiment] || SENTIMENT_MAP.Neutral).label}
+            </span>
           </div>
 
-          <blockquote className="rounded-lg bg-surface/65 p-4 text-[0.95rem] leading-relaxed text-ink-hi">
+          <blockquote className="rounded-lg border border-line-soft p-4 text-[0.95rem] leading-relaxed text-ink-hi">
             {item.originalText}
             {item.rating != null && (
               <span className="mt-2 flex items-center gap-1 text-xs text-ink-lo">
@@ -68,49 +72,63 @@ const FeedbackDetail = ({ item, onClose }) => {
             )}
           </blockquote>
 
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
+            {item.category && item.category !== 'Other' ? (
+              <>
+                <div>
+                  <dt className="text-xs text-ink-lo">Nhóm vấn đề</dt>
+                  <dd className="mt-0.5 text-sm font-medium text-ink-hi">{item.categoryLabel}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-ink-lo">Nguyên nhân</dt>
+                  <dd className="mt-0.5 text-sm font-medium text-ink-hi">{item.causeLabel || 'Chưa xác định'}</dd>
+                </div>
+              </>
+            ) : (
+              <div className="col-span-2">
+                <dt className="text-xs text-ink-lo">Nhóm vấn đề</dt>
+                <dd className="mt-0.5 text-sm text-ink-mid">Không nêu vấn đề cụ thể</dd>
+              </div>
+            )}
+            <div className="col-span-2">
+              <dt className="text-xs text-ink-lo">Ai gán nhãn</dt>
+              <dd className="mt-0.5 text-sm text-ink-mid">{LABELLER_LABEL[item.labelledBy] || item.labelledBy}</dd>
+            </div>
+          </dl>
+
           {item.aiSummary && (
             <div>
-              <p className="eyebrow mb-1.5">Tóm tắt</p>
+              <h3 className="mb-1 text-sm font-semibold text-ink-hi">Tóm tắt</h3>
               <p className="text-sm leading-relaxed text-ink-mid">{item.aiSummary}</p>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-surface/55 p-3">
-              <p className="text-[0.7rem] text-ink-lo">Nhóm vấn đề</p>
-              <p className="mt-0.5 text-sm font-medium text-ink-hi">{item.categoryLabel || item.category || '—'}</p>
-            </div>
-            <div className="rounded-lg bg-surface/55 p-3">
-              <p className="text-[0.7rem] text-ink-lo">Nguyên nhân</p>
-              <p className="mt-0.5 text-sm font-medium text-ink-hi">{item.causeLabel || '—'}</p>
-            </div>
-          </div>
-
           {t && (
-            <div>
-              <p className="eyebrow mb-3">Tầng kiểm soát tin cậy</p>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-lg bg-surface/55 p-3">
-                  <p className="text-[0.7rem] text-ink-lo">Hạng nguồn</p>
-                  <p className={`mt-0.5 font-mono text-lg font-semibold ${tierTone(t.tierWeight)}`}>{t.tier}</p>
-                </div>
-                <div className="rounded-lg bg-surface/55 p-3">
-                  <p className="text-[0.7rem] text-ink-lo">Trọng số</p>
-                  <p className="mt-0.5 font-mono text-lg font-semibold text-ink-hi">{Number(t.weight).toFixed(2)}</p>
-                </div>
-                <div className="rounded-lg bg-surface/55 p-3">
-                  <p className="text-[0.7rem] text-ink-lo">Nghi vấn</p>
-                  <p className="mt-0.5 font-mono text-lg font-semibold text-ink-hi">{t.authenticityScore != null ? Number(t.authenticityScore).toFixed(2) : '—'}</p>
-                </div>
-              </div>
-              <ProgressBar className="mt-3" value={t.weight} label="Mức đóng góp vào chỉ số" showValue />
-              {t.bandLabelVi && <p className="mt-2 text-xs text-ink-lo">Vùng: {t.bandLabelVi}</p>}
+            <div className="border-t border-line-soft pt-5">
+              <h3 className="text-sm font-semibold text-ink-hi">{ev.counted ? 'Vì sao phản hồi này được tính' : 'Vì sao phản hồi này không được tính'}</h3>
+              <p className="mt-3 flex items-center gap-2 text-sm text-ink-hi">
+                <EvidenceSwatch kind={ev.kind} size={12} />
+                {ev.label}
+                {!ev.counted && <Badge tone="crit">{exclusionLabel(t)}</Badge>}
+              </p>
+              <ProgressBar
+                className="mt-4"
+                value={t.weight}
+                label={`Mức đóng góp vào chỉ số: ${nf2.format(Number(t.weight) || 0)} trên tối đa 1`}
+              />
+              <p className="mt-2 text-xs leading-relaxed text-ink-lo">
+                Mức này phụ thuộc độ tin của nguồn (hạng {t.tier}, tối đa {nf2.format(t.tierWeight ?? 0)}) và giảm dần khi phản hồi cũ đi
+                {t.triggeredSignals?.length > 0 ? ' hoặc có dấu hiệu bất thường.' : '.'}
+              </p>
               {t.triggeredSignals?.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {t.triggeredSignals.map((s, i) => {
-                    const Icon = SIGNAL_ICONS[s.signal] || HelpCircle;
-                    return <Badge key={i} tone="high" icon={Icon}>{s.signal}</Badge>;
-                  })}
+                <div className="mt-3">
+                  <p className="mb-2 text-xs font-medium text-ink-mid">Dấu hiệu bất thường</p>
+                  <div className="flex flex-wrap gap-2">
+                    {t.triggeredSignals.map((s, i) => {
+                      const Icon = SIGNAL_ICONS[s.signal] || HelpCircle;
+                      return <Badge key={i} tone="high" icon={Icon}>{s.signal}</Badge>;
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -128,7 +146,7 @@ const Feedbacks = () => {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState(params.get('q') || '');
   const [mood, setMood] = useState('All');
-  const [tier, setTier] = useState('All');
+  const [evidence, setEvidence] = useState('All');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
 
@@ -137,16 +155,14 @@ const Feedbacks = () => {
   const [timeFilter, setTimeFilter] = useState(params.get('time') || readStorage('timeFilter') || 'All');
   const [sourceFilter, setSourceFilter] = useState(params.get('source') || readStorage('sourceFilter') || 'All');
   const [productFilter, setProductFilter] = useState(params.get('product') || readStorage('productFilter') || 'All');
-  // ?include=all: xem ĐỦ lô vừa thu thập, kể cả phản hồi Trust Layer không tính vào
-  // chỉ số (rác, nghi không xác thực, hoặc quá cũ nên trọng số về 0). Mặc định
-  // trang chỉ hiện phản hồi được tính — mở từ trang Nguồn dữ liệu thì bật chế độ này,
-  // nếu không người xem chỉ thấy 11/47 đánh giá vừa cào và tưởng mất dữ liệu
+  // ?include=all: xem ĐỦ lô vừa thu thập, kể cả phản hồi không được tính vào
+  // chỉ số (rác, nghi ảo, hoặc quá cũ nên trọng số về 0) — mở từ trang Nguồn
+  // dữ liệu, nếu không người xem chỉ thấy 11/47 đánh giá vừa cào và tưởng mất dữ liệu
   const includeAll = params.get('include') === 'all';
 
-  // Mở bằng đường dẫn có sẵn bộ lọc (nút "Xem trong kho phản hồi") là xem một lô
-  // cụ thể, không phải chọn bộ lọc làm việc: không lưu lại. Bản trước lưu, và
-  // trang Tổng quan mở sau đó bị lọc theo đúng một sản phẩm vừa cào (toàn đánh
-  // giá cũ, trọng số 0) nên trắng trơn.
+  // Mở bằng đường dẫn có sẵn bộ lọc là xem một lô cụ thể, không phải chọn bộ
+  // lọc làm việc: không lưu lại, nếu không trang Tổng quan mở sau đó bị lọc
+  // theo đúng một sản phẩm vừa cào và trắng trơn
   const [deepLinked] = useState(() => ['time', 'source', 'product'].some((k) => params.has(k)));
 
   useEffect(() => {
@@ -167,26 +183,27 @@ const Feedbacks = () => {
     axios
       .get(`/feedbacks${buildQuery({ time: timeFilter, source: sourceFilter, product: productFilter }, { include: includeAll ? 'all' : null })}`)
       .then((res) => {
-        setFeedbacks(Array.isArray(res.data) ? res.data : []);
+        setFeedbacks(Array.isArray(res.data) ? res.data.map((f) => ({ ...f, _ev: evidenceOf(f) })) : []);
         setError(null);
       })
       .catch(() => setError('Không tải được phản hồi. Kiểm tra máy chủ đã chạy chưa.'))
       .finally(() => setLoading(false));
   }, [timeFilter, sourceFilter, productFilter, includeAll]);
 
-  useEffect(() => setPage(1), [search, mood, tier, timeFilter, sourceFilter, productFilter]);
+  useEffect(() => setPage(1), [search, mood, evidence, timeFilter, sourceFilter, productFilter]);
 
-  const countedTotal = useMemo(() => feedbacks.filter((f) => f.trust?.weight > 0).length, [feedbacks]);
+  const countedTotal = useMemo(() => feedbacks.filter((f) => f._ev.counted).length, [feedbacks]);
 
-  const q = strip(search.trim());
+  const q = foldVi(search.trim());
   const searched = useMemo(
-    () => (q ? feedbacks.filter((f) => strip(`${f.originalText} ${f.author} ${f.productName}`).includes(q)) : feedbacks),
+    () => (q ? feedbacks.filter((f) => foldVi(`${f.originalText} ${f.author} ${f.productName}`).includes(q)) : feedbacks),
     [feedbacks, q]
   );
-  const filtered = searched.filter((f) => (mood === 'All' || f.sentiment === mood) && (tier === 'All' || f.trust?.tier === tier));
+  const filtered = searched.filter((f) => (mood === 'All' || f.sentiment === mood) && (evidence === 'All' || f._ev.kind === evidence));
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const countBy = (key, val) => searched.filter((f) => (key === 'mood' ? f.sentiment === val : f.trust?.tier === val)).length;
+  const countMood = (val) => searched.filter((f) => f.sentiment === val).length;
+  const countEvidence = (val) => searched.filter((f) => f._ev.kind === val).length;
 
   const clearSearch = () => {
     setSearch('');
@@ -195,14 +212,7 @@ const Feedbacks = () => {
 
   return (
     <div className="cx">
-      <PageHeader
-        section="Giám sát"
-        title="Kho"
-        accent="phản hồi"
-        subtitle={includeAll
-          ? 'Đang xem toàn bộ phản hồi, kể cả phản hồi không được tính vào chỉ số. Bấm vào một dòng để xem chi tiết và các tín hiệu đã kích hoạt.'
-          : 'Chỉ hiển thị phản hồi đã qua tầng kiểm soát tin cậy. Bấm vào một dòng để xem chi tiết và các tín hiệu đã kích hoạt.'}
-      />
+      <PageHeader title="Phản hồi" subtitle="Bấm vào một dòng để xem nội dung đầy đủ và vì sao phản hồi được tính." />
 
       <FilterBar
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}
@@ -212,17 +222,15 @@ const Feedbacks = () => {
       />
 
       {includeAll && !loading && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/30 bg-accent-dim px-4 py-3 text-sm text-ink-mid">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-accent/30 bg-accent-dim px-4 py-3 text-sm text-ink-mid">
           <span>
-            <b className="text-ink-hi">{fmtInt(countedTotal)}</b> phản hồi được tính vào chỉ số
-            {feedbacks.length - countedTotal > 0 && (
-              <> · <b className="text-ink-hi">{fmtInt(feedbacks.length - countedTotal)}</b> không tính (rác, nghi không xác thực hoặc quá cũ) — vẫn hiển thị để đối chiếu</>
-            )}
+            Đang xem cả phản hồi không được tính: <b className="text-ink-hi">{fmtInt(countedTotal)}</b> được tính,{' '}
+            <b className="text-ink-hi">{fmtInt(feedbacks.length - countedTotal)}</b> không tính (rác, nghi ảo hoặc quá cũ).
           </span>
           <button
             type="button"
             onClick={() => { const next = new URLSearchParams(params); next.delete('include'); setParams(next, { replace: true }); }}
-            className="text-xs font-medium text-accent hover:underline"
+            className="text-xs font-semibold text-accent hover:underline"
           >
             Chỉ xem phản hồi được tính
           </button>
@@ -236,9 +244,9 @@ const Feedbacks = () => {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo nội dung, khách hàng hoặc sản phẩm — gõ không dấu cũng được"
+              placeholder="Tìm nội dung, khách hàng, sản phẩm (gõ không dấu cũng được)"
               aria-label="Tìm phản hồi"
-              className="h-12 w-full rounded-lg border border-line bg-surface/70 pr-12 pl-11 text-sm text-ink-hi outline-none transition-[border-color,box-shadow] placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
+              className="h-11 w-full rounded-lg border border-line bg-surface pr-12 pl-11 text-sm text-ink-hi outline-none transition-[border-color,box-shadow] placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
             />
             {search && (
               <button type="button" onClick={clearSearch} aria-label="Xoá tìm kiếm" className="absolute top-1/2 right-3 grid size-7 -translate-y-1/2 place-items-center rounded-md text-ink-lo hover:bg-raised hover:text-ink-hi">
@@ -249,19 +257,19 @@ const Feedbacks = () => {
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Lọc theo cảm xúc">
-              <span className="eyebrow mr-1">Cảm xúc</span>
-              <Chip active={mood === 'All'} onClick={() => setMood('All')} count={searched.length}>Tất cả</Chip>
+              <Chip active={mood === 'All'} onClick={() => setMood('All')} count={searched.length}>Mọi cảm xúc</Chip>
               {MOODS.map((m) => (
-                <Chip key={m.value} active={mood === m.value} onClick={() => setMood(m.value)} icon={m.icon} count={countBy('mood', m.value)}>
+                <Chip key={m.value} active={mood === m.value} onClick={() => setMood(m.value)} icon={m.icon} count={countMood(m.value)}>
                   {m.label}
                 </Chip>
               ))}
             </div>
-            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Lọc theo hạng tin cậy">
-              <span className="eyebrow mr-1">Hạng nguồn</span>
-              <Chip active={tier === 'All'} onClick={() => setTier('All')}>Mọi hạng</Chip>
-              {TIERS.map((t) => (
-                <Chip key={t} active={tier === t} onClick={() => setTier(t)} count={countBy('tier', t)} className="font-mono">{t}</Chip>
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Lọc theo bằng chứng">
+              <Chip active={evidence === 'All'} onClick={() => setEvidence('All')}>Mọi bằng chứng</Chip>
+              {EVIDENCE_FILTERS.map((o) => (
+                <Chip key={o.value} active={evidence === o.value} onClick={() => setEvidence(o.value)} count={countEvidence(o.value)}>
+                  <EvidenceSwatch kind={o.value} /> {o.label}
+                </Chip>
               ))}
             </div>
           </div>
@@ -272,16 +280,16 @@ const Feedbacks = () => {
         ) : loading && feedbacks.length === 0 ? (
           <div className="flex flex-col gap-2 p-5">{Array.from({ length: 8 }, (_, i) => <div key={i} className="h-14 animate-pulse rounded-lg bg-raised" />)}</div>
         ) : filtered.length === 0 ? (
-          <EmptyState title="Không có phản hồi khớp" description="Thử bỏ bớt điều kiện lọc hoặc đổi từ khoá tìm kiếm." />
+          <EmptyState title="Không có phản hồi khớp" description="Bỏ bớt điều kiện lọc hoặc đổi từ khoá tìm kiếm." />
         ) : (
           <div className={`overflow-x-auto transition-opacity ${loading ? 'opacity-60' : ''}`}>
             <table className="fb-table">
               <colgroup>
-                <col style={{ width: '20%' }} />
-                <col style={{ width: '38%' }} />
-                <col style={{ width: '15%' }} />
-                <col style={{ width: '11%' }} />
-                <col style={{ width: '8%' }} />
+                <col style={{ width: '19%' }} />
+                <col style={{ width: '37%' }} />
+                <col style={{ width: '14%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '12%' }} />
                 <col style={{ width: '8%' }} />
               </colgroup>
               <thead>
@@ -290,7 +298,7 @@ const Feedbacks = () => {
                   <th>Nội dung</th>
                   <th>Nhóm vấn đề</th>
                   <th>Cảm xúc</th>
-                  <th>Hạng</th>
+                  <th>Bằng chứng</th>
                   <th>Nguồn</th>
                 </tr>
               </thead>
@@ -316,7 +324,7 @@ const Feedbacks = () => {
                         </div>
                       </td>
                       <td className="fb-c-text"><div className="fb-clamp" title={f.originalText}>{f.originalText}</div></td>
-                      <td className="fb-c-cat">{f.categoryLabel ? <span className="fb-chip" title={f.categoryLabel}>{f.categoryLabel}</span> : <span className="text-ink-lo">—</span>}</td>
+                      <td className="fb-c-cat">{f.categoryLabel && f.category !== 'Other' ? <span className="fb-chip" title={f.categoryLabel}>{f.categoryLabel}</span> : <span className="text-xs text-ink-lo">Không nêu vấn đề</span>}</td>
                       <td className="fb-c-sent">
                         <span className="inline-flex items-center gap-2 text-[0.8rem] text-ink-mid">
                           <SentimentFace sentiment={f.sentiment} size={22} />
@@ -324,14 +332,7 @@ const Feedbacks = () => {
                         </span>
                       </td>
                       <td className="fb-c-trust">
-                        <span className={`fb-trust-tier ${tierTone(f.trust?.tierWeight)}`}>{f.trust?.tier || '—'}</span>
-                        {includeAll && !(f.trust?.weight > 0) && (
-                          <span className="ml-1.5" title={f.trust?.bandLabelVi || ''}>
-                            <Badge tone={f.trust?.band === 'SPAM' || f.trust?.band === 'LIKELY_INAUTHENTIC' ? 'crit' : 'neutral'}>
-                              {f.trust?.band === 'SPAM' ? 'Rác' : f.trust?.band === 'LIKELY_INAUTHENTIC' ? 'Nghi ảo' : 'Không tính'}
-                            </Badge>
-                          </span>
-                        )}
+                        {f._ev.counted ? <EvidenceTag evidence={f._ev} /> : <Badge tone="crit">{exclusionLabel(f.trust)}</Badge>}
                       </td>
                       <td className="fb-c-src"><span className="fb-source">{f.source}</span></td>
                     </tr>
@@ -345,8 +346,7 @@ const Feedbacks = () => {
         {filtered.length > 0 && (
           <div className="fb-pager">
             <span className="fb-pager-info">
-              {fmtInt((page - 1) * PAGE_SIZE + 1)}–{fmtInt(Math.min(page * PAGE_SIZE, filtered.length))} / {fmtInt(filtered.length)}
-              {filtered.length !== feedbacks.length && <span className="text-ink-lo"> (trên {fmtInt(feedbacks.length)})</span>}
+              {fmtInt((page - 1) * PAGE_SIZE + 1)}–{fmtInt(Math.min(page * PAGE_SIZE, filtered.length))} trên {fmtInt(filtered.length)}
             </span>
             <div className="fb-pager-btns">
               <button className="fb-page-btn" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} aria-label="Trang trước"><ChevronLeft size={14} /></button>

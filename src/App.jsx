@@ -29,9 +29,8 @@ const ProtectedRoute = ({ isAuthenticated, children }) =>
 
 /**
  * KHUNG ỨNG DỤNG
- * Nền khuôn viên UIT phủ sương nằm cố định phía sau; thanh bên kính nổi;
- * vùng nội dung cuộn riêng với thanh trên dính. Ctrl+K mở bảng lệnh ở
- * mọi trang.
+ * Thanh bên áp sát mép trái; vùng nội dung cuộn riêng với thanh trên dính.
+ * Ctrl+K mở bảng lệnh ở mọi trang.
  */
 const MainLayout = ({ children, onLogout }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -57,7 +56,6 @@ const MainLayout = ({ children, onLogout }) => {
 
   return (
     <>
-      <div className="app-backdrop" aria-hidden="true" />
       <div className="flex min-h-screen">
         <Sidebar
           onLogout={onLogout}

@@ -4,39 +4,36 @@ import {
 } from 'lucide-react';
 
 /**
- * Cấu trúc điều hướng DÙNG CHUNG cho thanh bên, thanh trên (tiêu đề trang)
- * và bảng lệnh Ctrl+K — khai báo một lần để ba nơi không bao giờ lệch nhau.
- * Nhóm theo việc người dùng cần làm, không theo cấu trúc mã nguồn.
+ * Cấu trúc điều hướng DÙNG CHUNG cho thanh bên và bảng lệnh Ctrl+K — khai
+ * báo một lần để hai nơi không bao giờ lệch nhau.
+ *
+ * Thanh bên chỉ giữ sáu việc người dùng làm hằng ngày. Ba trang còn lại vẫn
+ * mở được, nhưng từ đúng chỗ người ta cần tới chúng:
+ *   Báo cáo         — nút "Xuất báo cáo" trên thanh lọc, và Ctrl+K
+ *   Cài đặt         — menu người dùng ở cuối thanh bên, và Ctrl+K
+ *   Phòng thí nghiệm — dòng trạng thái mô hình ở cuối thanh bên, và Ctrl+K
  */
 export const NAV = [
   {
-    group: 'Giám sát',
+    group: 'Chính',
     items: [
       { to: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
-      { to: '/risk', label: 'Cảnh báo & hành động', short: 'Cảnh báo', icon: Siren, badge: 'alerts' },
-      { to: '/feedbacks', label: 'Phản hồi', icon: MessagesSquare }
-    ]
-  },
-  {
-    group: 'Phân tích',
-    items: [
+      { to: '/risk', label: 'Cảnh báo', icon: Siren, badge: 'alerts' },
+      { to: '/feedbacks', label: 'Phản hồi', icon: MessagesSquare },
       { to: '/analytics', label: 'Phân tích nguyên nhân', icon: ScanSearch },
       { to: '/trust', label: 'Tin cậy dữ liệu', icon: ShieldCheck, badge: 'queue' },
-      { to: '/lab', label: 'Phòng thí nghiệm', icon: FlaskConical }
-    ]
-  },
-  {
-    group: 'Hệ thống',
-    items: [
-      { to: '/data', label: 'Nguồn dữ liệu', icon: DatabaseZap },
-      { to: '/reports', label: 'Báo cáo', icon: FileText },
-      { to: '/settings', label: 'Cài đặt', icon: Settings }
+      { to: '/data', label: 'Nguồn dữ liệu', icon: DatabaseZap }
     ]
   }
 ];
 
 /** Trang không nằm trên thanh bên nhưng vẫn tìm được qua bảng lệnh */
-export const HIDDEN_PAGES = [{ to: '/ui-kit', label: 'Bộ giao diện (UI kit)', icon: Palette, group: 'Hệ thống' }];
+export const HIDDEN_PAGES = [
+  { to: '/reports', label: 'Báo cáo', icon: FileText, group: 'Khác' },
+  { to: '/settings', label: 'Cài đặt', icon: Settings, group: 'Khác' },
+  { to: '/lab', label: 'Phòng thí nghiệm mô hình', icon: FlaskConical, group: 'Khác' },
+  { to: '/ui-kit', label: 'Bộ giao diện (UI kit)', icon: Palette, group: 'Khác' }
+];
 
 export const findPage = (pathname) => {
   for (const g of NAV) {
