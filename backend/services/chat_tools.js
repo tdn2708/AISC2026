@@ -216,6 +216,18 @@ const TOOLS = {
     }
   },
 
+  /**
+   * Livestream: dữ kiện do API chat lấy trước (services/live/brief.js) rồi gắn
+   * vào ngữ cảnh, vì đọc phiên live cần truy vấn database, không đồng bộ được
+   */
+  live_sessions: {
+    description: 'Kết quả phiên livestream đang chạy và gần nhất, việc nên làm',
+    run(ctx) {
+      const facts = ctx.live?.facts?.length ? ctx.live.facts : ['Chưa lấy được dữ liệu livestream.'];
+      return { title: 'Livestream', facts };
+    }
+  },
+
   /** Phân bố theo kênh thu thập */
   channel_breakdown: {
     description: 'So sánh các kênh: số lượng, tỉ lệ tiêu cực, mức tin cậy',

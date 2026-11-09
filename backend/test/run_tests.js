@@ -1485,6 +1485,75 @@ test('Live: hàng đợi gộp câu hỏi giống nhau, khiếu nại lên đầ
   assert.ok(s.queue.some((g) => g.key === q1.groupKey), 'ba người hỏi lại thì thẻ mở lại');
 });
 
+const { coach: liveCoach, measureEffect } = require('../services/live/coach');
+
+/** Dựng một phiên giả với mốc thời gian cụ thể cho bộ gợi ý hành động */
+function liveScenario(lines, { current = 'ao-thun', now = Date.parse('2026-11-11T20:30:00Z') } = {}) {
+  const session = { products: MEGALIVE_CATALOG, policy: MEGALIVE_POLICY, currentProductId: current };
+  const agg = new LiveAggregator(session);
+  let i = 0;
+  for (const [minAgo, text] of lines) {
+    const c = liveIntent.classifyComment(text, { products: MEGALIVE_CATALOG });
+    const inferred = !c.productId && (c.intent === 'question' || c.intent === 'order');
+    const doc = {
+      _id: `s${i++}`, ts: new Date(now - minAgo * 60000), author: { hash: `u${i}`, handle: `u${i}` }, ...c,
+      productId: c.productId || (inferred ? current : null), productInferred: inferred,
+      status: c.intent === 'question' || c.intent === 'complaint' ? 'open' : null
+    };
+    doc.groupKey = groupKeyOf(doc);
+    agg.add(doc);
+  }
+  const suggestionFor = (g) => liveAnswer.suggestAnswer({ intent: g.intent, topic: g.topic, productId: g.productId, variant: { size: g.size } }, session);
+  return { agg, session, now, actions: liveCoach({ agg, session, suggestionFor, now }) };
+}
+const times = (n, minAgo, text) => Array.from({ length: n }, (_, k) => [minAgo - k * 0.1, text]);
+
+test('Live coach: biến thể đã hết mà vẫn có người chốt -> báo hết, gợi ý size còn hàng, tính doanh thu lỡ', () => {
+  const { actions } = liveScenario(times(3, 4, 'chốt quần jean size XL'));
+  const a = actions.find((x) => x.type === 'soldout_demand');
+  assert.ok(a, JSON.stringify(actions.map((x) => x.type)));
+  assert.strictEqual(a.severity, 'critical');
+  assert.ok(/size L/.test(a.script), a.script);
+  assert.strictEqual(a.lostValue, 3 * 299000);
+});
+
+test('Live coach: biến thể sắp hết -> câu nói tạo khan hiếm với số lượng thật', () => {
+  const { actions } = liveScenario(times(7, 6, 'chốt váy size L'), { current: 'vay-hoa' });
+  const a = actions.find((x) => x.type === 'low_stock');
+  assert.ok(a, JSON.stringify(actions.map((x) => x.type)));
+  assert.ok(/còn 2 cái/.test(a.script), a.script);
+});
+
+test('Live coach: nhiều người cùng hỏi giá -> trả lời một lần trên sóng bằng giá trong danh mục', () => {
+  const { actions } = liveScenario(times(6, 2, 'giá bao nhiêu shop'));
+  const a = actions.find((x) => x.type === 'question_burst');
+  assert.ok(a);
+  assert.ok(a.script.includes('129.000đ') && !a.script.startsWith('@'), a.script);
+});
+
+test('Live coach: khiếu nại dồn dập được ưu tiên cao nhất', () => {
+  const lines = [...times(15, 4, 'đẹp quá'), ...times(3, 3, 'đơn hôm trước chưa nhận được hàng'), ...times(6, 2, 'giá bao nhiêu shop')];
+  const { actions } = liveScenario(lines);
+  assert.strictEqual(actions[0].type === 'complaint_spike' || actions[0].severity === 'critical', true);
+  assert.ok(actions.some((x) => x.type === 'complaint_spike'));
+});
+
+test('Live coach: bình luận giảm mạnh và khách hỏi dồn sản phẩm chưa giới thiệu', () => {
+  const busy = Array.from({ length: 60 }, (_, k) => [8.5 - k * 0.09, k % 2 ? 'đẹp quá' : 'hi shop']);
+  const { actions } = liveScenario([...busy, ...times(6, 2.5, 'túi tote còn không shop')]);
+  assert.ok(actions.some((x) => x.type === 'engagement_drop'), JSON.stringify(actions.map((x) => x.type)));
+  const hot = actions.find((x) => x.type === 'hot_other_product');
+  assert.ok(hot && hot.do.productId === 'tui-tote');
+});
+
+test('Live coach: đo hiệu quả trước/sau một hành động', () => {
+  const lines = [...times(3, 5.5, 'chốt M1'), ...times(9, 2.8, 'chốt M1')];
+  const { agg, now } = liveScenario(lines);
+  const at = new Date(now - 3 * 60000);
+  const e = measureEffect(agg, { watch: 'order', productId: 'ao-thun', type: 'ask_not_buy' }, at, now);
+  assert.ok(e.ready && e.after > e.before && e.better === true, JSON.stringify(e));
+});
+
 // ==================================================================
 console.log(`\n${'='.repeat(52)}`);
 console.log(`Kết quả: ${passed} đạt, ${failed} lỗi`);

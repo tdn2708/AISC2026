@@ -1500,8 +1500,19 @@ router.post('/chat', wrap(async (req, res) => {
     return res.status(413).json({ success: false, message: `Câu hỏi dài quá ${MAX_TEXT_CHARS} ký tự` });
   }
 
-  const ctx = await getContext(req.db);
+  const baseCtx = await getContext(req.db);
   const chatEngine = require('../services/chat_engine');
+  // Câu hỏi về livestream: lấy trước dữ kiện phiên live, gắn vào một bản ngữ
+  // cảnh riêng của request (không sửa ngữ cảnh dùng chung đang được nhớ)
+  let ctx = baseCtx;
+  if (chatEngine.routeIntent(message).intent.id === 'live') {
+    try {
+      const { liveBriefing } = require('../services/live/brief');
+      ctx = Object.assign(Object.create(baseCtx), { live: await liveBriefing(req.db, req.workspace) });
+    } catch (e) {
+      console.warn('[CHAT] Không lấy được dữ liệu livestream:', e.message);
+    }
+  }
 
   const result = await chatEngine.ask(
     ctx,

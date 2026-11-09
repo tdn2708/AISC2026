@@ -146,20 +146,29 @@ function createSimulator({ products = MEGALIVE_CATALOG, speed = 1, seed = Date.n
       : inPhase < 0.7
         ? { question: 0.3, order: 0.38, praise: 0.1, chatter: 0.19, complaint: 0.03 }
         : { question: 0.25, order: 0.15, praise: 0.15, chatter: 0.42, complaint: 0.03 };
+    // Tình huống thật hay gặp, để trợ lý hành động có việc mà gợi ý:
+    //  - cứ 3 lượt sản phẩm có một đợt khách cũ vào khiếu nại đơn trước
+    //  - cứ 4 lượt có một lượt khách hỏi dồn một sản phẩm chưa được giới thiệu
+    if (phase % 3 === 2 && inPhase < 0.5) {
+      w.complaint = 0.1;
+      w.chatter -= 0.07;
+    }
     let r = rand();
     let intent = 'chatter';
     for (const [k, v] of Object.entries(w)) {
       if ((r -= v) <= 0) { intent = k; break; }
     }
     // Thỉnh thoảng khách hỏi về sản phẩm khác, không phải sản phẩm đang giới thiệu
-    const target = rand() < 0.12 ? pick(products) : p;
+    const crowdAsk = phase % 4 === 1 && inPhase > 0.3 && intent === 'question' && rand() < 0.5;
+    const target = crowdAsk ? products[(phase + 3) % products.length] : rand() < 0.12 ? pick(products) : p;
     const u = pick(users);
     seq += 1;
     return {
       type: 'comment',
       platformMsgId: `sim-${seed}-${run}-${seq}`,
       author: { handle: u.handle, nickname: u.nickname, platformUserId: `sim-${u.id}` },
-      text: fill(pick(TEMPLATES[intent]), target),
+      // Khách hỏi sản phẩm khác thì phải nhắc tên hoặc số giỏ, không thì không ai biết
+      text: fill(pick(crowdAsk ? TEMPLATES.question.filter((t) => /{p}|{n}/.test(t)) : TEMPLATES[intent]), target),
       ts: new Date(now)
     };
   }

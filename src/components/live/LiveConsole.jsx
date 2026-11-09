@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ArrowLeft, Square, RotateCw, Package, MessageSquarePlus, Download, ChevronDown } from 'lucide-react';
-import { Button, Badge, Drawer, EmptyState, GlassPanel } from '../ui';
+import { Button, Badge, Drawer, EmptyState, GlassPanel, Tabs } from '../ui';
 import { fmtInt, fmtPct } from '../../lib/format';
 import useLiveSession, { liveUrl } from '../../hooks/useLiveSession';
 import { StatusPill, PLATFORM_LABEL, duration } from './shared';
@@ -11,6 +11,8 @@ import Orders from './Orders';
 import { Rhythm, Topics, Products } from './Insights';
 import CatalogEditor, { toRow, fromRow } from './CatalogEditor';
 import ManualInput from './ManualInput';
+import ActionCoach from './ActionCoach';
+import Report from './Report';
 
 /**
  * BẢNG ĐIỀU KHIỂN MỘT PHIÊN LIVE
@@ -64,6 +66,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
   const [rows, setRows] = useState([]);
   const [policy, setPolicy] = useState({});
   const [busy, setBusy] = useState(null);
+  const [view, setView] = useState(null);
 
   // Đồng hồ thời lượng phiên
   useEffect(() => {
@@ -79,6 +82,8 @@ const LiveConsole = ({ sessionId, onBack }) => {
   }
 
   const live = ['live', 'connecting', 'reconnecting'].includes(session.status);
+  // Phiên đã kết thúc mở thẳng báo cáo; đang live mở bảng điều khiển
+  const tab = view || (live ? 'console' : 'report');
   const t = stats.totals;
   const products = session.products || [];
 
@@ -155,6 +160,13 @@ const LiveConsole = ({ sessionId, onBack }) => {
         </div>
       </header>
 
+      <Tabs
+        value={tab}
+        onChange={setView}
+        tabs={[{ value: 'console', label: 'Điều khiển phiên' }, { value: 'report', label: live ? 'Báo cáo đến hiện tại' : 'Báo cáo sau live' }]}
+      />
+
+      {tab === 'report' ? <Report key={`${session.status}-${session.endedAt || ''}`} sessionId={session.id} /> : (<>
       {/* Số liệu */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
         <Kpi label="Người xem" value={stats.viewers?.now != null ? fmtInt(stats.viewers.now) : '—'} sub={stats.viewers?.peak ? `Cao nhất ${fmtInt(stats.viewers.peak)}` : 'Nền tảng chưa báo'} />
@@ -187,6 +199,8 @@ const LiveConsole = ({ sessionId, onBack }) => {
         </div>
       )}
 
+      <ActionCoach stats={stats} sessionId={session.id} live={live} onOpenCatalog={openCatalog} />
+
       {/* Ba cột */}
       <div className="grid gap-4 lg:grid-cols-12">
         <div className="lg:col-span-5"><Queue stats={stats} sessionId={session.id} onChanged={live ? undefined : refresh} /></div>
@@ -199,6 +213,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
       </div>
 
       <Orders stats={stats} sessionId={session.id} onChanged={live ? undefined : refresh} />
+      </>)}
 
       <Drawer
         open={drawer === 'catalog'}

@@ -96,6 +96,51 @@ router.get('/platforms', (req, res) => {
 // Phiên
 // ------------------------------------------------------------------
 
+/**
+ * Tóm tắt cho trang Tổng quan: phiên đang live (số liệu trực tiếp, việc cần
+ * làm gấp nhất) và phiên đã kết thúc gần nhất (kết quả, việc cho phiên sau).
+ * Báo cáo của phiên đã kết thúc được nhớ theo mã phiên và thời điểm kết thúc.
+ */
+const overviewMemo = new Map();
+router.get('/overview', wrap(async (req, res) => {
+  await hub.ensureIndexes(req.db);
+  const col = req.db.collection('live_sessions');
+  const recent = await col.find({}).sort({ createdAt: -1 }).limit(20).toArray();
+  const live = recent
+    .map((s) => ({ s, r: hub.runtimeFor(s._id, req.workspace) }))
+    .filter(({ r }) => r && r.status !== 'ended')
+    .map(({ s, r }) => {
+      const snap = r.snapshot();
+      return {
+        id: String(s._id), title: s.title, platform: s.platform, simulated: Boolean(s.simulated), status: r.status, startedAt: s.startedAt,
+        viewers: snap.viewers.now, comments: snap.totals.comments, orders: snap.totals.byIntent.order, complaints: snap.totals.byIntent.complaint,
+        queueOpen: snap.queueOpen, actions: snap.actions.active.slice(0, 2).map((a) => ({ title: a.title, severity: a.severity }))
+      };
+    });
+  const lastEnded = recent.find((s) => s.status === 'ended');
+  let latest = null;
+  if (lastEnded) {
+    // Nhớ tối đa một phút: khiếu nại vừa được đưa vào hệ thống thì số liệu đổi theo
+    const key = `${lastEnded._id}|${lastEnded.endedAt?.toISOString?.() || ''}|${(lastEnded.actions || []).length}|${Math.floor(Date.now() / 60000)}`;
+    let rep = overviewMemo.get(key);
+    if (!rep) {
+      const { buildReport } = require('../services/live/report');
+      rep = await buildReport(req.db, lastEnded);
+      overviewMemo.clear();
+      overviewMemo.set(key, rep);
+    }
+    latest = {
+      id: String(lastEnded._id), title: lastEnded.title, platform: lastEnded.platform, simulated: Boolean(lastEnded.simulated),
+      startedAt: lastEnded.startedAt, endedAt: lastEnded.endedAt,
+      revenue: rep.revenue.estimated, lostRevenue: rep.revenue.lostTotal, orders: rep.totals.byIntent.order,
+      complaints: rep.complaints.total, complaintsUnpushed: rep.complaints.total - rep.complaints.pushed,
+      answeredShare: rep.response.answeredShare,
+      todo: rep.todo.slice(0, 3)
+    };
+  }
+  res.json({ live, latest });
+}));
+
 router.get('/sessions', wrap(async (req, res) => {
   await hub.ensureIndexes(req.db);
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
@@ -374,6 +419,72 @@ router.post('/sessions/:id/groups/rewrite', wrap(async (req, res) => {
     grounded: draft.grounded,
     facts: draft.facts
   });
+}));
+
+/** Báo cáo sau phiên: phễu, doanh thu, cầu bị lỡ, câu hỏi bỏ sót, việc cần làm */
+router.get('/sessions/:id/report', wrap(async (req, res) => {
+  const s = await sessionOr404(req);
+  const r = hub.runtimeFor(s._id, req.workspace);
+  if (r) await r.flush();
+  const { buildReport } = require('../services/live/report');
+  res.json(await buildReport(req.db, r ? { ...s, ...r.session, summary: { ...(s.summary || {}), viewers: r.agg.viewers } } : s));
+}));
+
+/**
+ * Đưa khiếu nại (và lời khen nếu chọn) của phiên vào kho phản hồi chính, để
+ * Trust Layer, cảnh báo và báo cáo tính chung với các kênh khác. Gán nhãn bằng
+ * cùng quy trình nhiều tầng như dữ liệu thu thập từ sàn. Chạy lại không tạo
+ * bản trùng: bình luận đã đưa được đánh dấu.
+ */
+router.post('/sessions/:id/push-feedback', wrap(async (req, res) => {
+  const s = await sessionOr404(req);
+  const intents = req.body?.includePraise ? ['complaint', 'praise'] : ['complaint'];
+  const r = hub.runtimeFor(s._id, req.workspace);
+  if (r) await r.flush();
+  const col = req.db.collection('live_comments');
+  const docs = await col.find({ sessionId: s._id, intent: { $in: intents }, pushedToFeedback: { $ne: true } }).sort({ ts: 1 }).limit(300).toArray();
+  if (!docs.length) return res.json({ inserted: 0, duplicates: 0, message: 'Không còn bình luận nào cần đưa' });
+
+  const { labelReviews } = require('../services/label_cascade');
+  const { buildFeedbackDocs, saveFeedbacks } = require('../services/ingest');
+  const { invalidate } = require('../services/analysis_context');
+  const SOURCE = { tiktok: 'TikTok', youtube: 'YouTube' };
+  const names = new Map((s.products || []).map((p) => [p.id, p.name]));
+  const labels = await labelReviews(docs.map((d) => ({ text: d.text, rating: null })));
+  // Mã bình luận live làm khóa chống trùng: tên đã che ("l***") và cùng một câu
+  // khiếu nại quen thuộc của nhiều khách khác nhau không bị gộp nhầm làm một
+  const raw = docs.map((d) => ({
+    source: SOURCE[s.platform] || 'Livestream',
+    rawText: d.text,
+    author: d.author?.handle || 'Ẩn danh',
+    timestamp: d.ts,
+    productName: names.get(d.productId) || null,
+    rating: null,
+    platformFacts: { platform: `live-${s.platform}`, reviewId: String(d._id), rawCustomerId: d.author?.hash || null, verifiedPurchase: false }
+  }));
+  const fb = buildFeedbackDocs(raw, labels, { collectedVia: 'livestream', fallbackProduct: s.title, sourceUrl: null });
+  fb.forEach((f, i) => {
+    f.liveSessionId = s._id;
+    f.liveCommentId = docs[i]._id;
+    if (s.simulated) f.simulated = true;
+  });
+  const out = await saveFeedbacks(req.db, fb);
+  await col.updateMany({ _id: { $in: docs.map((d) => d._id) } }, { $set: { pushedToFeedback: true } });
+  invalidate(req.db);
+  res.json({ ...out, labelled: labels.filter((l) => l?.labelledBy).length });
+}));
+
+/** Người đứng live đã làm (done) hoặc bỏ qua (dismissed) một việc trợ lý gợi ý */
+router.post('/sessions/:id/actions', wrap(async (req, res) => {
+  const s = await sessionOr404(req);
+  const id = str(req.body?.id, 200);
+  const status = ['done', 'dismissed'].includes(req.body?.status) ? req.body.status : null;
+  if (!id || !status) throw bad('Thiếu mã việc hoặc trạng thái');
+  const r = hub.runtimeFor(s._id, req.workspace);
+  if (!r) throw bad('Phiên không còn chạy', 409);
+  const entry = await r.resolveAction(id, status, str(req.body?.by, 60));
+  if (!entry) throw bad('Việc này không còn hiệu lực', 404);
+  res.json({ ok: true, action: entry });
 }));
 
 router.post('/sessions/:id/orders/:commentId', wrap(async (req, res) => {

@@ -41,6 +41,9 @@ class LiveAggregator {
     this.groups = new Map();
     this.orders = [];
     this.firstAt = null;
+    // Nhật ký gọn từng bình luận cho bộ gợi ý hành động (coach.js):
+    // so nhịp 3 phút gần nhất với 3 phút trước, đếm cầu theo biến thể…
+    this.events = [];
     this.lastAt = null;
   }
 
@@ -66,6 +69,16 @@ class LiveAggregator {
     if (c.author?.hash) this.authors.add(c.author.hash);
     this.firstAt = this.firstAt == null ? ts : Math.min(this.firstAt, ts);
     this.lastAt = this.lastAt == null ? ts : Math.max(this.lastAt, ts);
+    this.events.push({
+      t: ts, intent: c.intent, topic: c.topic || null, productId: c.productId || null,
+      size: c.variant?.size || null, color: c.variant?.color || null, qty: c.quantity || 0,
+      groupKey: c.groupKey || null, inferred: Boolean(c.productInferred)
+    });
+    // Giữ đủ để đo hiệu quả hành động cả phiên; chỉ cắt khi phiên rất dài
+    if (this.events.length > 60000) {
+      const cut = (this.lastAt || ts) - 3 * 60 * MINUTE;
+      this.events = this.events.filter((e) => e.t >= cut);
+    }
 
     const mk = Math.floor(ts / MINUTE) * MINUTE;
     const m = this.minutes.get(mk) || { t: mk, total: 0, question: 0, order: 0, complaint: 0 };

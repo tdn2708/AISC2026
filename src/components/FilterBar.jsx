@@ -27,7 +27,10 @@ const SOURCES = [
   { value: 'TikTok', label: 'TikTok' },
   { value: 'Lazada', label: 'Lazada' },
   { value: 'Tiki', label: 'Tiki' },
-  { value: 'CSKH', label: 'Tổng đài CSKH' }
+  { value: 'CSKH', label: 'Tổng đài CSKH' },
+  // Khiếu nại đưa từ trang Livestream vào (TikTok Live giữ nguồn TikTok)
+  { value: 'Livestream', label: 'Livestream' },
+  { value: 'YouTube', label: 'YouTube Live' }
 ];
 
 /** Menu thả xuống kính — đóng khi bấm ra ngoài hoặc Esc */

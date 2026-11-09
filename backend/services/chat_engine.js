@@ -77,6 +77,13 @@ const INTENTS = [
     focus: 'Mô tả diễn biến theo thời gian và chỉ ra hướng thay đổi'
   },
   {
+    id: 'live',
+    keywords: ['livestream', 'live stream', 'phiên live', 'buổi live', 'megalive', 'đi live', 'lên live', 'live vừa', 'live hôm',
+      'người xem', 'lượt chốt', 'chốt đơn', 'hết hàng', 'doanh thu lỡ', 'người đứng live'],
+    tools: ['live_sessions'],
+    focus: 'Tóm tắt phiên livestream: kết quả, việc nên làm, so với phiên trước'
+  },
+  {
     id: 'channel',
     keywords: ['kênh', 'nguồn', 'shopee', 'facebook', 'tiktok', 'lazada', 'cskh', 'so sánh kênh'],
     tools: ['channel_breakdown', 'metrics_overview'],
@@ -216,7 +223,8 @@ function gatherBriefing(ctx, question, intent, filters) {
   // Câu hỏi kiểu "khách chê gì nhiều nhất" không chứa từ khoá nào trùng nội
   // dung phản hồi, nên tìm BM25 trả rỗng. Khi đó lấy các khiếu nại mới nhất
   // thuộc nhóm bị chê nhiều nhất làm dẫn chứng, và nói rõ đó là cách chọn.
-  if (!evidence.length && intent.id !== 'model_performance' && intent.id !== 'business' && intent.id !== 'taxonomy') {
+  // Câu hỏi về livestream: dẫn chứng là khiếu nại trên sàn thì lạc đề
+  if (!evidence.length && !['model_performance', 'business', 'taxonomy', 'live'].includes(intent.id)) {
     const { applyFilters } = require('./analysis_context');
     const metrics = require('./metrics');
     const complaints = applyFilters(ctx.items, filters || {}, ctx.asOf)

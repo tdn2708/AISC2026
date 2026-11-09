@@ -26,6 +26,8 @@ const { ObjectId } = require('mongodb');
 const { classifyComment, INTENT_LABEL, TOPIC_LABEL } = require('./intent');
 const { LiveAggregator, groupKeyOf } = require('./aggregator');
 const { suggestAnswer } = require('./answer');
+const { coach, measureEffect } = require('./coach');
+const { stockReplay } = require('./report');
 const { createTikTokConnector } = require('./connectors/tiktok');
 const { createYouTubeConnector } = require('./connectors/youtube');
 const { createSimulator } = require('./connectors/simulator');
@@ -168,13 +170,24 @@ function withSuggestion(g, session) {
   return { ...g, suggestion: s };
 }
 
-function decorateSnapshot(snap, session) {
+/** Nhật ký hành động kèm hiệu quả trước/sau (mới nhất trước) */
+function actionHistory(agg, session) {
+  return (session.actions || []).slice().reverse().map((a) => ({
+    ...a,
+    effect: a.status === 'done' ? measureEffect(agg, a, a.at, Date.now(), session.status === 'ended') : null
+  }));
+}
+
+function decorateSnapshot(snap, session, agg, active = []) {
   return {
     ...snap,
     queue: snap.queue.map((g) => withSuggestion(g, session)),
-    currentProductId: session.currentProductId || null
+    currentProductId: session.currentProductId || null,
+    actions: { active, history: agg ? actionHistory(agg, session) : [] }
   };
 }
+
+const ACTION_COOLDOWN_MS = 10 * 60 * 1000;
 
 // ==================================================================
 // Runtime
@@ -198,6 +211,46 @@ class Runtime {
     this.statsTimer = setInterval(() => this.pushStats(), STATS_INTERVAL_MS);
     this.heartbeat = setInterval(() => this.broadcastRaw(': ping\n\n'), HEARTBEAT_MS);
     this.dirty = false;
+    // Việc đã làm hoặc bỏ qua: ẩn trong ACTION_COOLDOWN_MS rồi mới được gợi ý lại
+    this.suppressed = new Map((session.actions || []).map((a) => [a.id, new Date(a.at).getTime() + ACTION_COOLDOWN_MS]));
+    this.lastActions = [];
+  }
+
+  /** Việc cần làm ngay theo dữ liệu hiện tại (coach.js), bỏ các việc vừa xử lý */
+  activeActions() {
+    const now = Date.now();
+    const list = coach({ agg: this.agg, session: this.session, suggestionFor: (g) => withSuggestion(g, this.session).suggestion, now })
+      .filter((a) => !(this.suppressed.get(a.id) > now));
+    this.lastActions = list;
+    return list;
+  }
+
+  /**
+   * Ghi nhận người đứng live đã làm (done) hoặc bỏ qua (dismissed) một việc.
+   * Một số việc tự thực hiện luôn: chuyển sản phẩm đang giới thiệu, đánh dấu
+   * nhóm câu hỏi đã trả lời bằng câu vừa đọc trên sóng.
+   */
+  async resolveAction(id, status, by) {
+    const a = this.lastActions.find((x) => x.id === id) || this.activeActions().find((x) => x.id === id);
+    if (!a) return null;
+    const entry = {
+      id: a.id, type: a.type, key: a.key, title: a.title, severity: a.severity, productId: a.productId || null,
+      groupKey: a.groupKey || null, watch: a.watch, script: a.script || null, lostValue: a.lostValue ?? null,
+      status, by: by || null, at: new Date()
+    };
+    this.session.actions = [...(this.session.actions || []), entry];
+    this.suppressed.set(a.id, entry.at.getTime() + ACTION_COOLDOWN_MS);
+    await this.db.collection('live_sessions').updateOne({ _id: this.session._id }, { $push: { actions: entry } });
+    if (status === 'done' && a.do?.kind === 'switch_product') await this.setCurrentProduct(a.do.productId);
+    if (status === 'done' && a.type === 'question_burst' && a.groupKey) {
+      await this.flush();
+      const answer = { text: a.script || null, by: by || 'người đứng live', provider: 'on-air', at: entry.at };
+      await this.db.collection('live_comments').updateMany({ sessionId: this.session._id, groupKey: a.groupKey, intent: 'question' }, { $set: { status: 'answered', answer } });
+      this.agg.resolve(a.groupKey, 'answered', answer);
+    }
+    this.dirty = true;
+    this.pushStats();
+    return entry;
   }
 
   get id() {
@@ -319,7 +372,7 @@ class Runtime {
   }
 
   snapshot() {
-    return decorateSnapshot(this.agg.snapshot(), this.session);
+    return decorateSnapshot(this.agg.snapshot(), this.session, this.agg, this.status === 'ended' ? [] : this.activeActions());
   }
 
   pushStats() {
@@ -363,6 +416,15 @@ class Runtime {
     this.status = 'ended';
     const snap = this.agg.snapshot();
     const summary = summarize(snap);
+    // Doanh thu ước tính từ bình luận chốt, để so sánh giữa các phiên
+    try {
+      const comments = await this.db.collection('live_comments').find({ sessionId: this.session._id, intent: 'order' }).sort({ ts: 1 }).toArray();
+      const money = stockReplay(comments, this.session.products || []);
+      summary.revenue = money.revenue;
+      summary.lostRevenue = money.lost.reduce((s, l) => s + l.value, 0);
+    } catch (e) {
+      console.warn('[LIVE] Không tính được doanh thu:', e.message);
+    }
     this.session.endedAt = new Date();
     this.session.summary = summary;
     await this.db.collection('live_sessions').updateOne(
@@ -438,7 +500,7 @@ async function rebuildSnapshot(db, session) {
     agg.viewers = { ...session.summary.viewers };
   }
   if (session.summary?.likes != null) agg.likes = session.summary.likes;
-  return decorateSnapshot(agg.snapshot({ now: agg.lastAt || Date.now() }), session);
+  return decorateSnapshot(agg.snapshot({ now: agg.lastAt || Date.now() }), session, agg, []);
 }
 
 /** Sau khi sửa nhãn hay trạng thái trên phiên đang chạy: dựng lại bộ tổng hợp */

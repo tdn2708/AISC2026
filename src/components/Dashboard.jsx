@@ -9,6 +9,7 @@ import SentimentTrendChart from './dashboard/SentimentTrendChart';
 import SentimentDonut from './dashboard/SentimentDonut';
 import RisingIssues from './dashboard/RisingIssues';
 import ActionCenter from './dashboard/ActionCenter';
+import LiveDigest from './dashboard/LiveDigest';
 
 /**
  * TỔNG QUAN — câu trả lời trước, số liệu sau
@@ -87,6 +88,7 @@ const Dashboard = () => {
         <div className="mb-8 grid grid-cols-12 items-start gap-6">
           <section aria-label="Việc cần quyết" className="col-span-12 xl:sticky xl:top-20 xl:order-2 xl:col-span-4">
             <ActionCenter alerts={alerts} />
+            <LiveDigest />
           </section>
 
           <section aria-label="Diễn biến và phân bổ" className="col-span-12 xl:order-1 xl:col-span-8">
