@@ -104,9 +104,9 @@ export const evidenceOf = (f) => {
   const counted = t.weight > 0;
   if (t.humanLabel) return { kind: 'human', label: 'Người đã duyệt', counted };
   if (f?.verifiedPurchase) return { kind: 'verified', label: 'Sàn xác nhận đã mua', counted };
-  if (f?.hasOrder || t.tier === 'P1') return { kind: 'verified', label: 'Có mã đơn hàng', counted };
+  if (f?.hasOrder || t.tier === 'P1') return { kind: 'verified', label: 'Đã mua thật', counted };
   if (t.tier === 'P2') return { kind: 'verified', label: 'Tài khoản đã định danh', counted };
-  return { kind: 'inferred', label: 'AI suy luận', counted };
+  return { kind: 'inferred', label: 'AI đoán', counted };
 };
 
 /** Ai đã gán nhãn nội dung (nhóm vấn đề, cảm xúc) cho phản hồi */

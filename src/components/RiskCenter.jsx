@@ -68,7 +68,7 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
       </>
     ],
     ['Bộ phận phụ trách', alert.owner || '—'],
-    ['Doanh thu chịu rủi ro', rec?.dataProfile?.slots?.revenue || 'Chưa đối soát được']
+    ['Doanh thu chịu rủi ro', rec?.dataProfile?.slots?.revenue || 'Chưa đủ dữ liệu đơn hàng để tính']
   ];
 
   return (

@@ -68,8 +68,8 @@ const UiKit = () => {
                 <div key={hex} className="text-center">
                   <span className="mx-auto block size-12 rounded-full border border-white/70 shadow-sm" style={{ background: hex }} />
                   <p className="mt-1.5 text-xs font-medium text-ink-hi">{name}</p>
-                  <p className="font-mono text-[0.62rem] text-ink-lo">{hex}</p>
-                  <p className="text-[0.62rem] text-ink-lo">{role}</p>
+                  <p className="font-mono text-xs text-ink-lo">{hex}</p>
+                  <p className="text-xs text-ink-lo">{role}</p>
                 </div>
               ))}
             </div>

@@ -78,7 +78,7 @@ const RisingIssues = ({ alerts = [] }) => {
                   />
                 </div>
 
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] text-ink-lo">
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-lo">
                   <SeverityBadge level={alert.severity} />
                   <span className="tabular-nums">
                     từ {fmtPct(st.baselineRate, st.baselineRate > 0 && st.baselineRate < 0.01 ? 2 : 1)} lên <span className="text-ink-mid">{fmtPct(st.currentRate, st.currentRate < 0.01 ? 2 : 1)}</span>

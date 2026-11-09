@@ -15,9 +15,9 @@ import { Button, TextField, EvidenceSwatch } from './ui';
 const DEMO = { email: 'admin@company.com', password: 'password123' };
 
 const PROOF = [
-  { kind: 'verified', text: 'Đối soát được với đơn hàng hoặc xác nhận của sàn' },
+  { kind: 'verified', text: 'Có chứng từ: khớp đơn hàng hoặc sàn xác nhận đã mua' },
   { kind: 'human', text: 'Người kiểm duyệt đã đọc lại' },
-  { kind: 'inferred', text: 'AI suy luận, chưa có chứng từ' }
+  { kind: 'inferred', text: 'AI đoán, chưa có chứng từ' }
 ];
 
 const Login = ({ onLogin }) => {
@@ -56,7 +56,7 @@ const Login = ({ onLogin }) => {
           </h1>
           <p className="mt-5 text-base leading-relaxed text-white/75">
             Đánh giá ảo, quảng cáo và chiến dịch có tổ chức bị lọc trước khi được tính. Phần còn lại cho bạn biết
-            con số nào dựa trên chứng từ, con số nào do AI suy luận.
+            con số nào dựa trên chứng từ, con số nào do AI đoán.
           </p>
           <ul className="mt-8 flex list-none flex-col gap-3 text-sm text-white/85">
             {PROOF.map((p) => (

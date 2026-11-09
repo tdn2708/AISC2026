@@ -284,7 +284,7 @@ const RootCauses = () => {
               <ol className="flex list-none flex-col gap-1">
                 {products.map((p, i) => (
                   <li key={p.key} className="flex items-center gap-3 rounded-lg px-1 py-2">
-                    <span className="grid size-6 shrink-0 place-items-center rounded bg-raised font-mono text-[0.68rem] text-ink-mid">{i + 1}</span>
+                    <span className="grid size-6 shrink-0 place-items-center rounded bg-raised font-mono text-xs text-ink-mid">{i + 1}</span>
                     <span className="min-w-0 flex-1 truncate text-sm text-ink-hi" title={p.label}>{p.label}</span>
                     <span className="font-mono text-xs text-ink-mid">{fmtInt(p.count)}</span>
                   </li>

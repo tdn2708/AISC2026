@@ -43,6 +43,11 @@
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+
+  /* Chữ nhỏ nhất trong giao diện là 13px: chú thích, nhãn, huy hiệu đều phải
+     đọc được không cần nheo mắt (bản cũ có chỗ chỉ 10-11px) */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.125rem;
 }
 
 @theme {

@@ -71,9 +71,9 @@ const ActionCard = ({ a, sessionId, onOpenCatalog }) => {
       <p className="mt-1 text-xs leading-relaxed text-ink-mid">{a.why}</p>
       {a.script && (
         <div className="mt-2 rounded-md bg-raised px-3 py-2">
-          <p className="text-[0.7rem] font-medium text-ink-lo">Câu nói mẫu</p>
+          <p className="text-xs font-medium text-ink-lo">Câu nói mẫu</p>
           <p className="mt-0.5 text-sm leading-snug text-ink-hi">“{a.script}”</p>
-          {a.grounded === false && <p className="mt-1 text-[0.7rem] text-high">Danh mục chưa đủ thông tin, kiểm tra trước khi đọc.</p>}
+          {a.grounded === false && <p className="mt-1 text-xs text-high">Danh mục chưa đủ thông tin, kiểm tra trước khi đọc.</p>}
         </div>
       )}
       {a.steps?.length > 0 && (

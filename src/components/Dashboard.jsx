@@ -1,28 +1,29 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import FilterBar from './FilterBar';
 import FeedbackTable from './FeedbackTable';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { readStorage, writeStorage } from '../lib/storage';
 import SummaryHeader from './dashboard/SummaryHeader';
-import KpiZone from './dashboard/KpiZone';
+import StoreHealth from './dashboard/StoreHealth';
+import TodayInbox, { buildTodo } from './dashboard/TodayInbox';
 import SentimentTrendChart from './dashboard/SentimentTrendChart';
 import SentimentDonut from './dashboard/SentimentDonut';
 import RisingIssues from './dashboard/RisingIssues';
-import ActionCenter from './dashboard/ActionCenter';
 import LiveDigest from './dashboard/LiveDigest';
 
 /**
- * TỔNG QUAN — câu trả lời trước, số liệu sau
+ * TỔNG QUAN — việc cần làm trước, số liệu sau
  * ------------------------------------------------------------------
- *   [ Câu tóm tắt: hôm nay có gì phải quyết (khối mực duy nhất)   12 ]
- *   [ Bộ lọc                                                      12 ]
- *   [ Khiếu nại ][ Tiêu cực ][ Tốc độ tăng ][ Sức khỏe dữ liệu       ]  mỗi thẻ có thanh bằng chứng
- *   [ Diễn biến cảm xúc                          8 ][ Việc cần quyết 4 ]
- *   [ Phân bổ cảm xúc ][ Vấn đề tăng nhanh         ][                 ]
- *   [ Phản hồi gần đây                                            12 ]
- *
- * Dưới 1280px, "Việc cần quyết" nhảy lên ngay sau hàng chỉ số: trên màn
- * hẹp không có cột bên cạnh, và việc cần quyết phải đứng trước số liệu mô tả.
+ *   [ Câu tóm tắt: hôm nay có mấy việc, việc nào gấp nhất            ]
+ *   [ Bộ lọc                                                         ]
+ *   [ Việc hôm nay: cảnh báo, livestream, đơn hàng, duyệt, dữ liệu   ]
+ *   [ Cửa hàng đang thế nào: khiếu nại | không hài lòng | độ tin     ]
+ *   [ Diễn biến cảm xúc                    8 ][ Phân bổ cảm xúc    4 ]
+ *   [ Vấn đề đang tăng nhanh               6 ][ Livestream         6 ]
+ *   [ Phản hồi gần đây                                               ]
+ * Trên điện thoại, mọi khối xếp một cột theo đúng thứ tự trên: việc cần
+ * làm luôn đứng trước số liệu mô tả.
  */
 
 const nowLabel = () => new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
@@ -40,6 +41,17 @@ const Dashboard = () => {
 
   const { stats, sentiments, alerts, trend, loading, error } = useDashboardData(timeFilter, sourceFilter, productFilter);
 
+  // Việc ngoài cảnh báo (livestream, đơn hàng, duyệt, dữ liệu); làm mới mỗi phút
+  const [inbox, setInbox] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    const load = () => axios.get('/inbox').then((r) => alive && setInbox(r.data.items || [])).catch(() => {});
+    load();
+    const t = setInterval(load, 60000);
+    return () => { alive = false; clearInterval(t); };
+  }, []);
+  const todo = buildTodo(alerts, inbox);
+
   const hasFilter = timeFilter !== 'All' || sourceFilter !== 'All' || productFilter !== 'All';
   const clearFilters = () => {
     setTimeFilter('All');
@@ -55,7 +67,7 @@ const Dashboard = () => {
 
   return (
     <div className="cx pt-2">
-      <SummaryHeader stats={stats} alerts={alerts} loading={loading} error={error} lastUpdated={lastUpdated} />
+      <SummaryHeader stats={stats} todo={todo} loading={loading} error={error} lastUpdated={lastUpdated} />
 
       <FilterBar
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}
@@ -81,24 +93,22 @@ const Dashboard = () => {
 
       {/* Tải lại thì giữ khung cũ ở độ mờ thấp: không nháy, không nhảy bố cục */}
       <div className={`transition-opacity duration-200 ${loading ? 'opacity-60' : ''}`} aria-busy={loading}>
-        <section aria-label="Chỉ số chính" className="mb-8">
-          <KpiZone stats={stats} trend={trend} />
-        </section>
+        <TodayInbox alerts={alerts} items={inbox} loading={loading} />
+
+        <StoreHealth stats={stats} />
 
         <div className="mb-8 grid grid-cols-12 items-start gap-6">
-          <section aria-label="Việc cần quyết" className="col-span-12 xl:sticky xl:top-20 xl:order-2 xl:col-span-4">
-            <ActionCenter alerts={alerts} />
-            <LiveDigest />
+          <section aria-label="Diễn biến cảm xúc" className="col-span-12 xl:col-span-8">
+            <SentimentTrendChart data={trend} />
           </section>
-
-          <section aria-label="Diễn biến và phân bổ" className="col-span-12 xl:order-1 xl:col-span-8">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_3fr]">
-              <div className="lg:col-[1/-1]">
-                <SentimentTrendChart data={trend} />
-              </div>
-              <SentimentDonut data={sentiments} />
-              <RisingIssues alerts={alerts} />
-            </div>
+          <section aria-label="Phân bổ cảm xúc" className="col-span-12 md:col-span-6 xl:col-span-4">
+            <SentimentDonut data={sentiments} />
+          </section>
+          <section aria-label="Vấn đề đang tăng nhanh" className="col-span-12 md:col-span-6 xl:col-span-6 xl:[&:has(+section:empty)]:col-span-12">
+            <RisingIssues alerts={alerts} />
+          </section>
+          <section aria-label="Livestream" className="col-span-12 xl:col-span-6 [&>div]:mt-0">
+            <LiveDigest />
           </section>
         </div>
 

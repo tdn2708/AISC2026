@@ -18,7 +18,7 @@ const PRIO_TONE = { high: 'crit', medium: 'high', low: 'neutral' };
 
 const Mini = ({ label, value, tone }) => (
   <div className="min-w-0">
-    <p className="truncate text-[0.7rem] text-ink-lo">{label}</p>
+    <p className="truncate text-xs text-ink-lo">{label}</p>
     <p className={`font-mono text-base font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
   </div>
 );

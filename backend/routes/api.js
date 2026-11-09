@@ -415,6 +415,99 @@ router.get('/nav/status', wrap(async (req, res) => {
 }));
 
 /**
+ * HỘP VIỆC HÔM NAY — các việc cần người làm, gộp từ mọi nguồn trừ cảnh báo
+ * (trang Tổng quan đã có cảnh báo kèm trạng thái quyết định, tự ghép vào).
+ * Mỗi việc: mức độ, việc gì, vì sao, và chỗ để làm.
+ *   - Phiên đang live: việc khẩn trợ lý đang gợi ý
+ *   - Đơn chốt từ live chưa lên đơn, khiếu nại từ live chưa đưa vào hệ thống
+ *   - Phản hồi chờ người duyệt (nghi ngờ ảo, AI chưa chắc nhãn)
+ *   - Kho thật lâu chưa thu thập thêm
+ */
+router.get('/inbox', wrap(async (req, res) => {
+  const ctx = await getContext(req.db);
+  const items = [];
+  const DAY = 24 * 60 * 60 * 1000;
+
+  // ---------- Livestream ----------
+  try {
+    const hub = require('../services/live/hub');
+    const sessions = await req.db.collection('live_sessions').find({ createdAt: { $gte: new Date(Date.now() - 7 * DAY) } }).sort({ createdAt: -1 }).limit(10).toArray();
+    for (const s of sessions) {
+      const r = hub.runtimeFor(s._id, req.workspace);
+      if (!r || r.status === 'ended') continue;
+      for (const a of r.snapshot().actions.active.filter((x) => x.severity !== 'medium').slice(0, 2)) {
+        items.push({
+          id: `live|${s._id}|${a.id}`, source: 'live', severity: a.severity === 'critical' ? 'critical' : 'high',
+          title: a.title, why: `Đang live "${s.title}". ${a.why}`,
+          actions: [{ label: 'Mở phiên live', to: `/live?session=${s._id}` }]
+        });
+      }
+    }
+    const ids = sessions.map((s) => s._id);
+    if (ids.length) {
+      const col = req.db.collection('live_comments');
+      const [newOrders, unpushed] = await Promise.all([
+        col.aggregate([{ $match: { sessionId: { $in: ids }, intent: 'order', orderStatus: 'new' } }, { $group: { _id: '$sessionId', n: { $sum: 1 } } }]).toArray(),
+        col.aggregate([{ $match: { sessionId: { $in: ids }, intent: 'complaint', pushedToFeedback: { $ne: true } } }, { $group: { _id: '$sessionId', n: { $sum: 1 } } }]).toArray()
+      ]);
+      const title = new Map(sessions.map((s) => [String(s._id), s.title]));
+      for (const o of newOrders) {
+        items.push({
+          id: `orders|${o._id}`, source: 'orders', severity: o.n >= 20 ? 'high' : 'medium',
+          title: `${o.n} lượt chốt từ live chưa lên đơn`, why: `Phiên "${title.get(String(o._id))}". Khách chờ lâu thì dễ đổi ý.`,
+          actions: [{ label: 'Xem danh sách', to: `/live?session=${o._id}` }]
+        });
+      }
+      for (const u of unpushed) {
+        items.push({
+          id: `livecomplaints|${u._id}`, source: 'live', severity: 'medium',
+          title: `${u.n} khiếu nại từ live chưa đưa vào hệ thống`, why: `Phiên "${title.get(String(u._id))}". Đưa vào để cảnh báo tính chung với các kênh khác.`,
+          actions: [{ label: 'Mở báo cáo phiên', to: `/live?session=${u._id}` }]
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('[INBOX] Bỏ qua phần livestream:', e.message);
+  }
+
+  // ---------- Duyệt phản hồi ----------
+  const queue = trustLayer.buildReviewQueue(ctx.items, 500);
+  const suspicious = Array.isArray(queue) ? queue.length : (queue?.items?.length ?? 0);
+  if (suspicious) {
+    items.push({
+      id: 'review|trust', source: 'review', severity: 'medium',
+      title: `${suspicious} phản hồi nghi là đánh giá ảo chờ duyệt`,
+      why: 'Đang bị giảm trọng số trong mọi chỉ số. Duyệt để giữ lại phản hồi thật, loại phản hồi ảo.',
+      actions: [{ label: 'Duyệt', to: '/trust' }]
+    });
+  }
+  const unsure = ctx.items.filter((f) => f.needsReview && f.labelledBy !== 'human').length;
+  if (unsure) {
+    items.push({
+      id: 'review|labels', source: 'review', severity: 'medium',
+      title: `${unsure} phản hồi AI chưa chắc nhãn`,
+      why: 'Hai mô hình bất đồng, thường là câu mỉa mai. Nhãn của người sẽ thay nhãn máy ngay.',
+      actions: [{ label: 'Duyệt nhãn', to: '/trust?tab=audit' }]
+    });
+  }
+
+  // ---------- Độ tươi của dữ liệu thật ----------
+  if (req.workspace === 'real' && ctx.ingestedAt) {
+    const days = Math.floor((Date.now() - new Date(ctx.ingestedAt).getTime()) / DAY);
+    if (days >= 2) {
+      items.push({
+        id: 'data|stale', source: 'data', severity: days >= 7 ? 'high' : 'medium',
+        title: `Dữ liệu chưa cập nhật ${days} ngày`,
+        why: 'Số liệu và cảnh báo đang dựa trên phản hồi cũ.',
+        actions: [{ label: 'Thu thập dữ liệu mới', to: '/data' }]
+      });
+    }
+  }
+
+  res.json({ items });
+}));
+
+/**
  * Người dùng xác nhận hoặc sửa nhãn. Mỗi nhãn được nạp vào tập huấn
  * luyện — đây là vòng lặp học chủ động, không phải một nút bấm trang trí.
  */

@@ -62,7 +62,7 @@ function weightedComplaintRate(feedbacks, transactionCount) {
     reason: null,
     numerator: Number(complaintWeight.toFixed(2)),
     denominator: transactionCount,
-    denominatorLabel: 'Số giao dịch đối soát được',
+    denominatorLabel: 'Số giao dịch có chứng từ',
     // Độ phủ: bao nhiêu phần trăm phản hồi hợp lệ đối soát được giao dịch
     coverage: feedbacks.length ? reconcilable.length / feedbacks.filter(isCountable).length : 0,
     sampleSize: reconcilable.length

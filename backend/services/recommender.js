@@ -74,7 +74,7 @@ const SUPPRESSING_REASONS = new Set(['ALREADY_DOING', 'NOT_APPLICABLE', 'đang l
 // ==================================================================
 
 function formatVnd(n) {
-  if (!n || n <= 0) return 'chưa đối soát được';
+  if (!n || n <= 0) return 'chưa đủ dữ liệu đơn hàng để tính';
   return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' đ';
 }
 
@@ -154,7 +154,7 @@ function buildSlots(alert, profile, ctx) {
 
   const rev = profile.revenue;
   slots.revenue = rev.measurable
-    ? `${formatVnd(rev.extrapolatedVnd || rev.atRiskVnd)}${rev.isLowerBound ? ' (cận dưới, đối soát được ' + formatPct(rev.coverage, 0) + ' bằng chứng)' : ''}`
+    ? `${formatVnd(rev.extrapolatedVnd || rev.atRiskVnd)}${rev.isLowerBound ? ' (cận dưới, có chứng từ cho ' + formatPct(rev.coverage, 0) + ' bằng chứng)' : ''}`
     : null;
 
   // Tỉ trọng của chiều trội nhất, dùng trong các câu dẫn chứng

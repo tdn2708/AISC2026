@@ -40,10 +40,10 @@ const SessionList = ({ sessions, onOpen, onDeleted }) => {
               </div>
               {sm && (
                 <dl className="hidden shrink-0 grid-cols-4 gap-5 text-right sm:grid">
-                  <div><dt className="text-[0.7rem] text-ink-lo">Bình luận</dt><dd className="font-mono text-sm text-ink-hi">{fmtInt(sm.comments)}</dd></div>
-                  <div><dt className="text-[0.7rem] text-ink-lo">Chốt đơn</dt><dd className="font-mono text-sm text-ink-hi">{fmtInt(sm.byIntent?.order)}</dd></div>
-                  <div><dt className="text-[0.7rem] text-ink-lo">Khiếu nại</dt><dd className={`font-mono text-sm ${sm.byIntent?.complaint ? 'text-crit' : 'text-ink-hi'}`}>{fmtInt(sm.byIntent?.complaint)}</dd></div>
-                  <div><dt className="text-[0.7rem] text-ink-lo">Đã trả lời</dt><dd className="font-mono text-sm text-ink-hi">{sm.answeredShare != null ? fmtPct(sm.answeredShare, 0) : '—'}</dd></div>
+                  <div><dt className="text-xs text-ink-lo">Bình luận</dt><dd className="font-mono text-sm text-ink-hi">{fmtInt(sm.comments)}</dd></div>
+                  <div><dt className="text-xs text-ink-lo">Chốt đơn</dt><dd className="font-mono text-sm text-ink-hi">{fmtInt(sm.byIntent?.order)}</dd></div>
+                  <div><dt className="text-xs text-ink-lo">Khiếu nại</dt><dd className={`font-mono text-sm ${sm.byIntent?.complaint ? 'text-crit' : 'text-ink-hi'}`}>{fmtInt(sm.byIntent?.complaint)}</dd></div>
+                  <div><dt className="text-xs text-ink-lo">Đã trả lời</dt><dd className="font-mono text-sm text-ink-hi">{sm.answeredShare != null ? fmtPct(sm.answeredShare, 0) : '—'}</dd></div>
                 </dl>
               )}
               <ChevronRight size={16} className="shrink-0 text-ink-lo" aria-hidden="true" />

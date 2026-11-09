@@ -45,7 +45,7 @@ const BADGE = {
 
 /** Badge — nhãn chữ nhỏ, góc vuông nhẹ, nền nhạt cùng tông chữ */
 export const Badge = ({ tone = 'neutral', icon: Icon, children, mono, className = '' }) => (
-  <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[0.7rem] font-medium whitespace-nowrap ${BADGE[tone]} ${mono ? 'font-mono' : ''} ${className}`}>
+  <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium whitespace-nowrap ${BADGE[tone]} ${mono ? 'font-mono' : ''} ${className}`}>
     {Icon && <Icon size={12} aria-hidden="true" />}
     {children}
   </span>
@@ -106,7 +106,7 @@ export const Stepper = ({ steps, className = '' }) => (
           </span>
           <p className="mt-3 text-xs leading-snug font-medium text-ink-mid">{s.label}</p>
           <p className="mt-1 font-mono text-xl font-semibold tracking-tight text-ink-hi">{s.value}</p>
-          {s.sub && <p className="mt-0.5 text-[0.7rem] leading-snug text-ink-lo">{s.sub}</p>}
+          {s.sub && <p className="mt-0.5 text-xs leading-snug text-ink-lo">{s.sub}</p>}
         </li>
       );
     })}

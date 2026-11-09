@@ -34,7 +34,7 @@ export const ConfidenceMeter = ({ value, className = '' }) => {
   if (value == null) return null;
   const pct = Math.round(value * 100);
   return (
-    <div className={`flex items-center gap-2 text-[0.7rem] text-ink-lo ${className}`}>
+    <div className={`flex items-center gap-2 text-xs text-ink-lo ${className}`}>
       <span className="shrink-0">Độ tin cậy</span>
       <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-raised">
         <span className="block h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />

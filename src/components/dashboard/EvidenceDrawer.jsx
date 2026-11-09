@@ -23,7 +23,7 @@ const METRICS = {
   wcr: {
     title: 'Tỉ lệ khiếu nại',
     mixKey: 'reconcilableComplaints',
-    scope: 'khiếu nại trên kênh đối soát được',
+    scope: 'khiếu nại trên kênh có đơn hàng để đối chiếu',
     formula: (s) => {
       const w = s?.weightedComplaintRate;
       if (!w?.available) return w?.reason || 'Chưa có dữ liệu giao dịch làm mẫu số, nên chỉ số này không được tính.';
@@ -34,13 +34,13 @@ const METRICS = {
       return [
         ['Tử số (tổng trọng số khiếu nại)', nf2(w?.numerator)],
         ['Mẫu số (giao dịch)', fmtInt(w?.denominator)],
-        ['Cỡ mẫu (phản hồi đối soát được)', fmtInt(w?.sampleSize)],
+        ['Cỡ mẫu (phản hồi có chứng từ)', fmtInt(w?.sampleSize)],
         ['Độ phủ đối soát', fmtPct(w?.coverage, 0)]
       ];
     }
   },
   negative: {
-    title: 'Tỉ trọng phản hồi tiêu cực',
+    title: 'Khách không hài lòng',
     mixKey: 'complaints',
     scope: 'phản hồi tiêu cực',
     formula: (s) => {
@@ -74,7 +74,7 @@ const METRICS = {
     }
   },
   health: {
-    title: 'Sức khỏe dữ liệu',
+    title: 'Độ tin số liệu',
     mixKey: 'all',
     scope: 'phản hồi hợp lệ',
     formula: () =>
@@ -101,7 +101,7 @@ const Section = ({ title, children }) => (
 const sampleBadge = (s) => {
   if (s.humanLabel) return { text: 'Người đã duyệt', strong: true };
   if (s.verifiedPurchase) return { text: 'Sàn xác nhận đã mua', strong: true };
-  if (s.hasOrder) return { text: 'Có mã đơn hàng', strong: true };
+  if (s.hasOrder) return { text: 'Đã mua thật', strong: true };
   if (s.tier === 'P2') return { text: 'Tài khoản đã định danh', strong: true };
   return { text: `Chưa đối soát, hạng ${s.tier}`, strong: false };
 };

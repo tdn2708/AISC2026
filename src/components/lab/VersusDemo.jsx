@@ -42,7 +42,7 @@ const CapabilityRow = ({ icon: Icon, label, generic, ours, detail }) => (
         <Icon size={15} className="shrink-0 text-ink-lo" aria-hidden="true" />
         {label}
       </p>
-      {detail && <p className="mt-0.5 pl-[23px] text-[0.74rem] leading-snug text-ink-lo">{detail}</p>}
+      {detail && <p className="mt-0.5 pl-[23px] text-xs leading-snug text-ink-lo">{detail}</p>}
     </div>
     <Mark ok={generic} />
     <Mark ok={ours} />
@@ -60,10 +60,10 @@ const MetricBar = ({ label, generic, ours, note }) => (
   <div>
     <div className="mb-1.5 flex items-baseline justify-between gap-3">
       <p className="text-[0.82rem] font-medium text-ink-hi">{label}</p>
-      {note && <p className="text-right text-[0.7rem] text-ink-lo">{note}</p>}
+      {note && <p className="text-right text-xs text-ink-lo">{note}</p>}
     </div>
     {[['Công cụ thông thường', generic, 'bg-neu'], ['Customer Radar', ours, 'bg-accent']].map(([name, v, cls]) => (
-      <div key={name} className="mb-1 grid grid-cols-[8.5rem_minmax(0,1fr)_3rem] items-center gap-2 text-[0.74rem] sm:grid-cols-[10rem_minmax(0,1fr)_3rem]">
+      <div key={name} className="mb-1 grid grid-cols-[8.5rem_minmax(0,1fr)_3rem] items-center gap-2 text-xs sm:grid-cols-[10rem_minmax(0,1fr)_3rem]">
         <span className="truncate text-ink-mid">{name}</span>
         <span className="h-2 overflow-hidden rounded-full bg-raised">
           <span className={`block h-full rounded-full ${cls} animate-grow-x origin-left`} style={{ width: `${Math.max(1, (v ?? 0) * 100)}%` }} />
@@ -189,7 +189,7 @@ const VersusDemo = () => {
           {/* ---------- Công cụ thông thường ---------- */}
           <GlassPanel className="flex flex-col p-5 sm:p-6">
             <p className="eyebrow mb-1">Công cụ thông thường</p>
-            <p className="mb-5 text-[0.78rem] leading-relaxed text-ink-lo">
+            <p className="mb-5 text-xs leading-relaxed text-ink-lo">
               Một nhãn cảm xúc cho cả câu (baseline B2 trong thực nghiệm)
             </p>
             <div className="flex items-center gap-3">
@@ -215,7 +215,7 @@ const VersusDemo = () => {
                 {usedModel ? (inBrowser ? 'ViSoBERT · trên trình duyệt' : 'ViSoBERT tinh chỉnh') : 'Lớp luật dự phòng'}
               </Badge>
             </div>
-            <p className="mb-5 text-[0.78rem] leading-relaxed text-ink-lo">
+            <p className="mb-5 text-xs leading-relaxed text-ink-lo">
               {usedModel ? 'Mô hình hiểu tiếng Việt mạng xã hội, bóc tách từng vấn đề' : 'Dịch vụ mô hình chưa sẵn sàng — đang dùng luật từ khóa'}
             </p>
 
@@ -244,10 +244,10 @@ const VersusDemo = () => {
                           <p className="text-[0.88rem] font-semibold text-ink-hi">
                             {a.categoryLabel}{a.causeLabel ? <span className="font-normal text-ink-mid"> → {a.causeLabel}</span> : null}
                           </p>
-                          {a.confidence != null && <span className="data-num shrink-0 text-[0.74rem] text-ink-lo">{Math.round(a.confidence * 100)}%</span>}
+                          {a.confidence != null && <span className="data-num shrink-0 text-xs text-ink-lo">{Math.round(a.confidence * 100)}%</span>}
                         </div>
                         {a.owner && (
-                          <p className="mt-1 flex items-center gap-1.5 text-[0.76rem] text-ink-mid">
+                          <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-mid">
                             <Building2 size={13} aria-hidden="true" />Chuyển cho: <b className="font-semibold text-ink-hi">{a.owner}</b>
                           </p>
                         )}
@@ -259,12 +259,12 @@ const VersusDemo = () => {
             )}
 
             {(replacements.length > 0 || piiTypes.length > 0 || guard) && (
-              <div className="mt-4 flex flex-col gap-1.5 border-t border-line-soft pt-3 text-[0.78rem] text-ink-mid">
+              <div className="mt-4 flex flex-col gap-1.5 border-t border-line-soft pt-3 text-xs text-ink-mid">
                 {replacements.length > 0 && (
                   <p>
                     <span className="text-ink-lo">Đã hiểu: </span>
                     {replacements.slice(0, 5).map((r, i) => (
-                      <span key={i} className="mr-1.5 inline-block font-mono text-[0.74rem]">
+                      <span key={i} className="mr-1.5 inline-block font-mono text-xs">
                         {r.from}<span className="text-ink-lo"> → </span><span className="text-accent-hi">{r.to}</span>{i < Math.min(replacements.length, 5) - 1 ? ',' : ''}
                       </span>
                     ))}
@@ -286,8 +286,8 @@ const VersusDemo = () => {
         <GlassPanel className="p-5 sm:p-6">
           <div className="mb-2 grid grid-cols-[minmax(0,1fr)_3.5rem_3.5rem] items-end gap-2 sm:grid-cols-[minmax(0,1fr)_5.5rem_5.5rem]">
             <p className="eyebrow">Với câu này, ai làm được gì</p>
-            <p className="text-center text-[0.68rem] leading-tight text-ink-lo">Thông thường</p>
-            <p className="text-center text-[0.68rem] leading-tight font-semibold text-accent-hi">Customer Radar</p>
+            <p className="text-center text-xs leading-tight text-ink-lo">Thông thường</p>
+            <p className="text-center text-xs leading-tight font-semibold text-accent-hi">Customer Radar</p>
           </div>
           {/* Mỗi hàng tính từ KẾT QUẢ THẬT của câu đang xem: chỉ hiện hàng liên
               quan, và đánh ✗ cho Customer Radar khi nó bỏ sót — không tô hồng */}
@@ -340,7 +340,7 @@ const VersusDemo = () => {
             <MetricBar label="Chỉ ra đúng nguyên nhân gốc" generic={mB2.causeMacroF1} ours={mM.causeMacroF1} />
             <MetricBar label="Đoán đúng cảm xúc" generic={mB2.sentimentMacroF1} ours={mM.sentimentMacroF1} note="hai bên gần nhau" />
           </div>
-          <p className="mt-4 text-[0.76rem] leading-relaxed text-ink-lo">
+          <p className="mt-4 text-xs leading-relaxed text-ink-lo">
             Về cảm xúc, hai cách gần ngang nhau — và đó chính là điểm đáng nói: biết khách "không vui" thì công cụ nào cũng làm được.
             Thứ doanh nghiệp cần là biết khách không vui <b className="text-ink-mid">vì cái gì</b> và <b className="text-ink-mid">ai phải xử lý</b>.
             Số liệu đầy đủ, kể cả các chỉ số chưa đạt mục tiêu, ở tab Kết quả thực nghiệm.

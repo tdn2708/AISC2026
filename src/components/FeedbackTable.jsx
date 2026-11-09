@@ -85,13 +85,13 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
       <div style={{ overflowX: 'auto' }}>
         <table className="fb-table">
           <colgroup>
-            <col style={{ width: '19%' }} />
-            <col style={{ width: '28%' }} />
-            <col style={{ width: '14%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '29%' }} />
+            <col style={{ width: '13%' }} />
             <col style={{ width: '11%' }} />
             <col style={{ width: '9%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '7%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '9%' }} />
           </colgroup>
           <thead>
             <tr>
@@ -132,7 +132,7 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
                     <td className="fb-c-product">
                       <div className="fb-clamp fb-product" title={item.productName}>{item.productName || '—'}</div>
                     </td>
-                    <td className="fb-c-cat">{category && item.category !== 'Other' ? <span className="fb-chip" title={category}>{category}</span> : <span className="text-xs text-ink-lo">Không nêu vấn đề</span>}</td>
+                    <td className="fb-c-cat">{category && item.category !== 'Other' ? <span className="fb-chip" title={category}>{category}</span> : <span className="text-ink-lo" title="Không nêu vấn đề cụ thể">—</span>}</td>
                     <td className="fb-c-sent">{getSentiment(item.sentiment)}</td>
                     <td className="fb-c-trust">{getTrust(item)}</td>
                     <td className="fb-c-src"><span className="fb-source">{item.source}</span></td>

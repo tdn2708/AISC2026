@@ -58,7 +58,7 @@ const Inline = ({ text, onCite, maxCite = 0 }) => {
           key={i}
           type="button"
           onClick={() => onCite(Number(cite[1]))}
-          className="mx-0.5 inline-grid h-[1.15rem] min-w-[1.15rem] place-items-center rounded bg-accent-dim px-1 align-text-top font-mono text-[0.68rem] font-semibold text-accent-hi hover:bg-accent hover:text-on-accent"
+          className="mx-0.5 inline-grid h-[1.15rem] min-w-[1.15rem] place-items-center rounded bg-accent-dim px-1 align-text-top font-mono text-xs font-semibold text-accent-hi hover:bg-accent hover:text-on-accent"
           aria-label={`Xem dẫn chứng số ${cite[1]}`}
         >
           {cite[1]}
@@ -143,10 +143,10 @@ const Answer = ({ msg, index, onOpenFeedback }) => {
                     <span className="font-mono text-xs font-semibold text-accent-hi">{i + 1}</span>
                     <span className="line-clamp-3">“{e.text}”</span>
                   </p>
-                  <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-4 text-[0.72rem] text-ink-lo">
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-4 text-xs text-ink-lo">
                     <span className="inline-flex items-center gap-1">
                       <EvidenceSwatch kind={verified ? 'verified' : 'inferred'} size={9} />
-                      {verified ? 'Đối soát được' : 'AI suy luận'}
+                      {verified ? 'Có chứng từ' : 'AI đoán'}
                     </span>
                     {e.cause || e.category ? <span>{e.cause || e.category}</span> : null}
                     <span>{e.source}</span>
@@ -163,7 +163,7 @@ const Answer = ({ msg, index, onOpenFeedback }) => {
       )}
 
       {msg.meta && (
-        <p className="text-[0.72rem] leading-relaxed text-ink-lo">
+        <p className="text-xs leading-relaxed text-ink-lo">
           {PROVIDER[msg.meta.provider] || PROVIDER.deterministic}. Dựa trên {fmtInt(msg.meta.validFeedbacks)} phản hồi được tính, cùng số liệu với Tổng quan.
         </p>
       )}

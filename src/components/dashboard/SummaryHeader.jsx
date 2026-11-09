@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, RefreshCw } from 'lucide-react';
-import { fmtDate, fmtDateTime, alertInWords, SEVERITY } from '../../lib/format';
+import { fmtDate, fmtDateTime } from '../../lib/format';
 
 /**
  * CÂU TRẢ LỜI ĐỨNG TRƯỚC, SỐ LIỆU ĐỨNG SAU
@@ -14,13 +14,11 @@ import { fmtDate, fmtDateTime, alertInWords, SEVERITY } from '../../lib/format';
 
 const lower1 = (s) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
 
-const bySeverity = (a, b) =>
-  (SEVERITY[b.severity]?.rank ?? 0) - (SEVERITY[a.severity]?.rank ?? 0) || (b.severityScore ?? 0) - (a.severityScore ?? 0);
-
-const SummaryHeader = ({ stats, alerts = [], loading, error, lastUpdated }) => {
+/** todo: danh sách việc đã gộp và xếp (TodayInbox.buildTodo) */
+const SummaryHeader = ({ stats, todo = [], loading, error, lastUpdated }) => {
   const navigate = useNavigate();
-  const pending = alerts.filter((a) => !a.decision || a.decision === 'PROPOSED').sort(bySeverity);
-  const top = pending[0];
+  const top = todo[0];
+  const urgent = todo.filter((t) => t.severity === 'critical').length;
   const real = stats?.workspace === 'real';
 
   let sentence;
@@ -29,17 +27,13 @@ const SummaryHeader = ({ stats, alerts = [], loading, error, lastUpdated }) => {
   } else if (loading && !stats) {
     sentence = 'Đang tải dữ liệu…';
   } else if (top) {
-    const what = top.causeLabel ? `${top.categoryLabel.toLowerCase()} (${lower1(top.causeLabel)})` : top.categoryLabel.toLowerCase();
     sentence = (
       <>
-        {pending.length} vấn đề cần quyết định. Nặng nhất là {what}
-        {top.productName ? <> ở {top.productName}</> : null}: {alertInWords(top)}.
+        Hôm nay có {todo.length} việc cần làm{urgent ? `, ${urgent} việc khẩn` : ''}. Gấp nhất: {lower1(top.title)}.
       </>
     );
-  } else if (alerts.length) {
-    sentence = 'Mọi vấn đề đã được quyết định. Hệ thống sẽ theo dõi lại sau 7 ngày.';
   } else {
-    sentence = 'Không có vấn đề nào cần quyết định. Mọi chỉ số đang trong ngưỡng bình thường.';
+    sentence = 'Hôm nay không có việc nào cần làm. Mọi chỉ số đang trong ngưỡng bình thường.';
   }
 
   const asOfLine = real
@@ -60,10 +54,10 @@ const SummaryHeader = ({ stats, alerts = [], loading, error, lastUpdated }) => {
           {top && (
             <button
               type="button"
-              onClick={() => navigate(`/risk?alert=${encodeURIComponent(top.id)}`)}
+              onClick={() => document.getElementById('today')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               className="inline-flex h-10 items-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#13232B] transition-colors hover:bg-white/90"
             >
-              Xem {pending.length} vấn đề <ArrowRight size={15} aria-hidden="true" />
+              Xem việc hôm nay <ArrowRight size={15} aria-hidden="true" />
             </button>
           )}
           <button
@@ -71,7 +65,7 @@ const SummaryHeader = ({ stats, alerts = [], loading, error, lastUpdated }) => {
             onClick={() => navigate('/data')}
             className="inline-flex h-10 items-center gap-2 rounded-md border border-white/25 px-4 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
           >
-            <RefreshCw size={14} aria-hidden="true" /> Đồng bộ dữ liệu
+            <RefreshCw size={14} aria-hidden="true" /> Thu thập dữ liệu mới
           </button>
         </div>
         <p className="min-w-0 flex-1 text-xs leading-relaxed text-white/70 sm:text-right">{asOfLine}</p>

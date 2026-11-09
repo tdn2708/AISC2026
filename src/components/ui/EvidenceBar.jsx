@@ -16,7 +16,7 @@ import { fmtInt } from '../../lib/format';
 export const EVIDENCE_KINDS = [
   {
     key: 'verified',
-    label: 'Đối soát được',
+    label: 'Có chứng từ',
     hint: 'Có mã đơn hàng, được sàn xác nhận đã mua, hoặc gắn tài khoản đã định danh'
   },
   {
@@ -26,7 +26,7 @@ export const EVIDENCE_KINDS = [
   },
   {
     key: 'inferred',
-    label: 'AI suy luận',
+    label: 'AI đoán',
     hint: 'Chưa có chứng từ; được tính vì Trust Layer không thấy dấu hiệu bất thường'
   }
 ];
@@ -83,11 +83,11 @@ export const EvidenceBar = ({ mix, height = 6, showCaption = true, className = '
         ))}
       </div>
       {showCaption && (
-        <p className="mt-1.5 text-[0.75rem] leading-snug text-ink-lo">
+        <p className="mt-1.5 text-xs leading-snug text-ink-lo">
           {total ? (
             <>
               <span className="font-mono font-medium text-ink-mid">{100 - pct(mix.inferred, total)}%</span> có chứng từ hoặc đã duyệt,{' '}
-              <span className="font-mono">{pct(mix.inferred, total)}%</span> do AI suy luận
+              <span className="font-mono">{pct(mix.inferred, total)}%</span> do AI đoán
             </>
           ) : (
             'Chưa có phản hồi nào được tính'

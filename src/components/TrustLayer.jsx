@@ -153,7 +153,7 @@ const TrustOverview = () => {
           />
           <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-line-soft pt-4 text-xs">
             <div className="flex gap-1.5"><dt className="text-ink-lo">Số kênh có dữ liệu</dt><dd className="font-mono font-semibold text-ink-hi">{health.channelCoverage.covered}/{health.channelCoverage.expected}</dd></div>
-            <div className="flex gap-1.5"><dt className="text-ink-lo">Đối soát được với đơn hàng</dt><dd className="font-mono font-semibold text-ink-hi">{pct1(health.reconciliationRate)}</dd></div>
+            <div className="flex gap-1.5"><dt className="text-ink-lo">Khớp với đơn hàng</dt><dd className="font-mono font-semibold text-ink-hi">{pct1(health.reconciliationRate)}</dd></div>
             {health.lowInformation?.count > 0 && (
               <div className="flex gap-1.5" title="Đánh giá ngắn kiểu “ok”, “hàng tốt”: không phải rác, vẫn được tính vào chỉ số">
                 <dt className="text-ink-lo">Đánh giá ngắn, vẫn được tính</dt>
@@ -168,13 +168,13 @@ const TrustOverview = () => {
         </GlassPanel>
 
         <GlassPanel tone="strong" className="flex flex-col items-center p-6 text-center">
-          <PanelHeader title="Sức khỏe dữ liệu" className="w-full text-left" />
+          <PanelHeader title="Độ tin số liệu" className="w-full text-left" />
           <HealthDial score={health.dataHealthScore} />
           <div className="mt-5 flex w-full flex-col gap-3 text-left">
             <ProgressBar label="Vượt qua kiểm tra tin cậy" value={(comps.passRate ?? 0) / 100} showValue />
             <ProgressBar label="Số kênh có dữ liệu" value={(comps.channelCoverage ?? 0) / 100} showValue />
             <ProgressBar label="Độ mới của dữ liệu" value={(comps.freshness ?? 0) / 100} showValue />
-            <ProgressBar label="Đối soát được với đơn hàng" value={(comps.reconciliation ?? 0) / 100} showValue />
+            <ProgressBar label="Khớp với đơn hàng" value={(comps.reconciliation ?? 0) / 100} showValue />
           </div>
         </GlassPanel>
       </div>

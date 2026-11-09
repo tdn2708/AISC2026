@@ -27,7 +27,7 @@ const Kpi = ({ label, value, sub, tone }) => (
   <div className="min-w-0 rounded-lg border border-line-soft bg-surface/60 px-3.5 py-3">
     <p className="truncate text-xs text-ink-lo">{label}</p>
     <p className={`mt-1 font-mono text-[1.45rem] leading-none font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
-    {sub && <p className="mt-1 truncate text-[0.7rem] text-ink-lo">{sub}</p>}
+    {sub && <p className="mt-1 truncate text-xs text-ink-lo">{sub}</p>}
   </div>
 );
 

@@ -76,7 +76,7 @@ const ManualInput = ({ session, onDone }) => {
       <section className="border-t border-line-soft pt-5">
         <h3 className="text-sm font-semibold text-ink-hi">Gửi tự động qua webhook</h3>
         <p className="mt-1 text-xs leading-relaxed text-ink-lo">Công cụ khác gửi bình luận vào phiên này bằng lệnh dưới đây. Giữ kín khóa nhập: ai có khóa đều gửi được bình luận vào phiên.</p>
-        <pre className="mt-2 overflow-x-auto rounded-md bg-raised p-3 font-code text-[0.7rem] leading-relaxed whitespace-pre-wrap break-all text-ink-mid">{curl}</pre>
+        <pre className="mt-2 overflow-x-auto rounded-md bg-raised p-3 font-code text-xs leading-relaxed whitespace-pre-wrap break-all text-ink-mid">{curl}</pre>
         <Button
           size="sm"
           variant="secondary"

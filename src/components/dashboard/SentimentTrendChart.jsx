@@ -53,7 +53,7 @@ const SentimentTrendChart = ({ data = [] }) => {
           </li>
         ))}
       </ul>
-      <div className="flex rounded-md border border-line/70 p-0.5 text-[0.7rem]" role="group" aria-label="Kiểu hiển thị">
+      <div className="flex rounded-md border border-line/70 p-0.5 text-xs" role="group" aria-label="Kiểu hiển thị">
         {[
           ['chart', 'Biểu đồ'],
           ['table', 'Bảng']

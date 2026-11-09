@@ -91,7 +91,7 @@ const Notifications = () => {
         onClick={() => setOpen((v) => !v)}
         badge={
           unread > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 grid min-w-[18px] place-items-center rounded-full bg-crit px-1 font-mono text-[0.62rem] leading-[18px] font-semibold text-white ring-2 ring-[var(--canvas)]">
+            <span className="absolute -top-0.5 -right-0.5 grid min-w-[18px] place-items-center rounded-full bg-crit px-1 font-mono text-xs leading-[18px] font-semibold text-white ring-2 ring-[var(--canvas)]">
               {unread > 9 ? '9+' : unread}
             </span>
           )
@@ -101,7 +101,7 @@ const Notifications = () => {
         <div className="glass-strong absolute top-[calc(100%+10px)] right-0 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg animate-pop-in">
           <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
             <h3 className="text-sm font-semibold text-ink-hi">Thông báo</h3>
-            {unread > 0 && <span className="rounded bg-crit/12 px-1.5 py-0.5 font-mono text-[0.68rem] font-medium text-crit">{unread} mới</span>}
+            {unread > 0 && <span className="rounded bg-crit/12 px-1.5 py-0.5 font-mono text-xs font-medium text-crit">{unread} mới</span>}
           </div>
           <ul className="max-h-[340px] list-none overflow-y-auto">
             {risks.length === 0 ? (
@@ -179,7 +179,7 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
           <Search size={16} aria-hidden="true" />
           {/* Màn hẹp chỉ còn biểu tượng: ô tìm kiếm từng đẩy thanh trên tràn ngang */}
           <span className="hidden flex-1 truncate text-left md:inline">Tìm nhanh…</span>
-          <kbd className="hidden rounded-md border border-line bg-surface/70 px-1.5 py-0.5 font-mono text-[0.66rem] text-ink-mid md:inline">
+          <kbd className="hidden rounded-md border border-line bg-surface/70 px-1.5 py-0.5 font-mono text-xs text-ink-mid md:inline">
             {isMac ? '⌘' : 'Ctrl'} K
           </kbd>
         </button>

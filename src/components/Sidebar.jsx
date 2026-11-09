@@ -55,7 +55,7 @@ const WorkspacePicker = ({ collapsed }) => {
         {!collapsed && (
           <>
             <span className="min-w-0 flex-1">
-              <span className="block text-[0.7rem] text-ink-lo">Kho dữ liệu</span>
+              <span className="block text-xs text-ink-lo">Kho dữ liệu</span>
               <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink-hi">
                 <span className={`size-1.5 shrink-0 rounded-full ${dot(current)}`} aria-hidden="true" />
                 {WORKSPACES[current].label}
@@ -119,7 +119,7 @@ const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
           {!collapsed && <span className="flex-1 truncate">{item.short || item.label}</span>}
           {!collapsed && count ? (
             <span
-              className={`rounded px-1.5 py-px font-mono text-[0.66rem] font-semibold ${
+              className={`rounded px-1.5 py-px font-mono text-xs font-semibold ${
                 critical ? 'bg-crit text-white' : 'bg-raised text-ink-mid'
               }`}
             >
@@ -202,7 +202,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
       : nlp === undefined
       ? { dot: 'bg-ink-lo', label: 'Đang kiểm tra…', title: 'Đang hỏi trạng thái dịch vụ mô hình' }
       : !nlp || !nlp.reachable
-        ? { dot: 'bg-ink-lo', label: 'Đang dùng bộ luật', title: nlp?.reason || 'Chưa kết nối dịch vụ ViSoBERT' }
+        ? { dot: 'bg-ink-lo', label: 'AI chế độ cơ bản', title: nlp?.reason || 'Chưa kết nối dịch vụ ViSoBERT' }
         : nlp.canLabel
           ? { dot: 'bg-ok', label: 'ViSoBERT đang chạy', title: `Đầu vào ${nlp.inputMode}` }
           : { dot: 'bg-high', label: 'ViSoBERT chưa tinh chỉnh', title: nlp.reason };
@@ -272,7 +272,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
                 className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-xs text-ink-mid hover:bg-raised hover:text-ink-hi"
               >
                 <span className={`size-1.5 shrink-0 rounded-full ${healthTone}`} aria-hidden="true" />
-                <span className="flex-1">Sức khỏe dữ liệu</span>
+                <span className="flex-1">Độ tin số liệu</span>
                 <span className={`font-mono font-semibold ${healthText}`}>{health ?? '—'}</span>
               </button>
               {/* Lối vào Phòng thí nghiệm: ai quan tâm mô hình đang chạy bằng gì thì bấm vào đây */}
@@ -295,7 +295,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
           {showMenu && (
             <div className="glass-strong absolute right-3 bottom-[calc(100%+6px)] left-3 z-10 min-w-[200px] rounded-lg p-1.5 animate-pop-in">
               <div className="border-b border-line-soft px-3 py-2">
-                <p className="text-[0.7rem] text-ink-lo">Đang đăng nhập</p>
+                <p className="text-xs text-ink-lo">Đang đăng nhập</p>
                 <p className="truncate text-sm font-medium text-ink-hi">{profile.email}</p>
               </div>
               <button
@@ -323,14 +323,14 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
             title={collapsed ? profile.name : undefined}
             className={`flex w-full items-center rounded-lg p-1.5 transition-colors hover:bg-raised ${collapsed ? 'justify-center' : 'gap-2.5'}`}
           >
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-dim text-[0.7rem] font-semibold text-accent-hi">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-dim text-xs font-semibold text-accent-hi">
               {initials(profile.name)}
             </span>
             {!collapsed && (
               <>
                 <span className="min-w-0 flex-1 text-left">
                   <span className="block truncate text-[0.82rem] font-medium text-ink-hi">{profile.name}</span>
-                  <span className="block truncate text-[0.7rem] text-ink-lo">Quản lý trải nghiệm KH</span>
+                  <span className="block truncate text-xs text-ink-lo">Quản lý trải nghiệm KH</span>
                 </span>
                 <ChevronsUpDown size={14} className="shrink-0 text-ink-lo" />
               </>

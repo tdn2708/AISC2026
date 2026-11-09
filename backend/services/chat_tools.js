@@ -50,7 +50,7 @@ const TOOLS = {
       if (cards.weightedComplaintRate.available) {
         facts.push(
           `Tỉ lệ Khiếu nại có Trọng số (WCR): ${cards.weightedComplaintRate.display}, ` +
-          `mẫu số là ${num(cards.weightedComplaintRate.denominator)} giao dịch đối soát được`
+          `mẫu số là ${num(cards.weightedComplaintRate.denominator)} giao dịch có chứng từ`
         );
       } else {
         facts.push(

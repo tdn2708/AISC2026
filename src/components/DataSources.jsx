@@ -311,14 +311,14 @@ const DataSources = () => {
                       <tr key={r.id}>
                         <td className="pl-5">
                           <p className="font-medium text-ink-hi">{r.source}</p>
-                          <p className="max-w-[360px] truncate font-mono text-[0.7rem] text-ink-lo" title={r.url}>{r.url}</p>
+                          <p className="max-w-[360px] truncate font-mono text-xs text-ink-lo" title={r.url}>{r.url}</p>
                         </td>
                         <td>
                           <Badge tone={st.tone} icon={st.icon}>{st.label}</Badge>
-                          {r.error && <p className="mt-1 text-[0.7rem] text-crit">{r.error}</p>}
-                          {r.note && <p className="mt-1 text-[0.7rem] text-ink-lo">{r.note}</p>}
+                          {r.error && <p className="mt-1 text-xs text-crit">{r.error}</p>}
+                          {r.note && <p className="mt-1 text-xs text-ink-lo">{r.note}</p>}
                           {r.status === 'Success' && r.dataSource && (
-                            <button type="button" onClick={() => navigate(feedbackLink(r.dataSource, r.productName))} className="mt-1 inline-flex items-center gap-1 text-[0.72rem] font-medium text-accent hover:underline">
+                            <button type="button" onClick={() => navigate(feedbackLink(r.dataSource, r.productName))} className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline">
                               Xem dữ liệu <ArrowRight size={12} />
                             </button>
                           )}

@@ -33,13 +33,14 @@ const ChartTip = ({ active, payload, label }) => {
   );
 };
 
-const Bars = ({ items, max, render }) => (
+/** stacked: tên một dòng, số liệu dòng dưới (tên sản phẩm dài, cột hẹp) */
+const Bars = ({ items, max, render, stacked = false }) => (
   <ul className="flex list-none flex-col gap-2.5">
     {items.map((it) => (
       <li key={it.key || it.id}>
-        <div className="flex items-baseline justify-between gap-3 text-sm">
-          <span className="min-w-0 truncate text-ink-hi">{it.label || it.name}</span>
-          <span className="shrink-0 font-mono text-xs text-ink-mid">{render(it)}</span>
+        <div className={stacked ? 'text-sm' : 'flex items-baseline justify-between gap-3 text-sm'}>
+          <span className={stacked ? 'block truncate text-ink-hi' : 'min-w-0 truncate text-ink-hi'} title={it.label || it.name}>{it.label || it.name}</span>
+          <span className={stacked ? 'block text-xs text-ink-mid' : 'shrink-0 font-mono text-xs text-ink-mid'}>{render(it)}</span>
         </div>
         <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-raised">
           <div className="h-full rounded-full bg-accent" style={{ width: `${max ? Math.max(3, ((it.count ?? it.score) / max) * 100) : 0}%` }} />
@@ -54,7 +55,7 @@ export const Rhythm = ({ stats }) => {
   return (
     <GlassPanel tone="strong" className="p-4 sm:p-5">
       <PanelHeader title="Nhịp bình luận" subtitle="Số bình luận mỗi phút" className="mb-3" />
-      <div className="mb-2 flex flex-wrap gap-3 text-[0.7rem] text-ink-mid">
+      <div className="mb-2 flex flex-wrap gap-3 text-xs text-ink-mid">
             {SERIES.map((k) => (
               <span key={k} className="inline-flex items-center gap-1">
                 <span className="size-2 rounded-sm" style={{ background: INTENT_MAP[k].color }} aria-hidden="true" />
@@ -101,7 +102,7 @@ export const Products = ({ stats }) => {
     <GlassPanel tone="strong" className="p-4 sm:p-5">
       <PanelHeader title="Sản phẩm được quan tâm" subtitle="Một đơn chốt tính bằng ba câu hỏi" />
       {products.length ? (
-        <Bars items={products} max={max} render={(p) => `${fmtInt(p.quantity)} đã chốt, ${fmtInt(p.questions)} câu hỏi`} />
+        <Bars stacked items={products} max={max} render={(p) => `${fmtInt(p.quantity)} đã chốt, ${fmtInt(p.questions)} câu hỏi`} />
       ) : (
         <EmptyState compact title="Chưa nhận ra sản phẩm nào" description="Khai báo danh mục và từ khóa để bình luận được gắn đúng sản phẩm." />
       )}

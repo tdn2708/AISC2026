@@ -658,7 +658,7 @@ const Reports = () => {
               </div>
               <p style={{ margin: '8px 0 0 0', fontSize: '11px', color: REPORT.lo, lineHeight: 1.5 }}>
                 {pdfData?.stats?.weightedComplaintRate?.available
-                  ? `mẫu số ${fmtInt(pdfData.stats.weightedComplaintRate.denominator)} giao dịch đối soát được`
+                  ? `mẫu số ${fmtInt(pdfData.stats.weightedComplaintRate.denominator)} giao dịch có chứng từ`
                   : 'chưa kết nối dữ liệu giao dịch nên không tồn tại mẫu số'}
               </p>
             </div>
@@ -670,7 +670,7 @@ const Reports = () => {
               thực sự tính được.
             */}
             <div style={{ flex: 1, background: REPORT.surface, border: `1px solid ${REPORT.border}`, padding: '18px 20px', borderRadius: '10px' }}>
-              <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: REPORT.lo, fontWeight: 600 }}>Sức khỏe dữ liệu</p>
+              <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: REPORT.lo, fontWeight: 600 }}>Độ tin số liệu</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
                 <h2 style={{
                   margin: 0, fontSize: '30px', fontWeight: 600, lineHeight: 1,

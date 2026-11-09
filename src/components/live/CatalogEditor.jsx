@@ -70,7 +70,7 @@ export const fromRow = (r) => ({
 
 const Field = ({ label, children, className = '' }) => (
   <label className={`flex min-w-0 flex-col gap-1 ${className}`}>
-    <span className="text-[0.7rem] font-medium text-ink-lo">{label}</span>
+    <span className="text-xs font-medium text-ink-lo">{label}</span>
     {children}
   </label>
 );

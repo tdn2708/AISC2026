@@ -26,9 +26,9 @@ const MOODS = [
   { value: 'Negative', label: 'Tiêu cực', icon: NegMark }
 ];
 const EVIDENCE_FILTERS = [
-  { value: 'verified', label: 'Đối soát được' },
+  { value: 'verified', label: 'Có chứng từ' },
   { value: 'human', label: 'Người đã duyệt' },
-  { value: 'inferred', label: 'AI suy luận' }
+  { value: 'inferred', label: 'AI đoán' }
 ];
 const SIGNAL_ICONS = {
   'Trùng lặp gần về nội dung': Copy,
@@ -310,12 +310,12 @@ const Feedbacks = () => {
           <div className={`overflow-x-auto transition-opacity ${loading ? 'opacity-60' : ''}`}>
             <table className="fb-table">
               <colgroup>
-                <col style={{ width: '19%' }} />
+                <col style={{ width: '18%' }} />
                 <col style={{ width: '37%' }} />
-                <col style={{ width: '14%' }} />
+                <col style={{ width: '13%' }} />
                 <col style={{ width: '10%' }} />
                 <col style={{ width: '12%' }} />
-                <col style={{ width: '8%' }} />
+                <col style={{ width: '10%' }} />
               </colgroup>
               <thead>
                 <tr>
@@ -349,7 +349,7 @@ const Feedbacks = () => {
                         </div>
                       </td>
                       <td className="fb-c-text"><div className="fb-clamp" title={f.originalText}>{f.originalText}</div></td>
-                      <td className="fb-c-cat">{f.categoryLabel && f.category !== 'Other' ? <span className="fb-chip" title={f.categoryLabel}>{f.categoryLabel}</span> : <span className="text-xs text-ink-lo">Không nêu vấn đề</span>}</td>
+                      <td className="fb-c-cat">{f.categoryLabel && f.category !== 'Other' ? <span className="fb-chip" title={f.categoryLabel}>{f.categoryLabel}</span> : <span className="text-ink-lo" title="Không nêu vấn đề cụ thể">—</span>}</td>
                       <td className="fb-c-sent">
                         <span className="inline-flex items-center gap-2 text-[0.8rem] text-ink-mid">
                           <SentimentFace sentiment={f.sentiment} size={22} />

@@ -16,7 +16,7 @@ export const Chip = ({ active, onClick, icon: Icon, count, children, className =
     {Icon && <Icon size={13} aria-hidden="true" />}
     {children}
     {count != null && (
-      <span className={`font-mono text-[0.68rem] ${active ? 'opacity-80' : 'text-ink-lo'}`}>{typeof count === 'number' ? count.toLocaleString('vi-VN') : count}</span>
+      <span className={`font-mono text-xs ${active ? 'opacity-80' : 'text-ink-lo'}`}>{typeof count === 'number' ? count.toLocaleString('vi-VN') : count}</span>
     )}
   </button>
 );
@@ -44,7 +44,7 @@ export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
           aria-pressed={active}
           onClick={() => onChange(o.value)}
           className={`inline-flex items-center gap-1.5 rounded font-medium transition-[background-color,color,box-shadow] duration-150 ${
-            size === 'sm' ? 'h-7 px-3 text-[0.72rem]' : 'h-9 px-4 text-sm'
+            size === 'sm' ? 'h-7 px-3 text-xs' : 'h-9 px-4 text-sm'
           } ${active ? 'bg-surface text-ink-hi shadow-[0_1px_3px_rgb(31_45_53/0.12)]' : 'text-ink-lo hover:text-ink-mid'}`}
         >
           {o.icon && <o.icon size={13} aria-hidden="true" />}
@@ -74,7 +74,7 @@ export const Tabs = ({ tabs, value, onChange, className = '' }) => (
           {t.icon && <t.icon size={15} aria-hidden="true" />}
           {t.label}
           {t.count != null && (
-            <span className={`rounded px-1.5 font-mono text-[0.68rem] ${active ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-mid'}`}>
+            <span className={`rounded px-1.5 font-mono text-xs ${active ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-mid'}`}>
               {t.count}
             </span>
           )}

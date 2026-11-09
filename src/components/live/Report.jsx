@@ -21,7 +21,7 @@ const Big = ({ label, value, sub, tone }) => (
   <div className="rounded-lg border border-line-soft bg-surface/60 px-4 py-3.5">
     <p className="text-xs text-ink-lo">{label}</p>
     <p className={`mt-1 font-mono text-[1.6rem] leading-none font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
-    {sub && <p className="mt-1.5 text-[0.72rem] text-ink-lo">{sub}</p>}
+    {sub && <p className="mt-1.5 text-xs text-ink-lo">{sub}</p>}
   </div>
 );
 

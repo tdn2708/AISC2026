@@ -35,7 +35,7 @@ export const SeverityBadge = ({ level, className = '' }) => {
   const Icon = SEVERITY_ICON[level] || Info;
   return (
     <span
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded bg-(--sev)/12 px-1.5 py-0.5 font-mono text-[0.66rem] font-medium text-(--sev) ${className}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded bg-(--sev)/12 px-1.5 py-0.5 font-mono text-xs font-medium text-(--sev) ${className}`}
       style={{ '--sev': meta.color }}
     >
       <Icon size={12} aria-hidden="true" />
