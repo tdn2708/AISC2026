@@ -1546,6 +1546,14 @@ test('Live coach: bình luận giảm mạnh và khách hỏi dồn sản phẩm
   assert.ok(hot && hot.do.productId === 'tui-tote');
 });
 
+test('Live coach: báo hết hàng được đo bằng lượt chốt vào đúng biến thể đã hết, không bằng cả sản phẩm', () => {
+  const lines = [...times(4, 5.5, 'chốt quần jean size XL'), ...times(8, 2.5, 'chốt quần jean size M'), [1, 'chốt quần jean size XL']];
+  const { agg, now } = liveScenario(lines, { current: 'quan-jean' });
+  const e = measureEffect(agg, { type: 'soldout_demand', watch: 'order', key: 'quan-jean|XL', productId: 'quan-jean' }, new Date(now - 3 * 60000), now);
+  assert.ok(e.ready && e.after < e.before && e.better === true, JSON.stringify(e));
+  assert.ok(/hàng đã hết/.test(e.metric));
+});
+
 test('Live coach: đo hiệu quả trước/sau một hành động', () => {
   const lines = [...times(3, 5.5, 'chốt M1'), ...times(9, 2.8, 'chốt M1')];
   const { agg, now } = liveScenario(lines);

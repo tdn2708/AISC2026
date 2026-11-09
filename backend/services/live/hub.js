@@ -235,7 +235,7 @@ class Runtime {
     if (!a) return null;
     const entry = {
       id: a.id, type: a.type, key: a.key, title: a.title, severity: a.severity, productId: a.productId || null,
-      groupKey: a.groupKey || null, watch: a.watch, script: a.script || null, lostValue: a.lostValue ?? null,
+      groupKey: a.groupKey || null, watch: a.watch, variant: a.variant ?? null, script: a.script || null, lostValue: a.lostValue ?? null,
       status, by: by || null, at: new Date()
     };
     this.session.actions = [...(this.session.actions || []), entry];

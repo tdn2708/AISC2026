@@ -122,7 +122,10 @@ function coach({ agg, session, suggestionFor, now = Date.now() }) {
           script: `${label} bên em hết rồi ạ.${alt ? ` Bạn nào cần thì lấy ${/^[A-Z0-9]+$/.test(alt.key) ? `size ${alt.key}` : alt.key} vẫn còn hàng nha.` : ''} Bạn bình luận "chờ ${k.key || 'hàng'}" để shop báo ngay khi về hàng.`,
           steps: [alt ? `Gợi ý ${alt.key} (còn khoảng ${alt.left})` : 'Gợi ý sản phẩm tương tự còn hàng', 'Ghi nhận nhu cầu để nhập thêm hàng (có trong báo cáo sau live)'],
           lostValue: unitPrice ? lostQty * unitPrice : null,
-          watch: 'order'
+          variant: k.key,
+          // Đo lượt chốt vào ĐÚNG biến thể đã hết: giảm là khách đã được chuyển
+          // sang biến thể khác. Đo cả sản phẩm thì lẫn nhịp đổi sản phẩm của phiên.
+          watch: 'soldout'
         });
       } else if (left > 0 && left <= Math.max(3, Math.ceil(k.initial * 0.15)) && demandOrders.length >= 2) {
         out.push({
@@ -321,6 +324,10 @@ function coach({ agg, session, suggestionFor, now = Date.now() }) {
  * nên giao diện ghi rõ "chưa loại trừ yếu tố khác".
  */
 function measureEffect(agg, action, at, now = Date.now(), ended = false) {
+  // Việc ghi trước khi có cách đo theo biến thể vẫn được đo đúng
+  if (action.type === 'soldout_demand') {
+    action = { ...action, watch: 'soldout', variant: action.variant ?? (String(action.key || '').split('|')[1] || null) };
+  }
   const t = new Date(at).getTime();
   const span = 3 * MIN;
   // Phiên đã kết thúc: cửa sổ "sau" dừng ở bình luận cuối cùng
@@ -329,6 +336,7 @@ function measureEffect(agg, action, at, now = Date.now(), ended = false) {
   const afterEnd = Math.min(t + span, end);
   const pick = {
     order: (e) => e.intent === 'order' && (!action.productId || action.type === 'engagement_drop' || e.productId === action.productId),
+    soldout: (e) => e.intent === 'order' && e.productId === action.productId && (action.variant == null || e.size === action.variant || e.color === action.variant),
     complaint: (e) => e.intent === 'complaint',
     comments: () => true,
     repeat: (e) => e.groupKey && e.groupKey === action.groupKey,
@@ -338,6 +346,7 @@ function measureEffect(agg, action, at, now = Date.now(), ended = false) {
   const after = afterEnd - t >= 30 * 1000 ? rate(agg.events, t, afterEnd, pick) : 0;
   const LABEL = {
     order: 'lượt chốt mỗi phút',
+    soldout: 'lượt chốt vào hàng đã hết mỗi phút',
     complaint: 'khiếu nại mỗi phút',
     comments: 'bình luận mỗi phút',
     repeat: 'người hỏi lại mỗi phút',
