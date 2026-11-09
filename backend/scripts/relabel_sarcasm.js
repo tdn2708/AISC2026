@@ -92,6 +92,12 @@ async function main() {
     await col.bulkWrite(ops);
     process.stdout.write(`\r  đã kiểm tra ${Math.min(i + BATCH, todo.length)}/${todo.length}`);
   }
+  // Báo cho máy chủ đang chạy rằng nhãn đã đổi tại chỗ (khóa cache không tự thấy)
+  await client.db(dbName).collection('meta').updateOne(
+    { _id: 'labels' },
+    { $inc: { version: 1 }, $set: { updatedAt: new Date(), by: 'relabel_sarcasm' } },
+    { upsert: true }
+  );
   console.log(`\nXong: mỉa mai ${stats.sarcastic}, không mỉa mai ${stats.literal}, đổi nhãn ${stats.changed}, chờ người duyệt ${stats.review}, mô hình thứ hai lỗi ${stats.judgeFailed}`);
   await client.close();
 }

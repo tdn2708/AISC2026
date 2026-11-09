@@ -161,18 +161,21 @@ async function doFetch(db, gen, onlyIfChanged) {
   const { cache } = st;
   const lastId = (name) =>
     db.collection(name).find({}, { projection: { _id: 1 } }).sort({ _id: -1 }).limit(1).next();
-  const [feedbackCount, txnCount, lastFeedback, lastTxn] = await Promise.all([
+  const [feedbackCount, txnCount, lastFeedback, lastTxn, labelsMeta] = await Promise.all([
     db.collection('feedbacks').estimatedDocumentCount(),
     db.collection('transactions').estimatedDocumentCount(),
     lastId('feedbacks'),
-    lastId('transactions')
+    lastId('transactions'),
+    db.collection('meta').findOne({ _id: 'labels' })
   ]);
 
   // Khóa cache: số bản ghi + _id mới nhất của mỗi bảng. Chỉ đếm thì không
   // nhận ra khi kho bị nạp lại bằng script bên ngoài với ĐÚNG số lượng cũ
   // (seed lại cùng tham số) — _id mới thì luôn đổi. Truy vấn _id dùng chỉ
   // mục mặc định nên gần như không tốn gì.
-  const key = `${feedbackCount}:${txnCount}:${lastFeedback?._id ?? ''}:${lastTxn?._id ?? ''}`;
+  // Script sửa nhãn tại chỗ (không thêm bản ghi) tăng meta.labels.version
+  // để mọi máy chủ đang chạy biết mà nạp lại.
+  const key = `${feedbackCount}:${txnCount}:${lastFeedback?._id ?? ''}:${lastTxn?._id ?? ''}:${labelsMeta?.version ?? 0}`;
   const maxAge = cache.value?.replay ? REPLAY_MAX_AGE_MS : MAX_AGE_MS;
   if (
     onlyIfChanged && cache.value && cache.generation === gen &&
