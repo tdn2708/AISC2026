@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const { scrapeShopeeReviews } = require('../services/scraper');
-const { analyzeFeedbackBatch, generateRiskAlertsBatch, classifyByRulesFallback } = require('../services/ai_analyzer');
+const { generateRiskAlertsBatch, classifyByRulesFallback } = require('../services/ai_analyzer');
 const { getContext, invalidate, applyFilters, ctxNow } = require('../services/analysis_context');
 const trustLayer = require('../services/trust_layer');
 const alertEngine = require('../services/alert_engine');
@@ -14,6 +14,7 @@ const { buildFeedbackDocs, saveFeedbacks } = require('../services/ingest');
 const normalizer = require('../services/normalizer');
 const visobert = require('../services/visobert_client');
 const insights = require('../services/insights');
+const { labelReviews } = require('../services/label_cascade');
 
 /** Bọc handler async để lỗi không làm treo request */
 const wrap = (fn) => (req, res) => {
@@ -113,6 +114,18 @@ function publicItem(f) {
     verifiedPurchase: f.verifiedPurchase === true,
     hasOrder: Boolean(f.orderId),
     labelledBy: f.labelledBy || 'synthetic',
+    // Mỉa mai và hàng chờ người duyệt (label_cascade.js); nhãn máy trước khi người sửa
+    sarcasm: f.sarcasm || null,
+    needsReview: Boolean(f.needsReview),
+    machineLabel: f.machineLabel
+      ? {
+          sentiment: f.machineLabel.sentiment,
+          category: f.machineLabel.category,
+          subCategory: f.machineLabel.subCategory,
+          labelledBy: f.machineLabel.labelledBy,
+          categoryLabel: f.machineLabel.category && f.machineLabel.category !== 'Other' ? taxonomy.categoryLabel(f.machineLabel.category) : null
+        }
+      : null,
     trust: f.trust
       ? {
           tier: f.trust.tier,
@@ -1014,16 +1027,32 @@ router.get('/audit/sample', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const done = await req.db.collection('audit_labels').find({}, { projection: { feedbackId: 1 } }).toArray();
   const n = Math.min(20, Math.max(1, Number(req.query.n) || 10));
-  const { items, remaining } = insights.auditSample(ctx.items, new Set(done.map((d) => d.feedbackId)), n);
+  const mode = insights.AUDIT_MODES.includes(req.query.mode) ? req.query.mode : 'random';
+  const doneIds = new Set(done.map((d) => d.feedbackId));
+  const { items, remaining } = insights.auditSample(ctx.items, doneIds, n, Math.random, mode);
+  // Số câu còn chờ ở từng hàng, để người duyệt biết nên làm hàng nào trước
+  const queues = Object.fromEntries(['sarcasm', 'review'].map((m) => [m, ctx.items.filter((f) => insights.inQueue(f, m) && !doneIds.has(String(f._id))).length]));
   res.json({
-    items: items.map(publicItem),
+    mode,
+    items: items.map((f) => ({
+      ...publicItem(f),
+      sarcasm: f.sarcasm || null,
+      labelVotes: f.labelVotes || null,
+      needsReview: Boolean(f.needsReview),
+      blindTest: insights.isBlindTest(f._id)
+    })),
     remaining,
-    categories: ['Other', ...taxonomy.CATEGORY_KEYS].map((key) => ({ key, label: key === 'Other' ? 'Không nêu vấn đề' : taxonomy.categoryLabel(key) }))
+    queues,
+    categories: ['Other', ...taxonomy.CATEGORY_KEYS].map((key) => ({
+      key,
+      label: key === 'Other' ? 'Không nêu vấn đề' : taxonomy.categoryLabel(key),
+      causes: key === 'Other' ? [] : taxonomy.flatTaxonomy().find((c) => c.key === key)?.causes.map((c) => ({ key: c.key, label: c.label })) || []
+    }))
   });
 }));
 
 router.post('/audit/label', wrap(async (req, res) => {
-  const { feedbackId, sentimentCorrect, categoryCorrect, correctSentiment, correctCategory, by } = req.body || {};
+  const { feedbackId, sentimentCorrect, categoryCorrect, correctSentiment, correctCategory, correctCause, sarcasm, sampleMode, by } = req.body || {};
   if (!feedbackId || typeof sentimentCorrect !== 'boolean' || typeof categoryCorrect !== 'boolean') {
     return res.status(400).json({ error: 'Cần feedbackId, sentimentCorrect và categoryCorrect (true/false)' });
   }
@@ -1036,6 +1065,10 @@ router.post('/audit/label', wrap(async (req, res) => {
   if (!categoryCorrect && !(correctCategory === 'Other' || taxonomy.CATEGORY_KEYS.includes(correctCategory))) {
     return res.status(400).json({ error: 'AI sai nhóm vấn đề thì phải chọn nhóm đúng' });
   }
+  // Nhãn MÁY lúc chấm (trước khi bị nhãn người ghi đè) — để đo AI đúng hay sai
+  const machine = item.machineLabel || item;
+  const cat = categoryCorrect ? machine.category || 'Other' : correctCategory;
+  const causeOk = correctCause && cat !== 'Other' && taxonomy.normalizeCause(cat, correctCause) === correctCause;
   await req.db.collection('audit_labels').updateOne(
     { feedbackId: String(feedbackId) },
     {
@@ -1043,18 +1076,25 @@ router.post('/audit/label', wrap(async (req, res) => {
         feedbackId: String(feedbackId),
         sentimentCorrect,
         categoryCorrect,
-        correctSentiment: sentimentCorrect ? item.sentiment : correctSentiment,
-        correctCategory: categoryCorrect ? item.category || 'Other' : correctCategory,
-        // Nhãn AI lúc chấm — để biết sau này AI nào sai, sai thành gì
-        aiSentiment: item.sentiment,
-        aiCategory: item.category || 'Other',
-        labelledBy: item.labelledBy || 'synthetic',
+        correctSentiment: sentimentCorrect ? machine.sentiment : correctSentiment,
+        correctCategory: cat,
+        correctCause: categoryCorrect ? machine.subCategory || null : causeOk ? correctCause : null,
+        // Có mỉa mai không (true/false); null = người duyệt không trả lời câu này
+        sarcasm: typeof sarcasm === 'boolean' ? sarcasm : null,
+        sampleMode: insights.AUDIT_MODES.includes(sampleMode) ? sampleMode : 'random',
+        blindTest: insights.isBlindTest(feedbackId),
+        aiSentiment: machine.sentiment,
+        aiCategory: machine.category || 'Other',
+        aiSarcasm: item.sarcasm?.verdict ?? null,
+        labelledBy: machine.labelledBy || 'synthetic',
         by: typeof by === 'string' ? by.slice(0, 80) : 'admin',
         at: new Date()
       }
     },
     { upsert: true }
   );
+  // Nhãn người phải có hiệu lực ngay trong mọi chỉ số
+  invalidate(req.db);
   const labels = await req.db.collection('audit_labels').find({}).toArray();
   res.json({ success: true, summary: insights.auditSummary(labels) });
 }));
@@ -1243,8 +1283,8 @@ router.post('/scrape', wrap(async (req, res) => {
     });
   }
 
-  const rawTexts = rawReviews.map((r) => r.rawText);
-  const aiResults = await analyzeFeedbackBatch(rawTexts);
+  // Gán nhãn nhiều tầng: kèm số sao, câu nghi mỉa mai được hỏi thêm mô hình thứ hai
+  const aiResults = await labelReviews(rawReviews.map((r) => ({ text: r.rawText, rating: r.rating })));
 
   const fallbackProduct =
     url.split('/').pop()?.split('?')[0]?.replace(/-/g, ' ') || 'Sản phẩm chưa xác định';

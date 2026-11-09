@@ -64,9 +64,19 @@ function authHeaders(cfg = config()) {
   return cfg.apiKey ? { Authorization: `Bearer ${cfg.apiKey}` } : {};
 }
 
-function prepareInput(text, mode = 'masked') {
-  if (mode === 'normalized') return normalize(text).normalized;
-  return maskPII(stripHtml(text)).text.replace(/\s+/g, ' ').trim();
+/**
+ * Tiền xử lý DÙNG CHUNG cho lúc huấn luyện và lúc chạy thật.
+ * Checkpoint huấn luyện kèm số sao (meta.inputRating = true) nhận tiền tố
+ * "[1 sao] " — tín hiệu mạnh nhất để nhận ra câu mỉa mai trên sàn. Không có
+ * số sao (Facebook, TikTok) thì không có tiền tố, đúng như lúc huấn luyện.
+ */
+const RATING_PREFIX = (rating) => (Number.isFinite(rating) && rating >= 1 && rating <= 5 ? `[${Math.round(rating)} sao] ` : '');
+
+function prepareInput(text, mode = 'masked', rating = null) {
+  const body = mode === 'normalized'
+    ? normalize(text).normalized
+    : maskPII(stripHtml(text)).text.replace(/\s+/g, ' ').trim();
+  return RATING_PREFIX(rating) + body;
 }
 
 let statusCache = { at: 0, value: null };
@@ -220,12 +230,14 @@ function guardPrediction(pred, rawText) {
  * `cache: false` chạy thẳng, không dùng bộ đệm — dùng khi cần ĐO tốc độ thật,
  * vì đọc từ đệm sẽ cho ra một con số throughput không có thật.
  */
-async function predict(texts, { cache = true } = {}) {
+async function predict(texts, { cache = true, ratings = null } = {}) {
   if (!Array.isArray(texts) || texts.length === 0) return [];
   const s = await status();
   if (!s.finetuned) return null;
   try {
-    const inputs = texts.map((t) => prepareInput(t, s.inputMode));
+    // Chỉ thêm số sao khi checkpoint được huấn luyện với số sao
+    const useRating = Boolean(s.checkpoint?.inputRating);
+    const inputs = texts.map((t, i) => prepareInput(t, s.inputMode, useRating && ratings ? ratings[i] : null));
     const guard = (preds) => preds.map((p, i) => guardPrediction(p, texts[i]));
     if (!cache) return guard(await postChunked('/predict', inputs, 'predictions'));
     // Khóa đệm gắn với thời điểm train: đổi checkpoint thì kết quả cũ tự vô hiệu
@@ -281,23 +293,29 @@ function detectedAspects(pred) {
     : [{ category: pred?.category, p: pred?.categoryConfidence, cause: pred?.cause, causeConfidence: pred?.causeConfidence }];
 
   return list
-    .map((d) => {
+    .flatMap((d) => {
       const category = d.category && taxonomy.TAXONOMY[d.category] ? d.category : null;
-      if (!category) return null;
-      const cause = taxonomy.normalizeCause(category, d.cause);
-      return {
-        category,
-        categoryLabel: taxonomy.categoryLabel(category),
-        cause,
-        causeLabel: taxonomy.causeLabel(category, cause),
-        owner: taxonomy.categoryOwner(category),
-        confidence: round2(d.p),
-        causeConfidence: round2(d.causeConfidence),
-        // Nguyên nhân dưới ngưỡng vẫn được nêu, nhưng phải hiện rõ là chưa chắc
-        causeUncertain: Boolean(d.causeUncertain)
-      };
-    })
-    .filter(Boolean);
+      if (!category) return [];
+      // Nhiều nguyên nhân CÙNG nhóm ("giao chậm, hộp móp"): mỗi nguyên nhân vượt
+      // ngưỡng là một khía cạnh riêng. Checkpoint cũ không có `causes` thì như trước.
+      const causes = Array.isArray(d.causes) && d.causes.length > 1
+        ? d.causes.map((c) => ({ cause: c.cause, p: c.p, uncertain: false }))
+        : [{ cause: d.cause, p: d.causeConfidence, uncertain: Boolean(d.causeUncertain) }];
+      return causes.map((c) => {
+        const cause = taxonomy.normalizeCause(category, c.cause);
+        return {
+          category,
+          categoryLabel: taxonomy.categoryLabel(category),
+          cause,
+          causeLabel: taxonomy.causeLabel(category, cause),
+          owner: taxonomy.categoryOwner(category),
+          confidence: round2(d.p),
+          causeConfidence: round2(c.p),
+          // Nguyên nhân dưới ngưỡng vẫn được nêu, nhưng phải hiện rõ là chưa chắc
+          causeUncertain: c.uncertain
+        };
+      });
+    });
 }
 
 /** Dạng kết quả của analyzeFeedbackBatch, để các tầng sau không phải biết nguồn nhãn */
@@ -327,6 +345,8 @@ function toAnalysis(pred) {
       ? aspects.map((a) => `${a.categoryLabel} — ${a.causeLabel || 'chưa rõ nguyên nhân'}`).join(' · ')
       : (category ? `${catLabel} — ${causeLbl || 'chưa rõ nguyên nhân'}` : 'Không thuộc nhóm khiếu nại nào trong taxonomy'),
     labelledBy: 'visobert',
+    // Checkpoint v4 có đầu ra mỉa mai riêng; bản cũ không có thì để trống
+    ...(Number.isFinite(pred.sarcasmProbability) ? { sarcasm: pred.sarcasmProbability >= 0.5, sarcasmProbability: round2(pred.sarcasmProbability) } : {}),
     modelConfidence: {
       sentiment: round2(pred.sentimentConfidence),
       category: round2(pred.categoryConfidence),
@@ -342,10 +362,10 @@ function toBaselinePrediction(pred) {
 }
 
 /** Gán nhãn theo lô bằng ViSoBERT; trả null nếu checkpoint chưa gán nhãn được */
-async function predictAnalysis(texts) {
+async function predictAnalysis(texts, ratings = null) {
   const s = await status();
   if (!s.canLabel) return null;
-  const preds = await predict(texts);
+  const preds = await predict(texts, { ratings });
   return preds ? preds.map(toAnalysis) : null;
 }
 

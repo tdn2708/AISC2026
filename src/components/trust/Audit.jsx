@@ -1,19 +1,33 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Check, X, SkipForward } from 'lucide-react';
-import { GlassPanel, PanelHeader, Button, ProgressBar, EmptyState, Chip, Select, Toast } from '../ui';
+import { GlassPanel, PanelHeader, Button, ProgressBar, EmptyState, Chip, Select, Toast, Segmented } from '../ui';
 import { fmtInt, fmtDate, fmtPct, SENTIMENT_MAP, LABELLER_LABEL } from '../../lib/format';
 
 /**
- * KIỂM TRA NGẪU NHIÊN DO NGƯỜI LÀM
+ * DUYỆT NHÃN DO NGƯỜI LÀM — ba hàng đợi
  * ------------------------------------------------------------------
- * Trả lời câu "chỉ số tin cậy cũng do AI tính, chứng thực bằng gì?": người
- * đọc phản hồi lấy NGẪU NHIÊN ĐỀU từ kho và chấm AI đúng hay sai. Tỉ lệ
- * đúng kèm khoảng tin cậy 95% (Wilson) là bằng chứng do người tạo ra, đại
- * diện cho cả kho chứ không chỉ cho những câu dễ.
+ *   Ngẫu nhiên     lấy đều từ cả kho. CHỈ hàng này dùng để đo độ chính xác
+ *                  của AI (khoảng tin cậy 95% Wilson) — đại diện cho cả kho.
+ *   Nghi mỉa mai   câu luật/mô hình nghi là mỉa mai: nguồn dữ liệu huấn luyện
+ *                  mỉa mai thật, thứ dự án chưa có.
+ *   Cần duyệt      hai mô hình bất đồng và số sao không phân xử được.
+ *
+ * Nhãn người GHI ĐÈ nhãn máy trong mọi chỉ số ngay sau khi lưu; câu thuộc bộ
+ * test mù (15%) được giữ riêng để đo mô hình, không bao giờ dùng huấn luyện.
  */
 
 const SENTS = ['Positive', 'Neutral', 'Negative'];
+const MODES = [
+  { value: 'random', label: 'Ngẫu nhiên' },
+  { value: 'sarcasm', label: 'Nghi mỉa mai' },
+  { value: 'review', label: 'Cần duyệt' }
+];
+const MODE_HINT = {
+  random: 'Lấy ngẫu nhiên đều từ cả kho. Chỉ hàng này được dùng để đo độ chính xác của AI.',
+  sarcasm: 'Câu bị nghi là mỉa mai. Nhãn ở đây là dữ liệu huấn luyện mỉa mai thật, và sửa luôn nhãn trên web.',
+  review: 'Hai mô hình bất đồng và số sao không phân xử được. Nhãn của bạn là nhãn cuối.'
+};
 
 const currentUser = () => {
   try {
@@ -39,51 +53,82 @@ const Result = ({ label, r }) => (
   </div>
 );
 
-const YesNo = ({ value, onChange, label }) => (
+const YesNo = ({ value, onChange, label, yes = 'Đúng', no = 'Sai' }) => (
   <div role="group" aria-label={label} className="flex gap-2">
-    <Chip active={value === true} onClick={() => onChange(true)} icon={Check}>Đúng</Chip>
-    <Chip active={value === false} onClick={() => onChange(false)} icon={X}>Sai</Chip>
+    <Chip active={value === true} onClick={() => onChange(true)} icon={Check}>{yes}</Chip>
+    <Chip active={value === false} onClick={() => onChange(false)} icon={X}>{no}</Chip>
   </div>
 );
 
+const sentLabel = (s) => (SENTIMENT_MAP[s] || SENTIMENT_MAP.Neutral).label;
+
+/** Vì sao câu này vào hàng chờ: tín hiệu luật + phiếu của từng mô hình */
+const MachineVotes = ({ item, categories }) => {
+  const catLabel = (k) => (k === 'Other' || !k ? 'không nêu vấn đề' : categories.find((c) => c.key === k)?.label || k);
+  const v = item.labelVotes;
+  if (!item.sarcasm?.suspected && !v) return null;
+  return (
+    <div className="mt-4 rounded-lg bg-raised px-4 py-3 text-xs leading-relaxed text-ink-mid">
+      {item.sarcasm?.signals?.length > 0 && <p><b className="text-ink-hi">Vì sao bị đánh dấu:</b> {item.sarcasm.signals.join('; ')}.</p>}
+      {v && (
+        <ul className="mt-1.5 flex list-none flex-col gap-0.5">
+          {v.primary && <li>Mô hình chính ({LABELLER_LABEL[v.primary.by] || v.primary.by}): {sentLabel(v.primary.sentiment)}, {catLabel(v.primary.category)}</li>}
+          {v.judge && <li>Mô hình thứ hai ({v.judge.by}): {v.judge.sarcastic ? 'mỉa mai' : 'không mỉa mai'}, {sentLabel(v.judge.sentiment)}, {catLabel(v.judge.category)}</li>}
+          {!v.judge && <li>Mô hình thứ hai: chưa có ý kiến (lỗi hoặc hết lượt gọi)</li>}
+          {v.rating && <li>Số sao: nghiêng về {sentLabel(v.rating).toLowerCase()}</li>}
+        </ul>
+      )}
+      {item.sarcasm?.reason && <p className="mt-1.5">Lý do mô hình thứ hai: “{item.sarcasm.reason}”</p>}
+    </div>
+  );
+};
+
+const EMPTY = { sent: null, cat: null, sarcasm: null, correctSentiment: null, correctCategory: '', correctCause: '' };
+
 const Audit = () => {
+  const [mode, setMode] = useState('random');
   const [summary, setSummary] = useState(null);
   const [queue, setQueue] = useState([]);
   const [categories, setCategories] = useState([]);
   const [remaining, setRemaining] = useState(null);
+  const [queues, setQueues] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(false);
-  const [ans, setAns] = useState({ sent: null, cat: null, correctSentiment: null, correctCategory: '' });
+  const [ans, setAns] = useState(EMPTY);
 
-  const loadSample = useCallback(async () => {
-    const { data } = await axios.get('/audit/sample?n=10');
+  const loadSample = useCallback(async (m) => {
+    const { data } = await axios.get(`/audit/sample?n=10&mode=${m}`);
     setQueue(data.items || []);
     setRemaining(data.remaining);
+    setQueues(data.queues || {});
     setCategories(data.categories || []);
   }, []);
 
   useEffect(() => {
-    Promise.all([axios.get('/audit/summary'), loadSample()])
-      .then(([s]) => {
-        setSummary(s.data);
-        setError(null);
-      })
+    axios.get('/audit/summary').then((s) => setSummary(s.data)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    setAns(EMPTY);
+    loadSample(mode)
+      .then(() => setError(null))
       .catch(() => setError('Không tải được dữ liệu kiểm tra. Kiểm tra máy chủ đã chạy chưa.'))
       .finally(() => setLoading(false));
-  }, [loadSample]);
+  }, [mode, loadSample]);
 
   const item = queue[0];
-  const reset = () => setAns({ sent: null, cat: null, correctSentiment: null, correctCategory: '' });
   const next = async () => {
-    reset();
+    setAns(EMPTY);
     if (queue.length > 1) setQueue((q) => q.slice(1));
-    else await loadSample();
+    else await loadSample(mode);
   };
 
+  const chosenCat = categories.find((c) => c.key === ans.correctCategory);
   const ready =
-    ans.sent !== null && ans.cat !== null &&
+    ans.sent !== null && ans.cat !== null && ans.sarcasm !== null &&
     (ans.sent || ans.correctSentiment) &&
     (ans.cat || ans.correctCategory);
 
@@ -97,6 +142,9 @@ const Audit = () => {
         categoryCorrect: ans.cat,
         correctSentiment: ans.sent ? undefined : ans.correctSentiment,
         correctCategory: ans.cat ? undefined : ans.correctCategory,
+        correctCause: ans.cat ? undefined : ans.correctCause || undefined,
+        sarcasm: ans.sarcasm,
+        sampleMode: mode,
         by: currentUser()
       });
       setSummary(data.summary);
@@ -110,10 +158,8 @@ const Audit = () => {
     }
   };
 
-  if (loading) return <div className="h-[420px] animate-pulse rounded-xl bg-raised" />;
-  if (error && !summary) return <GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel>;
-
   const aiCat = item ? (item.category && item.category !== 'Other' ? item.categoryLabel : 'Không nêu vấn đề') : '';
+  const modeOptions = MODES.map((m) => ({ ...m, label: m.value === 'random' ? m.label : `${m.label} (${fmtInt(queues[m.value] ?? 0)})` }));
 
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
@@ -121,7 +167,7 @@ const Audit = () => {
         <PanelHeader title="Kết quả kiểm tra" subtitle="Người đọc phản hồi lấy ngẫu nhiên và chấm AI đúng hay sai." />
         <ProgressBar
           value={summary ? summary.n / summary.target : 0}
-          label={`Đã kiểm tra ${fmtInt(summary?.n)} trên mục tiêu ${fmtInt(summary?.target)} phản hồi`}
+          label={`Đã kiểm tra ngẫu nhiên ${fmtInt(summary?.n)} trên mục tiêu ${fmtInt(summary?.target)} phản hồi`}
           showValue
         />
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -130,6 +176,13 @@ const Audit = () => {
         </div>
         {summary?.n > 0 && summary.n < 30 && (
           <p className="mt-3 text-xs leading-relaxed text-high">Mới {summary.n} phản hồi nên khoảng tin cậy còn rộng. Từ khoảng 100 phản hồi trở lên con số mới đủ chắc để trình bày.</p>
+        )}
+        {summary?.totalReviewed > 0 && (
+          <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <dt className="text-ink-mid">Tổng câu người đã duyệt</dt><dd className="text-right font-mono text-ink-hi">{fmtInt(summary.totalReviewed)}</dd>
+            <dt className="text-ink-mid">Câu mỉa mai đã xác nhận</dt><dd className="text-right font-mono text-ink-hi">{fmtInt(summary.sarcasm?.sarcastic)} / {fmtInt(summary.sarcasm?.labelled)}</dd>
+            <dt className="text-ink-mid">Thuộc bộ test mù</dt><dd className="text-right font-mono text-ink-hi">{fmtInt(summary.blindTest)}</dd>
+          </dl>
         )}
         {summary?.topConfusions?.length > 0 && (
           <div className="mt-5">
@@ -150,13 +203,22 @@ const Audit = () => {
       </GlassPanel>
 
       <GlassPanel tone="strong" className="p-6">
-        {!item ? (
-          <EmptyState title="Đã kiểm tra hết" description="Không còn phản hồi nào chưa được kiểm tra trong kho này." />
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <Segmented label="Hàng đợi" options={modeOptions} value={mode} onChange={setMode} />
+        </div>
+        <p className="mb-4 text-xs leading-relaxed text-ink-lo">{MODE_HINT[mode]}</p>
+
+        {loading ? (
+          <div className="h-[360px] animate-pulse rounded-lg bg-raised" />
+        ) : error && !item ? (
+          <EmptyState variant="error" title="Không tải được" description={error} />
+        ) : !item ? (
+          <EmptyState title="Hàng đợi này đã trống" description={mode === 'random' ? 'Không còn phản hồi nào chưa được kiểm tra trong kho này.' : 'Không còn câu nào chờ duyệt ở hàng này.'} />
         ) : (
           <>
             <PanelHeader
               title="Phản hồi này AI xếp có đúng không?"
-              subtitle={remaining != null ? `Lấy ngẫu nhiên từ ${fmtInt(remaining)} phản hồi chưa kiểm tra` : undefined}
+              subtitle={remaining != null ? `Còn ${fmtInt(remaining)} phản hồi trong hàng này` : undefined}
             />
             <blockquote className="rounded-lg border border-line-soft p-4 text-[0.95rem] leading-relaxed text-ink-hi">
               {item.originalText}
@@ -167,20 +229,24 @@ const Audit = () => {
                 {item.productName && <span className="truncate">{item.productName}</span>}
               </span>
             </blockquote>
+            <MachineVotes item={item} categories={categories} />
 
             <div className="mt-5 flex flex-col gap-5">
               <div>
-                <p className="text-sm text-ink-mid">
-                  AI đoán cảm xúc: <b className="text-ink-hi">{(SENTIMENT_MAP[item.sentiment] || SENTIMENT_MAP.Neutral).label}</b>
-                </p>
+                <p className="text-sm text-ink-mid">Câu này có <b className="text-ink-hi">mỉa mai</b> không (khen ngoài miệng nhưng thật ra chê)?</p>
+                <div className="mt-2">
+                  <YesNo label="Có mỉa mai không" yes="Có" no="Không" value={ans.sarcasm} onChange={(v) => setAns((a) => ({ ...a, sarcasm: v }))} />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-ink-mid">AI đoán cảm xúc: <b className="text-ink-hi">{sentLabel(item.sentiment)}</b></p>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <YesNo label="Cảm xúc đúng hay sai" value={ans.sent} onChange={(v) => setAns((a) => ({ ...a, sent: v }))} />
                   {ans.sent === false && (
                     <div role="group" aria-label="Cảm xúc đúng" className="flex flex-wrap gap-2">
                       {SENTS.filter((s) => s !== item.sentiment).map((s) => (
-                        <Chip key={s} active={ans.correctSentiment === s} onClick={() => setAns((a) => ({ ...a, correctSentiment: s }))}>
-                          {SENTIMENT_MAP[s].label}
-                        </Chip>
+                        <Chip key={s} active={ans.correctSentiment === s} onClick={() => setAns((a) => ({ ...a, correctSentiment: s }))}>{sentLabel(s)}</Chip>
                       ))}
                     </div>
                   )}
@@ -195,12 +261,22 @@ const Audit = () => {
                 <div className="mt-2 flex flex-wrap items-end gap-3">
                   <YesNo label="Nhóm vấn đề đúng hay sai" value={ans.cat} onChange={(v) => setAns((a) => ({ ...a, cat: v }))} />
                   {ans.cat === false && (
-                    <Select
-                      label="Nhóm đúng"
-                      value={ans.correctCategory}
-                      onChange={(e) => setAns((a) => ({ ...a, correctCategory: e.target.value }))}
-                      options={[{ value: '', label: 'Chọn nhóm đúng' }, ...categories.filter((c) => c.key !== (item.category || 'Other')).map((c) => ({ value: c.key, label: c.label }))]}
-                    />
+                    <>
+                      <Select
+                        label="Nhóm đúng"
+                        value={ans.correctCategory}
+                        onChange={(e) => setAns((a) => ({ ...a, correctCategory: e.target.value, correctCause: '' }))}
+                        options={[{ value: '', label: 'Chọn nhóm đúng' }, ...categories.filter((c) => c.key !== (item.category || 'Other')).map((c) => ({ value: c.key, label: c.label }))]}
+                      />
+                      {chosenCat?.causes?.length > 0 && (
+                        <Select
+                          label="Nguyên nhân (nếu rõ)"
+                          value={ans.correctCause}
+                          onChange={(e) => setAns((a) => ({ ...a, correctCause: e.target.value }))}
+                          options={[{ value: '', label: 'Không rõ' }, ...chosenCat.causes.map((c) => ({ value: c.key, label: c.label }))]}
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -215,7 +291,7 @@ const Audit = () => {
           </>
         )}
       </GlassPanel>
-      <Toast show={toast}>Đã lưu kết quả kiểm tra</Toast>
+      <Toast show={toast}>Đã lưu, nhãn của bạn đã thay nhãn máy</Toast>
     </div>
   );
 };

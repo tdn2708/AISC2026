@@ -27,7 +27,7 @@ import torch
 from onnxruntime.quantization import QuantType, quantize_dynamic
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from visobert_model import DEFAULT_CHECKPOINT, TASKS, load_checkpoint  # noqa: E402
+from visobert_model import DEFAULT_CHECKPOINT, load_checkpoint  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "onnx"
 
@@ -38,15 +38,26 @@ class Exportable(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
+        # Đầu ra theo checkpoint: bản v4 có thêm "sarcasm", bản cũ thì không
+        self.tasks = list(model.tasks)
 
     def forward(self, input_ids, attention_mask):
         out = self.model(input_ids, attention_mask)
-        return tuple(out[t] for t in TASKS)
+        return tuple(out[t] for t in self.tasks)
 
 
 def main():
-    OUT.mkdir(exist_ok=True)
-    model, tok, meta = load_checkpoint(DEFAULT_CHECKPOINT, "cpu")
+    # Chạy trên Kaggle: python deploy/export_onnx.py --checkpoint <thư mục checkpoint> --out <thư mục ra>
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
+    ap.add_argument("--out", type=Path, default=None)
+    args = ap.parse_args()
+    global OUT
+    if args.out:
+        OUT = args.out
+    OUT.mkdir(parents=True, exist_ok=True)
+    model, tok, meta = load_checkpoint(args.checkpoint, "cpu")
     model.eval()
     wrapped = Exportable(model).eval()
 
@@ -57,11 +68,11 @@ def main():
         (sample["input_ids"], sample["attention_mask"]),
         str(fp32),
         input_names=["input_ids", "attention_mask"],
-        output_names=[f"{t}_logits" for t in TASKS],
+        output_names=[f"{t}_logits" for t in wrapped.tasks],
         dynamic_axes={
             "input_ids": {0: "batch", 1: "seq"},
             "attention_mask": {0: "batch", 1: "seq"},
-            **{f"{t}_logits": {0: "batch"} for t in TASKS},
+            **{f"{t}_logits": {0: "batch"} for t in wrapped.tasks},
         },
         opset_version=17,
         dynamo=False,
@@ -75,8 +86,8 @@ def main():
     print(f"int8: {int8.stat().st_size / 1e6:.1f} MB")
 
     for f in ("tokenizer.json", "tokenizer_config.json", "special_tokens_map.json"):
-        shutil.copy(DEFAULT_CHECKPOINT / "tokenizer" / f, OUT / f)
-    shutil.copy(DEFAULT_CHECKPOINT / "meta.json", OUT / "meta.json")
+        shutil.copy(args.checkpoint / "tokenizer" / f, OUT / f)
+    shutil.copy(args.checkpoint / "meta.json", OUT / "meta.json")
     print(f"Xong: {OUT}")
 
 

@@ -101,7 +101,7 @@ def encode_row(row, labels, where):
 
     Nhận cả `category`/`cause` (một nhãn) lẫn `categories`/`causes` (nhiều nhãn).
     """
-    y = {"sentiment": IGNORE, "spam": IGNORE, "category": None, "cause": None}
+    y = {"sentiment": IGNORE, "spam": IGNORE, "sarcasm": IGNORE, "category": None, "cause": None}
 
     if "sentiment" in row and row["sentiment"] is not None:
         if row["sentiment"] not in labels["sentiment"]:
@@ -110,6 +110,10 @@ def encode_row(row, labels, where):
 
     if "spam" in row and row["spam"] is not None:
         y["spam"] = labels["spam"].index("spam" if row["spam"] in (True, 1, "spam") else "not_spam")
+
+    # Mỉa mai (bản v4): chỉ câu có nhãn mỉa mai rõ ràng mới đóng góp vào đầu ra này
+    if "sarcasm" in row and row["sarcasm"] is not None and "sarcasm" in labels:
+        y["sarcasm"] = labels["sarcasm"].index("sarcastic" if row["sarcasm"] in (True, 1, "sarcastic") else "literal")
 
     cats = None
     if "categories" in row:
@@ -168,7 +172,11 @@ def load_split(paths, labels, input_mode=None):
                 input_mode = mode
             elif mode != input_mode:
                 sys.exit(f"{p}:{i} inputMode '{mode}' khác '{input_mode}' — không trộn hai kiểu tiền xử lý")
-            rows.append({"text": row.get("text", row["input"]), "input": row["input"],
+            # Trọng số mẫu: nhãn người = 1, nhãn mô hình thầy (Qwen) thấp hơn — chỗ
+            # hai nguồn nói khác nhau thì nhãn người thắng
+            w = float(row.get("weight", 1.0) or 1.0)
+            rows.append({"text": row.get("text", row["input"]), "input": row["input"], "w": w,
+                         "rating": bool(row.get("inputRating")),
                          "y": encode_row(row, labels, f"{p}:{i}")})
     return rows, input_mode
 
@@ -197,7 +205,9 @@ def batches(rows, tokenizer, batch_size, max_len, shuffle, rng=None, labels=None
                         max_length=max_len, return_tensors="pt")
         out = {
             "sentiment": torch.tensor([r["y"]["sentiment"] for r in batch]),
-            "spam": torch.tensor([r["y"]["spam"] for r in batch])
+            "spam": torch.tensor([r["y"]["spam"] for r in batch]),
+            "sarcasm": torch.tensor([r["y"]["sarcasm"] for r in batch]),
+            "weight": torch.tensor([r.get("w", 1.0) for r in batch], dtype=torch.float)
         }
         for task in ("category", "cause"):
             size = len(labels[task])
@@ -226,6 +236,18 @@ def evaluate(model, rows, tokenizer, labels, trained, device, max_len):
         preds.extend(decode({k: v.cpu() for k, v in logits.items()}, labels, trained, multi_label=True))
 
     report = {}
+    # Mỉa mai đo F1 của lớp "sarcastic" (lớp hiếm, thứ ta thật sự cần bắt)
+    if trained.get("sarcasm"):
+        gold, pred = [], []
+        for r, p in zip(rows, preds):
+            if r["y"]["sarcasm"] == IGNORE or "sarcasmProbability" not in p:
+                continue
+            gold.append(labels["sarcasm"][r["y"]["sarcasm"]])
+            pred.append("sarcastic" if p["sarcasmProbability"] >= 0.5 else "literal")
+        if gold:
+            report["sarcasm"] = {"f1Sarcastic": round(float(f1_score(gold, pred, pos_label="sarcastic", average="binary", zero_division=0)), 4),
+                                 "macroF1": round(float(f1_score(gold, pred, average="macro", zero_division=0)), 4),
+                                 "n": len(gold), "sarcasticGold": gold.count("sarcastic")}
     for task in ("sentiment", "spam"):
         if not trained.get(task):
             continue
@@ -340,17 +362,21 @@ def main():
     counts = {
         "sentiment": sum(1 for r in train_rows if r["y"]["sentiment"] != IGNORE),
         "spam": sum(1 for r in train_rows if r["y"]["spam"] != IGNORE),
+        "sarcasm": sum(1 for r in train_rows if r["y"]["sarcasm"] != IGNORE),
         "category": sum(1 for r in train_rows if r["y"]["category"] is not None),
         "cause": sum(1 for r in train_rows if r["y"]["cause"] is not None)
     }
     multi_issue_rows = sum(1 for r in train_rows
                            if r["y"]["category"] is not None and sum(r["y"]["category"]) > 1)
-    trained = {t: counts[t] > 0 for t in TASKS}
+    trained = {t: counts[t] > 0 for t in TASKS if t in labels}
+    # Có dòng nào mang tiền tố số sao thì checkpoint phải được chạy với số sao
+    input_rating = any(r.get("rating") for r in train_rows)
+    sarcastic_rows = sum(1 for r in train_rows if r["y"]["sarcasm"] == labels.get("sarcasm", ["", ""]).index("sarcastic")) if "sarcasm" in labels else 0
     if trained["cause"] and not trained["category"]:
         sys.exit("Có nhãn cause nhưng không có nhãn category.")
     print(f"Thiết bị: {device} | inputMode: {input_mode} | mẫu huấn luyện: {len(train_rows)}")
     print("Số nhãn theo đầu ra:", counts)
-    print(f"Câu mang nhiều danh mục cùng lúc: {multi_issue_rows}")
+    print(f"Câu mang nhiều danh mục cùng lúc: {multi_issue_rows} | câu mỉa mai: {sarcastic_rows} | có số sao: {input_rating}")
     if not any(trained.values()):
         sys.exit("Không có nhãn nào để huấn luyện.")
 
@@ -383,9 +409,10 @@ def main():
         print(f"Trọng số lớp {task}: " + ", ".join(f"{labels[task][i]}={w[i]:.2f} (n={freq[i]})" for i in range(n)))
         return torch.tensor(w, dtype=torch.float, device=device)
 
+    # reduction="none" để nhân trọng số từng mẫu (nhãn người nặng hơn nhãn mô hình thầy)
     ce_by_task = {
-        "sentiment": nn.CrossEntropyLoss(ignore_index=IGNORE, weight=class_weights("sentiment")),
-        "spam": nn.CrossEntropyLoss(ignore_index=IGNORE, weight=class_weights("spam"))
+        t: nn.CrossEntropyLoss(ignore_index=IGNORE, weight=class_weights(t), reduction="none")
+        for t in ("sentiment", "spam", "sarcasm") if t in labels
     }
     bce = nn.BCEWithLogitsLoss(reduction="none")
 
@@ -399,11 +426,14 @@ def main():
         for enc in loader:
             logits = model(enc["input_ids"].to(device), enc["attention_mask"].to(device))
             loss = 0.0
-            for t in ("sentiment", "spam"):
+            w = enc["labels"]["weight"].to(device)
+            for t in ce_by_task:
                 y = enc["labels"][t].to(device)
-                # Lô không có nhãn nào cho đầu ra này thì bỏ qua — CE trên 0 phần tử cho NaN
-                if (y != IGNORE).any():
-                    loss = loss + ce_by_task[t](logits[t], y)
+                valid = (y != IGNORE).float()
+                # Lô không có nhãn nào cho đầu ra này thì bỏ qua — chia cho 0 cho NaN
+                if float(valid.sum()) > 0:
+                    per = ce_by_task[t](logits[t], y)
+                    loss = loss + (per * w * valid).sum() / (w * valid).sum()
             # Danh mục và nguyên nhân: BCE trên từng lớp độc lập, nhờ vậy một câu
             # mang được nhiều nhãn. Mask loại các câu không có nhãn cho đầu ra đó.
             for t in ("category", "cause"):
@@ -414,7 +444,7 @@ def main():
                     # (1-3 lớp dương trên 8 hoặc 28), lấy trung bình sẽ nén tín hiệu học
                     # của hai đầu ra này xuống mức không đáng kể so với cảm xúc và rác
                     per_row = bce(logits[t], y).sum(dim=1)
-                    loss = loss + (per_row * mask).sum() / mask.sum()
+                    loss = loss + (per_row * mask * w).sum() / (mask * w).sum()
             if not torch.is_tensor(loss):
                 continue
             optim.zero_grad()
@@ -439,7 +469,9 @@ def main():
         if score > best_score:
             best_score, best_report = score, report
             save_checkpoint(model, tokenizer, args.out, {
-                "model": "ViSoBERT đa nhiệm (sentiment + category + cause + spam)",
+                "model": "ViSoBERT đa nhiệm (" + " + ".join(t for t in TASKS if trained.get(t)) + ")",
+                "inputRating": input_rating,
+                "sarcasticTrainRows": sarcastic_rows,
                 "base": "uitnlp/visobert",
                 "labels": labels,
                 "inputMode": input_mode,
@@ -449,7 +481,7 @@ def main():
                 "trainedTasks": trained,
                 "trainCounts": counts,
                 "multiIssueTrainRows": multi_issue_rows,
-                "classWeighted": ["sentiment", "spam"],
+                "classWeighted": list(ce_by_task.keys()),
                 "trainFiles": [str(p) for p in args.train],
                 "dataManifests": manifests,
                 "bestEpoch": epoch,

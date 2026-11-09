@@ -147,7 +147,7 @@ def health():
             k: meta.get(k) for k in ("model", "inputMode", "trainedTasks", "trainCounts", "bestEpoch",
                                      "devReport", "leakageGuard", "excludedTestSha256",
                                      "testOverlapRemoved", "trainedAt", "dataManifests", "hyperparameters",
-                                     "calibration", "multiLabel")
+                                     "calibration", "multiLabel", "inputRating")
         },
     }
 
@@ -193,11 +193,12 @@ OCCLUSION_MAX_WORDS = 60
 
 
 def _logits(model, tok, texts, max_len):
-    parts = {t: [] for t in TASKS}
+    # Theo đầu ra THẬT của checkpoint: bản cũ không có đầu ra "sarcasm"
+    parts = {t: [] for t in model.tasks}
     for part in chunks(texts, BATCH):
         batch = tok(part, padding=True, truncation=True, max_length=max_len, return_tensors="pt").to(DEVICE)
         out = model(batch["input_ids"], batch["attention_mask"])
-        for t in TASKS:
+        for t in model.tasks:
             parts[t].append(out[t].cpu())
     return {t: torch.cat(v) for t, v in parts.items()}
 
@@ -241,8 +242,8 @@ def explain(body: TextIn):
         # con số mà tầng quyết định dùng
         return torch.softmax(rows / float(cal.get(f"{task}Temperature", 1.0) or 1.0), dim=-1)
 
-    probs = {t: to_probs(t, logits[t][0]) for t in TASKS}
-    prediction = decode({t: logits[t] for t in TASKS}, labels, trained,
+    probs = {t: to_probs(t, logits[t][0]) for t in logits}
+    prediction = decode({t: logits[t] for t in logits}, labels, trained,
                         multi_label=multi_label, calibration=meta.get("calibration"))[0]
     t2 = time.perf_counter()
 

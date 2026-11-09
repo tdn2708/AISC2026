@@ -14,8 +14,28 @@ const metrics = require('./metrics');
 const taxonomy = require('./taxonomy');
 const { wilsonInterval, twoProportionZTest } = require('./statistics');
 
+const crypto = require('crypto');
+
 const DAY = 86400000;
 const AUDIT_TARGET = 300;
+
+/**
+ * BỘ TEST MÙ CỐ ĐỊNH: ~15% phản hồi, chọn theo mã băm của id nên không đổi
+ * giữa các lần chạy và không phụ thuộc ai chọn. Nhãn người trên các phản hồi
+ * này là tập kiểm tra; script xuất dữ liệu huấn luyện LUÔN loại chúng ra.
+ */
+const BLIND_PERCENT = 15;
+function isBlindTest(id) {
+  const h = crypto.createHash('sha1').update(String(id)).digest();
+  return h.readUInt32BE(0) % 100 < BLIND_PERCENT;
+}
+
+/** Ba hàng đợi duyệt: chỉ "random" được dùng để đo độ chính xác */
+const AUDIT_MODES = ['random', 'sarcasm', 'review'];
+const inQueue = (f, mode) =>
+  mode === 'sarcasm' ? Boolean(f.sarcasm?.suspected) && f.sarcasm?.by !== 'human'
+    : mode === 'review' ? f.needsReview === true
+      : true;
 
 // ==================================================================
 // 1. KIỂM TRA NGẪU NHIÊN
@@ -26,8 +46,9 @@ const AUDIT_TARGET = 300;
  * hồi đã kiểm. Ngẫu nhiên đều (không chọn theo độ bất định như hàng đợi
  * kiểm duyệt) là điều kiện để tỉ lệ đúng đo được đại diện cho cả kho.
  */
-function auditSample(items, labelledIds, n = 10, rand = Math.random) {
-  const pool = items.filter((f) => metrics.isCountable(f) && !labelledIds.has(String(f._id)));
+function auditSample(items, labelledIds, n = 10, rand = Math.random, mode = 'random') {
+  // Hàng nghi mỉa mai / cần duyệt lấy cả phản hồi trọng số 0 (vd. bị hạ trọng số oan vì lệch sao)
+  const pool = items.filter((f) => (mode === 'random' ? metrics.isCountable(f) : true) && inQueue(f, mode) && !labelledIds.has(String(f._id)));
   // Fisher–Yates một phần: chỉ xáo n phần tử đầu
   const arr = pool.slice();
   const k = Math.min(n, arr.length);
@@ -39,7 +60,11 @@ function auditSample(items, labelledIds, n = 10, rand = Math.random) {
 }
 
 /** Kết quả kiểm tra: tỉ lệ AI đúng, khoảng tin cậy 95%, tách theo nguồn gán nhãn */
-function auditSummary(labels) {
+function auditSummary(allLabels) {
+  // Độ chính xác chỉ đo trên mẫu NGẪU NHIÊN: hàng nghi mỉa mai / cần duyệt toàn
+  // câu khó, tính vào sẽ kéo con số xuống và không đại diện cho cả kho
+  const labels = allLabels.filter((l) => !l.sampleMode || l.sampleMode === 'random');
+  const sarcasmLabelled = allLabels.filter((l) => typeof l.sarcasm === 'boolean');
   const n = labels.length;
   const cat = labels.filter((l) => l.categoryCorrect).length;
   const sent = labels.filter((l) => l.sentimentCorrect).length;
@@ -73,7 +98,11 @@ function auditSummary(labels) {
         const label = (c) => (c === 'Other' ? 'Không nêu vấn đề' : taxonomy.categoryLabel(c));
         return { from: label(from), to: label(to), count };
       }),
-    method: 'Lấy mẫu ngẫu nhiên đều trên phản hồi được tính vào chỉ số; khoảng tin cậy 95% theo Wilson.'
+    method: 'Lấy mẫu ngẫu nhiên đều trên phản hồi được tính vào chỉ số; khoảng tin cậy 95% theo Wilson. Hàng nghi mỉa mai và hàng cần duyệt không tính vào con số này.',
+    totalReviewed: allLabels.length,
+    byMode: Object.fromEntries(AUDIT_MODES.map((m) => [m, allLabels.filter((l) => (l.sampleMode || 'random') === m).length])),
+    sarcasm: { labelled: sarcasmLabelled.length, sarcastic: sarcasmLabelled.filter((l) => l.sarcasm).length },
+    blindTest: allLabels.filter((l) => isBlindTest(l.feedbackId)).length
   };
 }
 
@@ -239,6 +268,10 @@ function fallbackReply(item, tone = 'formal') {
 
 module.exports = {
   AUDIT_TARGET,
+  AUDIT_MODES,
+  BLIND_PERCENT,
+  isBlindTest,
+  inQueue,
   auditSample,
   auditSummary,
   decisionEffect,

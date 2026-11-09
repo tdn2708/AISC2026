@@ -22,7 +22,7 @@ require('dotenv').config();
 const axios = require('axios');
 const { MongoClient } = require('mongodb');
 const { fetchTikiReviews } = require('../services/scraper');
-const { analyzeFeedbackBatch } = require('../services/ai_analyzer');
+const { labelReviews } = require('../services/label_cascade');
 const { buildFeedbackDocs, saveFeedbacks } = require('../services/ingest');
 
 // Nhóm hàng có nhiều đánh giá và nhiều kiểu khiếu nại khác nhau (giao vận,
@@ -130,7 +130,8 @@ async function main() {
       totals.fetched += raw.length;
       if (!raw.length) continue;
 
-      const ai = await analyzeFeedbackBatch(raw.map((r) => r.rawText));
+      // Kèm số sao; câu nghi mỉa mai được hỏi thêm mô hình thứ hai rồi bỏ phiếu
+      const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating })));
       for (const a of ai) totals.byLabeller[a?.labelledBy || 'none'] = (totals.byLabeller[a?.labelledBy || 'none'] || 0) + 1;
       const docs = buildFeedbackDocs(raw, ai, { fallbackProduct: product.name, collectedVia: 'bulk', sourceUrl: product.url });
       for (const d of docs) d.productCategory = query;

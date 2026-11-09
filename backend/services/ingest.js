@@ -84,8 +84,12 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
       // Giữ đủ khía cạnh: mô hình đa nhãn có thể nêu nhiều vấn đề trong một phản hồi,
       // `category` chỉ là danh mục chính dùng để đếm chỉ số
       aspects: Array.isArray(ai.aspects) ? ai.aspects : [],
-      // Nhãn do đâu gán (visobert / llm / rules) — để biết độ tin của nhãn
+      // Nhãn do đâu gán (visobert / llm / rules / cascade) — để biết độ tin của nhãn
       labelledBy: ai.labelledBy || null,
+      // Mỉa mai và các phiếu bầu nhãn (label_cascade.js); câu bất đồng chờ người duyệt
+      ...(ai.sarcasm ? { sarcasm: ai.sarcasm } : {}),
+      ...(ai.labelVotes ? { labelVotes: ai.labelVotes } : {}),
+      needsReview: Boolean(ai.needsReview),
       collectedAt,
       collectedVia: meta.collectedVia,
       sourceUrl: meta.sourceUrl || null

@@ -1309,6 +1309,73 @@ test('Bản trả lời dự phòng nhắc đúng vấn đề và không hứa h
   assert.ok(p.includes('KHÔNG hứa hoàn tiền') && p.includes('giao trễ quá'));
 });
 
+console.log('\nMỈA MAI VÀ GÁN NHÃN NHIỀU TẦNG');
+const sarcasm = require('../services/sarcasm');
+const { applyJudgement } = require('../services/label_cascade');
+const { applyHumanLabels } = require('../services/analysis_context');
+
+test('Luật nghi mỉa mai bắt lệch sao và "khen + sự việc tiêu cực", bỏ qua lời khen thật', () => {
+  const s1 = sarcasm.sarcasmSignals({ text: 'Giao nhanh ghê, đặt mùng 1 mà 15 mới tới', rating: 1, sentiment: 'Positive' });
+  assert.ok(s1.suspected, 'sao thấp + chữ khen phải bị nghi');
+  const s2 = sarcasm.sarcasmSignals({ text: 'Chất lượng tuyệt vời, dùng 2 hôm là hỏng 🙂', rating: null, sentiment: 'Positive' });
+  assert.ok(s2.suspected, 'khen + hỏng + giọng mỉa, không có sao vẫn phải bị nghi');
+  const s3 = sarcasm.sarcasmSignals({ text: 'Hàng tốt, giao nhanh, đóng gói kỹ', rating: 5, sentiment: 'Positive' });
+  assert.strictEqual(s3.suspected, false, 'lời khen thật không bị nghi');
+  const s4 = sarcasm.sarcasmSignals({ text: 'Giao chậm, hộp móp', rating: 5, sentiment: 'Negative' });
+  assert.ok(s4.ratingConflict && !s4.suspected, '5 sao mà chê là lệch sao, không phải mỉa mai');
+});
+
+test('Bỏ phiếu: mô hình thứ hai + số sao thắng mô hình chính; hai nhóm khác nhau thì cần người', () => {
+  const primary = { sentiment: 'Positive', category: 'Other', subCategory: null };
+  const judge = { sentiment: 'Negative', category: 'Delivery', subCategory: 'LateDelivery', sarcastic: true };
+  const v = sarcasm.resolveVotes(primary, judge, 1);
+  assert.strictEqual(v.sentiment, 'Negative');
+  assert.strictEqual(v.category, 'Delivery');
+  assert.strictEqual(v.needsReview, false, 'đa số rõ ràng thì không cần người');
+  const conflict = sarcasm.resolveVotes({ sentiment: 'Negative', category: 'ProductQuality' }, { sentiment: 'Negative', category: 'Delivery', sarcastic: false }, 1);
+  assert.strictEqual(conflict.needsReview, true, 'hai mô hình chỉ ra hai nhóm khác nhau phải hỏi người');
+  const split = sarcasm.resolveVotes({ sentiment: 'Positive', category: 'Other' }, { sentiment: 'Negative', category: 'Other' }, null);
+  assert.strictEqual(split.needsReview, true, 'không có số sao và hai mô hình bất đồng thì không có đa số');
+});
+
+test('Giám khảo lỗi (null) thì đẩy sang người duyệt, câu bình thường không bị đụng tới', () => {
+  const sus = applyJudgement({ text: 'Giao nhanh ghê, 2 tuần mới tới', rating: 1 }, { sentiment: 'Positive', category: 'Other', labelledBy: 'llm' }, null);
+  assert.strictEqual(sus.needsReview, true);
+  assert.strictEqual(sus.sarcasm.suspected, true);
+  assert.strictEqual(sus.labelVotes.rating, 'Negative');
+  const normal = applyJudgement({ text: 'Hàng đẹp, đúng mô tả', rating: 5 }, { sentiment: 'Positive', category: 'Other', labelledBy: 'llm' }, null);
+  assert.strictEqual(normal.needsReview, false);
+  assert.strictEqual(normal.sarcasm.suspected, false);
+});
+
+test('Nhãn người duyệt ghi đè nhãn máy và giữ lại nhãn máy cũ', () => {
+  const fbs = [{ _id: 'a', sentiment: 'Positive', category: 'Other', subCategory: null, labelledBy: 'llm', needsReview: true }, { _id: 'b', sentiment: 'Negative', category: 'Delivery' }];
+  const n = applyHumanLabels(fbs, [{ feedbackId: 'a', correctSentiment: 'Negative', correctCategory: 'Delivery', correctCause: 'LateDelivery', sarcasm: true }]);
+  assert.strictEqual(n, 1);
+  assert.deepStrictEqual([fbs[0].sentiment, fbs[0].category, fbs[0].subCategory, fbs[0].labelledBy], ['Negative', 'Delivery', 'LateDelivery', 'human']);
+  assert.strictEqual(fbs[0].machineLabel.sentiment, 'Positive');
+  assert.strictEqual(fbs[0].sarcasm.verdict, 'sarcastic');
+  assert.strictEqual(fbs[0].needsReview, false);
+  assert.strictEqual(fbs[1].labelledBy, undefined, 'phản hồi chưa duyệt không bị đụng tới');
+});
+
+test('Bộ test mù cố định theo mã và chiếm khoảng 15%', () => {
+  const ids = Array.from({ length: 4000 }, (_, i) => `id${i}`);
+  const blind = ids.filter(insights.isBlindTest).length / ids.length;
+  assert.ok(blind > 0.12 && blind < 0.18, `tỉ lệ test mù ${blind}`);
+  assert.strictEqual(insights.isBlindTest('id7'), insights.isBlindTest('id7'));
+});
+
+test('Câu mỉa mai không bị Trust Layer coi là lệch sao (không hạ trọng số oan)', () => {
+  const norm = normalizer.normalize('Giao nhanh ghê, 15 ngày mới tới');
+  const plain = trust.starTextMismatch({ rating: 1, sentiment: 'Positive' }, norm);
+  assert.ok(plain.score > 0.5, 'không có thông tin mỉa mai thì vẫn bị coi là lệch');
+  const sar = trust.starTextMismatch({ rating: 1, sentiment: 'Positive', sarcasm: { suspected: true, verdict: null } }, norm);
+  assert.strictEqual(sar.score, 0);
+  const literal = trust.starTextMismatch({ rating: 1, sentiment: 'Positive', sarcasm: { suspected: true, verdict: 'literal' } }, norm);
+  assert.ok(literal.score > 0.5, 'người/mô hình đã kết luận KHÔNG mỉa mai thì lệch sao vẫn tính');
+});
+
 // ==================================================================
 console.log(`\n${'='.repeat(52)}`);
 console.log(`Kết quả: ${passed} đạt, ${failed} lỗi`);

@@ -48,5 +48,9 @@
     "not_spam",
     "spam"
   ],
+  "sarcasm": [
+    "literal",
+    "sarcastic"
+  ],
   "generatedFrom": "backend/services/taxonomy.js"
 }

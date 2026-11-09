@@ -1,12 +1,16 @@
 """
 MÔ HÌNH ĐA NHIỆM TRÊN NỀN VISOBERT
 ==================================================================
-Một bộ mã hóa ViSoBERT dùng chung, bốn đầu ra:
+Một bộ mã hóa ViSoBERT dùng chung, tối đa năm đầu ra:
 
   sentiment  cảm xúc toàn câu (Positive / Negative / Neutral)
   category   danh mục Level 1 của taxonomy, cộng lớp NONE = không phải khiếu nại
   cause      nguyên nhân Level 2, mã hóa "Danh mục.NguyênNhân"
   spam       nội dung rác / quảng cáo (tầng T1 của Trust Layer)
+  sarcasm    câu mỉa mai (literal / sarcastic) — từ bản v4
+
+Số đầu ra lấy theo labels của checkpoint: checkpoint cũ (bốn đầu ra) vẫn
+nạp và chạy được y như trước.
 
 GIẢI MÃ PHÂN CẤP: nguyên nhân chỉ được chọn TRONG danh mục đã dự đoán.
 Không có chuyện mô hình trả "Giao hàng" kèm nguyên nhân "Trừ tiền hai
@@ -30,7 +34,9 @@ DEFAULT_CHECKPOINT = HERE / "checkpoints" / "visobert-absa"
 DEFAULT_LABELS = HERE / "labels.json"
 
 IGNORE = -100
-TASKS = ("sentiment", "category", "cause", "spam")
+TASKS = ("sentiment", "category", "cause", "spam", "sarcasm")
+# Các đầu ra phân loại một nhãn (softmax); category/cause là đa nhãn (sigmoid)
+SINGLE_LABEL_TASKS = ("sentiment", "spam", "sarcasm")
 NONE = "NONE"
 
 
@@ -61,8 +67,10 @@ class ViSoBertMultiTask(nn.Module):
         self.labels = labels
         hidden = encoder.config.hidden_size
         self.dropout = nn.Dropout(dropout)
+        # Chỉ tạo đầu ra có trong labels: checkpoint cũ không có "sarcasm"
+        self.tasks = [t for t in TASKS if t in labels]
         self.heads = nn.ModuleDict(
-            {task: nn.Linear(hidden, len(labels[task])) for task in TASKS}
+            {task: nn.Linear(hidden, len(labels[task])) for task in self.tasks}
         )
 
     def forward(self, input_ids, attention_mask):
@@ -114,7 +122,7 @@ def decode(logits, labels, trained_tasks, multi_label=False,
     cause_threshold = cal.get("causeThreshold", cause_threshold)
     soft = {
         t: torch.softmax(logits[t] / float(cal.get(f"{t}Temperature", 1.0) or 1.0), dim=-1)
-        for t in ("sentiment", "spam")
+        for t in SINGLE_LABEL_TASKS if t in logits
     }
     if multi_label:
         cat_p = torch.sigmoid(logits["category"])
@@ -150,10 +158,22 @@ def decode(logits, labels, trained_tasks, multi_label=False,
                     sub = sub / sub.sum().clamp(min=1e-9)
                 k = int(sub.argmax())
                 p = float(sub[k])
+                # Bỏ giới hạn MỘT nguyên nhân mỗi danh mục: "giao chậm, hộp móp"
+                # là hai nguyên nhân cùng nhóm Giao hàng. Ở chế độ đa nhãn, mọi
+                # nguyên nhân vượt ngưỡng đều được trả; nguyên nhân mạnh nhất vẫn
+                # là nguyên nhân chính để tầng sau không phải đổi cách đọc.
+                causes = []
+                if multi_label:
+                    order = sorted(range(len(idxs)), key=lambda j: -float(sub[j]))
+                    causes = [{"cause": labels["cause"][idxs[j]].split(".", 1)[1], "p": round(float(sub[j]), 4)}
+                              for j in order if float(sub[j]) >= cause_threshold]
+                if not causes:
+                    causes = [{"cause": labels["cause"][idxs[k]].split(".", 1)[1], "p": round(p, 4)}]
                 return {
                     "cause": labels["cause"][idxs[k]].split(".", 1)[1],
                     "p": round(p, 4),
-                    "uncertain": bool(multi_label and p < cause_threshold)
+                    "uncertain": bool(multi_label and p < cause_threshold),
+                    "causes": causes
                 }
 
             if multi_label:
@@ -174,7 +194,8 @@ def decode(logits, labels, trained_tasks, multi_label=False,
                     bc = best_cause(c)
                     r["categories"].append({
                         "category": c, "p": round(p, 4),
-                        "cause": bc["cause"], "causeConfidence": bc["p"], "causeUncertain": bc["uncertain"]
+                        "cause": bc["cause"], "causeConfidence": bc["p"], "causeUncertain": bc["uncertain"],
+                        "causes": bc.get("causes", [])
                     })
                 r["category"] = primary
                 r["categoryConfidence"] = round(primary_p, 4)
@@ -196,6 +217,10 @@ def decode(logits, labels, trained_tasks, multi_label=False,
         if trained_tasks.get("spam"):
             spam_idx = labels["spam"].index("spam")
             r["spamProbability"] = round(float(soft["spam"][i][spam_idx]), 4)
+
+        if trained_tasks.get("sarcasm") and "sarcasm" in soft:
+            sar_idx = labels["sarcasm"].index("sarcastic")
+            r["sarcasmProbability"] = round(float(soft["sarcasm"][i][sar_idx]), 4)
 
         results.append(r)
     return results

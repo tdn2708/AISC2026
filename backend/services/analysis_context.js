@@ -60,6 +60,35 @@ const anchorsToData = (db) => db.databaseName === REAL_DB;
  */
 const REAL_HALF_LIFE_DAYS = Number(process.env.REAL_HALF_LIFE_DAYS) || 180;
 
+/**
+ * Ghi đè nhãn máy bằng nhãn người duyệt (collection audit_labels).
+ * Chỉ ghi đè trường người đã sửa; trường người xác nhận "đúng" giữ nguyên.
+ * Hàm thuần trên mảng, để kiểm thử được không cần database.
+ */
+function applyHumanLabels(feedbacks, labels) {
+  if (!labels || !labels.length) return 0;
+  const byId = new Map(labels.map((l) => [String(l.feedbackId), l]));
+  let applied = 0;
+  for (const f of feedbacks) {
+    const l = byId.get(String(f._id));
+    if (!l) continue;
+    f.machineLabel = { sentiment: f.sentiment, category: f.category, subCategory: f.subCategory, labelledBy: f.labelledBy };
+    if (l.correctSentiment) f.sentiment = l.correctSentiment;
+    if (l.correctCategory) {
+      if (l.correctCategory !== f.category) f.subCategory = l.correctCause || null;
+      f.category = l.correctCategory;
+    }
+    if (l.correctCause) f.subCategory = l.correctCause;
+    if (typeof l.sarcasm === 'boolean') {
+      f.sarcasm = { ...(f.sarcasm || {}), verdict: l.sarcasm ? 'sarcastic' : 'literal', by: 'human' };
+    }
+    f.labelledBy = 'human';
+    f.needsReview = false;
+    applied += 1;
+  }
+  return applied;
+}
+
 /** "Bây giờ" của một ngữ cảnh: mốc dữ liệu với kho thật, giờ thật với kho mô phỏng */
 const ctxNow = (ctx) => (ctx && ctx.asOf ? new Date(ctx.asOf) : new Date());
 // Chỉ các trường giao dịch thật sự được dùng (đối soát, doanh thu rủi ro, vùng)
@@ -189,6 +218,13 @@ async function doFetch(db, gen, onlyIfChanged) {
     console.warn('[VISOBERT] Bỏ qua tín hiệu mô hình cho Trust Layer:', e.message);
   }
 
+  // NHÃN NGƯỜI DUYỆT THẮNG NHÃN MÁY. Người đọc phản hồi ở trang Kiểm tra và
+  // sửa cảm xúc / nhóm vấn đề / mỉa mai: nhãn đó phải thay nhãn máy trong MỌI
+  // chỉ số, không chỉ dùng để đo độ chính xác. Áp TRƯỚC Trust Layer vì luật
+  // lệch sao đọc chính nhãn cảm xúc này. Nhãn máy cũ giữ ở `machineLabel`.
+  const auditLabels = await db.collection('audit_labels').find({}).toArray();
+  applyHumanLabels(feedbacks, auditLabels);
+
   const halfLifeDays = anchorsToData(db) ? REAL_HALF_LIFE_DAYS : DEFAULT_HALF_LIFE_DAYS;
   const result = runTrustLayer(feedbacks, {
     orders: transactions,
@@ -316,4 +352,4 @@ function applyFilters(items, query = {}, nowRef = null) {
   return out;
 }
 
-module.exports = { getContext, invalidate, applyFilters, normalizeLabels, ctxNow };
+module.exports = { getContext, invalidate, applyFilters, normalizeLabels, ctxNow, applyHumanLabels };

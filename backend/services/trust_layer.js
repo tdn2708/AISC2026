@@ -590,6 +590,12 @@ function starTextMismatch(fb, normalized) {
   if (!fb.sentiment) {
     return { score: 0, available: false, note: 'Chưa có nhãn cảm xúc để đối chiếu' };
   }
+  // Lệch sao do MỈA MAI ("giao nhanh ghê, 15 ngày mới tới" + 1 sao) không phải
+  // dấu vết đánh giá thuê: đó là lời chê thật, khó thấy nhất. Bản cũ hạ trọng
+  // số đúng những câu này. Câu đã kết luận hoặc đang nghi mỉa mai thì bỏ qua.
+  if (fb.sarcasm && (fb.sarcasm.verdict === 'sarcastic' || (fb.sarcasm.suspected && fb.sarcasm.verdict !== 'literal'))) {
+    return { score: 0, available: true, note: 'Lệch sao do mỉa mai, không tính là bất nhất' };
+  }
 
   const starPolarity = (fb.rating - 3) / 2; // 1 sao -> -1, 5 sao -> +1
   const sentimentPolarity =

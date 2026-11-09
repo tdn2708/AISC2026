@@ -218,10 +218,17 @@ function coerceResult(raw, originalText) {
  * ViSoBERT đứng đầu vì đây là đường chạy nóng: chạy cục bộ, không tốn phí
  * theo lượt, không gửi văn bản khách hàng ra dịch vụ bên ngoài.
  */
-const analyzeFeedbackBatch = async (reviewsArray) => {
-  if (!Array.isArray(reviewsArray) || reviewsArray.length === 0) return [];
+/** Đầu vào nhận chuỗi (kiểu cũ) hoặc {text, rating}: số sao là tín hiệu mạnh nhất để nhận ra mỉa mai */
+const toItem = (r) =>
+  typeof r === 'string'
+    ? { text: r, rating: null }
+    : { text: String(r?.text ?? r?.rawText ?? ''), rating: Number.isFinite(Number(r?.rating)) && r?.rating != null ? Number(r.rating) : null };
 
-  const viaModel = await visobert.predictAnalysis(reviewsArray);
+const analyzeFeedbackBatch = async (reviewsInput) => {
+  if (!Array.isArray(reviewsInput) || reviewsInput.length === 0) return [];
+  const reviewsArray = reviewsInput.map(toItem);
+
+  const viaModel = await visobert.predictAnalysis(reviewsArray.map((r) => r.text), reviewsArray.map((r) => r.rating));
   if (viaModel) return viaModel;
 
   // Chia lô: một prompt chứa vài trăm bình luận dễ vượt giới hạn token, và
@@ -269,7 +276,8 @@ function rateLimitDelayMs(error) {
   return Math.min(90000, Math.ceil((m ? Number(m[1]) : 20) * 1000) + 1000);
 }
 
-async function analyzeChunkWithLLM(reviewsArray) {
+async function analyzeChunkWithLLM(items) {
+  const reviewsArray = items.map((r) => r.text);
   if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) {
     return reviewsArray.map((text) => classifyByRulesFallback(text));
   }
@@ -277,7 +285,7 @@ async function analyzeChunkWithLLM(reviewsArray) {
   // Che PII TRƯỚC khi văn bản rời khỏi tiến trình. Bản cũ gửi nguyên văn
   // (kèm số điện thoại, email, mã đơn) sang Groq — trái với chính nguyên tắc
   // "PII không bao giờ chạm tới mô hình" ở normalizer.js.
-  const maskedReviews = reviewsArray.map((t) => maskPII(stripHtml(t)).text);
+  const maskedReviews = items.map((r) => ({ text: maskPII(stripHtml(r.text)).text, rating: r.rating }));
 
   const prompt = `Bạn là hệ thống gán nhãn phản hồi khách hàng tiếng Việt cho sàn thương mại điện tử.
 
@@ -293,11 +301,22 @@ bình luận PHÀN NÀN về vấn đề đó. Bình luận chỉ khen, không c
 category = "Other" và subCategory = null. Bình luận vừa khen vừa chê thì
 ghi vấn đề bị chê.
 
+MỈA MAI: mỗi bình luận đi kèm "rating" (số sao 1-5, hoặc null). Người Việt
+hay dùng lời khen để chê: "giao nhanh ghê, đặt mùng 1 mà 15 mới tới",
+"chất lượng tuyệt vời, dùng 2 hôm là hỏng", "cảm ơn shop đã gửi nhầm màu".
+Dấu hiệu: lời khen đi cùng một sự việc tiêu cực cụ thể, số sao thấp mà chữ
+khen, từ "ghê", "quá trời", "đúng là", biểu tượng 🙂👏, câu hỏi tu từ.
+Khi là mỉa mai: sentiment theo Ý THẬT (thường là "Negative"), category và
+subCategory theo vấn đề THẬT bị chê, và đặt "sarcasm": true. Không phải mỉa
+mai thì "sarcasm": false. Số sao chỉ là gợi ý, không tự quyết: 1 sao mà nội
+dung khen thật lòng (ví dụ chọn nhầm sao) thì vẫn là "Positive".
+
 Với MỖI bình luận trong mảng đầu vào, trả về một đối tượng JSON:
 {
   "category": "<một mã Level 1 ở trên, hoặc 'Other'>",
   "subCategory": "<một mã Level 2 thuộc đúng category đó, hoặc null>",
   "sentiment": "Positive" | "Negative" | "Neutral",
+  "sarcasm": true | false,
   "aspects": [{"aspect": "<khía cạnh được nhắc tới>", "polarity": "Positive|Negative|Neutral"}],
   "entities": {"branch": <chi nhánh hoặc null>, "product": <sản phẩm hoặc null>, "orderId": <mã đơn hoặc null>, "courier": <đơn vị vận chuyển hoặc null>},
   "aiSummary": "<một câu tóm tắt>"
@@ -340,7 +359,12 @@ ${JSON.stringify(maskedReviews)}`;
           ? parsed
           : Array.isArray(parsed?.results) ? parsed.results : Object.values(parsed || {}).find((v) => Array.isArray(v)) || [];
         if (arr.length === 0) throw new Error('mô hình trả về mảng rỗng');
-        return reviewsArray.map((text, i) => coerceResult(arr[i], text));
+        return reviewsArray.map((text, i) => {
+          const r = coerceResult(arr[i], text);
+          // Mô hình đã thấy số sao và tự kết luận có mỉa mai hay không
+          if (r.labelledBy === 'llm') r.sarcasm = arr[i]?.sarcasm === true;
+          return r;
+        });
       } catch (error) {
         // Bị giới hạn tốc độ (429): khi thu thập hàng loạt thì chờ đúng thời gian
         // nhà cung cấp yêu cầu rồi thử lại, thay vì để cả lô rơi về lớp luật
@@ -356,6 +380,96 @@ ${JSON.stringify(maskedReviews)}`;
   }
   // Lớp luật, KHÔNG phải nhãn ngẫu nhiên
   return reviewsArray.map((text) => classifyByRulesFallback(text));
+}
+
+/**
+ * GIÁM KHẢO MỈA MAI — ý kiến THỨ HAI cho những câu bị nghi mỉa mai.
+ * Chạy bằng mô hình KHÁC mô hình gán nhãn chính (ưu tiên Groq, rồi mới tới
+ * Gemini), để hai phiếu không cùng một điểm mù. Prompt chỉ làm một việc: đọc
+ * câu + số sao + nhãn đang có, quyết định có mỉa mai không và ý thật là gì.
+ *
+ * @param {Array<{text, rating, primary: {sentiment, category, subCategory}}>} items
+ * @returns {Promise<Array<{sarcastic, sentiment, category, subCategory, reason, by}>|null>}
+ */
+async function judgeSarcasm(items) {
+  if (!Array.isArray(items) || items.length === 0) return [];
+  if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) return null;
+  const out = [];
+  for (let i = 0; i < items.length; i += LLM_BATCH_SIZE) {
+    const chunk = items.slice(i, i + LLM_BATCH_SIZE);
+    const data = chunk.map((it) => ({
+      text: maskPII(stripHtml(it.text)).text,
+      rating: Number.isFinite(it.rating) ? it.rating : null,
+      currentLabel: { sentiment: it.primary?.sentiment, category: it.primary?.category, subCategory: it.primary?.subCategory }
+    }));
+    const prompt = `Bạn là người kiểm tra lại nhãn cho đánh giá khách hàng tiếng Việt trên sàn thương mại điện tử.
+Các câu dưới đây bị NGHI là mỉa mai (dùng lời khen để chê). Với mỗi câu, đọc nội dung,
+số sao ("rating", 1-5 hoặc null) và nhãn hiện tại, rồi quyết định:
+- "sarcastic": true nếu người viết đang mỉa mai, false nếu khen/chê thật lòng.
+- "sentiment": cảm xúc THẬT của người viết: "Positive" | "Negative" | "Neutral".
+- "category" và "subCategory": vấn đề THẬT bị chê theo taxonomy, hoặc "Other"/null nếu không chê gì.
+- "reason": một câu ngắn giải thích.
+Số sao chỉ là gợi ý: 1 sao mà nội dung khen thật lòng thì vẫn là "Positive".
+
+TAXONOMY:
+${taxonomyPrompt()}
+
+Trả về DUY NHẤT một đối tượng JSON dạng {"results": [...]}, mảng results có đúng ${data.length} phần tử theo đúng thứ tự.
+
+Dữ liệu:
+${JSON.stringify(data)}`;
+
+    const attempts = [];
+    if (process.env.GROQ_API_KEY) {
+      attempts.push(['groq', async () => (await getGroq().chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: GROQ_MODEL,
+        response_format: { type: 'json_object' },
+        max_tokens: 4096
+      })).choices[0].message.content]);
+    }
+    if (process.env.GEMINI_API_KEY) {
+      attempts.push(['gemini', async () => (await getGenAI()
+        .getGenerativeModel({ model: GEMINI_LABEL_MODEL, generationConfig: { responseMimeType: 'application/json' } }, { timeout: LABEL_TIMEOUT_MS })
+        .generateContent(prompt)).response.text()]);
+    }
+
+    let got = null;
+    for (const [by, call] of attempts) {
+      for (let retry = 0; ; retry++) {
+        try {
+          await waitForLlmSlot();
+          const parsed = JSON.parse(stripCodeFence(await call()));
+          const arr = Array.isArray(parsed) ? parsed : parsed?.results;
+          if (!Array.isArray(arr) || arr.length !== chunk.length) throw new Error('số kết quả không khớp');
+          got = arr.map((r) => {
+            const category = taxonomy.normalizeCategory(r?.category);
+            return {
+              sarcastic: r?.sarcastic === true,
+              sentiment: ['Positive', 'Negative', 'Neutral'].includes(r?.sentiment) ? r.sentiment : null,
+              category,
+              subCategory: taxonomy.normalizeCause(category, r?.subCategory),
+              reason: String(r?.reason || '').slice(0, 200) || null,
+              by
+            };
+          });
+          break;
+        } catch (error) {
+          const wait = rateLimitDelayMs(error);
+          if (wait !== null && retry < LLM_RETRY_429) {
+            await new Promise((r) => setTimeout(r, wait));
+            continue;
+          }
+          console.warn(`[JUDGE/${by}] Lỗi kiểm tra mỉa mai:`, error.message);
+          break;
+        }
+      }
+      if (got) break;
+    }
+    // Lô nào hỏng thì để trống phiếu thứ hai cho lô đó — tầng trên đẩy sang người duyệt
+    out.push(...(got || chunk.map(() => null)));
+  }
+  return out;
 }
 
 /**
@@ -507,6 +621,7 @@ const generateRiskAlertsBatch = async (alerts) => {
 module.exports = {
   llmAvailability,
   analyzeFeedbackBatch,
+  judgeSarcasm,
   generatePrediction,
   chatWithData,
   generateRiskAlertsBatch,

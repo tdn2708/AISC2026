@@ -60,6 +60,8 @@ function buildLabels() {
     category: [...taxonomy.CATEGORY_KEYS, 'NONE'],
     cause,
     spam: ['not_spam', 'spam'],
+    // Bản v4: đầu ra mỉa mai. Checkpoint cũ không có khóa này vẫn chạy bình thường
+    sarcasm: ['literal', 'sarcastic'],
     generatedFrom: 'backend/services/taxonomy.js'
   };
 }

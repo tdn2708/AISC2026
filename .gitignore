@@ -40,3 +40,6 @@ backend/.env.*
 
 # Mô hình ONNX xuất ra để chạy trên web (tải lên kho mô hình Hugging Face, không commit)
 nlp_service/deploy/onnx/
+
+# Log loi cua cac tac vu chay ngam
+*.log.err

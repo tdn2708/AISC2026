@@ -114,7 +114,18 @@ export const LABELLER_LABEL = {
   llm: 'Mô hình ngôn ngữ lớn (Gemini, dự phòng Groq)',
   visobert: 'ViSoBERT tinh chỉnh cho tiếng Việt',
   rules: 'Bộ luật từ khoá',
-  synthetic: 'Nhãn có sẵn của bộ dữ liệu mô phỏng'
+  synthetic: 'Nhãn có sẵn của bộ dữ liệu mô phỏng',
+  human: 'Người duyệt',
+  cascade: 'Nhiều mô hình bỏ phiếu (mô hình chính, mô hình thứ hai, số sao)'
+};
+
+/** Nhãn mỉa mai ngắn cho bảng: đã kết luận, đang nghi, hay không có gì */
+export const sarcasmTag = (f) => {
+  const s = f?.sarcasm;
+  if (!s) return null;
+  if (s.verdict === 'sarcastic') return { label: s.by === 'human' ? 'Mỉa mai (người xác nhận)' : 'Mỉa mai', tone: 'high' };
+  if (s.suspected && s.verdict !== 'literal') return { label: 'Nghi mỉa mai', tone: 'med' };
+  return null;
 };
 
 /** Nhãn ngắn cho phản hồi KHÔNG được tính vào chỉ số */

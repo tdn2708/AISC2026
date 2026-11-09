@@ -5,7 +5,7 @@ import { Search, X, ChevronLeft, ChevronRight, Copy, Zap, UserX, Star, Receipt, 
 import FilterBar from './FilterBar';
 import ReplyDraft from './feedback/ReplyDraft';
 import { PageHeader, GlassPanel, Chip, Drawer, EmptyState, SentimentFace, Badge, ProgressBar, EvidenceTag, EvidenceSwatch } from './ui';
-import { buildQuery, fmtInt, fmtDateTime, initials, SENTIMENT_MAP, foldVi, evidenceOf, exclusionLabel, LABELLER_LABEL } from '../lib/format';
+import { buildQuery, fmtInt, fmtDateTime, initials, SENTIMENT_MAP, foldVi, evidenceOf, exclusionLabel, LABELLER_LABEL, sarcasmTag } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
 
 /**
@@ -93,9 +93,29 @@ const FeedbackDetail = ({ item, onClose }) => {
             )}
             <div className="col-span-2">
               <dt className="text-xs text-ink-lo">Ai gán nhãn</dt>
-              <dd className="mt-0.5 text-sm text-ink-mid">{LABELLER_LABEL[item.labelledBy] || item.labelledBy}</dd>
+              <dd className="mt-0.5 text-sm text-ink-mid">
+                {LABELLER_LABEL[item.labelledBy] || item.labelledBy}
+                {item.machineLabel && (
+                  <span className="block text-xs text-ink-lo">
+                    Máy từng gán: {(SENTIMENT_MAP[item.machineLabel.sentiment] || SENTIMENT_MAP.Neutral).label.toLowerCase()}, {item.machineLabel.categoryLabel || 'không nêu vấn đề'}
+                  </span>
+                )}
+              </dd>
             </div>
           </dl>
+
+          {(item.sarcasm?.suspected || item.sarcasm?.verdict === 'sarcastic') && (
+            <div className="rounded-lg border border-high/30 bg-high/8 px-4 py-3 text-sm text-ink-mid">
+              <p className="font-semibold text-ink-hi">
+                {item.sarcasm.verdict === 'sarcastic' ? 'Câu mỉa mai: lời khen ngoài miệng, thật ra là chê' : item.sarcasm.verdict === 'literal' ? 'Đã kiểm tra: không phải mỉa mai' : 'Nghi mỉa mai, chờ xác nhận'}
+              </p>
+              {item.sarcasm.signals?.length > 0 && <p className="mt-1 text-xs">Dấu hiệu: {item.sarcasm.signals.join('; ')}.</p>}
+              {item.sarcasm.reason && <p className="mt-1 text-xs">Mô hình thứ hai: “{item.sarcasm.reason}”</p>}
+              {item.needsReview && (
+                <a href="/trust?tab=audit" className="mt-1.5 inline-block text-xs font-semibold text-accent hover:underline">Các mô hình chưa thống nhất, mở hàng cần duyệt</a>
+              )}
+            </div>
+          )}
 
           {item.aiSummary && (
             <div>
@@ -335,6 +355,12 @@ const Feedbacks = () => {
                           <SentimentFace sentiment={f.sentiment} size={22} />
                           {s.label}
                         </span>
+                        {(sarcasmTag(f) || f.needsReview) && (
+                          <span className="mt-1 flex flex-wrap gap-1">
+                            {sarcasmTag(f) && <Badge tone={sarcasmTag(f).tone}>{sarcasmTag(f).label}</Badge>}
+                            {f.needsReview && <Badge>Chờ duyệt</Badge>}
+                          </span>
+                        )}
                       </td>
                       <td className="fb-c-trust">
                         {f._ev.counted ? <EvidenceTag evidence={f._ev} /> : <Badge tone="crit">{exclusionLabel(f.trust)}</Badge>}

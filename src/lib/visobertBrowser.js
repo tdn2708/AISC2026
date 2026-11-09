@@ -16,7 +16,9 @@
 const MODEL_BASE = (import.meta.env?.VITE_VISOBERT_MODEL_URL ||
   'https://huggingface.co/tdn278/customer-radar-visobert-onnx/resolve/main').replace(/\/+$/, '');
 const CACHE_NAME = 'cr-visobert-v1';
-const TASKS = ['sentiment', 'category', 'cause', 'spam'];
+// Đầu ra có thể có; mỗi checkpoint chỉ có một phần (bản cũ không có "sarcasm").
+// Đầu ra thật đọc từ outputNames của phiên ONNX — xem eng.tasks.
+const TASKS = ['sentiment', 'category', 'cause', 'spam', 'sarcasm'];
 const NONE = 'NONE';
 const PAD_ID = 1;
 const OCCLUSION_MAX_WORDS = 60;
@@ -116,7 +118,8 @@ export function loadBrowserModel(onProgressCb) {
     );
     onProgress?.({ phase: 'init', loaded: 0, total: 0 });
     const session = await ort.InferenceSession.create(modelBuf, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
-    engine = { ort, session, meta, tokenizer: new Tokenizer(tokJson, tokCfg), maxLen: Math.min(256, meta.maxLength || 256) };
+    const tasks = TASKS.filter((t) => session.outputNames.includes(`${t}_logits`));
+    engine = { ort, session, meta, tasks, tokenizer: new Tokenizer(tokJson, tokCfg), maxLen: Math.min(256, meta.maxLength || 256) };
     onProgress?.({ phase: 'ready', loaded: 0, total: 0 });
     return engine;
   })();
@@ -179,7 +182,7 @@ function logits(eng, texts) {
 }
 
 async function logitsUnqueued(eng, texts) {
-  const out = Object.fromEntries(TASKS.map((t) => [t, []]));
+  const out = Object.fromEntries(eng.tasks.map((t) => [t, []]));
   for (let i = 0; i < texts.length; i += BATCH) {
     const enc = texts.slice(i, i + BATCH).map((t) => encode(eng, t).ids);
     const L = Math.max(...enc.map((e) => e.length));
@@ -191,7 +194,7 @@ async function logitsUnqueued(eng, texts) {
       attention_mask: new eng.ort.Tensor('int64', mask, [enc.length, L])
     };
     const res = await eng.session.run(feeds);
-    for (const t of TASKS) {
+    for (const t of eng.tasks) {
       const tensor = res[`${t}_logits`];
       const width = tensor.dims[1];
       for (let b = 0; b < enc.length; b++) out[t].push(Array.from(tensor.data.slice(b * width, (b + 1) * width)));
@@ -237,7 +240,14 @@ function decodeOne(eng, lg) {
       let sub = idxs.map((i) => causeP[i]);
       if (!multiLabel) { const s = Math.max(sub.reduce((a, b) => a + b, 0), 1e-9); sub = sub.map((v) => v / s); }
       const k = argmax(sub);
-      return { cause: labels.cause[idxs[k]].split('.').slice(1).join('.'), p: r4(sub[k]), uncertain: Boolean(multiLabel && sub[k] < causeThreshold) };
+      // Bỏ giới hạn MỘT nguyên nhân mỗi danh mục (cùng logic với visobert_model.decode):
+      // mọi nguyên nhân vượt ngưỡng đều được trả, mạnh nhất vẫn là nguyên nhân chính
+      const name = (j) => labels.cause[idxs[j]].split('.').slice(1).join('.');
+      let causes = multiLabel
+        ? sub.map((p, j) => [j, p]).filter(([, p]) => p >= causeThreshold).sort((a, b) => b[1] - a[1]).map(([j, p]) => ({ cause: name(j), p: r4(p) }))
+        : [];
+      if (!causes.length) causes = [{ cause: name(k), p: r4(sub[k]) }];
+      return { cause: name(k), p: r4(sub[k]), uncertain: Boolean(multiLabel && sub[k] < causeThreshold), causes };
     };
 
     if (multiLabel) {
@@ -250,7 +260,7 @@ function decodeOne(eng, lg) {
       const chosen = detected.length ? detected : (primary === null ? [] : [[primary, primaryP]]);
       r.categories = chosen.map(([c, p]) => {
         const bc = bestCause(c);
-        return { category: c, p: r4(p), cause: bc.cause, causeConfidence: bc.p, causeUncertain: bc.uncertain };
+        return { category: c, p: r4(p), cause: bc.cause, causeConfidence: bc.p, causeUncertain: bc.uncertain, causes: bc.causes || [] };
       });
       r.category = primary;
       r.categoryConfidence = r4(primaryP);
@@ -272,10 +282,15 @@ function decodeOne(eng, lg) {
     const p = softmax(lg.spam, cal.spamTemperature || 1);
     r.spamProbability = r4(p[labels.spam.indexOf('spam')]);
   }
+
+  if (trained.sarcasm && lg.sarcasm) {
+    const p = softmax(lg.sarcasm, cal.sarcasmTemperature || 1);
+    r.sarcasmProbability = r4(p[labels.sarcasm.indexOf('sarcastic')]);
+  }
   return r;
 }
 
-const pick = (lg, i) => Object.fromEntries(TASKS.map((t) => [t, lg[t][i]]));
+const pick = (lg, i) => Object.fromEntries(Object.keys(lg).map((t) => [t, lg[t][i]]));
 
 /** Dự đoán cho nhiều câu — cùng dạng kết quả với POST /predict */
 export async function browserPredict(texts) {
@@ -296,7 +311,7 @@ export async function browserExplain(text) {
   const lg = pick(await logits(eng, [text]), 0);
   const toProbs = (task, row) =>
     multiLabel && (task === 'category' || task === 'cause') ? row.map(sigmoid) : softmax(row, cal[`${task}Temperature`] || 1);
-  const probs = Object.fromEntries(TASKS.map((t) => [t, toProbs(t, lg[t])]));
+  const probs = Object.fromEntries(Object.keys(lg).map((t) => [t, toProbs(t, lg[t])]));
   const prediction = decodeOne(eng, lg);
   const t2 = performance.now();
 
