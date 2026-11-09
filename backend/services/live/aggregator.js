@@ -109,9 +109,10 @@ class LiveAggregator {
       const g = this.groups.get(key) || {
         key, intent: c.intent, topic: c.topic || null, productId: c.productId || null,
         size: key.split('|')[3] || null, count: 0, newSinceAnswer: 0, firstAt: c.ts, lastAt: c.ts,
-        samples: [], status: 'open', answer: null, latestId: null
+        samples: [], status: 'open', answer: null, latestId: null, answeredCount: 0
       };
       g.count += 1;
+      if (c.status === 'answered') g.answeredCount += 1;
       g.lastAt = c.ts;
       g.latestId = String(c._id);
       g.samples = [{ id: String(c._id), handle: c.author?.handle || null, text: c.text, ts: c.ts, body: c.body || null, variant: c.variant || {} }, ...g.samples].slice(0, 3);
@@ -135,6 +136,10 @@ class LiveAggregator {
     g.status = status;
     g.answer = answer || g.answer;
     g.newSinceAnswer = 0;
+    // Trả lời cả nhóm = mọi câu trong nhóm tính tới lúc này đã được trả lời
+    if (status === 'answered') g.answeredCount = g.count;
+    // "Mở lại" do người dùng bấm: cả nhóm quay về chưa trả lời (đúng như trong database)
+    if (status === 'open') g.answeredCount = 0;
     return g;
   }
 
@@ -177,7 +182,9 @@ class LiveAggregator {
       productName: this.productName(g.productId)
     });
 
-    const answeredQuestions = all.filter((g) => g.status === 'answered').reduce((s, g) => s + g.count, 0);
+    // Đếm theo câu đã được trả lời: nhóm bị mở lại vì có người hỏi tiếp vẫn giữ
+    // phần đã trả lời trước đó
+    const answeredQuestions = all.reduce((s, g) => s + (g.answeredCount || 0), 0);
     const askedQuestions = all.reduce((s, g) => s + g.count, 0);
 
     return {

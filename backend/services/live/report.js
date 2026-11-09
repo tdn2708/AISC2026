@@ -117,10 +117,14 @@ async function buildReport(db, session) {
 
   // ---------- Trả lời câu hỏi ----------
   const groups = [...agg.groups.values()].filter((g) => g.intent === 'question');
-  const answered = groups.filter((g) => g.status === 'answered');
-  const askedPeople = groups.reduce((s, g) => s + g.count, 0);
-  const answeredPeople = answered.reduce((s, g) => s + g.count, 0);
-  const waits = answered.map((g) => (g.answer?.at ? (new Date(g.answer.at) - new Date(g.firstAt)) / MIN : null)).filter((x) => x != null && x >= 0);
+  // Đếm theo từng câu hỏi đã được trả lời, không theo trạng thái nhóm: nhóm
+  // đã trả lời rồi bị mở lại vì có người hỏi tiếp thì những người trước đó
+  // vẫn là đã được trả lời
+  const questionRows = comments.filter((c) => c.intent === 'question');
+  const askedPeople = questionRows.length;
+  const answeredRows = questionRows.filter((c) => c.status === 'answered' && c.answer?.at);
+  const answeredPeople = answeredRows.length;
+  const waits = answeredRows.map((c) => (new Date(c.answer.at) - new Date(c.ts)) / MIN).filter((x) => x >= 0);
   const missed = groups.filter((g) => g.status === 'open').sort((a, b) => b.count - a.count).slice(0, 8).map((g) => ({
     topic: g.topic, topicLabel: TOPIC_LABEL[g.topic] || 'Câu hỏi khác', productName: byId.get(g.productId)?.name || null, people: g.count, sample: g.samples?.[0]?.text || ''
   }));
