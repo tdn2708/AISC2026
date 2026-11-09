@@ -4,6 +4,8 @@
  * Chạy:  node scripts/relabel_sarcasm.js --dry        (chỉ đếm, không gọi mô hình, không ghi)
  *        node scripts/relabel_sarcasm.js              (kho thật, mặc định)
  *        node scripts/relabel_sarcasm.js --limit=50   (thử trên 50 câu nghi vấn đầu)
+ *        node scripts/relabel_sarcasm.js --retry-failed      (chạy lại câu mô hình thứ hai chưa trả lời)
+ *        node scripts/relabel_sarcasm.js --recheck-sarcastic (xét lại câu đã gắn mỉa mai)
  *
  * Phản hồi thu thập TRƯỚC khi có quy trình gán nhãn nhiều tầng chưa được kiểm
  * tra mỉa mai. Script này chạy đúng các bước của label_cascade cho kho cũ:
@@ -37,13 +39,18 @@ async function main() {
   // --retry-failed: chỉ chạy lại câu đã bị nghi nhưng mô hình thứ hai chưa trả lời
   // được (lỗi mạng, hết lượt). Nhãn gốc lấy lại từ labelVotes.primary.
   const RETRY = args.includes('--retry-failed');
-  const query = RETRY
-    ? { 'sarcasm.suspected': true, 'labelVotes.judge': null, 'sarcasm.by': { $ne: 'human' } }
-    : FORCE ? {} : { sarcasm: { $exists: false } };
+  // --recheck-sarcastic: xét lại các câu đã bị gắn mỉa mai (sau khi đổi định
+  // nghĩa trong prompt). Nhãn gốc cũng lấy lại từ labelVotes.primary.
+  const RECHECK = args.includes('--recheck-sarcastic');
+  const query = RECHECK
+    ? { 'sarcasm.verdict': 'sarcastic', 'sarcasm.by': { $ne: 'human' } }
+    : RETRY
+      ? { 'sarcasm.suspected': true, 'labelVotes.judge': null, 'sarcasm.by': { $ne: 'human' } }
+      : FORCE ? {} : { sarcasm: { $exists: false } };
   const docs = (await col
     .find(query, { projection: { originalText: 1, rating: 1, sentiment: 1, category: 1, subCategory: 1, labelledBy: 1, labelVotes: 1 } })
     .toArray())
-    .map((d) => (RETRY && d.labelVotes?.primary
+    .map((d) => ((RETRY || RECHECK) && d.labelVotes?.primary
       ? { ...d, sentiment: d.labelVotes.primary.sentiment, category: d.labelVotes.primary.category, subCategory: d.labelVotes.primary.subCategory, labelledBy: d.labelVotes.primary.by }
       : d));
 
@@ -51,7 +58,7 @@ async function main() {
   const plain = [];
   for (const d of docs) {
     const s = sarcasmSignals({ text: d.originalText, rating: d.rating, sentiment: d.sentiment });
-    (s.suspected || s.ratingConflict ? flagged : plain).push({ d, s });
+    (RECHECK || s.suspected || s.ratingConflict ? flagged : plain).push({ d, s });
   }
   console.log(`${dbName}: ${docs.length} phản hồi chưa kiểm tra mỉa mai — ${flagged.length} bị nghi hoặc lệch sao, ${plain.length} bình thường`);
   for (const { d, s } of flagged.slice(0, 8)) console.log(`  ${d.rating ?? '-'}★ [${d.sentiment}] ${String(d.originalText).slice(0, 90)}  ← ${s.signals.join('; ') || 'lệch sao'}`);

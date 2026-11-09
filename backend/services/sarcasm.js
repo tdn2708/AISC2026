@@ -21,7 +21,7 @@ const { normalize } = require('./normalizer');
 const fold = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
 
 // Từ khen hay bị dùng ngược nghĩa trong đánh giá sàn
-const PRAISE = /(tuyệt vời|xuất sắc|tuyệt|đỉnh|xịn|nhanh ghê|nhanh quá|nhanh thật|giỏi|hay ghê|hay quá|chuyên nghiệp|chu đáo|đáng tiền|cảm ơn shop|cám ơn shop|cảm ơn|10 điểm|mười điểm|5 sao|năm sao|hài lòng|ưng|quá ổn|tốt ghê|tốt thật|hay thật|đẹp ghê|siêu|nhất quả đất|nhất thế giới)/;
+const PRAISE = /(?<!\p{L})(tuyệt vời|xuất sắc|tuyệt|đỉnh|xịn|nhanh ghê|nhanh quá|nhanh thật|giỏi|hay ghê|hay quá|chuyên nghiệp|chu đáo|đáng tiền|cảm ơn shop|cám ơn shop|cảm ơn|10 điểm|mười điểm|5 sao|năm sao|hài lòng|ưng|quá ổn|tốt ghê|tốt thật|hay thật|đẹp ghê|siêu|nhất quả đất|nhất thế giới)(?!\p{L})/u;
 
 // Sự việc tiêu cực cụ thể — thứ khiến lời khen ở trên thành ngược nghĩa
 const NEGATIVE_FACT = /(trễ|muộn|chậm|mãi|chưa (nhận|thấy|giao|tới|đến)|không (nhận|thấy|ai|giao|tới|đến|trả lời|phản hồi|dùng được|chạy|lên)|hỏng|vỡ|móp|rách|bể|lỗi|hư|giả|nhái|thiếu|mất|sai|lừa|chờ|đợi|tuần|tháng|\d+\s*ngày|hết hạn|hôi|ẩm|bẩn|cũ|trả hàng|hoàn tiền|bùng|ăn cắp|tệ|kém|chán)/;
@@ -117,4 +117,13 @@ function resolveVotes(primary, judge, rating) {
   };
 }
 
-module.exports = { sarcasmSignals, resolveVotes, ratingVote };
+// Có lời khen nào không, kể cả lời khen ngắn ("tốt", "ok", "đẹp").
+// Mỉa mai là dùng lời khen để chê, nên câu không có lời khen nào thì không
+// thể là mỉa mai, dù mô hình nói gì.
+const PRAISE_SHORT = /(?<!\p{L})(tốt|ok|oke|okela|ổn|đẹp|xinh|ngon|thích|ưng|hay|nhanh|rẻ|chất|xịn|đỉnh|tuyệt|hài lòng|cảm ơn|cám ơn|uy tín|đáng|5\s*\*|5\s*sao)(?!\p{L})/u;
+function hasPraise(text) {
+  const t = normalize(String(text || '')).normalized.toLowerCase();
+  return PRAISE.test(t) || PRAISE_SHORT.test(t);
+}
+
+module.exports = { sarcasmSignals, resolveVotes, ratingVote, hasPraise };

@@ -13,7 +13,7 @@
  */
 
 const { analyzeFeedbackBatch, judgeSarcasm } = require('./ai_analyzer');
-const { sarcasmSignals, resolveVotes, ratingVote } = require('./sarcasm');
+const { sarcasmSignals, resolveVotes, ratingVote, hasPraise } = require('./sarcasm');
 
 const toItem = (r) =>
   typeof r === 'string'
@@ -35,10 +35,17 @@ function applyJudgement(item, primary, judge) {
     };
   }
 
+  // Câu không có lời khen nào thì không thể là mỉa mai: bỏ cờ của mô hình,
+  // giữ phần cảm xúc/nhóm vấn đề nó đưa ra.
+  const praise = hasPraise(item.text);
+  if (judge && judge.sarcastic && !praise) judge = { ...judge, sarcastic: false, reason: `${judge.reason || ''} (không có lời khen nên không tính là mỉa mai)`.trim() };
   const vote = resolveVotes(primary, judge, item.rating);
   // Phiếu thứ hai hỏng (mất mạng, hết lượt): không đoán, đẩy sang người duyệt
   const judgeMissing = !judge;
-  const verdict = judge ? (judge.sarcastic ? 'sarcastic' : 'literal') : primary.sarcasm === true ? 'sarcastic' : null;
+  const verdict = judge ? (judge.sarcastic ? 'sarcastic' : 'literal') : primary.sarcasm === true && praise ? 'sarcastic' : null;
+  // Mỉa mai nghĩa là ý thật ngược lời khen; kết luận mỉa mai mà vẫn Tích cực
+  // là tự mâu thuẫn, để người quyết.
+  const contradiction = verdict === 'sarcastic' && vote.sentiment === 'Positive';
   return {
     ...primary,
     sentiment: vote.sentiment,
@@ -57,7 +64,7 @@ function applyJudgement(item, primary, judge) {
       rating: ratingVote(item.rating),
       tally: vote.tally
     },
-    needsReview: judgeMissing || vote.needsReview,
+    needsReview: judgeMissing || vote.needsReview || contradiction,
     labelledBy: vote.sentiment !== primary.sentiment || vote.category !== primary.category ? 'cascade' : primary.labelledBy
   };
 }

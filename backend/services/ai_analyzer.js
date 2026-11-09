@@ -251,6 +251,15 @@ const analyzeFeedbackBatch = async (reviewsInput) => {
 // 10 bình luận mỗi lượt: lô 40 làm đầu ra JSON dài vượt giới hạn và bị cắt
 // cụt giữa chừng ("Unterminated string in JSON") — cả lô rơi về lớp luật
 const LLM_BATCH_SIZE = 10;
+
+// Ranh giới mỉa mai, dùng chung cho mô hình gán nhãn chính và mô hình thứ hai.
+// Trên dữ liệu thật, câu "khen nhưng chê" và câu 5 sao mà chê thẳng nhiều hơn
+// mỉa mai thật rất nhiều; gộp chúng vào làm cờ mỉa mai mất nghĩa.
+const SARCASM_NOT = `KHÔNG phải mỉa mai (vẫn gán sentiment/category theo nội dung, nhưng "sarcasm": false):
+- câu vừa khen thật vừa chê thật, thường có "nhưng", "mỗi tội", "có điều": "đẹp nhưng bị xước";
+- câu chê thẳng mà vẫn cho 4-5 sao (nhiều người quen cho sao cao);
+- câu chỉ chê hoặc chỉ hỏi, không có lời khen nào.
+Chỉ là mỉa mai khi lời khen KHÔNG thật lòng: người viết nói ngược ý mình.`;
 // Trang web cần nhanh (5 lô song song, không chờ); bộ thu thập hàng loạt chạy
 // hàng trăm lô nên đặt LLM_CONCURRENCY=1, LLM_MIN_INTERVAL_MS và LLM_RETRY_429
 // để nằm trong hạn mức miễn phí (Gemini 15 lượt/phút, Groq 8.000 token/phút)
@@ -308,7 +317,8 @@ Dấu hiệu: lời khen đi cùng một sự việc tiêu cực cụ thể, s�
 khen, từ "ghê", "quá trời", "đúng là", biểu tượng 🙂👏, câu hỏi tu từ.
 Khi là mỉa mai: sentiment theo Ý THẬT (thường là "Negative"), category và
 subCategory theo vấn đề THẬT bị chê, và đặt "sarcasm": true. Không phải mỉa
-mai thì "sarcasm": false. Số sao chỉ là gợi ý, không tự quyết: 1 sao mà nội
+mai thì "sarcasm": false.
+${SARCASM_NOT} Số sao chỉ là gợi ý, không tự quyết: 1 sao mà nội
 dung khen thật lòng (ví dụ chọn nhầm sao) thì vẫn là "Positive".
 
 Với MỖI bình luận trong mảng đầu vào, trả về một đối tượng JSON:
@@ -410,6 +420,7 @@ số sao ("rating", 1-5 hoặc null) và nhãn hiện tại, rồi quyết đị
 - "category" và "subCategory": vấn đề THẬT bị chê theo taxonomy, hoặc "Other"/null nếu không chê gì.
 - "reason": một câu ngắn giải thích.
 Số sao chỉ là gợi ý: 1 sao mà nội dung khen thật lòng thì vẫn là "Positive".
+${SARCASM_NOT}
 
 TAXONOMY:
 ${taxonomyPrompt()}

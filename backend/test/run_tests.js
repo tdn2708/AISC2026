@@ -1348,6 +1348,27 @@ test('Giám khảo lỗi (null) thì đẩy sang người duyệt, câu bình th
   assert.strictEqual(normal.sarcasm.suspected, false);
 });
 
+test('"ưng" trong "nhưng" không bị tính là lời khen', () => {
+  assert.strictEqual(sarcasm.hasPraise('Nhưng dùng vài bữa đã bị khét'), false);
+  assert.strictEqual(sarcasm.hasPraise('siêu ưng ý'), true);
+  assert.strictEqual(sarcasm.hasPraise('SP tốt.....'), true);
+  assert.strictEqual(sarcasm.hasPraise('ồn'), false);
+});
+
+test('Câu không có lời khen thì không thành mỉa mai dù mô hình nói vậy', () => {
+  const judge = { sarcastic: true, sentiment: 'Negative', category: 'ProductQuality', subCategory: null, reason: 'x', by: 'groq' };
+  const r = applyJudgement({ text: 'ồn', rating: 5 }, { sentiment: 'Negative', category: 'ProductQuality', labelledBy: 'llm' }, judge);
+  assert.strictEqual(r.sarcasm.verdict, 'literal');
+  assert.strictEqual(r.sentiment, 'Negative', 'vẫn giữ cảm xúc mô hình đưa ra');
+});
+
+test('Kết luận mỉa mai mà vẫn Tích cực thì đẩy sang người duyệt', () => {
+  const judge = { sarcastic: true, sentiment: 'Positive', category: 'Other', subCategory: null, reason: 'x', by: 'groq' };
+  const r = applyJudgement({ text: 'Sản phẩm rất tốt, rất hài lòng', rating: 1 }, { sentiment: 'Positive', category: 'Other', labelledBy: 'llm' }, judge);
+  assert.strictEqual(r.sarcasm.verdict, 'sarcastic');
+  assert.strictEqual(r.needsReview, true);
+});
+
 test('Nhãn người duyệt ghi đè nhãn máy và giữ lại nhãn máy cũ', () => {
   const fbs = [{ _id: 'a', sentiment: 'Positive', category: 'Other', subCategory: null, labelledBy: 'llm', needsReview: true }, { _id: 'b', sentiment: 'Negative', category: 'Delivery' }];
   const n = applyHumanLabels(fbs, [{ feedbackId: 'a', correctSentiment: 'Negative', correctCategory: 'Delivery', correctCause: 'LateDelivery', sarcasm: true }]);
