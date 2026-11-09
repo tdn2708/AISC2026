@@ -35,6 +35,7 @@
     "groq-sdk": "^1.5.0",
     "mongodb": "^7.5.0",
     "mongoose": "^9.9.2",
-    "puppeteer": "^25.6.0"
+    "puppeteer": "^25.6.0",
+    "tiktok-live-connector": "^2.5.0"
   }
 }

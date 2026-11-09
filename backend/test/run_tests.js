@@ -1398,6 +1398,94 @@ test('Câu mỉa mai không bị Trust Layer coi là lệch sao (không hạ tr�
 });
 
 // ==================================================================
+// LIVESTREAM
+// ==================================================================
+const liveIntent = require('../services/live/intent');
+const liveAnswer = require('../services/live/answer');
+const { LiveAggregator, groupKeyOf } = require('../services/live/aggregator');
+const { MEGALIVE_CATALOG, MEGALIVE_POLICY } = require('../services/live/connectors/simulator');
+
+test('Live: phân loại ý định bình luận, kể cả gõ không dấu', () => {
+  const cases = [
+    ['giá bao nhiêu shop', 'question', 'price'],
+    ['gia bn v', 'question', 'price'],
+    ['còn size M không', 'question', 'stock'],
+    ['1m6 50kg mặc size gì ạ', 'question', 'size'],
+    ['ship về Cà Mau mất mấy ngày', 'question', 'shipping'],
+    ['có mã giảm giá không', 'question', 'promo'],
+    ['có bị xù không', 'question', 'material'],
+    ['chốt M2', 'order', null],
+    ['lấy 2 cái áo thun', 'order', null],
+    ['đơn hôm trước chưa nhận được hàng', 'complaint', null],
+    ['nhắn tin không ai trả lời', 'complaint', null],
+    ['đẹp quáaaa', 'praise', null],
+    ['❤️❤️❤️', 'chatter', null]
+  ];
+  for (const [text, intent, topic] of cases) {
+    const r = liveIntent.classifyComment(text);
+    assert.strictEqual(r.intent, intent, `${text} -> ${r.intent}`);
+    if (topic) assert.strictEqual(r.topic, topic, `${text} -> ${r.topic}`);
+  }
+});
+
+test('Live: trích size, màu, số lượng, số đo và che số điện thoại', () => {
+  const o = liveIntent.classifyComment('chốt M2 màu đen sdt 0912345678');
+  assert.deepStrictEqual([o.intent, o.variant.size, o.variant.color, o.quantity, o.hasPhone], ['order', 'M', 'đen', 2, true]);
+  assert.ok(!o.text.includes('0912345678'));
+  const b = liveIntent.classifyComment('cao 1m55 nặng 48 mặc size nào');
+  assert.deepStrictEqual(b.body, { heightCm: 155, weightKg: 48 });
+  assert.strictEqual(liveIntent.classifyComment('size gì vậy').variant.size, undefined, '"gì" không phải mã size');
+});
+
+test('Live: nhận sản phẩm theo số giỏ hàng và từ khóa', () => {
+  const p = MEGALIVE_CATALOG;
+  assert.strictEqual(liveIntent.classifyComment('giỏ 2 còn hàng không', { products: p }).productId, 'quan-jean');
+  assert.strictEqual(liveIntent.classifyComment('lấy 1 cái túi', { products: p }).productId, 'tui-tote');
+  assert.strictEqual(liveIntent.classifyComment('giá bao nhiêu', { products: p }).productId, null);
+});
+
+test('Live: gợi ý trả lời chỉ dùng dữ kiện shop khai báo', () => {
+  const session = { products: MEGALIVE_CATALOG, policy: MEGALIVE_POLICY, currentProductId: 'ao-thun' };
+  const price = liveAnswer.suggestAnswer({ intent: 'question', topic: 'price', productId: null }, session);
+  assert.ok(price.grounded && price.text.includes('129.000đ'), price.text);
+  const size = liveAnswer.suggestAnswer({ intent: 'question', topic: 'size', productId: 'ao-thun', body: { heightCm: 165, weightKg: 58 } }, session);
+  assert.ok(size.text.includes('size M'), size.text);
+  const soldOut = liveAnswer.suggestAnswer({ intent: 'question', topic: 'stock', productId: 'quan-jean', variant: { size: 'XL' } }, session);
+  assert.ok(/hết hàng/.test(soldOut.text), soldOut.text);
+  const unknown = liveAnswer.suggestAnswer({ intent: 'question', topic: 'price', productId: null }, { products: [], policy: {} });
+  assert.strictEqual(unknown.grounded, false, 'không có danh mục thì không được bịa giá');
+  assert.ok(!/\d/.test(unknown.text));
+});
+
+test('Live: hàng đợi gộp câu hỏi giống nhau, khiếu nại lên đầu, mở lại khi hỏi tiếp', () => {
+  const agg = new LiveAggregator({ products: MEGALIVE_CATALOG });
+  let i = 0;
+  const add = (text) => {
+    const c = liveIntent.classifyComment(text, { products: MEGALIVE_CATALOG });
+    const doc = { _id: `c${i++}`, ts: new Date(Date.now() + i * 1000), author: { hash: `u${i}`, handle: `u${i}` }, ...c, status: c.intent === 'question' || c.intent === 'complaint' ? 'open' : null };
+    doc.groupKey = groupKeyOf(doc);
+    agg.add(doc);
+    return doc;
+  };
+  const q1 = add('xin giá áo thun');
+  add('áo thun bao nhiêu tiền');
+  add('đơn hôm trước chưa nhận được hàng');
+  add('chốt 2 áo thun');
+  let s = agg.snapshot();
+  assert.strictEqual(s.queue[0].intent, 'complaint');
+  const priceGroup = s.queue.find((g) => g.topic === 'price');
+  assert.strictEqual(priceGroup.count, 2);
+  assert.strictEqual(s.totals.orderQuantity, 2);
+  agg.resolve(q1.groupKey, 'answered', { text: 'x' });
+  assert.ok(!agg.snapshot().queue.some((g) => g.key === q1.groupKey), 'đã trả lời thì rời hàng đợi');
+  add('giá áo thun sao shop');
+  add('áo thun giá bao nhiêu');
+  add('xin giá áo thun ạ');
+  s = agg.snapshot();
+  assert.ok(s.queue.some((g) => g.key === q1.groupKey), 'ba người hỏi lại thì thẻ mở lại');
+});
+
+// ==================================================================
 console.log(`\n${'='.repeat(52)}`);
 console.log(`Kết quả: ${passed} đạt, ${failed} lỗi`);
 console.log('='.repeat(52));

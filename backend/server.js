@@ -119,6 +119,8 @@ async function startServer() {
       }
     });
 
+    // Livestream: phiên live, bình luận thời gian thực (SSE), hàng đợi trả lời
+    app.use('/api/live', require('./routes/live'));
     app.use('/api', require('./routes/api'));
 
     app.use((req, res) => {

@@ -8,6 +8,7 @@ import Assistant from './components/shell/Assistant';
 import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
 import Feedbacks from './components/Feedbacks';
+import Live from './components/Live';
 import RiskCenter from './components/RiskCenter';
 import DataSources from './components/DataSources';
 import Reports from './components/Reports';
@@ -107,6 +108,7 @@ function App() {
         <Route path="/dashboard" element={page(<Dashboard />)} />
         <Route path="/risk" element={page(<RiskCenter />)} />
         <Route path="/feedbacks" element={page(<Feedbacks />)} />
+        <Route path="/live" element={page(<Live />)} />
         <Route path="/analytics" element={page(<Analytics />)} />
         <Route path="/segments" element={<Navigate to="/analytics?tab=segments" replace />} />
         <Route path="/trust" element={page(<TrustLayerPage />)} />

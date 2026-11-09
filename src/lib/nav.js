@@ -1,13 +1,13 @@
 import {
   LayoutDashboard, Siren, MessagesSquare, ScanSearch, ShieldCheck, FlaskConical,
-  DatabaseZap, FileText, Settings, Palette
+  DatabaseZap, FileText, Settings, Palette, Radio
 } from 'lucide-react';
 
 /**
  * Cấu trúc điều hướng DÙNG CHUNG cho thanh bên và bảng lệnh Ctrl+K — khai
  * báo một lần để hai nơi không bao giờ lệch nhau.
  *
- * Thanh bên chỉ giữ sáu việc người dùng làm hằng ngày. Ba trang còn lại vẫn
+ * Thanh bên chỉ giữ bảy việc người dùng làm hằng ngày. Ba trang còn lại vẫn
  * mở được, nhưng từ đúng chỗ người ta cần tới chúng:
  *   Báo cáo         — nút "Xuất báo cáo" trên thanh lọc, và Ctrl+K
  *   Cài đặt         — menu người dùng ở cuối thanh bên, và Ctrl+K
@@ -20,6 +20,7 @@ export const NAV = [
       { to: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
       { to: '/risk', label: 'Cảnh báo', icon: Siren, badge: 'alerts' },
       { to: '/feedbacks', label: 'Phản hồi', icon: MessagesSquare },
+      { to: '/live', label: 'Livestream', icon: Radio },
       { to: '/analytics', label: 'Phân tích nguyên nhân', icon: ScanSearch },
       { to: '/trust', label: 'Tin cậy dữ liệu', icon: ShieldCheck, badge: 'queue' },
       { to: '/data', label: 'Nguồn dữ liệu', icon: DatabaseZap }
