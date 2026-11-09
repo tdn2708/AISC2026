@@ -935,7 +935,9 @@ router.get('/analyze/batch/sample', wrap(async (req, res) => {
       { $project: { originalText: 1, _id: 0 } }
     ])
     .toArray();
-  res.json({ texts: docs.map((d) => d.originalText).filter(Boolean) });
+  // Ô nhập của Lab tách theo dòng: phản hồi có xuống dòng phải gộp lại một dòng,
+  // nếu không 200 phản hồi thành 201 dòng và một câu bị cắt làm đôi
+  res.json({ texts: docs.map((d) => String(d.originalText || '').replace(/\s*\n+\s*/g, ' ').trim()).filter(Boolean) });
 }));
 
 /** Trạng thái dịch vụ ViSoBERT: có chạy không, đã tinh chỉnh chưa, học những đầu ra nào */

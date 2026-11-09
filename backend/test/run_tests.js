@@ -1397,6 +1397,13 @@ test('Câu mỉa mai không bị Trust Layer coi là lệch sao (không hạ tr�
   assert.ok(literal.score > 0.5, 'người/mô hình đã kết luận KHÔNG mỉa mai thì lệch sao vẫn tính');
 });
 
+test('Các file route nạp được (bắt lỗi cú pháp trước khi máy chủ không khởi động nổi)', () => {
+  for (const r of ['../routes/api', '../routes/live']) {
+    const router = require(r);
+    assert.strictEqual(typeof router, 'function', `${r} phải xuất ra một router`);
+  }
+});
+
 // ==================================================================
 // LIVESTREAM
 // ==================================================================

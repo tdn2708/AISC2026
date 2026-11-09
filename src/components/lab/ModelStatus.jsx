@@ -41,7 +41,7 @@ const ModelStatus = ({ className = '' }) => {
         {s.phase === 'init'
           ? 'Đang khởi động mô hình…'
           : s.phase === 'model' && s.total
-            ? <>Đang tải mô hình ViSoBERT về máy bạn: <b className="data-num text-ink-hi">{mb(s.loaded)} / {mb(s.total)} MB</b> · chỉ lần đầu</>
+            ? <>Đang tải mô hình ViSoBERT về máy bạn: <b className="data-num text-ink-hi">{mb(s.loaded)} / {mb(s.total)} MB</b>, chỉ lần đầu</>
             : 'Đang chuẩn bị mô hình ViSoBERT…'}
       </p>
       <div className="h-1.5 overflow-hidden rounded-full bg-raised">

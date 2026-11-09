@@ -49,7 +49,9 @@ const Bar = ({ label, count, max, tone }) => (
 
 export default function BatchDemo() {
   const [text, setText] = useState('');
-  const [size, setSize] = useState(200);
+  // 100 câu: khoảng 25 giây khi mô hình chạy trên trình duyệt, đủ nhanh để trình diễn
+  const [size, setSize] = useState(100);
+  const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -82,14 +84,25 @@ export default function BatchDemo() {
     try {
       // Máy chủ không có mô hình thì trình duyệt tự chạy ViSoBERT cho cả lô
       const status = await axios.get('/nlp/status').then((r) => r.data).catch(() => null);
-      setResult(await analyzeBatch(lines, { serverHasModel: Boolean(status?.canLabel) }));
+      const startedAt = performance.now();
+      setProgress({ done: 0, total: lines.length, startedAt });
+      setResult(await analyzeBatch(lines, {
+        serverHasModel: Boolean(status?.canLabel),
+        onProgress: (done, total) => setProgress({ done, total, startedAt })
+      }));
     } catch (e) {
       setError(e.response?.data?.error || 'Không chạy được lô này.');
       setResult(null);
     } finally {
       setLoading(null);
+      setProgress(null);
     }
   };
+
+  // Thời gian còn lại ước theo tốc độ của chính lô đang chạy
+  const eta = progress && progress.done > 0
+    ? Math.max(0, Math.round(((performance.now() - progress.startedAt) / progress.done) * (progress.total - progress.done) / 1000))
+    : null;
 
   const maxCat = result ? Math.max(1, ...result.summary.byCategory.map((c) => c.count)) : 1;
   const sentimentRows = result
@@ -126,9 +139,24 @@ export default function BatchDemo() {
           </button>
           <button onClick={run} disabled={loading !== null || lines.length === 0} style={btn('primary', loading !== null || lines.length === 0)}>
             {loading === 'run' ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Play size={15} />}
-            Chạy {lines.length > 0 ? lines.length : ''} phản hồi
+            {loading === 'run' && progress
+              ? `Đang chạy ${progress.done}/${progress.total}`
+              : `Chạy ${lines.length > 0 ? lines.length : ''} phản hồi`}
           </button>
         </div>
+
+        {loading === 'run' && (
+          <div role="status" aria-live="polite" style={{ marginTop: '0.8rem' }}>
+            <div style={{ height: 6, borderRadius: 3, background: 'var(--raised)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${progress?.total ? (progress.done / progress.total) * 100 : 3}%`, background: 'var(--accent)', transition: 'width 200ms ease' }} />
+            </div>
+            <p style={{ margin: '0.4rem 0 0', fontSize: '0.86rem', color: 'var(--text-mid)' }}>
+              {!progress || progress.done === 0
+                ? 'Đang chuẩn bị mô hình và che thông tin cá nhân…'
+                : `Đã phân tích ${progress.done} trên ${progress.total} phản hồi${eta != null ? `, còn khoảng ${eta} giây` : ''}. Mô hình chạy trên máy của bạn nên tốc độ phụ thuộc vào máy.`}
+            </p>
+          </div>
+        )}
 
         <textarea
           value={text}
@@ -196,8 +224,8 @@ export default function BatchDemo() {
               </div>
             </div>
             <p style={{ margin: '1rem 0 0', fontSize: '0.78rem', color: 'var(--text-lo)', lineHeight: 1.6 }}>
-              Nguồn nhãn: {result.source === 'visobert' ? (result.modelRuntime === 'browser' ? 'ViSoBERT chạy trên trình duyệt của bạn' : 'ViSoBERT tinh chỉnh') : 'luật từ khóa (ViSoBERT chưa sẵn sàng)'} ·
-              {' '}chuẩn hóa và che PII {result.timings.normalizeMs} ms · mô hình {result.timings.modelMs} ms.
+              Nguồn nhãn: {result.source === 'visobert' ? (result.modelRuntime === 'browser' ? 'ViSoBERT chạy trên trình duyệt của bạn' : 'ViSoBERT tinh chỉnh') : 'luật từ khóa (ViSoBERT chưa sẵn sàng)'},
+              {' '}chuẩn hóa và che PII {result.timings.normalizeMs} ms, mô hình {result.timings.modelMs} ms.
               Chạy trên CPU, một tiến trình. Một phản hồi có thể nêu nhiều vấn đề nên tổng theo danh mục lớn hơn số phản hồi có khiếu nại.
             </p>
           </div>
@@ -216,7 +244,7 @@ export default function BatchDemo() {
                     <tr key={i}>
                       <td style={{ fontSize: '0.8rem', minWidth: 260 }}>
                         {it.text.length > 120 ? it.text.slice(0, 120) + '…' : it.text}
-                        {it.piiMasked && <span style={{ color: 'var(--sev-ok)', fontSize: '0.72rem' }}> · đã che PII</span>}
+                        {it.piiMasked && <span style={{ color: 'var(--sev-ok)', fontSize: '0.72rem' }}>, đã che PII</span>}
                       </td>
                       <td style={{ fontSize: '0.78rem', color: it.sentiment === 'Negative' ? 'var(--sev-crit)' : it.sentiment === 'Positive' ? 'var(--sev-ok)' : 'var(--text-lo)' }}>
                         {it.spam ? '—' : it.sentiment}

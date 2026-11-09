@@ -167,8 +167,8 @@ const Experiments = () => {
           <div style={{ padding: '1.1rem 1.35rem', borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
             <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Luật từ khóa và ViSoBERT trên từng câu</h3>
             <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {h2h.total} câu kiểm tra giữ riêng · cả hai đúng {h2h.bothCorrect} · chỉ ViSoBERT đúng{' '}
-              {h2h.onlyModelCorrect.length} · chỉ luật đúng {h2h.onlyRulesCorrect.length} · cả hai sai {h2h.bothWrong}
+              {h2h.total} câu kiểm tra giữ riêng, cả hai đúng {h2h.bothCorrect}, chỉ ViSoBERT đúng{' '}
+              {h2h.onlyModelCorrect.length}, chỉ luật đúng {h2h.onlyRulesCorrect.length}, cả hai sai {h2h.bothWrong}
             </p>
           </div>
           {[
@@ -202,8 +202,8 @@ const Experiments = () => {
           ))}
           {mRow?.checkpoint && (
             <p style={{ margin: 0, padding: '0.8rem 1.35rem', borderTop: '1px solid rgba(148,163,184,0.12)', fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              Checkpoint train lúc {new Date(mRow.checkpoint.trainedAt).toLocaleString('vi-VN')} · epoch tốt nhất {mRow.checkpoint.bestEpoch} ·
-              số nhãn: cảm xúc {mRow.checkpoint.trainCounts?.sentiment}, danh mục {mRow.checkpoint.trainCounts?.category}, rác {mRow.checkpoint.trainCounts?.spam} ·
+              Checkpoint train lúc {new Date(mRow.checkpoint.trainedAt).toLocaleString('vi-VN')}, epoch tốt nhất {mRow.checkpoint.bestEpoch},
+              số nhãn: cảm xúc {mRow.checkpoint.trainCounts?.sentiment}, danh mục {mRow.checkpoint.trainCounts?.category}, rác {mRow.checkpoint.trainCounts?.spam},
               loại {mRow.checkpoint.testOverlapRemoved} câu trùng tập kiểm tra
             </p>
           )}
@@ -248,7 +248,7 @@ const Experiments = () => {
                       {lowerIsBetter ? `${(value * 100).toFixed(1)}%` : value.toFixed(3)}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
-                      mục tiêu {lowerIsBetter ? `≤ ${(target * 100).toFixed(0)}%` : `≥ ${target}`} · {pass ? 'ĐẠT' : 'CHƯA ĐẠT'}
+                      mục tiêu {lowerIsBetter ? `≤ ${(target * 100).toFixed(0)}%` : `≥ ${target}`}, {pass ? 'ĐẠT' : 'CHƯA ĐẠT'}
                     </div>
                   </div>
                 </div>

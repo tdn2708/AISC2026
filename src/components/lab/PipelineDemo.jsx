@@ -257,7 +257,7 @@ function StepSpam({ t }) {
 
       {s.modelScore != null && (
         <>
-          <Label>Xác suất rác do ViSoBERT chấm · ngưỡng {s.threshold}</Label>
+          <Label>Xác suất rác do ViSoBERT chấm, ngưỡng {s.threshold}</Label>
           <ProbBar label="Nội dung rác / quảng cáo" p={s.modelScore} winner tone={s.modelScore >= s.threshold ? 'var(--sev-high)' : 'var(--accent)'} />
           <Note>Mô hình không được một mình chặn phản hồi — chỉ chặn khi điểm vượt ngưỡng VÀ có ít nhất một dấu hiệu liên hệ hoặc chào mời.</Note>
         </>
@@ -293,7 +293,7 @@ function StepTokens({ t }) {
     <>
       <Label>Văn bản mô hình nhận ({m.inputMode === 'masked' ? 'đã che PII, giữ nguyên teencode' : 'đã chuẩn hóa'})</Label>
       <MaskedText text={m.modelInput} />
-      <Label>{m.tokenCount} token · tối đa {m.maxLength}{m.truncated ? ' · đã cắt bớt' : ''}</Label>
+      <Label>{m.tokenCount} token, tối đa {m.maxLength}{m.truncated ? ', đã cắt bớt' : ''}</Label>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
         {m.tokens.map((tok, i) => {
           const special = /^<.*>$/.test(tok);
@@ -538,7 +538,7 @@ function StepFinal({ t, scenario }) {
 
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 300px', minWidth: 0 }}>
-          <Label>Bản ghi đi vào hệ thống · kết quả chính thức</Label>
+          <Label>Bản ghi đi vào hệ thống, kết quả chính thức</Label>
           <p style={{ margin: '-0.15rem 0 0.5rem', fontSize: '0.76rem', color: 'var(--text-lo)', lineHeight: 1.55 }}>
             Do <strong style={{ color: 'var(--accent-hi)' }}>{f.source === 'visobert' ? 'ViSoBERT' : 'luật từ khóa'}</strong> sinh ra.
             Đây là bản ghi được lưu, được đếm vào chỉ số và có thể kích hoạt cảnh báo.
@@ -569,11 +569,11 @@ function StepFinal({ t, scenario }) {
                 }}>
                   <span style={{ fontSize: '0.83rem', color: 'var(--text-hi)' }}>
                     {a.categoryLabel} → {a.causeLabel || 'chưa rõ nguyên nhân'}
-                    {a.causeUncertain && <span style={{ color: 'var(--sev-high)' }}> · nguyên nhân chưa chắc</span>}
-                    {i === 0 && <span style={{ color: 'var(--text-lo)' }}> · chính</span>}
+                    {a.causeUncertain && <span style={{ color: 'var(--sev-high)' }}>, nguyên nhân chưa chắc</span>}
+                    {i === 0 && <span style={{ color: 'var(--text-lo)' }}>, chính</span>}
                   </span>
                   <span className="data-num" style={{ fontSize: '0.74rem', color: 'var(--text-lo)' }}>
-                    {a.owner}{a.confidence != null ? ` · ${a.confidence}` : ''}
+                    {a.owner}{a.confidence != null ? `, ${a.confidence}` : ''}
                   </span>
                 </div>
               ))}
@@ -737,10 +737,10 @@ export default function PipelineDemo() {
           <Chip tone={modelReady ? 'ok' : 'warn'} title={nlp?.reason || ''}>
             <Cpu size={12} />
             {nlp?.canLabel
-              ? `ViSoBERT sẵn sàng · train ${nlp.checkpoint?.trainedAt ? new Date(nlp.checkpoint.trainedAt).toLocaleDateString('vi-VN') : ''}`
+              ? `ViSoBERT sẵn sàng, train ${nlp.checkpoint?.trainedAt ? new Date(nlp.checkpoint.trainedAt).toLocaleDateString('vi-VN') : ''}`
               : inBrowser
-                ? (browserStatus.phase === 'ready' ? 'ViSoBERT · chạy trên trình duyệt' : 'ViSoBERT · đang tải về trình duyệt')
-                : 'ViSoBERT chưa sẵn sàng · bước 5–7 sẽ trống'}
+                ? (browserStatus.phase === 'ready' ? 'ViSoBERT chạy trên trình duyệt' : 'ViSoBERT đang tải về trình duyệt')
+                : 'ViSoBERT chưa sẵn sàng, bước 5–7 sẽ trống'}
           </Chip>
         </div>
 

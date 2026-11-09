@@ -212,7 +212,7 @@ const VersusDemo = () => {
             <div className="mb-1 flex items-center justify-between gap-2">
               <p className="eyebrow">Customer Radar</p>
               <Badge tone={usedModel ? 'accent' : 'neutral'} icon={Sparkles}>
-                {usedModel ? (inBrowser ? 'ViSoBERT · trên trình duyệt' : 'ViSoBERT tinh chỉnh') : 'Lớp luật dự phòng'}
+                {usedModel ? (inBrowser ? 'ViSoBERT chạy trên trình duyệt' : 'ViSoBERT tinh chỉnh') : 'Lớp luật dự phòng'}
               </Badge>
             </div>
             <p className="mb-5 text-xs leading-relaxed text-ink-lo">
@@ -303,7 +303,7 @@ const VersusDemo = () => {
                 ours={aspects.length > 0 || final?.sentiment !== 'Negative'}
                 detail={
                   aspects.length
-                    ? aspects.map((a) => a.causeLabel || a.categoryLabel).join(' · ')
+                    ? aspects.map((a) => a.causeLabel || a.categoryLabel).join(', ')
                     : final?.sentiment === 'Negative'
                       ? 'Câu chê này chưa được gắn vào nhóm vấn đề nào'
                       : 'Biết đây không phải lời phàn nàn — không tạo việc thừa'
@@ -319,7 +319,7 @@ const VersusDemo = () => {
                 label="Chỉ ra bộ phận chịu trách nhiệm xử lý"
                 generic={false}
                 ours={aspects.some((a) => a.owner)}
-                detail={[...new Set(aspects.map((a) => a.owner).filter(Boolean))].join(' · ')}
+                detail={[...new Set(aspects.map((a) => a.owner).filter(Boolean))].join(', ')}
               />
             )}
             {piiTypes.length > 0 && (

@@ -28,14 +28,25 @@ export async function analyzeText(text) {
  * Chạy cả lô. Máy chủ có mô hình thì dùng máy chủ; không thì trình duyệt chạy
  * trên /model-inputs của lô rồi gửi kết quả kèm thời gian đo được.
  */
-export async function analyzeBatch(texts, { serverHasModel } = {}) {
+export async function analyzeBatch(texts, { serverHasModel, onProgress } = {}) {
   if (serverHasModel || !browserModelSupported()) return (await axios.post('/analyze/batch', { texts })).data;
   try {
     const { texts: clean, inputs } = (await axios.post('/model-inputs', { texts })).data;
     await loadBrowserModel();
-    const t0 = performance.now();
-    const clientPredictions = await browserPredict(inputs);
-    const clientModelMs = Math.round((performance.now() - t0) * 10) / 10;
+    // Chạy từng nhóm nhỏ và nhường trình duyệt vẽ lại giữa các nhóm: 200 câu mất
+    // gần một phút trên CPU, không báo tiến độ thì trông như trang bị treo
+    const CHUNK = 8;
+    const clientPredictions = [];
+    let modelMs = 0;
+    onProgress?.(0, inputs.length);
+    for (let i = 0; i < inputs.length; i += CHUNK) {
+      const t0 = performance.now();
+      clientPredictions.push(...(await browserPredict(inputs.slice(i, i + CHUNK))));
+      modelMs += performance.now() - t0;
+      onProgress?.(Math.min(i + CHUNK, inputs.length), inputs.length);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    const clientModelMs = Math.round(modelMs * 10) / 10;
     return (await axios.post('/analyze/batch', { texts: clean, clientPredictions, clientModelMs })).data;
   } catch (e) {
     console.warn('Không chạy được mô hình trên trình duyệt, dùng lớp luật:', e);
