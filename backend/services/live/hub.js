@@ -60,9 +60,14 @@ async function ensureIndexes(db) {
   ]);
 }
 
+// Thiếu muối bí mật thì dùng muối ngẫu nhiên của tiến trình: mã người xem vẫn
+// ổn định trong lúc máy chủ chạy, nhưng không ai dò ngược được từ tên hiển thị
+const PROCESS_SALT = crypto.randomBytes(24).toString('hex');
+
 function authorHash(platform, handle) {
   if (!handle) return null;
-  return crypto.createHash('sha256').update(`${process.env.PII_SALT || 'live'}|${platform}|${handle}`).digest('hex').slice(0, 16);
+  const salt = require('../pii_salt').saltReady() ? process.env.PII_SALT : PROCESS_SALT;
+  return crypto.createHash('sha256').update(`${salt}|${platform}|${handle}`).digest('hex').slice(0, 16);
 }
 
 function platformInfo() {

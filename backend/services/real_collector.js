@@ -13,8 +13,9 @@
  *  - Khóa nằm trong MongoDB (findOneAndUpdate có điều kiện), nên dù có hai
  *    tiến trình (lúc Render chuyển bản triển khai) cũng chỉ một lượt chạy.
  *  - Khóa có hạn 2 giờ: tiến trình chết giữa chừng thì lượt sau tự lấy lại.
- *  - Thiếu PII_SALT bí mật thì KHÔNG chạy và ghi rõ lý do để giao diện báo,
- *    vì băm mã khách bằng muối công khai thì dò ngược ra tài khoản thật được.
+ *  - Thiếu PII_SALT bí mật vẫn chạy, nhưng ingest.js không lưu mã khách (băm
+ *    bằng muối công khai thì dò ngược ra tài khoản thật được). Giao diện báo
+ *    rõ phần bị thiếu: bước gom theo tài khoản của Trust Layer.
  *
  * Gán nhãn đi lần lượt từng sản phẩm, nghỉ giữa các sản phẩm, để nằm trong
  * hạn mức miễn phí của LLM mà không giành tài nguyên với người đang dùng web.
@@ -46,8 +47,8 @@ const CHECK_MS = 30 * 60 * 1000;
 const LOCK_TTL_MS = 2 * HOUR;
 const MANUAL_GAP_MS = 30 * 60 * 1000;
 
-/** Muối băm mã khách đã được đặt bí mật chưa */
-const saltReady = () => Boolean(process.env.PII_SALT && process.env.PII_SALT !== 'customer-radar');
+// Muối băm mã khách: nạp lúc khởi động từ biến môi trường hoặc database
+const { saltReady } = require('./pii_salt');
 
 /** Sản phẩm nhiều đánh giá nhất của một từ khóa */
 async function searchProducts(query, limit, minReviews) {
@@ -157,16 +158,18 @@ const enabled = () => process.env.AUTO_COLLECT !== '0';
 /** Trạng thái để giao diện hiển thị: lần chạy gần nhất, lần kế tiếp, lý do không chạy */
 async function collectorStatus(db) {
   const s = (await db.collection('meta').findOne({ _id: STATE_ID })) || {};
-  const ready = saltReady();
+  const ready = true;
+  const salt = saltReady();
   const lastAt = s.finishedAt || null;
   return {
     enabled: enabled(),
     ready,
     reason: !enabled()
       ? 'Tự thu thập đang tắt (AUTO_COLLECT=0).'
-      : !ready
-        ? 'Máy chủ chưa có PII_SALT bí mật, nên chưa thu thập để không lộ mã khách. Thêm biến PII_SALT trong phần Environment của Render.'
-        : null,
+      : null,
+    // Có muối thì lưu mã khách đã băm; chưa có thì bỏ trống mã khách cho an toàn
+    saltReady: salt,
+    note: salt ? null : 'Chưa có muối băm bí mật (PII_SALT) nên mã khách không được lưu. Đánh giá vẫn được thu thập và phân tích, chỉ thiếu bước kiểm tra hành vi theo tài khoản.',
     running: Boolean(s.running && s.lockedAt && Date.now() - new Date(s.lockedAt).getTime() < LOCK_TTL_MS),
     startedAt: s.lockedAt || null,
     progress: s.progress || null,
@@ -184,7 +187,6 @@ async function collectorStatus(db) {
  * (đang có lượt khác chạy, hoặc chưa tới hạn).
  */
 async function runOnce(db, { trigger = 'schedule', minGapMs = EVERY_MS, opts, onDone } = {}) {
-  if (!saltReady()) return { started: false, reason: 'no_salt' };
   const now = new Date();
   const meta = db.collection('meta');
   await meta.updateOne({ _id: STATE_ID }, { $setOnInsert: { running: false } }, { upsert: true });
@@ -239,10 +241,7 @@ let timer = null;
 /** Bật bộ hẹn giờ cho kho thật. onDone nhận số liệu sau mỗi lượt có dữ liệu mới. */
 function startAutoCollect(db, { onDone } = {}) {
   if (timer || !enabled()) return;
-  if (!saltReady()) {
-    console.warn('[tự thu thập] tắt: chưa đặt PII_SALT bí mật trên máy chủ.');
-    return;
-  }
+  if (!saltReady()) console.warn('[tự thu thập] chưa có PII_SALT bí mật: vẫn thu thập, nhưng không lưu mã khách.');
   const tick = () => runOnce(db, { trigger: 'schedule', onDone }).catch((e) => console.warn('[tự thu thập]', e.message));
   // Đợi 2 phút sau khởi động: để việc nạp sẵn ngữ cảnh chạy xong trước
   setTimeout(tick, 2 * 60 * 1000).unref?.();

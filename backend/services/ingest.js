@@ -9,6 +9,7 @@
 const crypto = require('crypto');
 const normalizer = require('./normalizer');
 const taxonomy = require('./taxonomy');
+const { saltReady } = require('./pii_salt');
 
 const sha1 = (s) => crypto.createHash('sha1').update(s).digest('hex');
 
@@ -42,10 +43,14 @@ function maskName(name) {
  * Mã khách ẩn danh, ổn định giữa các lần thu thập: băm mã khách của sàn kèm
  * một chuỗi bí mật, nên không suy ngược được ra tài khoản thật. Bộ phát hiện
  * hành vi tài khoản gom theo mã này thay vì tên đã che (tên che dễ trùng).
+ *
+ * Chưa có muối bí mật thì KHÔNG lưu mã khách (trả null): mã khách của sàn là
+ * số tuần tự, băm với muối công khai thì thử ngược ra được ngay. Dữ liệu vẫn
+ * vào kho và vẫn được phân tích, chỉ thiếu bước gom theo tài khoản.
  */
 function pseudoCustomerId(platform, rawId) {
-  if (rawId == null) return null;
-  const salt = process.env.PII_SALT || 'customer-radar';
+  if (rawId == null || !saltReady()) return null;
+  const salt = process.env.PII_SALT;
   return `${String(platform).toLowerCase()}:${sha1(`${salt}|${platform}|${rawId}`).slice(0, 12)}`;
 }
 

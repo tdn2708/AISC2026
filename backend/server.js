@@ -100,6 +100,10 @@ async function startServer() {
     await Promise.all(Object.values(workspaces).map(ensureIndexes));
     console.log('Đã kiểm tra chỉ mục.');
 
+    // Muối băm mã khách: từ biến môi trường, không có thì từ kho thật (services/pii_salt.js)
+    const saltSource = await require('./services/pii_salt').loadSalt(workspaces.real);
+    console.log(saltSource ? `Muối băm mã khách: đã nạp (nguồn ${saltSource === 'env' ? 'biến môi trường' : 'database'}).` : 'Muối băm mã khách: CHƯA CÓ, các đường ghi dữ liệu thật sẽ từ chối.');
+
     app.use((req, res, next) => {
       const ws = String(req.get('X-Workspace') || req.query.workspace || 'demo').toLowerCase();
       req.workspace = workspaces[ws] ? ws : 'demo';

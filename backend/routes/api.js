@@ -1505,9 +1505,6 @@ router.get('/collector/status', wrap(async (req, res) => {
 
 router.post('/collector/run', wrap(async (req, res) => {
   if (req.workspace !== 'real') return res.status(400).json({ error: 'Chỉ kho Dữ liệu thật mới tự thu thập' });
-  if (!realCollector.saltReady()) {
-    return res.status(409).json({ error: 'Máy chủ chưa có PII_SALT bí mật nên chưa thu thập được. Thêm biến PII_SALT trong phần Environment của Render.' });
-  }
   // Bấm tay vẫn giữ khoảng cách tối thiểu 30 phút, để không ai vô tình chạy dồn
   const r = await realCollector.runOnce(req.db, { trigger: 'manual', minGapMs: realCollector.MANUAL_GAP_MS });
   const status = await realCollector.collectorStatus(req.db);

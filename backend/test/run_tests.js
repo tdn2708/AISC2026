@@ -1192,10 +1192,16 @@ test('Tên người mua bị che, mã khách ẩn danh ổn định và không l
   assert.strictEqual(ingest.maskName('Quang Duy Ha'), 'Quang D. H.');
   assert.strictEqual(ingest.maskName('Linh'), 'L***');
   assert.strictEqual(ingest.maskName(''), 'Ẩn danh');
+  const keep = process.env.PII_SALT;
+  process.env.PII_SALT = 'muoi-bi-mat-chi-de-chay-test-0123456789';
   const a = ingest.pseudoCustomerId('Tiki', 1769036);
   assert.strictEqual(a, ingest.pseudoCustomerId('Tiki', 1769036), 'cùng khách phải ra cùng mã');
   assert.notStrictEqual(a, ingest.pseudoCustomerId('Tiki', 1769037));
   assert.ok(a.startsWith('tiki:') && !a.includes('1769036'), 'mã ẩn danh không được chứa mã gốc');
+  // Muối công khai thì băm ra dò ngược được: không lưu mã khách
+  process.env.PII_SALT = 'customer-radar';
+  assert.strictEqual(ingest.pseudoCustomerId('Tiki', 1769036), null);
+  if (keep === undefined) delete process.env.PII_SALT; else process.env.PII_SALT = keep;
 });
 
 test('Bản ghi từ sàn: che tên, giữ dữ kiện sàn, không lưu mã khách gốc, chống trùng theo mã đánh giá', () => {
@@ -1567,6 +1573,19 @@ test('Live coach: đo hiệu quả trước/sau một hành động', () => {
   const at = new Date(now - 3 * 60000);
   const e = measureEffect(agg, { watch: 'order', productId: 'ao-thun', type: 'ask_not_buy' }, at, now);
   assert.ok(e.ready && e.after > e.before && e.better === true, JSON.stringify(e));
+});
+
+test('Muối băm: giá trị mặc định công khai hoặc quá ngắn không được coi là bí mật', () => {
+  const { isSecret, saltReady } = require('../services/pii_salt');
+  assert.strictEqual(isSecret('customer-radar'), false);
+  assert.strictEqual(isSecret('live'), false);
+  assert.strictEqual(isSecret('ngan'), false);
+  assert.strictEqual(isSecret(undefined), false);
+  assert.strictEqual(isSecret('a'.repeat(32)), true);
+  const keep = process.env.PII_SALT;
+  process.env.PII_SALT = 'customer-radar';
+  assert.strictEqual(saltReady(), false, 'muối mặc định thì các đường ghi dữ liệu thật phải từ chối');
+  if (keep === undefined) delete process.env.PII_SALT; else process.env.PII_SALT = keep;
 });
 
 // ==================================================================

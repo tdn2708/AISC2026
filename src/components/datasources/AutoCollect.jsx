@@ -97,6 +97,7 @@ const AutoCollect = () => {
           <p className="mt-0.5 text-base font-semibold text-ink-hi">{headline}</p>
           {s.reason && <p className="mt-1 max-w-[70ch] text-sm text-high">{s.reason}</p>}
           {s.lastError && !s.running && <p className="mt-1 max-w-[70ch] text-sm text-high">{s.lastError}</p>}
+          {s.note && <p className="mt-1 max-w-[70ch] text-xs leading-relaxed text-ink-mid">{s.note}</p>}
           <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-mid">
             {last && (
               <div className="flex gap-1">

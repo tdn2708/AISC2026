@@ -44,11 +44,9 @@ async function main() {
     process.exit(1);
   }
 
-  // Mã khách của sàn là số tuần tự: băm với muối mặc định (công khai trong mã
-  // nguồn) thì thử ngược ra tài khoản thật được ngay. Ghi kho thật phải có muối bí mật.
+  // Mã khách của sàn là số tuần tự: không có muối bí mật thì ingest.js bỏ trống mã khách
   if (!opts.dry && !saltReady()) {
-    console.error('Từ chối: chưa đặt PII_SALT bí mật (trong .env của máy chủ).');
-    process.exit(1);
+    console.warn('Chưa đặt PII_SALT bí mật: vẫn thu thập, nhưng không lưu mã khách.');
   }
 
   const client = opts.dry ? null : await MongoClient.connect(process.env.MONGODB_URI);
