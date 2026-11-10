@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Download, FileText, FileSpreadsheet, Calendar, Trash2, Eye } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet, Calendar, Trash2, Eye, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -504,7 +504,7 @@ const Reports = () => {
               </p>
               <p style={{ color: REPORT.lo, fontSize: '11px', margin: 0, lineHeight: 1.6 }}>
                 Kỳ: {timeFilter === 'All' ? 'Toàn thời gian' : timeFilter}<br />
-                Nguồn: {sourceFilter === 'All' ? 'Tất cả' : sourceFilter} · Sản phẩm: {productFilter === 'All' ? 'Tất cả' : productFilter}
+                Nguồn: {sourceFilter === 'All' ? 'Tất cả' : sourceFilter}, sản phẩm: {productFilter === 'All' ? 'Tất cả' : productFilter}
               </p>
             </div>
           </div>
@@ -537,7 +537,7 @@ const Reports = () => {
                   </h3>
                   {takeaways.length > 0 && (
                     <span style={{ fontSize: '11px', color: REPORT.lo, fontFamily: "'Geist Mono', monospace" }}>
-                      {takeaways.length} việc · {crit} ở mức ưu tiên cao
+                      {takeaways.length} việc, {crit} ở mức ưu tiên cao
                     </span>
                   )}
                 </div>
@@ -576,7 +576,7 @@ const Reports = () => {
                           <span style={{ fontSize: '14px', fontWeight: 700, color: REPORT.hi, lineHeight: 1.4 }}>
                             {t.problem}
                             {t.scope && (
-                              <span style={{ fontWeight: 400, color: REPORT.mid }}> · {t.scope}</span>
+                              <span style={{ fontWeight: 400, color: REPORT.mid }}>, {t.scope}</span>
                             )}
                           </span>
                           <SeverityDot level={t.severity} />
@@ -585,7 +585,7 @@ const Reports = () => {
                         {/* Dong 2 — MUC DO ANH HUONG THUC TE */}
                         {t.impact.length > 0 && (
                           <div style={{ fontSize: '12.5px', color: REPORT.mid, lineHeight: 1.65, marginBottom: '7px' }}>
-                            {t.impact.join(' · ')}
+                            {t.impact.join('; ')}
                           </div>
                         )}
 
@@ -596,14 +596,14 @@ const Reports = () => {
                             fontSize: '12.5px', color: REPORT.hi, lineHeight: 1.6,
                             background: REPORT.accentDim, borderRadius: '6px', padding: '8px 11px'
                           }}>
-                            <span style={{ color: REPORT.accentHi, flexShrink: 0, fontWeight: 700 }}>→</span>
+                            <span style={{ color: REPORT.accentHi, flexShrink: 0, fontWeight: 700, display: 'inline-flex', paddingTop: '2px' }}><ArrowRight size={14} aria-hidden="true" /></span>
                             <span>
                               {t.action}
                               {t.approval && (
                                 <span style={{ color: REPORT.high }}> Cần phê duyệt của {t.approval}.</span>
                               )}
                               {t.owner && (
-                                <span style={{ color: REPORT.lo }}> Bộ phận xử lý: {t.owner}{t.sla ? ` · SLA ${t.sla}` : ''}.</span>
+                                <span style={{ color: REPORT.lo }}> Bộ phận xử lý: {t.owner}{t.sla ? `, SLA ${t.sla}` : ''}.</span>
                               )}
                             </span>
                           </div>
@@ -721,7 +721,7 @@ const Reports = () => {
                     <h3 style={h3}>Diễn biến theo thời gian</h3>
                     <p style={sub}>
                       Phản hồi tiêu cực so với phản hồi tích cực
-                      {peak ? ' · điểm neo đánh dấu ngày có đỉnh khiếu nại' : ''}
+                      {peak ? ', điểm neo đánh dấu ngày có đỉnh khiếu nại' : ''}
                     </p>
                     <div style={{ height: '330px' }}>
                       {pdfData?.trend && (
@@ -764,7 +764,7 @@ const Reports = () => {
                                 strokeWidth={2}
                                 isFront
                                 label={{
-                                  value: `${peak.name} · ${peakLabel}`,
+                                  value: `${peak.name}, ${peakLabel}`,
                                   position: 'top',
                                   fill: REPORT.crit,
                                   fontSize: 10,
@@ -902,7 +902,7 @@ const Reports = () => {
           
           {/* Footer at the absolute bottom */}
           <div style={{ marginTop: '36px', paddingTop: '22px', borderTop: `1px solid ${REPORT.border}`, textAlign: 'center', color: REPORT.lo, fontSize: '10.5px', lineHeight: 1.7 }}>
-            Lập tự động bởi nền tảng CustomerRadar · Mọi chỉ số được tính trên phản hồi đã qua tầng kiểm soát tin cậy dữ liệu · Tài liệu nội bộ
+            Lập tự động bởi nền tảng Customer Radar. Mọi chỉ số được tính trên phản hồi đã qua tầng kiểm soát tin cậy dữ liệu. Tài liệu nội bộ.
           </div>
         </div>
       </div>

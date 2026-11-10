@@ -135,9 +135,9 @@ export function buildTakeaways(recommendations = [], limit = 4) {
 
     const scope = [a.productName, r.dataProfile?.slots?.region]
       .filter(Boolean)
-      .join(' · ');
+      .join(', ');
 
-    const problem = [a.categoryLabel, a.causeLabel].filter(Boolean).join(' — ');
+    const problem = [a.categoryLabel, a.causeLabel].filter(Boolean).join(': ');
 
     // Mức ảnh hưởng: ưu tiên tiền, vì đó là đại lượng cấp quản lý ra
     // quyết định trên đó. Không đối soát được thì lùi về số khách hàng.
@@ -168,7 +168,7 @@ export function buildTakeaways(recommendations = [], limit = 4) {
       st.z != null ? `z = ${String(st.z).replace('.', ',')}` : null,
       st.pValueDisplay ? st.pValueDisplay.replace('.', ',') : null,
       r.evidence?.excludedByTrust ? `đã loại ${fmtInt(r.evidence.excludedByTrust)} phản hồi không đạt ngưỡng tin cậy` : null
-    ].filter(Boolean).join(' · ');
+    ].filter(Boolean).join('; ');
 
     return {
       id: r.alertId,

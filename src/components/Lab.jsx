@@ -1,29 +1,33 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import {
-  Loader2, AlertTriangle, CheckCircle2, XCircle
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import PipelineDemo from './lab/PipelineDemo';
 import BatchDemo from './lab/BatchDemo';
 import VersusDemo from './lab/VersusDemo';
 import { preloadBrowserModel } from '../lib/analyze';
-import { PageHeader } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Tabs, Badge, EmptyState } from './ui';
 
 /**
  * PHÒNG THÍ NGHIỆM
  * ------------------------------------------------------------------
- * Hai tab, phục vụ hai câu hỏi khác nhau của người xem:
- *
- *   1. "Hệ thống có thật sự xử lý được tiếng Việt không?"
- *        -> Trình diễn xử lý ngôn ngữ: tám bước với dữ liệu trung gian thật
- *   2. "Nó chính xác bao nhiêu?"
- *        -> Kết quả thực nghiệm có số, đo trên tập kiểm tra giữ riêng
- *
- * Tab thứ nhất nằm ở components/lab/PipelineDemo.jsx.
+ * Bốn tab, mỗi tab trả lời một câu hỏi của người xem:
+ *   Đối đầu                    "khác gì công cụ đang có?"
+ *   Trình diễn xử lý ngôn ngữ  "có thật sự xử lý được tiếng Việt không?" (tám bước, dữ liệu thật)
+ *   Xử lý hàng loạt            "chạy cả lô nhanh cỡ nào?"
+ *   Kết quả thực nghiệm        "chính xác bao nhiêu?" (đo trên tập kiểm tra giữ riêng)
  */
 
+const TABS = [
+  { value: 'versus', label: 'Đối đầu' },
+  { value: 'live', label: 'Trình diễn xử lý ngôn ngữ' },
+  { value: 'batch', label: 'Xử lý hàng loạt' },
+  { value: 'eval', label: 'Kết quả thực nghiệm' }
+];
+
+const f4 = (v) => (v == null ? '—' : v.toFixed(4));
+
 // ==================================================================
-// TAB 2 — KẾT QUẢ THỰC NGHIỆM
+// KẾT QUẢ THỰC NGHIỆM
 // ==================================================================
 
 const Experiments = () => {
@@ -38,7 +42,7 @@ const Experiments = () => {
       setData(res.data);
       setError(null);
     } catch (e) {
-      setError(e.response?.data?.hint || 'Chưa có kết quả đánh giá. Chạy `npm run eval` trong thư mục backend.');
+      setError(e.response?.data?.hint || 'Chưa có kết quả đánh giá. Chạy npm run eval trong thư mục backend.');
     } finally {
       setLoading(false);
     }
@@ -47,151 +51,119 @@ const Experiments = () => {
   useEffect(() => { load(); }, [load]);
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', color: 'var(--text-secondary)', padding: '2rem 0' }}>
-        <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> Đang tải kết quả thực nghiệm...
-      </div>
-    );
+    return <div className="flex flex-col gap-4" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="h-40 animate-pulse rounded-xl bg-raised" />)}</div>;
   }
-
   if (error) {
-    return (
-      <div style={{
-        padding: '1.5rem', background: 'rgba(234,179,8,0.07)',
-        border: '1px solid rgba(234,179,8,0.25)', borderRadius: 'var(--radius-md)',
-        color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.65
-      }}>
-        {error}
-      </div>
-    );
+    return <EmptyState variant="error" title="Chưa có kết quả thực nghiệm" description={error} />;
   }
 
   const b1 = data.models.find((m) => m.id === 'B1');
   const mRow = data.models.find((m) => m.id === 'M' && m.available);
   const h2h = data.headToHead?.available ? data.headToHead : null;
-  const gap = b1 && b1.devCategoryMacroF1 != null
-    ? b1.devCategoryMacroF1 - b1.categoryMacroF1
-    : null;
+  const gap = b1 && b1.devCategoryMacroF1 != null ? b1.devCategoryMacroF1 - b1.categoryMacroF1 : null;
+  const unavailable = data.models.filter((m) => !m.available);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      {/* Cảnh báo về giới hạn của tập dữ liệu — đặt TRƯỚC mọi con số */}
-      <div style={{
-        padding: '1rem 1.1rem', background: 'rgba(234,179,8,0.07)',
-        border: '1px solid rgba(234,179,8,0.25)', borderRadius: 'var(--radius-md)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--risk-medium)', fontWeight: 600, fontSize: '0.88rem', marginBottom: '0.5rem' }}>
-          <AlertTriangle size={15} /> Giới hạn của các con số dưới đây
-        </div>
-        <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-secondary)', fontSize: '0.83rem', lineHeight: 1.7 }}>
-          <li>Tập do nhóm tự soạn và tự gán nhãn ({data.dataset.aspectSamples} câu), <strong>chưa phải UIT-ViSFD</strong>.</li>
-          <li>Mới có {data.dataset.annotators} người gán nhãn, nên <strong>chưa tính được Cohen&apos;s kappa</strong>.</li>
+    <div className="flex flex-col gap-5">
+      {/* Giới hạn của tập dữ liệu — đặt TRƯỚC mọi con số */}
+      <section className="rounded-xl border border-high/30 bg-high/8 px-5 py-4">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-high">
+          <AlertTriangle size={16} aria-hidden="true" /> Giới hạn của các con số dưới đây
+        </h3>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed text-ink-mid">
+          <li>Tập do nhóm tự soạn và tự gán nhãn ({data.dataset.aspectSamples} câu), <strong className="text-ink-hi">chưa phải UIT-ViSFD</strong>.</li>
+          <li>Mới có {data.dataset.annotators} người gán nhãn, nên <strong className="text-ink-hi">chưa tính được Cohen&apos;s kappa</strong>.</li>
           <li>Cỡ mẫu nhỏ nên khoảng tin cậy rộng. Con số là tín hiệu về hướng đi, chưa phải kết quả công bố được.</li>
           {mRow && (
             <li>
-              Dòng M train trên nhãn cảm xúc do người gán của UIT-ViSFD cộng tập chuyên ngành{' '}
-              <strong>sinh từ khung câu</strong> (nhãn theo cấu trúc sinh, không phải người gán trên phản hồi thật),
-              đã lọc trùng mặt chữ với tập kiểm tra. F1 phát triển của M không độc lập vì tập này dùng để chọn epoch.
+              Dòng M train trên nhãn cảm xúc do người gán của UIT-ViSFD cộng tập chuyên ngành <strong className="text-ink-hi">sinh từ khung câu</strong> (nhãn
+              theo cấu trúc sinh, không phải người gán trên phản hồi thật), đã lọc trùng mặt chữ với tập kiểm tra. F1 phát triển của M không độc lập vì
+              tập này dùng để chọn epoch.
             </li>
           )}
         </ul>
-      </div>
+      </section>
 
-      {/* Kiểm tra rò rỉ */}
       {data.leakageAudit && (
-        <div style={{
-          padding: '0.85rem 1.1rem', borderRadius: 'var(--radius-md)',
-          background: data.leakageAudit.clean ? 'rgba(16,185,129,0.07)' : 'rgba(239,68,68,0.07)',
-          border: `1px solid ${data.leakageAudit.clean ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.3)'}`,
-          display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
-          fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.6
-        }}>
+        <p className={`flex items-start gap-2.5 rounded-xl border px-5 py-3.5 text-sm leading-relaxed text-ink-mid ${data.leakageAudit.clean ? 'border-ok/30 bg-ok/8' : 'border-crit/30 bg-crit/8'}`}>
           {data.leakageAudit.clean
-            ? <CheckCircle2 size={16} color="var(--risk-low)" style={{ flexShrink: 0, marginTop: '1px' }} />
-            : <XCircle size={16} color="var(--risk-critical)" style={{ flexShrink: 0, marginTop: '1px' }} />}
+            ? <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-ok" aria-hidden="true" />
+            : <XCircle size={17} className="mt-0.5 shrink-0 text-crit" aria-hidden="true" />}
           <span>{data.leakageAudit.verdict}</span>
-        </div>
+        </p>
       )}
 
       {/* Bảng mô hình */}
-      <div className="glass-panel" style={{ padding: 0 }}>
-        <div style={{ padding: '1.1rem 1.35rem', borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Phân loại danh mục (Level 1)</h3>
-          <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Macro-F1 trên tập kiểm tra giữ riêng, so với tập phát triển
-          </p>
-        </div>
-        <div className="table-responsive">
-          <table className="data-table">
+      <GlassPanel tone="strong" className="overflow-hidden">
+        <PanelHeader className="mb-0 border-b border-line-soft px-5 pt-5 pb-4" title="Phân loại danh mục (Level 1)" subtitle="Macro-F1 trên tập kiểm tra giữ riêng, so với tập phát triển" />
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
-              <tr>
-                <th>Mã</th><th>Mô hình</th><th>Vai trò</th>
-                <th>F1 (kiểm tra)</th><th>F1 (phát triển)</th>
+              <tr className="border-b border-line-soft text-xs text-ink-mid">
+                <th scope="col" className="px-5 py-2.5 font-semibold">Mã</th>
+                <th scope="col" className="px-3 py-2.5 font-semibold">Mô hình</th>
+                <th scope="col" className="px-3 py-2.5 font-semibold">Vai trò</th>
+                <th scope="col" className="px-3 py-2.5 text-right font-semibold">F1 kiểm tra</th>
+                <th scope="col" className="px-5 py-2.5 text-right font-semibold">F1 phát triển</th>
               </tr>
             </thead>
             <tbody>
               {data.models.map((m) => (
-                <tr key={m.id}>
-                  <td style={{ fontWeight: 700 }}>{m.id}</td>
-                  <td style={{ fontSize: '0.85rem' }}>{m.name}</td>
-                  <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{m.role || '—'}</td>
-                  <td style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                    {!m.available
-                      ? <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>chưa có số</span>
-                      : m.canDetectAspect
-                        ? m.categoryMacroF1.toFixed(4)
-                        : <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>không bóc tách được</span>}
+                <tr key={m.id} className={`border-b border-line-soft last:border-0 ${m.id === 'M' ? 'bg-accent-dim/40' : ''}`}>
+                  <td className="px-5 py-3 font-mono font-semibold text-ink-hi">{m.id}</td>
+                  <td className="px-3 py-3 text-ink-hi">{m.name}</td>
+                  <td className="px-3 py-3 text-ink-mid">{m.role || '—'}</td>
+                  <td className="px-3 py-3 text-right font-mono font-semibold text-ink-hi">
+                    {!m.available ? <span className="font-sans font-normal text-ink-lo">chưa có số</span>
+                      : m.canDetectAspect ? f4(m.categoryMacroF1)
+                        : <span className="font-sans font-normal text-ink-lo">không bóc tách được</span>}
                   </td>
-                  <td style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--text-secondary)' }}>
-                    {m.devCategoryMacroF1 != null ? m.devCategoryMacroF1.toFixed(4) : '—'}
-                  </td>
+                  <td className="px-5 py-3 text-right font-mono text-ink-mid">{f4(m.devCategoryMacroF1)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-        {/* Lý do các mô hình chưa có số */}
-        <div style={{ padding: '1rem 1.35rem', borderTop: '1px solid rgba(148,163,184,0.12)' }}>
-          {data.models.filter((m) => !m.available).map((m) => (
-            <p key={m.id} style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              <strong style={{ color: 'var(--text-secondary)' }}>{m.id}:</strong> {m.reason}
-            </p>
-          ))}
-        </div>
-      </div>
+        {unavailable.length > 0 && (
+          <div className="border-t border-line-soft px-5 py-3.5">
+            {unavailable.map((m) => (
+              <p key={m.id} className="text-xs leading-relaxed text-ink-mid"><strong className="text-ink-hi">{m.id}:</strong> {m.reason}</p>
+            ))}
+          </div>
+        )}
+      </GlassPanel>
 
       {/* Đối đầu từng câu: luật và ViSoBERT, liệt kê đủ cả hai chiều */}
       {h2h && (
-        <div className="glass-panel" style={{ padding: 0 }}>
-          <div style={{ padding: '1.1rem 1.35rem', borderBottom: '1px solid rgba(148,163,184,0.12)' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Luật từ khóa và ViSoBERT trên từng câu</h3>
-            <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {h2h.total} câu kiểm tra giữ riêng, cả hai đúng {h2h.bothCorrect}, chỉ ViSoBERT đúng{' '}
-              {h2h.onlyModelCorrect.length}, chỉ luật đúng {h2h.onlyRulesCorrect.length}, cả hai sai {h2h.bothWrong}
-            </p>
-          </div>
-          {[
-            ['Chỉ ViSoBERT đúng', h2h.onlyModelCorrect],
-            ['Chỉ luật từ khóa đúng', h2h.onlyRulesCorrect]
-          ].map(([title, rows]) => (
-            <div key={title} style={{ padding: '0.9rem 1.35rem', borderTop: '1px solid rgba(148,163,184,0.12)' }}>
-              <div style={{ fontWeight: 600, fontSize: '0.86rem', marginBottom: '0.5rem' }}>{title} ({rows.length})</div>
+        <GlassPanel tone="strong" className="overflow-hidden">
+          <PanelHeader
+            className="mb-0 border-b border-line-soft px-5 pt-5 pb-4"
+            title="Luật từ khóa và ViSoBERT trên từng câu"
+            subtitle={`${h2h.total} câu kiểm tra giữ riêng: cả hai đúng ${h2h.bothCorrect}, chỉ ViSoBERT đúng ${h2h.onlyModelCorrect.length}, chỉ luật đúng ${h2h.onlyRulesCorrect.length}, cả hai sai ${h2h.bothWrong}`}
+          />
+          {[['Chỉ ViSoBERT đúng', h2h.onlyModelCorrect], ['Chỉ luật từ khóa đúng', h2h.onlyRulesCorrect]].map(([title, rows]) => (
+            <div key={title} className="border-b border-line-soft px-5 py-4 last:border-0">
+              <h4 className="text-sm font-semibold text-ink-hi">{title} <span className="font-mono font-normal text-ink-mid">({rows.length})</span></h4>
               {rows.length === 0 ? (
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Không có câu nào.</p>
+                <p className="mt-1 text-sm text-ink-lo">Không có câu nào.</p>
               ) : (
-                <div className="table-responsive">
-                  <table className="data-table">
+                <div className="mt-2 overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-left text-sm">
                     <thead>
-                      <tr><th>Câu</th><th>Đáp án</th><th>Luật từ khóa</th><th>ViSoBERT</th></tr>
+                      <tr className="border-b border-line-soft text-xs text-ink-mid">
+                        <th scope="col" className="py-2 pr-3 font-semibold">Câu</th>
+                        <th scope="col" className="py-2 pr-3 font-semibold">Đáp án</th>
+                        <th scope="col" className="py-2 pr-3 font-semibold">Luật từ khóa</th>
+                        <th scope="col" className="py-2 font-semibold">ViSoBERT</th>
+                      </tr>
                     </thead>
                     <tbody>
                       {rows.map((r, i) => (
-                        <tr key={i}>
-                          <td style={{ fontSize: '0.82rem', minWidth: 220 }}>{r.text}</td>
-                          <td style={{ fontSize: '0.8rem' }}>{r.gold}</td>
-                          <td style={{ fontSize: '0.8rem', color: r.rulesCorrect ? 'var(--risk-low)' : 'var(--risk-critical)' }}>{r.rules}</td>
-                          <td style={{ fontSize: '0.8rem', color: r.modelCorrect ? 'var(--risk-low)' : 'var(--risk-critical)' }}>{r.model}</td>
+                        <tr key={i} className="border-b border-line-soft last:border-0 align-top">
+                          <td className="min-w-[220px] py-2.5 pr-3 text-ink-hi">{r.text}</td>
+                          <td className="py-2.5 pr-3 text-ink-mid">{r.gold}</td>
+                          <td className={`py-2.5 pr-3 ${r.rulesCorrect ? 'text-ok' : 'text-crit'}`}>{r.rules}</td>
+                          <td className={`py-2.5 ${r.modelCorrect ? 'text-ok' : 'text-crit'}`}>{r.model}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -201,39 +173,34 @@ const Experiments = () => {
             </div>
           ))}
           {mRow?.checkpoint && (
-            <p style={{ margin: 0, padding: '0.8rem 1.35rem', borderTop: '1px solid rgba(148,163,184,0.12)', fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              Checkpoint train lúc {new Date(mRow.checkpoint.trainedAt).toLocaleString('vi-VN')}, epoch tốt nhất {mRow.checkpoint.bestEpoch},
-              số nhãn: cảm xúc {mRow.checkpoint.trainCounts?.sentiment}, danh mục {mRow.checkpoint.trainCounts?.category}, rác {mRow.checkpoint.trainCounts?.spam},
-              loại {mRow.checkpoint.testOverlapRemoved} câu trùng tập kiểm tra
+            <p className="border-t border-line-soft px-5 py-3 text-xs leading-relaxed text-ink-mid">
+              Checkpoint train lúc {new Date(mRow.checkpoint.trainedAt).toLocaleString('vi-VN')}, epoch tốt nhất {mRow.checkpoint.bestEpoch}, số nhãn:
+              cảm xúc {mRow.checkpoint.trainCounts?.sentiment}, danh mục {mRow.checkpoint.trainCounts?.category}, rác {mRow.checkpoint.trainCounts?.spam},
+              loại {mRow.checkpoint.testOverlapRemoved} câu trùng tập kiểm tra.
             </p>
           )}
-        </div>
+        </GlassPanel>
       )}
 
       {/* Phát hiện quan trọng nhất: khoảng cách dev/test */}
       {gap != null && (
-        <div className="glass-panel" style={{ borderLeft: '3px solid var(--accent-cyan)' }}>
-          <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 600 }}>
-            Phát hiện chính: bộ phân loại luật không khái quát hóa được
-          </h3>
-          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.7 }}>
-            Cùng một bộ phân loại luật đạt Macro-F1{' '}
-            <strong style={{ color: 'var(--risk-low)' }}>{b1.devCategoryMacroF1.toFixed(2)}</strong>{' '}
-            trên tập đã dùng để tinh chỉnh từ khóa, nhưng chỉ còn{' '}
-            <strong style={{ color: 'var(--risk-critical)' }}>{b1.categoryMacroF1.toFixed(2)}</strong>{' '}
-            trên tập kiểm tra giữ riêng — chênh lệch {gap.toFixed(2)}.
-            Nói cách khác, thêm từ khóa chỉ giúp khớp đúng những câu đã thấy, không giúp hiểu
-            câu mới. Đây là lập luận định lượng cho việc cần một mô hình ngôn ngữ được tinh
-            chỉnh, thay vì tiếp tục mở rộng danh sách từ khóa.
+        <GlassPanel tone="strong" className="relative overflow-hidden p-5 pl-6">
+          <span className="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
+          <h3 className="text-heading font-semibold text-ink-hi">Phát hiện chính: bộ phân loại luật không khái quát hóa được</h3>
+          <p className="mt-2 max-w-[78ch] text-sm leading-relaxed text-ink-mid">
+            Cùng một bộ phân loại luật đạt Macro-F1 <strong className="font-mono text-ok">{b1.devCategoryMacroF1.toFixed(2)}</strong> trên tập đã dùng
+            để tinh chỉnh từ khóa, nhưng chỉ còn <strong className="font-mono text-crit">{b1.categoryMacroF1.toFixed(2)}</strong> trên tập kiểm tra giữ
+            riêng, chênh {gap.toFixed(2)}. Thêm từ khóa chỉ giúp khớp đúng những câu đã thấy, không giúp hiểu câu mới. Đây là lập luận định lượng cho
+            việc dùng một mô hình ngôn ngữ được tinh chỉnh, thay vì tiếp tục mở rộng danh sách từ khóa.
           </p>
-        </div>
+        </GlassPanel>
       )}
 
       {/* Trust Layer */}
       {data.trustLayer && (
-        <div className="glass-panel">
-          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600 }}>Tầng kiểm soát tin cậy dữ liệu</h3>
-          <div className="dashboard-grid" style={{ marginBottom: '0.75rem' }}>
+        <GlassPanel tone="strong" className="p-5">
+          <PanelHeader title="Tầng kiểm soát tin cậy dữ liệu" />
+          <div className="grid gap-3 sm:grid-cols-3">
             {[
               ['Precision bộ lọc rác', data.trustLayer.report.perClass.spam.precision, data.targets.spamPrecision],
               ['Precision phát hiện không xác thực', data.trustLayer.report.perClass.inauthentic.precision, data.targets.inauthenticPrecision],
@@ -241,49 +208,49 @@ const Experiments = () => {
             ].map(([label, value, target, lowerIsBetter]) => {
               const pass = lowerIsBetter ? value <= target : value >= target;
               return (
-                <div key={label} className="col-span-4">
-                  <div style={{ padding: '0.9rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 'var(--radius-md)' }}>
-                    <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginBottom: '0.35rem', lineHeight: 1.4 }}>{label}</div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 700, color: pass ? 'var(--risk-low)' : 'var(--risk-critical)', fontVariantNumeric: 'tabular-nums' }}>
-                      {lowerIsBetter ? `${(value * 100).toFixed(1)}%` : value.toFixed(3)}
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
-                      mục tiêu {lowerIsBetter ? `≤ ${(target * 100).toFixed(0)}%` : `≥ ${target}`}, {pass ? 'ĐẠT' : 'CHƯA ĐẠT'}
-                    </div>
-                  </div>
+                <div key={label} className="rounded-lg border border-line-soft bg-canvas px-4 py-3.5">
+                  <p className="text-xs leading-snug text-ink-mid">{label}</p>
+                  <p className={`mt-1.5 font-mono text-display font-semibold ${pass ? 'text-ok' : 'text-crit'}`}>
+                    {lowerIsBetter ? `${(value * 100).toFixed(1)}%` : value.toFixed(3)}
+                  </p>
+                  <p className="mt-1.5 flex items-center gap-2 text-xs text-ink-mid">
+                    Mục tiêu {lowerIsBetter ? `≤ ${(target * 100).toFixed(0)}%` : `≥ ${target}`}
+                    <Badge tone={pass ? 'ok' : 'crit'}>{pass ? 'Đạt' : 'Chưa đạt'}</Badge>
+                  </p>
                 </div>
               );
             })}
           </div>
-          <p style={{ margin: 0, fontSize: '0.79rem', color: 'var(--text-muted)', lineHeight: 1.65 }}>
-            {data.trustLayer.methodNote}
-          </p>
-        </div>
+          <p className="mt-3 text-xs leading-relaxed text-ink-mid">{data.trustLayer.methodNote}</p>
+        </GlassPanel>
       )}
 
       {/* Ablation */}
       {data.ablations?.trustLayer && (
-        <div className="glass-panel">
-          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 600 }}>Thí nghiệm loại bỏ thành phần</h3>
-          <div style={{ fontSize: '0.87rem', color: 'var(--text-secondary)', lineHeight: 1.8 }}>
-            <div>
-              <strong style={{ color: 'var(--text-primary)' }}>Chuẩn hóa teencode:</strong>{' '}
-              Macro-F1 {data.ablations.slangNormalization.categoryMacroF1_off.toFixed(4)} (tắt) →{' '}
-              {data.ablations.slangNormalization.categoryMacroF1_on.toFixed(4)} (bật)
+        <GlassPanel tone="strong" className="p-5">
+          <PanelHeader title="Thí nghiệm loại bỏ thành phần" subtitle="Tắt từng thành phần để đo đúng phần nó đóng góp" />
+          <dl className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-line-soft bg-canvas px-4 py-3.5">
+              <dt className="text-sm font-semibold text-ink-hi">Chuẩn hóa teencode</dt>
+              <dd className="mt-1 text-sm text-ink-mid">
+                Macro-F1 <span className="font-mono">{f4(data.ablations.slangNormalization.categoryMacroF1_off)}</span> khi tắt,{' '}
+                <span className="font-mono font-semibold text-ink-hi">{f4(data.ablations.slangNormalization.categoryMacroF1_on)}</span> khi bật
+              </dd>
             </div>
-            <div>
-              <strong style={{ color: 'var(--text-primary)' }}>Trust Layer:</strong>{' '}
-              WCR {data.ablations.trustLayer.wcrWithoutTrustLayer} (tắt) →{' '}
-              {data.ablations.trustLayer.wcrWithTrustLayer} (bật), loại{' '}
-              {data.ablations.trustLayer.excludedFeedbacks} phản hồi trên{' '}
-              {data.ablations.trustLayer.datasetSize}
+            <div className="rounded-lg border border-line-soft bg-canvas px-4 py-3.5">
+              <dt className="text-sm font-semibold text-ink-hi">Trust Layer</dt>
+              <dd className="mt-1 text-sm text-ink-mid">
+                Tỉ lệ khiếu nại có trọng số <span className="font-mono">{data.ablations.trustLayer.wcrWithoutTrustLayer}</span> khi tắt,{' '}
+                <span className="font-mono font-semibold text-ink-hi">{data.ablations.trustLayer.wcrWithTrustLayer}</span> khi bật; loại{' '}
+                {data.ablations.trustLayer.excludedFeedbacks} trên {data.ablations.trustLayer.datasetSize} phản hồi
+              </dd>
             </div>
-          </div>
-        </div>
+          </dl>
+        </GlassPanel>
       )}
 
-      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
-        Sinh lúc {new Date(data.generatedAt).toLocaleString('vi-VN')} bằng lệnh <code>npm run eval</code>
+      <p className="text-xs text-ink-mid">
+        Sinh lúc {new Date(data.generatedAt).toLocaleString('vi-VN')} bằng lệnh <code className="font-code">npm run eval</code>
       </p>
     </div>
   );
@@ -304,43 +271,12 @@ const Lab = () => {
   }, []);
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '3rem' }}>
-      <div className="cx">
-        <PageHeader
-          title="Phòng thí nghiệm mô hình"
-          subtitle="Thử bộ phân loại tiếng Việt với câu của bạn, và xem kết quả đo trên tập kiểm tra."
-        />
-      </div>
-
-      <div style={{
-        // Màn hẹp: cuộn ngang thay vì ép mỗi tab thành ba dòng chữ
-        display: 'inline-flex', gap: '0.25rem', marginBottom: '1.5rem', maxWidth: '100%', overflowX: 'auto',
-        background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: 'var(--r-ctrl)', padding: '0.25rem'
-      }}>
-        {[
-          { id: 'versus', label: 'Đối đầu' },
-          { id: 'live', label: 'Trình diễn xử lý ngôn ngữ' },
-          { id: 'batch', label: 'Xử lý hàng loạt' },
-          { id: 'eval', label: 'Kết quả thực nghiệm' }
-        ].map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            style={{
-              padding: '0.5rem 1rem', border: 'none', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
-              background: tab === t.id ? 'var(--accent-dim)' : 'transparent',
-              borderRadius: 'calc(var(--r-ctrl) - 2px)',
-              color: tab === t.id ? 'var(--accent-hi)' : 'var(--text-mid)',
-              cursor: 'pointer', fontSize: '0.86rem', fontWeight: 600,
-              transition: 'background-color 120ms var(--ease), color 120ms var(--ease)'
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
+    <div className="cx pb-12">
+      <PageHeader
+        title="Phòng thí nghiệm mô hình"
+        subtitle="Thử bộ phân loại tiếng Việt với câu của bạn, và xem kết quả đo trên tập kiểm tra."
+      />
+      <Tabs tabs={TABS} value={tab} onChange={setTab} className="mb-6" />
       {tab === 'versus' ? <VersusDemo /> : tab === 'live' ? <PipelineDemo /> : tab === 'batch' ? <BatchDemo /> : <Experiments />}
     </div>
   );

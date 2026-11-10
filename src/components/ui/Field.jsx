@@ -67,7 +67,7 @@ export const TextArea = ({ label, hint, error, maxLength, value = '', className 
         />
         {maxLength && (
           <span className="pointer-events-none absolute right-3 bottom-2.5 font-mono text-xs text-ink-lo">
-            {String(value).length}/{maxLength}
+            {String(value).length.toLocaleString('vi-VN')}/{maxLength.toLocaleString('vi-VN')}
           </span>
         )}
       </div>
