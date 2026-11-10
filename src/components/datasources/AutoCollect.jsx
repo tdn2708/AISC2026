@@ -95,6 +95,11 @@ const AutoCollect = () => {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-ink-mid">Kho Dữ liệu thật tự cập nhật mỗi {s.everyHours} giờ</p>
           <p className="mt-0.5 text-base font-semibold text-ink-hi">{headline}</p>
+          {s.running && s.stage && (
+            <p className="mt-1 max-w-[70ch] truncate text-xs text-ink-mid">
+              Đang {s.stage.step}{s.stage.product ? `: ${s.stage.product}` : ` (${s.stage.query})`}
+            </p>
+          )}
           {s.reason && <p className="mt-1 max-w-[70ch] text-sm text-high">{s.reason}</p>}
           {s.lastError && !s.running && <p className="mt-1 max-w-[70ch] text-sm text-high">{s.lastError}</p>}
           {s.note && <p className="mt-1 max-w-[70ch] text-xs leading-relaxed text-ink-mid">{s.note}</p>}

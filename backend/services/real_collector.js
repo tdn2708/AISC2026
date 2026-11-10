@@ -44,11 +44,26 @@ const HOUR = 3600 * 1000;
 const STATE_ID = 'autocollect';
 const EVERY_MS = 24 * HOUR;
 const CHECK_MS = 30 * 60 * 1000;
-const LOCK_TTL_MS = 2 * HOUR;
+// Khóa được làm mới mỗi phút bởi nhịp tim của lượt đang chạy. Tiến trình chết
+// (Render khởi động lại) thì sau 15 phút không có nhịp tim, lượt sau lấy lại khóa.
+const LOCK_TTL_MS = 15 * 60 * 1000;
+const HEARTBEAT_MS = 60 * 1000;
+// Một sản phẩm (lấy đánh giá, gán nhãn, ghi) không được giữ cả lượt quá 3 phút:
+// lần chạy đầu trên Render đã treo ở một sản phẩm suốt hơn 15 phút
+const PRODUCT_BUDGET_MS = 3 * 60 * 1000;
 const MANUAL_GAP_MS = 30 * 60 * 1000;
 
 // Muối băm mã khách: nạp lúc khởi động từ biến môi trường hoặc database
 const { saltReady } = require('./pii_salt');
+
+/** Hết hạn thì bỏ qua, không chờ mãi. Việc bị bỏ dở vẫn có thể ghi sau; khóa chống trùng giữ dữ liệu sạch. */
+function withTimeout(promise, ms, what) {
+  let t;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => { t = setTimeout(() => reject(new Error(`${what} quá ${Math.round(ms / 1000)} giây`)), ms); })
+  ]).finally(() => clearTimeout(t));
+}
 
 /** Sản phẩm nhiều đánh giá nhất của một từ khóa */
 async function searchProducts(query, limit, minReviews) {
@@ -79,7 +94,7 @@ async function searchProducts(query, limit, minReviews) {
  * Một lượt thu thập. db = null là chạy thử (không ghi).
  * log(line) nhận từng dòng tiến độ; onProgress(totals) nhận số liệu cộng dồn.
  */
-async function collectReal(db, opts = {}, { log = () => {}, onProgress = null } = {}) {
+async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, onStage = null } = {}) {
   const o = {
     queries: opts.queries?.length ? opts.queries : DEFAULT_QUERIES,
     productsPerQuery: opts.productsPerQuery ?? 5,
@@ -95,14 +110,16 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null } 
     await db.collection('products').createIndex({ productId: 1, snapshotAt: -1 });
   }
 
-  const totals = { queries: o.queries.length, products: 0, fetched: 0, inserted: 0, duplicates: 0, failed: 0, byLabeller: {} };
+  const totals = { queries: o.queries.length, products: 0, fetched: 0, inserted: 0, duplicates: 0, failed: 0, timedOut: 0, byLabeller: {} };
+  const stage = (query, product, step) => onStage?.({ query, product: product ? product.name.slice(0, 60) : null, step, at: new Date() });
   const seen = new Set();
   log(`Thu thập ${o.queries.length} nhóm hàng, ${o.productsPerQuery} sản phẩm mỗi nhóm, tối đa ${o.pages * 20} đánh giá mới nhất mỗi sản phẩm${db ? '' : ' (chạy thử, không ghi)'}`);
 
   for (const query of o.queries) {
     let products = [];
+    stage(query, null, 'tìm sản phẩm');
     try {
-      products = await searchProducts(query, o.productsPerQuery, o.minReviews);
+      products = await withTimeout(searchProducts(query, o.productsPerQuery, o.minReviews), 60000, 'Tìm sản phẩm');
     } catch (e) {
       totals.failed += 1;
       log(`[${query}] không tìm được sản phẩm: ${e.message}`);
@@ -115,32 +132,45 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null } 
       seen.add(product.productId);
       totals.products += 1;
 
-      let raw = [];
+      const work = (async () => {
+        let raw = [];
+        try {
+          stage(query, product, 'lấy đánh giá');
+          raw = await fetchTikiReviews(new URL(product.url), { sort: 'id|desc', maxPages: o.pages });
+        } catch (e) {
+          totals.failed += 1;
+          log(`[${query}] lỗi khi lấy đánh giá ${product.productId}: ${e.message}`);
+          return;
+        }
+        totals.fetched += raw.length;
+        if (!raw.length) return;
+
+        // Kèm số sao; câu nghi mỉa mai được hỏi thêm mô hình thứ hai rồi bỏ phiếu
+        stage(query, product, `gán nhãn ${raw.length} đánh giá`);
+        const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating })));
+        for (const a of ai) totals.byLabeller[a?.labelledBy || 'none'] = (totals.byLabeller[a?.labelledBy || 'none'] || 0) + 1;
+        const docs = buildFeedbackDocs(raw, ai, { fallbackProduct: product.name, collectedVia: 'bulk', sourceUrl: product.url });
+        for (const d of docs) d.productCategory = query;
+
+        if (db) {
+          stage(query, product, 'ghi vào kho');
+          const { inserted, duplicates } = await saveFeedbacks(db, docs);
+          totals.inserted += inserted;
+          totals.duplicates += duplicates;
+          await db.collection('products').insertOne({ ...product, snapshotAt: new Date() });
+          log(`[${query}] ${product.name.slice(0, 60)}: ${raw.length} đánh giá, +${inserted} mới`);
+        } else {
+          const complaints = docs.filter((d) => d.category !== 'Other').length;
+          log(`[${query}] ${product.name.slice(0, 60)}: ${raw.length} đánh giá, ${complaints} lời chê`);
+        }
+      })();
       try {
-        raw = await fetchTikiReviews(new URL(product.url), { sort: 'id|desc', maxPages: o.pages });
+        await withTimeout(work, PRODUCT_BUDGET_MS, `Sản phẩm ${product.productId}`);
       } catch (e) {
         totals.failed += 1;
-        log(`[${query}] lỗi khi lấy đánh giá ${product.productId}: ${e.message}`);
-        continue;
-      }
-      totals.fetched += raw.length;
-      if (!raw.length) continue;
-
-      // Kèm số sao; câu nghi mỉa mai được hỏi thêm mô hình thứ hai rồi bỏ phiếu
-      const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating })));
-      for (const a of ai) totals.byLabeller[a?.labelledBy || 'none'] = (totals.byLabeller[a?.labelledBy || 'none'] || 0) + 1;
-      const docs = buildFeedbackDocs(raw, ai, { fallbackProduct: product.name, collectedVia: 'bulk', sourceUrl: product.url });
-      for (const d of docs) d.productCategory = query;
-
-      if (db) {
-        const { inserted, duplicates } = await saveFeedbacks(db, docs);
-        totals.inserted += inserted;
-        totals.duplicates += duplicates;
-        await db.collection('products').insertOne({ ...product, snapshotAt: new Date() });
-        log(`[${query}] ${product.name.slice(0, 60)}: ${raw.length} đánh giá, +${inserted} mới`);
-      } else {
-        const complaints = docs.filter((d) => d.category !== 'Other').length;
-        log(`[${query}] ${product.name.slice(0, 60)}: ${raw.length} đánh giá, ${complaints} lời chê`);
+        if (/quá \d+ giây/.test(e.message)) totals.timedOut += 1;
+        work.catch(() => {});
+        log(`[${query}] bỏ qua ${product.productId}: ${e.message}`);
       }
       onProgress?.(totals);
       await sleep(o.pauseMs);
@@ -173,6 +203,7 @@ async function collectorStatus(db) {
     running: Boolean(s.running && s.lockedAt && Date.now() - new Date(s.lockedAt).getTime() < LOCK_TTL_MS),
     startedAt: s.lockedAt || null,
     progress: s.progress || null,
+    stage: s.stage || null,
     lastFinishedAt: lastAt,
     lastResult: s.lastResult || null,
     lastError: s.lastError || null,
@@ -207,9 +238,16 @@ async function runOnce(db, { trigger = 'schedule', minGapMs = EVERY_MS, opts, on
   (async () => {
     const t0 = Date.now();
     let lastWrite = 0;
+    let current = null;
+    // Nhịp tim: giữ khóa còn sống và cho giao diện thấy đang làm bước nào
+    const beat = setInterval(() => {
+      meta.updateOne({ _id: STATE_ID }, { $set: { lockedAt: new Date(), stage: current } }).catch(() => {});
+    }, HEARTBEAT_MS);
+    beat.unref?.();
     try {
       const totals = await collectReal(db, opts || { productsPerQuery: 4, pages: 2, pauseMs: 5000 }, {
         log: (line) => console.log('[tự thu thập]', line),
+        onStage: (st) => { current = st; },
         onProgress: (t) => {
           // Ghi tiến độ thưa thôi, đủ cho giao diện hiện "đang chạy, đã thêm N"
           if (Date.now() - lastWrite < 15000) return;
@@ -218,7 +256,7 @@ async function runOnce(db, { trigger = 'schedule', minGapMs = EVERY_MS, opts, on
         }
       });
       await meta.updateOne({ _id: STATE_ID }, {
-        $set: { running: false, finishedAt: new Date(), lastResult: { ...totals, ms: Date.now() - t0 }, progress: null }
+        $set: { running: false, finishedAt: new Date(), lastResult: { ...totals, ms: Date.now() - t0 }, progress: null, stage: null }
       });
       console.log(`[tự thu thập] xong: +${totals.inserted} mới, ${totals.duplicates} đã có, ${Math.round((Date.now() - t0) / 1000)} giây`);
       // Có dữ liệu mới: bỏ dự báo cũ và tính lại số liệu ở nền (trang vẫn hiện số cũ tới khi xong)
@@ -230,7 +268,9 @@ async function runOnce(db, { trigger = 'schedule', minGapMs = EVERY_MS, opts, on
     } catch (e) {
       console.error('[tự thu thập] lỗi:', e.message);
       // Lỗi cũng tính là một lượt, để không thử lại liên tục mỗi 30 phút
-      await meta.updateOne({ _id: STATE_ID }, { $set: { running: false, finishedAt: new Date(), lastError: e.message, progress: null } }).catch(() => {});
+      await meta.updateOne({ _id: STATE_ID }, { $set: { running: false, finishedAt: new Date(), lastError: e.message, progress: null, stage: null } }).catch(() => {});
+    } finally {
+      clearInterval(beat);
     }
   })();
   return { started: true };
