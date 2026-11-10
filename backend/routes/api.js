@@ -437,6 +437,9 @@ router.get('/trust/health', wrap(async (req, res) => {
       count: ctx.items.filter((f) => f.trust && f.trust.tier === tier).length
     })),
     humanLabelCount: ctx.humanLabelCount,
+    // Số phản hồi thực sự góp vào chỉ số (trọng số > 0): khớp con số trên mọi
+    // trang; khác validForAnalysis ở phần phản hồi quá cũ, trọng số về 0
+    countedForMetrics: ctx.items.filter(metrics.isCountable).length,
     dictionarySize: normalizer.DICTIONARY_SIZE,
     computedAt: ctx.computedAt
   });
@@ -560,14 +563,14 @@ router.get('/inbox', wrap(async (req, res) => {
       for (const o of newOrders) {
         items.push({
           id: `orders|${o._id}`, source: 'orders', severity: o.n >= 20 ? 'high' : 'medium',
-          title: `${o.n} lượt chốt từ live chưa lên đơn`, why: `Phiên "${title.get(String(o._id))}". Khách chờ lâu thì dễ đổi ý.`,
+          title: `${o.n.toLocaleString('vi-VN')} lượt chốt từ live chưa lên đơn`, why: `Phiên "${title.get(String(o._id))}". Khách chờ lâu thì dễ đổi ý.`,
           actions: [{ label: 'Xem danh sách', to: `/live?session=${o._id}` }]
         });
       }
       for (const u of unpushed) {
         items.push({
           id: `livecomplaints|${u._id}`, source: 'live', severity: 'medium',
-          title: `${u.n} khiếu nại từ live chưa đưa vào hệ thống`, why: `Phiên "${title.get(String(u._id))}". Đưa vào để cảnh báo tính chung với các kênh khác.`,
+          title: `${u.n.toLocaleString('vi-VN')} khiếu nại từ live chưa đưa vào hệ thống`, why: `Phiên "${title.get(String(u._id))}". Đưa vào để cảnh báo tính chung với các kênh khác.`,
           actions: [{ label: 'Mở báo cáo phiên', to: `/live?session=${u._id}` }]
         });
       }
@@ -582,7 +585,7 @@ router.get('/inbox', wrap(async (req, res) => {
   if (suspicious) {
     items.push({
       id: 'review|trust', source: 'review', severity: 'medium',
-      title: `${suspicious} phản hồi nghi là đánh giá ảo chờ duyệt`,
+      title: `${suspicious.toLocaleString('vi-VN')} phản hồi nghi là đánh giá ảo chờ duyệt`,
       why: 'Đang bị giảm trọng số trong mọi chỉ số. Duyệt để giữ lại phản hồi thật, loại phản hồi ảo.',
       actions: [{ label: 'Duyệt', to: '/trust' }]
     });
@@ -591,7 +594,7 @@ router.get('/inbox', wrap(async (req, res) => {
   if (unsure) {
     items.push({
       id: 'review|labels', source: 'review', severity: 'medium',
-      title: `${unsure} phản hồi AI chưa chắc nhãn`,
+      title: `${unsure.toLocaleString('vi-VN')} phản hồi AI chưa chắc nhãn`,
       why: 'Hai mô hình bất đồng, thường là câu mỉa mai. Nhãn của người sẽ thay nhãn máy ngay.',
       actions: [{ label: 'Duyệt nhãn', to: '/trust?tab=audit' }]
     });

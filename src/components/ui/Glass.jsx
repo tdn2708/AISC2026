@@ -20,8 +20,8 @@ export const GlassPanel = ({ as: Tag = 'div', tone = 'soft', glow = null, classN
 export const PanelHeader = ({ title, subtitle, right, id, className = '' }) => (
   <header className={`mb-4 flex items-start justify-between gap-x-4 gap-y-2 ${right ? 'flex-wrap sm:flex-nowrap' : ''} ${className}`}>
     <div className="min-w-0 flex-1">
-      <h3 id={id} className="text-[1.04rem] font-semibold tracking-tight text-ink-hi">{title}</h3>
-      {subtitle && <p className="mt-0.5 text-[0.8rem] leading-relaxed text-ink-mid">{subtitle}</p>}
+      <h3 id={id} className="text-heading font-semibold tracking-tight text-ink-hi">{title}</h3>
+      {subtitle && <p className="mt-0.5 text-sm leading-relaxed text-ink-mid">{subtitle}</p>}
     </div>
     {right}
   </header>

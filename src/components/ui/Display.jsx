@@ -14,7 +14,7 @@ import { CheckCircle2, CircleAlert } from 'lucide-react';
 export const PageHeader = ({ title, accent, subtitle, actions, meta }) => (
   <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4 animate-fade-up">
     <div className="min-w-0">
-      <h1 className="text-[1.6rem] leading-tight font-semibold tracking-[-0.02em] text-ink-hi">
+      <h1 className="text-display leading-tight font-semibold tracking-[-0.02em] text-ink-hi">
         {accent ? `${title} ${accent}` : title}
       </h1>
       {subtitle && <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ink-mid">{subtitle}</p>}
@@ -27,7 +27,7 @@ export const PageHeader = ({ title, accent, subtitle, actions, meta }) => (
 /** Tiêu đề khu vực: một dòng chữ đậm vừa, không trang trí; `right` cho thao tác phụ */
 export const SectionLabel = ({ children, right, className = '' }) => (
   <div className={`mb-3 flex items-baseline justify-between gap-3 ${className}`}>
-    <h2 className="text-[0.95rem] font-semibold text-ink-hi">{children}</h2>
+    <h2 className="text-base font-semibold text-ink-hi">{children}</h2>
     {right}
   </div>
 );

@@ -367,7 +367,7 @@ const Reports = () => {
                 <c.icon size={22} aria-hidden="true" />
               </span>
               <div>
-                <h3 className="text-[1.05rem] font-semibold text-ink-hi">{c.title}</h3>
+                <h3 className="text-heading font-semibold text-ink-hi">{c.title}</h3>
                 <p className="font-mono text-xs text-ink-lo">{c.ext}</p>
               </div>
             </div>
@@ -382,7 +382,7 @@ const Reports = () => {
       <GlassPanel tone="strong" className="overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-4">
           <div>
-            <h3 className="text-[0.98rem] font-semibold text-ink-hi">Lịch sử báo cáo</h3>
+            <h3 className="text-base font-semibold text-ink-hi">Lịch sử báo cáo</h3>
             <p className="text-xs text-ink-lo">Lưu trên máy này</p>
           </div>
           <div className="flex items-center gap-2">

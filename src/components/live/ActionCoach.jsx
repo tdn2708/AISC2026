@@ -110,7 +110,7 @@ const ActionCoach = ({ stats, sessionId, live, onOpenCatalog }) => {
     <section aria-labelledby="coach-title" className="rounded-xl border border-line-soft bg-accent-dim/40 p-4 sm:p-5">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h2 id="coach-title" className="text-[1.04rem] font-semibold text-ink-hi">Việc nên làm ngay</h2>
+          <h2 id="coach-title" className="text-heading font-semibold text-ink-hi">Việc nên làm ngay</h2>
           <p className="text-xs text-ink-mid">Rút ra từ bình luận trong vài phút gần nhất. Câu nói mẫu chỉ dùng thông tin shop đã khai báo.</p>
         </div>
         {active.length > 3 && (

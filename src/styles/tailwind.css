@@ -48,6 +48,20 @@
      đọc được không cần nheo mắt (bản cũ có chỗ chỉ 10-11px) */
   --text-xs: 0.8125rem;
   --text-xs--line-height: 1.125rem;
+
+  /* Thang chữ của giao diện (tỉ lệ ~1,2). Dùng đúng các bậc này, không tự đặt cỡ:
+       text-xs 13px    chú thích, nhãn phụ, huy hiệu
+       text-sm 14px    chữ thân trong bảng, thẻ, mô tả
+       text-base 16px  tiêu đề một dòng việc, đoạn đọc chính
+       text-heading 18px  tiêu đề khối (panel, section)
+       text-display 26px  tiêu đề trang, câu tóm tắt đầu trang
+       text-metric 32px   con số chính của một chỉ số */
+  --text-heading: 1.125rem;
+  --text-heading--line-height: 1.4;
+  --text-display: 1.625rem;
+  --text-display--line-height: 1.25;
+  --text-metric: 2rem;
+  --text-metric--line-height: 1;
 }
 
 @theme {

@@ -43,7 +43,7 @@ const Result = ({ label, r }) => (
     <p className="text-sm text-ink-mid">{label}</p>
     {r?.n ? (
       <>
-        <p className="mt-1.5 font-mono text-[1.9rem] leading-none font-semibold text-ink-hi">{fmtPct(r.p, 0)}</p>
+        <p className="mt-1.5 font-mono text-metric leading-none font-semibold text-ink-hi">{fmtPct(r.p, 0)}</p>
         <p className="mt-1.5 text-xs text-ink-lo">
           Khoảng tin cậy 95%: <span className="font-mono text-ink-mid">{fmtPct(r.low, 0)} – {fmtPct(r.high, 0)}</span>
         </p>
@@ -222,7 +222,7 @@ const Audit = () => {
               title="Phản hồi này AI xếp có đúng không?"
               subtitle={remaining != null ? `Còn ${fmtInt(remaining)} phản hồi trong hàng này` : undefined}
             />
-            <blockquote className="rounded-lg border border-line-soft p-4 text-[0.95rem] leading-relaxed text-ink-hi">
+            <blockquote className="rounded-lg border border-line-soft p-4 text-base leading-relaxed text-ink-hi">
               {item.originalText}
               <span className="mt-2 flex flex-wrap gap-x-3 text-xs text-ink-lo">
                 {item.rating != null && <span className="font-mono">{item.rating}★</span>}

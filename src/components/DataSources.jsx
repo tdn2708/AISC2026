@@ -295,7 +295,7 @@ const DataSources = () => {
         <GlassPanel tone="strong" className="overflow-hidden">
           <div className="flex items-center justify-between gap-3 border-b border-line-soft px-5 py-4">
             <div>
-              <h3 className="text-[0.98rem] font-semibold text-ink-hi">Lịch sử thu thập trên máy này</h3>
+              <h3 className="text-base font-semibold text-ink-hi">Lịch sử thu thập trên máy này</h3>
               <p className="text-xs text-ink-lo">Xoá lịch sử không xoá dữ liệu đã thu thập</p>
             </div>
             {history.length > 0 && <Button size="sm" variant="danger" icon={Trash2} onClick={() => setConfirm({ type: 'history' })}>Xoá lịch sử</Button>}

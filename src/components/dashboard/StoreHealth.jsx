@@ -44,8 +44,8 @@ const Metric = ({ label, children, sub, note, bad, onOpen }) => (
     className="group relative flex min-w-0 flex-col px-5 py-5 text-left transition-colors hover:bg-raised focus-visible:bg-raised sm:px-6"
   >
     {bad && <span aria-hidden="true" className="absolute top-5 bottom-5 left-0 w-[3px] rounded-r bg-crit" />}
-    <span className="text-[0.95rem] font-medium text-ink-mid">{label}</span>
-    <span className="mt-2 text-[2rem] leading-none font-semibold tracking-[-0.02em] text-ink-hi">{children}</span>
+    <span className="text-base font-medium text-ink-mid">{label}</span>
+    <span className="mt-2 text-metric leading-none font-semibold tracking-[-0.02em] text-ink-hi">{children}</span>
     {sub && <span className="mt-2.5">{sub}</span>}
     {note && <span className="mt-1 text-sm text-ink-mid">{note}</span>}
     <span className="mt-3 inline-flex items-center gap-0.5 text-sm font-semibold text-accent-hi opacity-80 group-hover:underline group-hover:opacity-100">
@@ -70,8 +70,8 @@ const StoreHealth = ({ stats }) => {
   const trust = health == null ? null : health >= 75 ? ['text-ok', 'Đáng tin'] : health >= 50 ? ['text-high', 'Cần chú ý'] : ['text-crit', 'Chưa đáng tin'];
 
   return (
-    <section aria-labelledby="health-title" className="mb-8 overflow-hidden rounded-[12px] border border-line bg-surface">
-      <h2 id="health-title" className="px-5 pt-5 text-[1.2rem] font-semibold tracking-[-0.01em] text-ink-hi sm:px-6">Cửa hàng đang thế nào</h2>
+    <section aria-labelledby="health-title" className="mb-8 overflow-hidden glass-strong rounded-xl">
+      <h2 id="health-title" className="px-5 pt-5 text-heading font-semibold tracking-[-0.01em] text-ink-hi sm:px-6">Cửa hàng đang thế nào</h2>
       <div className="mt-1 grid grid-cols-1 divide-y divide-line-soft md:grid-cols-3 md:divide-x md:divide-y-0">
         <Metric
           label="Khiếu nại trên đơn hàng"

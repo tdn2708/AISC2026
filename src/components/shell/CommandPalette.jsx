@@ -129,7 +129,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
             placeholder="Gõ tên trang, nội dung phản hồi, hoặc một câu hỏi…"
             aria-label="Tìm lệnh"
             aria-activedescendant={items[active] ? `cmd-${items[active].id}` : undefined}
-            className="h-14 w-full min-w-0 border-0 bg-transparent text-[0.95rem] text-ink-hi outline-none placeholder:text-ink-lo"
+            className="h-14 w-full min-w-0 border-0 bg-transparent text-base text-ink-hi outline-none placeholder:text-ink-lo"
           />
           <kbd className="rounded-md border border-line px-1.5 py-0.5 font-mono text-xs text-ink-lo">Esc</kbd>
         </div>

@@ -107,7 +107,7 @@ const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
       onClick={onNavigate}
       title={collapsed ? `${item.label}${count ? ` (${count})` : ''}` : undefined}
       className={({ isActive }) =>
-        `group relative flex h-10 items-center rounded-lg text-[0.86rem] transition-[background-color,color,box-shadow] duration-150 ${
+        `group relative flex h-10 items-center rounded-lg text-sm transition-[background-color,color,box-shadow] duration-150 ${
           collapsed ? 'justify-center' : 'gap-3 px-3'
         } ${
           isActive
@@ -339,7 +339,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
             {!collapsed && (
               <>
                 <span className="min-w-0 flex-1 text-left">
-                  <span className="block truncate text-[0.82rem] font-medium text-ink-hi">{profile.name}</span>
+                  <span className="block truncate text-sm font-medium text-ink-hi">{profile.name}</span>
                   <span className="block truncate text-xs text-ink-lo">Quản lý trải nghiệm KH</span>
                 </span>
                 <ChevronsUpDown size={14} className="shrink-0 text-ink-lo" />

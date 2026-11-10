@@ -47,7 +47,7 @@ const AlertPlan = ({ alert, state, onAccept, onDismiss }) => {
       {step ? (
         <>
           <p className="text-sm font-semibold text-ink-mid">Hệ thống đề xuất</p>
-          <p className="mt-1 text-[0.95rem] leading-snug text-ink-hi">{step.text}</p>
+          <p className="mt-1 text-base leading-snug text-ink-hi">{step.text}</p>
           <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-mid">
             {step.kindLabel && <span>{step.kindLabel}</span>}
             <span>Khoảng {step.effortDays} ngày công</span>
@@ -90,7 +90,7 @@ const Row = ({ t, open, onToggle, state, onAccept, onDismiss }) => {
         </div>
         <div className="min-w-0 flex-1">
           <p className="hidden text-xs text-ink-mid sm:block">{SOURCE[t.source] || 'Việc khác'}</p>
-          <p className="text-[0.98rem] sm:mt-0.5 leading-snug font-semibold text-ink-hi">{t.title}</p>
+          <p className="text-base sm:mt-0.5 leading-snug font-semibold text-ink-hi">{t.title}</p>
           <p className="mt-1 text-sm leading-relaxed text-ink-mid">{t.why}</p>
           {t.kind === 'alert' && open && <AlertPlan alert={t.alert} state={state} onAccept={onAccept} onDismiss={onDismiss} />}
         </div>
@@ -129,10 +129,10 @@ const TodayInbox = ({ alerts = [], items = [], loading }) => {
   const visible = showAll ? todo : todo.slice(0, PREVIEW);
 
   return (
-    <section id="today" aria-labelledby="today-title" className="mb-8 scroll-mt-24 overflow-hidden rounded-[12px] border border-line bg-surface">
+    <section id="today" aria-labelledby="today-title" className="mb-8 scroll-mt-24 overflow-hidden glass-strong rounded-xl">
       <header className="flex flex-wrap items-end justify-between gap-2 border-b border-line-soft px-5 pt-5 pb-4 sm:px-6">
         <div>
-          <h2 id="today-title" className="text-[1.2rem] font-semibold tracking-[-0.01em] text-ink-hi">Việc hôm nay</h2>
+          <h2 id="today-title" className="text-heading font-semibold tracking-[-0.01em] text-ink-hi">Việc hôm nay</h2>
           <p className="mt-0.5 text-sm text-ink-mid">
             {loading && !todo.length ? 'Đang gom việc…' : remaining ? `${remaining} việc cần làm, việc gấp ở trên` : 'Đã xử lý hết'}
           </p>

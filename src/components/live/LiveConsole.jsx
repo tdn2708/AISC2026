@@ -26,7 +26,7 @@ import Report from './Report';
 const Kpi = ({ label, value, sub, tone }) => (
   <div className="min-w-0 rounded-lg border border-line-soft bg-surface/60 px-3.5 py-3">
     <p className="truncate text-xs text-ink-lo">{label}</p>
-    <p className={`mt-1 font-mono text-[1.45rem] leading-none font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
+    <p className={`mt-1 font-mono text-display leading-none font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
     {sub && <p className="mt-1 truncate text-xs text-ink-lo">{sub}</p>}
   </div>
 );
@@ -136,7 +136,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
             <ArrowLeft size={13} aria-hidden="true" />Tất cả phiên live
           </button>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-[1.45rem] leading-tight font-semibold tracking-[-0.02em] text-ink-hi">{session.title}</h1>
+            <h1 className="text-display leading-tight font-semibold tracking-[-0.02em] text-ink-hi">{session.title}</h1>
             <StatusPill status={session.status} />
             {session.simulated && <Badge tone="sky">Dữ liệu mô phỏng</Badge>}
           </div>

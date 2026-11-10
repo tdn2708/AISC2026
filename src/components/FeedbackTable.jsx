@@ -32,10 +32,10 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
   const allHref = `/feedbacks${all.toString() ? `?${all}` : ''}`;
 
   return (
-    <div className="overflow-hidden rounded-[12px] border border-line bg-surface">
+    <div className="overflow-hidden glass-strong rounded-xl">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-line-soft px-5 py-4 sm:px-6">
         <div>
-          <h2 className="text-[1.05rem] font-semibold text-ink-hi">Phản hồi gần đây</h2>
+          <h2 className="text-heading font-semibold text-ink-hi">Phản hồi gần đây</h2>
           <p className="mt-0.5 text-sm text-ink-mid">Mới nhất trước, chỉ gồm phản hồi được tính vào chỉ số. Bấm một dòng để xem chi tiết.</p>
         </div>
         {total > 0 && (

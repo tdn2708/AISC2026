@@ -139,7 +139,7 @@ const Answer = ({ msg, index, onOpenFeedback }) => {
                   data-cite={i + 1}
                   className={`rounded-lg border p-2.5 transition-colors ${focus === i + 1 ? 'border-accent bg-accent-dim' : 'border-line-soft'}`}
                 >
-                  <p className="flex gap-2 text-[0.8rem] leading-relaxed text-ink-hi">
+                  <p className="flex gap-2 text-sm leading-relaxed text-ink-hi">
                     <span className="font-mono text-xs font-semibold text-accent-hi">{i + 1}</span>
                     <span className="line-clamp-3">“{e.text}”</span>
                   </p>

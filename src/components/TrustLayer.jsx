@@ -238,7 +238,7 @@ const TrustOverview = () => {
                 <tr key={t.tier}>
                   <td className="pl-5"><span className="font-mono font-semibold text-accent">{t.tier}</span></td>
                   <td>
-                    <span className="block text-[0.82rem] text-ink-hi">{t.label}</span>
+                    <span className="block text-sm text-ink-hi">{t.label}</span>
                     <span className="block text-xs text-ink-lo">Đối soát: {t.reconciliation.toLowerCase()}</span>
                   </td>
                   <td className="text-right font-mono">{t.weight.toFixed(2).replace('.', ',')}</td>

@@ -19,7 +19,7 @@ const VARIANT = {
 const SIZE = {
   sm: 'h-8 gap-1.5 rounded-md px-3 text-xs',
   md: 'h-10 gap-2 rounded-lg px-4 text-sm',
-  lg: 'h-12 gap-2 rounded-lg px-5 text-[0.95rem]'
+  lg: 'h-12 gap-2 rounded-lg px-5 text-base'
 };
 
 export const Button = ({

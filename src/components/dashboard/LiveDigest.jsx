@@ -42,7 +42,7 @@ const LiveDigest = () => {
   return (
     <div className="glass-strong mt-6 rounded-xl p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="inline-flex items-center gap-2 text-[1.04rem] font-semibold text-ink-hi">
+        <h2 className="inline-flex items-center gap-2 text-heading font-semibold text-ink-hi">
           <Radio size={16} className="text-accent" aria-hidden="true" />Livestream
         </h2>
         {now ? <Badge tone="crit" className="gap-1.5"><span className="size-1.5 animate-pulse rounded-full bg-crit" aria-hidden="true" />Đang live</Badge> : null}

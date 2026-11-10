@@ -42,7 +42,7 @@ const FeedbackDetail = ({ item, onClose }) => {
             </span>
           </div>
 
-          <blockquote className="rounded-lg border border-line-soft p-4 text-[0.95rem] leading-relaxed text-ink-hi">
+          <blockquote className="rounded-lg border border-line-soft p-4 text-base leading-relaxed text-ink-hi">
             {item.originalText}
             {item.rating != null && (
               <span className="mt-2 flex items-center gap-1 text-xs text-ink-lo">

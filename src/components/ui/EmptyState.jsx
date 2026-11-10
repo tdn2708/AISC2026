@@ -22,7 +22,7 @@ export const EmptyState = ({ variant = 'empty', title, description, action, comp
       <span className={`grid size-10 place-items-center rounded-lg ${v.cls}`}>
         <v.Icon size={20} aria-hidden="true" />
       </span>
-      <h3 className="mt-3 text-[0.95rem] font-semibold text-ink-hi">{title}</h3>
+      <h3 className="mt-3 text-base font-semibold text-ink-hi">{title}</h3>
       {description && <p className="mt-1 max-w-sm text-sm leading-relaxed text-ink-mid">{description}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>

@@ -54,6 +54,14 @@ const Dashboard = () => {
   }, [dataVersion]);
   const todo = buildTodo(alerts, inbox);
 
+  // Sổ đối chiếu ở đầu trang: phễu của cả kho (thu thập, loại, được tính)
+  const [ledger, setLedger] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    axios.get('/trust/health').then((r) => alive && setLedger(r.data)).catch(() => {});
+    return () => { alive = false; };
+  }, [dataVersion]);
+
   const hasFilter = timeFilter !== 'All' || sourceFilter !== 'All' || productFilter !== 'All';
   const clearFilters = () => {
     setTimeFilter('All');
@@ -69,7 +77,7 @@ const Dashboard = () => {
 
   return (
     <div className="cx pt-2">
-      <SummaryHeader stats={stats} todo={todo} loading={loading} error={error} lastUpdated={lastUpdated} />
+      <SummaryHeader stats={stats} todo={todo} loading={loading} error={error} lastUpdated={lastUpdated} ledger={ledger} evidence={hasFilter ? null : stats?.evidence?.all} />
 
       <FilterBar
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}

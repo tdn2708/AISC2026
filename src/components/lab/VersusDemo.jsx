@@ -38,7 +38,7 @@ const sentimentLabel = (s) => SENTIMENT_MAP[s]?.label || 'Trung tính';
 const CapabilityRow = ({ icon: Icon, label, generic, ours, detail }) => (
   <li className="grid grid-cols-[minmax(0,1fr)_3.5rem_3.5rem] items-center gap-2 border-b border-line-soft py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_5.5rem_5.5rem]">
     <div className="min-w-0">
-      <p className="flex items-center gap-2 text-[0.84rem] font-medium text-ink-hi">
+      <p className="flex items-center gap-2 text-sm font-medium text-ink-hi">
         <Icon size={15} className="shrink-0 text-ink-lo" aria-hidden="true" />
         {label}
       </p>
@@ -59,7 +59,7 @@ const Mark = ({ ok }) => (
 const MetricBar = ({ label, generic, ours, note }) => (
   <div>
     <div className="mb-1.5 flex items-baseline justify-between gap-3">
-      <p className="text-[0.82rem] font-medium text-ink-hi">{label}</p>
+      <p className="text-sm font-medium text-ink-hi">{label}</p>
       {note && <p className="text-right text-xs text-ink-lo">{note}</p>}
     </div>
     {[['Công cụ thông thường', generic, 'bg-neu'], ['Customer Radar', ours, 'bg-accent']].map(([name, v, cls]) => (
@@ -166,7 +166,7 @@ const VersusDemo = () => {
             rows={2}
             aria-label="Câu phản hồi cần phân tích"
             placeholder="Gõ một phản hồi bất kỳ, kể cả teencode…"
-            className="min-h-[3.25rem] w-full resize-y rounded-lg border border-line bg-surface px-3.5 py-3 text-[0.95rem] leading-relaxed text-ink-hi outline-none focus:border-accent"
+            className="min-h-[3.25rem] w-full resize-y rounded-lg border border-line bg-surface px-3.5 py-3 text-base leading-relaxed text-ink-hi outline-none focus:border-accent"
           />
           {/* Không khóa nút khi đang chạy: câu mặc định chạy lúc mở trang có thể
               chờ máy chủ vài giây, và cú bấm của người xem trong lúc đó từng bị
@@ -196,10 +196,10 @@ const VersusDemo = () => {
               <SentimentFace sentiment={generic?.sentiment} size={44} />
               <div>
                 <p className="text-xl font-semibold text-ink-hi">{sentimentLabel(generic?.sentiment)}</p>
-                <p className="text-[0.8rem] text-ink-lo">cho cả câu</p>
+                <p className="text-sm text-ink-lo">cho cả câu</p>
               </div>
             </div>
-            <div className="mt-5 flex flex-1 flex-col justify-end gap-2 text-[0.82rem] text-ink-mid">
+            <div className="mt-5 flex flex-1 flex-col justify-end gap-2 text-sm text-ink-mid">
               <p className="flex items-start gap-2"><X size={15} className="mt-0.5 shrink-0 text-crit" />Không biết khách phàn nàn về vấn đề gì</p>
               <p className="flex items-start gap-2"><X size={15} className="mt-0.5 shrink-0 text-crit" />Không biết chuyển cho bộ phận nào xử lý</p>
               {piiTypes.length > 0 && <p className="flex items-start gap-2"><X size={15} className="mt-0.5 shrink-0 text-crit" />Lưu nguyên số điện thoại, email của khách</p>}
@@ -222,7 +222,7 @@ const VersusDemo = () => {
             {spam?.isSpam ? (
               <div className="rounded-lg border border-crit/30 bg-crit/8 p-4">
                 <p className="flex items-center gap-2 font-semibold text-crit"><ShieldCheck size={17} />Chặn: không phải phản hồi thật</p>
-                <p className="mt-1 text-[0.8rem] text-ink-mid">{spam.reasons?.[0]}. Không được đếm vào bất kỳ chỉ số nào.</p>
+                <p className="mt-1 text-sm text-ink-mid">{spam.reasons?.[0]}. Không được đếm vào bất kỳ chỉ số nào.</p>
               </div>
             ) : (
               <>
@@ -230,7 +230,7 @@ const VersusDemo = () => {
                   <SentimentFace sentiment={final?.sentiment} size={44} />
                   <div>
                     <p className="text-xl font-semibold text-ink-hi">{sentimentLabel(final?.sentiment)}</p>
-                    <p className="text-[0.8rem] text-ink-lo">
+                    <p className="text-sm text-ink-lo">
                       {aspects.length ? `${aspects.length} vấn đề được bóc tách` : 'Không có vấn đề cần xử lý'}
                     </p>
                   </div>
@@ -241,7 +241,7 @@ const VersusDemo = () => {
                     {aspects.map((a, i) => (
                       <li key={`${a.category}-${a.cause}-${i}`} className="rounded-lg bg-raised px-3.5 py-2.5">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-[0.88rem] font-semibold text-ink-hi">
+                          <p className="text-sm font-semibold text-ink-hi">
                             {a.categoryLabel}{a.causeLabel ? <span className="font-normal text-ink-mid"> → {a.causeLabel}</span> : null}
                           </p>
                           {a.confidence != null && <span className="data-num shrink-0 text-xs text-ink-lo">{Math.round(a.confidence * 100)}%</span>}

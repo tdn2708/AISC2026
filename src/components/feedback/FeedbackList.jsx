@@ -66,7 +66,7 @@ const FeedbackList = ({ items, showProduct = false, onSelect, dimmed = false }) 
                   : <span className="text-ink-lo" title="Không nêu vấn đề cụ thể">—</span>}
               </td>
               <td className="fb-c-sent">
-                <span className="inline-flex items-center gap-2 text-[0.86rem] text-ink-mid">
+                <span className="inline-flex items-center gap-2 text-sm text-ink-mid">
                   <SentimentFace sentiment={f.sentiment} size={22} />
                   {s.label}
                 </span>

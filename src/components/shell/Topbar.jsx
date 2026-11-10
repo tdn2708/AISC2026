@@ -7,6 +7,7 @@ import { IconButton } from '../ui';
 import { findPage } from '../../lib/nav';
 import { useTheme } from '../../hooks/useTheme';
 import { alertTitle } from '../../lib/format';
+import { useRefreshing } from '../../lib/dataVersion';
 
 /**
  * THANH TRÊN — dính theo cuộn, kính trong.
@@ -118,7 +119,7 @@ const Notifications = () => {
                     >
                       <span className={`mt-1.5 size-2 shrink-0 rounded-full ${isRead ? 'bg-transparent' : 'bg-crit'}`} />
                       <span className="min-w-0">
-                        <span className="block text-[0.82rem] font-semibold text-ink-hi">{risk.issue}</span>
+                        <span className="block text-sm font-semibold text-ink-hi">{risk.issue}</span>
                         <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-ink-mid">{risk.insight}</span>
                       </span>
                     </button>
@@ -141,6 +142,7 @@ const Notifications = () => {
 };
 
 const Topbar = ({ onOpenMenu, onOpenCommand }) => {
+  const refreshing = useRefreshing();
   const { pathname } = useLocation();
   const page = findPage(pathname);
   const { theme, setTheme } = useTheme();
@@ -185,6 +187,15 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
         </button>
 
         <div className="hidden flex-1 md:block" />
+
+        {/* Sau một thao tác ghi, máy chủ tính lại số liệu ở nền; trang tự tải lại khi xong */}
+        {refreshing && (
+          <span role="status" className="hidden shrink-0 items-center gap-2 rounded-full bg-accent-dim px-3 py-1.5 text-xs font-medium text-accent-hi md:inline-flex">
+            <span className="size-1.5 animate-pulse rounded-full bg-accent" aria-hidden="true" />
+            Đang cập nhật số liệu
+          </span>
+        )}
+
 
         {/* Trợ lý: nút có chữ trên màn rộng, chỉ biểu tượng trên điện thoại */}
         <button
