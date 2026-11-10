@@ -481,8 +481,13 @@ function detectBursts(items) {
 function detectAccountAnomalies(items) {
   const byAuthor = new Map();
   items.forEach((it, idx) => {
-    // Dữ liệu thật có mã khách ẩn danh (tên hiển thị đã che nên dễ trùng nhau)
-    const key = it.customerId || (it.author || 'Anonymous').trim();
+    // Dữ liệu thật có mã khách ẩn danh (tên hiển thị đã che nên dễ trùng nhau).
+    // Dòng thu thập từ sàn (có dedupKey) mà thiếu mã khách thì KHÔNG gom theo
+    // tên đã che: "Quang D. H." là hàng chục người khác nhau, gom lại thành một
+    // "tài khoản" sẽ sinh cờ đánh giá ảo giả. Dòng đó đứng riêng, tức không
+    // tham gia tín hiệu hành vi tài khoản.
+    const key = it.customerId
+      || (it.dedupKey ? `solo:${idx}` : (it.author || 'Anonymous').trim());
     if (!byAuthor.has(key)) byAuthor.set(key, []);
     byAuthor.get(key).push({ idx, item: it });
   });
