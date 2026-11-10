@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Check, X, SkipForward } from 'lucide-react';
 import { GlassPanel, PanelHeader, Button, ProgressBar, EmptyState, Chip, Select, Toast, Segmented } from '../ui';
 import { fmtInt, fmtDate, fmtPct, SENTIMENT_MAP, LABELLER_LABEL } from '../../lib/format';
+import { reportRefreshing } from '../../lib/dataVersion';
 
 /**
  * DUYỆT NHÃN DO NGƯỜI LÀM — ba hàng đợi
@@ -148,6 +149,7 @@ const Audit = () => {
         by: currentUser()
       });
       setSummary(data.summary);
+      reportRefreshing(true);
       setToast(true);
       setTimeout(() => setToast(false), 1500);
       await next();

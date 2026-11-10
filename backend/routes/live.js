@@ -71,6 +71,16 @@ function cleanPolicy(input = {}) {
   return Object.fromEntries(POLICY_KEYS.map((k) => [k, str(input?.[k], 400) || '']));
 }
 
+// Mọi thao tác ghi lên một phiên làm cũ số liệu đã nhớ của phiên đó (hub.memoized).
+// Bỏ cả trước lẫn sau khi ghi: request đọc chen giữa không được nhớ lại bản cũ.
+router.use('/sessions/:id', (req, res, next) => {
+  if (req.method !== 'GET') {
+    hub.dropMemo(req.params.id);
+    res.on('finish', () => hub.dropMemo(req.params.id));
+  }
+  next();
+});
+
 async function sessionOr404(req) {
   const s = await hub.loadSession(req.db, req.params.id);
   if (!s) throw bad('Không tìm thấy phiên live', 404);
@@ -99,9 +109,8 @@ router.get('/platforms', (req, res) => {
 /**
  * Tóm tắt cho trang Tổng quan: phiên đang live (số liệu trực tiếp, việc cần
  * làm gấp nhất) và phiên đã kết thúc gần nhất (kết quả, việc cho phiên sau).
- * Báo cáo của phiên đã kết thúc được nhớ theo mã phiên và thời điểm kết thúc.
+ * Báo cáo của phiên đã kết thúc được nhớ tới khi có thao tác ghi lên phiên đó.
  */
-const overviewMemo = new Map();
 router.get('/overview', wrap(async (req, res) => {
   await hub.ensureIndexes(req.db);
   const col = req.db.collection('live_sessions');
@@ -120,15 +129,7 @@ router.get('/overview', wrap(async (req, res) => {
   const lastEnded = recent.find((s) => s.status === 'ended');
   let latest = null;
   if (lastEnded) {
-    // Nhớ tối đa một phút: khiếu nại vừa được đưa vào hệ thống thì số liệu đổi theo
-    const key = `${lastEnded._id}|${lastEnded.endedAt?.toISOString?.() || ''}|${(lastEnded.actions || []).length}|${Math.floor(Date.now() / 60000)}`;
-    let rep = overviewMemo.get(key);
-    if (!rep) {
-      const { buildReport } = require('../services/live/report');
-      rep = await buildReport(req.db, lastEnded);
-      overviewMemo.clear();
-      overviewMemo.set(key, rep);
-    }
+    const rep = await hub.reportFor(req.db, lastEnded, null);
     latest = {
       id: String(lastEnded._id), title: lastEnded.title, platform: lastEnded.platform, simulated: Boolean(lastEnded.simulated),
       startedAt: lastEnded.startedAt, endedAt: lastEnded.endedAt,
@@ -424,10 +425,7 @@ router.post('/sessions/:id/groups/rewrite', wrap(async (req, res) => {
 /** Báo cáo sau phiên: phễu, doanh thu, cầu bị lỡ, câu hỏi bỏ sót, việc cần làm */
 router.get('/sessions/:id/report', wrap(async (req, res) => {
   const s = await sessionOr404(req);
-  const r = hub.runtimeFor(s._id, req.workspace);
-  if (r) await r.flush();
-  const { buildReport } = require('../services/live/report');
-  res.json(await buildReport(req.db, r ? { ...s, ...r.session, summary: { ...(s.summary || {}), viewers: r.agg.viewers } } : s));
+  res.json(await hub.reportFor(req.db, s, hub.runtimeFor(s._id, req.workspace)));
 }));
 
 /**

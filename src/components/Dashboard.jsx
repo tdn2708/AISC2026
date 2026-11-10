@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useDataVersion } from '../lib/dataVersion';
 import FilterBar from './FilterBar';
 import FeedbackTable from './FeedbackTable';
 import { useDashboardData } from '../hooks/useDashboardData';
@@ -43,13 +44,14 @@ const Dashboard = () => {
 
   // Việc ngoài cảnh báo (livestream, đơn hàng, duyệt, dữ liệu); làm mới mỗi phút
   const [inbox, setInbox] = useState([]);
+  const dataVersion = useDataVersion();
   useEffect(() => {
     let alive = true;
     const load = () => axios.get('/inbox').then((r) => alive && setInbox(r.data.items || [])).catch(() => {});
     load();
     const t = setInterval(load, 60000);
     return () => { alive = false; clearInterval(t); };
-  }, []);
+  }, [dataVersion]);
   const todo = buildTodo(alerts, inbox);
 
   const hasFilter = timeFilter !== 'All' || sourceFilter !== 'All' || productFilter !== 'All';

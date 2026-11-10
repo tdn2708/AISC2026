@@ -11,8 +11,9 @@
  * dùng lại trong một khoảng ngắn.
  */
 
-const { runTrustLayer, DEFAULT_HALF_LIFE_DAYS } = require('./trust_layer');
-const taxonomy = require('./taxonomy');
+const path = require('path');
+const { DEFAULT_HALF_LIFE_DAYS } = require('./trust_layer');
+const { computeContext, normalizeLabels, applyHumanLabels, applyReviewLabel } = require('./context_compute');
 const visobert = require('./visobert_client');
 
 /**
@@ -60,35 +61,6 @@ const anchorsToData = (db) => db.databaseName === REAL_DB;
  */
 const REAL_HALF_LIFE_DAYS = Number(process.env.REAL_HALF_LIFE_DAYS) || 180;
 
-/**
- * Ghi đè nhãn máy bằng nhãn người duyệt (collection audit_labels).
- * Chỉ ghi đè trường người đã sửa; trường người xác nhận "đúng" giữ nguyên.
- * Hàm thuần trên mảng, để kiểm thử được không cần database.
- */
-function applyHumanLabels(feedbacks, labels) {
-  if (!labels || !labels.length) return 0;
-  const byId = new Map(labels.map((l) => [String(l.feedbackId), l]));
-  let applied = 0;
-  for (const f of feedbacks) {
-    const l = byId.get(String(f._id));
-    if (!l) continue;
-    f.machineLabel = { sentiment: f.sentiment, category: f.category, subCategory: f.subCategory, labelledBy: f.labelledBy };
-    if (l.correctSentiment) f.sentiment = l.correctSentiment;
-    if (l.correctCategory) {
-      if (l.correctCategory !== f.category) f.subCategory = l.correctCause || null;
-      f.category = l.correctCategory;
-    }
-    if (l.correctCause) f.subCategory = l.correctCause;
-    if (typeof l.sarcasm === 'boolean') {
-      f.sarcasm = { ...(f.sarcasm || {}), verdict: l.sarcasm ? 'sarcastic' : 'literal', by: 'human' };
-    }
-    f.labelledBy = 'human';
-    f.needsReview = false;
-    applied += 1;
-  }
-  return applied;
-}
-
 /** "Bây giờ" của một ngữ cảnh: mốc dữ liệu với kho thật, giờ thật với kho mô phỏng */
 const ctxNow = (ctx) => (ctx && ctx.asOf ? new Date(ctx.asOf) : new Date());
 // Chỉ các trường giao dịch thật sự được dùng (đối soát, doanh thu rủi ro, vùng)
@@ -98,33 +70,82 @@ const TXN_PROJECTION = { _id: 0, orderId: 1, productName: 1, region: 1, orderedA
  * Trạng thái bộ đệm RIÊNG cho từng database. Máy chủ phục vụ cùng lúc kho mô
  * phỏng và kho dữ liệu thật (người xem chuyển qua lại), nên một bộ đệm dùng
  * chung sẽ trả nhầm số liệu của kho này cho kho kia.
+ *   cache     bản đang hợp lệ
+ *   stale     bản vừa bị invalidate: vẫn phục vụ trong lúc bản mới đang tính
  */
 const states = new Map();
 function stateFor(db) {
   const name = db.databaseName;
   if (!states.has(name)) {
-    states.set(name, { cache: { key: null, at: 0, computedAt: 0, value: null, generation: 0 }, generation: 0, ongoing: null });
+    states.set(name, { cache: { key: null, at: 0, computedAt: 0, value: null, generation: 0 }, generation: 0, ongoing: null, stale: null });
   }
   return states.get(name);
 }
 
-/** Chuẩn hóa nhãn danh mục/nguyên nhân về taxonomy hiện hành */
-function normalizeLabels(fb) {
-  const category = taxonomy.normalizeCategory(fb.category);
-  const cause = taxonomy.normalizeCause(category, fb.subCategory);
-  return {
-    ...fb,
-    category,
-    subCategory: cause,
-    categoryLabel: taxonomy.categoryLabel(category),
-    causeLabel: taxonomy.causeLabel(category, cause)
+// ==================================================================
+// LUỒNG TÍNH RIÊNG
+// ==================================================================
+
+let worker = null;
+let seq = 0;
+const pending = new Map();
+
+function getWorker() {
+  if (worker) return worker;
+  const { Worker } = require('worker_threads');
+  worker = new Worker(path.join(__dirname, 'context_worker.js'));
+  worker.unref(); // không giữ tiến trình sống (script chạy một lần vẫn thoát được)
+  const fail = (err) => {
+    for (const { reject } of pending.values()) reject(err);
+    pending.clear();
+    worker = null;
   };
+  worker.on('message', (msg) => {
+    const job = pending.get(msg.id);
+    if (!job) return;
+    pending.delete(msg.id);
+    if (msg.ok) job.resolve(msg);
+    else job.reject(new Error(msg.error));
+  });
+  worker.on('error', fail);
+  worker.on('exit', (code) => fail(new Error(`Luồng tính dừng (mã ${code})`)));
+  return worker;
 }
 
+/** Chạy phần tính trong worker; worker hỏng thì tính ngay tại luồng chính như trước */
+async function compute(input) {
+  if (process.env.CONTEXT_WORKER === '0') return computeContext(input);
+  try {
+    const msg = await new Promise((resolve, reject) => {
+      const id = ++seq;
+      pending.set(id, { resolve, reject });
+      try {
+        getWorker().postMessage({ id, input });
+      } catch (e) {
+        pending.delete(id);
+        reject(e);
+      }
+    });
+    return msg.value;
+  } catch (e) {
+    console.warn('[CONTEXT] Luồng tính riêng lỗi, tính tại luồng chính:', e.message);
+    return computeContext(input);
+  }
+}
+
+// ==================================================================
+// BỘ ĐỆM
+// ==================================================================
+
 /**
- * Nạp dữ liệu và chạy Trust Layer một lần cho cả vòng đời request.
+ * Ngữ cảnh phân tích của một kho.
+ *  - Bản hợp lệ: trả ngay; quá TTL thì làm mới ở nền.
+ *  - Vừa bị invalidate (có thao tác ghi): trả ngay BẢN CŨ kèm cờ `refreshing`,
+ *    bản mới tính ở nền. Trước đây request kế tiếp phải chờ cả lần tính lại
+ *    (hàng chục giây trên Render) — duyệt nhãn liên tục là mỗi lần bấm một lần chờ.
+ *  - Chưa có bản nào (vừa khởi động): chờ.
  * @param {import('mongodb').Db} db
- * @param {{ force?: boolean }} opts
+ * @param {{ force?: boolean, fresh?: boolean }} opts  fresh: chờ bản mới nhất
  */
 async function getContext(db, opts = {}) {
   const st = stateFor(db);
@@ -140,7 +161,20 @@ async function getContext(db, opts = {}) {
     return st.cache.value;
   }
 
+  if (!opts.force && !opts.fresh && st.stale) {
+    refresh(db, { onlyIfChanged: false }).catch((e) =>
+      console.warn('[CONTEXT] Tính lại sau khi ghi thất bại, giữ bản cũ:', e.message)
+    );
+    return st.stale;
+  }
+
   return refresh(db, { onlyIfChanged: false });
+}
+
+/** Kho này có đang tính lại số liệu không (để giao diện báo cho người dùng) */
+function isRefreshing(db) {
+  const st = stateFor(db);
+  return !(st.cache.value && st.cache.generation === st.generation);
 }
 
 /** Một lần nạp duy nhất cho mỗi thế hệ dữ liệu; các request đồng thời dùng chung */
@@ -151,6 +185,11 @@ function refresh(db, { onlyIfChanged }) {
   const gen = st.generation;
   const promise = doFetch(db, gen, onlyIfChanged).finally(() => {
     if (st.ongoing && st.ongoing.promise === promise) st.ongoing = null;
+    // Có thao tác ghi xảy ra trong lúc đang tính: tính tiếp bản mới hơn ở nền,
+    // nếu không cờ `refreshing` treo tới tận request kế tiếp
+    if (st.generation !== gen && st.stale) {
+      refresh(db, { onlyIfChanged: false }).catch((e) => console.warn('[CONTEXT] Tính lại thất bại:', e.message));
+    }
   });
   st.ongoing = { generation: gen, promise };
   return promise;
@@ -159,6 +198,7 @@ function refresh(db, { onlyIfChanged }) {
 async function doFetch(db, gen, onlyIfChanged) {
   const st = stateFor(db);
   const { cache } = st;
+  const t0 = Date.now();
   const lastId = (name) =>
     db.collection(name).find({}, { projection: { _id: 1 } }).sort({ _id: -1 }).limit(1).next();
   const [feedbackCount, txnCount, lastFeedback, lastTxn, labelsMeta] = await Promise.all([
@@ -191,109 +231,100 @@ async function doFetch(db, gen, onlyIfChanged) {
   // (phát lại theo thời gian thực); bản ghi không có mốc thời gian vẫn được đọc
   // ($not $gt khớp cả trường thiếu hoặc null).
   const asOf = new Date();
-  const [rawFeedbacks, transactions, upcoming] = await Promise.all([
+  const [rawFeedbacks, transactions, upcoming, auditLabels, reviewLabels] = await Promise.all([
     db.collection('feedbacks').find({ timestamp: { $not: { $gt: asOf } } }).sort({ timestamp: -1 }).batchSize(FETCH_BATCH).toArray(),
     db.collection('transactions').find({ deliveredAt: { $not: { $gt: asOf } } }, { projection: TXN_PROJECTION }).batchSize(FETCH_BATCH).toArray(),
-    db.collection('feedbacks').findOne({ timestamp: { $gt: asOf } }, { projection: { _id: 1 } })
+    db.collection('feedbacks').findOne({ timestamp: { $gt: asOf } }, { projection: { _id: 1 } }),
+    db.collection('audit_labels').find({}).toArray(),
+    db.collection('review_labels').find({}).toArray()
   ]);
-
-  const feedbacks = rawFeedbacks.map(normalizeLabels);
-
-  // rawFeedbacks đã sắp mới nhất trước
-  let dataAsOf = null;
-  let ingestedAt = null;
-  if (anchorsToData(db) && feedbacks.length) {
-    dataAsOf = new Date(feedbacks[0].timestamp);
-    if (Number.isNaN(dataAsOf.getTime())) dataAsOf = null;
-    ingestedAt = feedbacks.reduce((max, f) => {
-      const t = f.collectedAt ? new Date(f.collectedAt).getTime() : 0;
-      return t > max ? t : max;
-    }, 0) || null;
-  }
+  // Mã dạng chuỗi: đi qua được luồng tính riêng, và mọi nơi vốn so mã bằng String()
+  for (const f of rawFeedbacks) f._id = String(f._id);
+  for (const l of auditLabels) l._id = String(l._id);
+  for (const l of reviewLabels) l._id = String(l._id);
+  const fetchMs = Date.now() - t0;
 
   // Tín hiệu ViSoBERT (vector nhúng cho T2, xác suất rác cho T1) nếu
   // được bật và dịch vụ đang chạy. Lỗi ở đây không được chặn Trust
   // Layer: không có tín hiệu mô hình thì chạy đúng như trước.
   let nlp = null;
   try {
-    nlp = await visobert.trustSignals(feedbacks);
+    nlp = await visobert.trustSignals(rawFeedbacks);
   } catch (e) {
     console.warn('[VISOBERT] Bỏ qua tín hiệu mô hình cho Trust Layer:', e.message);
   }
 
-  // NHÃN NGƯỜI DUYỆT THẮNG NHÃN MÁY. Người đọc phản hồi ở trang Kiểm tra và
-  // sửa cảm xúc / nhóm vấn đề / mỉa mai: nhãn đó phải thay nhãn máy trong MỌI
-  // chỉ số, không chỉ dùng để đo độ chính xác. Áp TRƯỚC Trust Layer vì luật
-  // lệch sao đọc chính nhãn cảm xúc này. Nhãn máy cũ giữ ở `machineLabel`.
-  const auditLabels = await db.collection('audit_labels').find({}).toArray();
-  applyHumanLabels(feedbacks, auditLabels);
-
   const halfLifeDays = anchorsToData(db) ? REAL_HALF_LIFE_DAYS : DEFAULT_HALF_LIFE_DAYS;
-  const result = runTrustLayer(feedbacks, {
-    orders: transactions,
+  const t1 = Date.now();
+  const computed = await compute({
+    rawFeedbacks,
+    transactions,
+    auditLabels,
+    reviewLabels,
+    anchorToData: anchorsToData(db),
     halfLifeDays,
-    now: dataAsOf || undefined,
-    ingestedAt: ingestedAt ? new Date(ingestedAt) : undefined,
-    modelSignals: nlp ? nlp.signals : undefined
+    modelSignals: nlp ? nlp.signals : null
   });
 
-  // Nhãn do người dùng kiểm duyệt GHI ĐÈ phán đoán của mô hình — đây là
-  // nửa đầu của vòng lặp học chủ động: mỗi thao tác của người dùng là
-  // một mẫu huấn luyện đúng ngành, đúng khách hàng của doanh nghiệp đó.
-  const labels = await db.collection('review_labels').find({}).toArray();
-  if (labels.length) {
-    const labelMap = new Map(labels.map((l) => [String(l.feedbackId), l]));
-    for (const item of result.items) {
-      const label = labelMap.get(String(item._id));
-      if (!label) continue;
-      item.trust.humanLabel = label.label;
-      item.trust.labelledBy = label.by || 'người kiểm duyệt';
-      item.trust.labelledAt = label.at;
-      if (label.label === 'valid') {
-        item.trust.band = 'ACCEPTED';
-        item.trust.bandLabelVi = 'Chấp nhận (người kiểm duyệt xác nhận)';
-        item.trust.weight = item.trust.tierWeight;
-      } else if (label.label === 'inauthentic' || label.label === 'spam') {
-        item.trust.band = label.label === 'spam' ? 'SPAM' : 'LIKELY_INAUTHENTIC';
-        item.trust.bandLabelVi =
-          label.label === 'spam' ? 'Nội dung rác (xác nhận)' : 'Không xác thực (xác nhận)';
-        item.trust.weight = 0;
-      }
-    }
-  }
-
   const value = {
-    items: result.items,
-    clusters: result.clusters,
-    bursts: result.bursts,
-    accountProfiles: result.accountProfiles,
-    funnel: result.funnel,
+    items: computed.items,
+    clusters: computed.clusters,
+    bursts: computed.bursts,
+    accountProfiles: computed.accountProfiles,
+    funnel: computed.funnel,
     transactions,
     transactionCount: transactions.length,
-    humanLabelCount: labels.length,
-    modelSignals: { ...result.modelSignals, source: nlp ? 'visobert' : null, ...(nlp ? nlp.meta : {}) },
+    humanLabelCount: reviewLabels.length,
+    modelSignals: { ...computed.modelSignals, source: nlp ? 'visobert' : null, ...(nlp ? nlp.meta : {}) },
     computedAt: new Date().toISOString(),
     dbName: db.databaseName,
-    asOf: dataAsOf ? dataAsOf.toISOString() : null,
+    asOf: computed.asOf,
     halfLifeDays,
-    ingestedAt: ingestedAt ? new Date(ingestedAt).toISOString() : null,
+    ingestedAt: computed.ingestedAt,
     replay: Boolean(upcoming)
   };
+  console.log(`[CONTEXT] ${db.databaseName}: ${computed.items.length} phản hồi, đọc ${fetchMs} ms, tính ${Date.now() - t1} ms`);
 
   // Dữ liệu đã bị invalidate trong lúc nạp: không ghi đè bộ đệm bằng bản cũ
   if (gen === st.generation) {
     const now = Date.now();
     st.cache = { key, at: now, computedAt: now, value, generation: gen };
+    st.stale = null;
+  } else if (!st.stale) {
+    // Bản này đã cũ so với thao tác ghi vừa xảy ra, nhưng vẫn hơn là không có gì
+    // để phục vụ trong lúc bản mới hơn đang tính
+    st.stale = { ...value, refreshing: true };
   }
   return value;
 }
 
-/** Bỏ bộ đệm của một database (sau khi ghi vào nó); không truyền db thì bỏ hết */
+/**
+ * Báo dữ liệu của một kho vừa đổi (sau khi ghi); không truyền db thì mọi kho.
+ * Bản đang có được giữ làm bản tạm, gắn cờ `refreshing`, tới khi bản mới tính xong.
+ */
 function invalidate(db) {
   const targets = db ? [stateFor(db)] : [...states.values()];
   for (const st of targets) {
+    const previous = st.cache.value || st.stale;
     st.generation += 1;
     st.cache = { key: null, at: 0, computedAt: 0, value: null, generation: st.generation };
+    st.stale = previous ? (previous.refreshing ? previous : { ...previous, refreshing: true }) : null;
+  }
+}
+
+/**
+ * Vá ngay bản đang phục vụ sau một thao tác nhỏ của người dùng (duyệt một
+ * nhãn), để màn hình thấy kết quả tức thì; bản tính lại đầy đủ vẫn chạy ở nền.
+ * @param {(ctx: object) => void} fn
+ */
+function patchServing(db, fn) {
+  const st = stateFor(db);
+  const ctx = st.cache.value || st.stale;
+  if (!ctx) return;
+  try {
+    fn(ctx);
+  } catch (e) {
+    console.warn('[CONTEXT] Không vá được bản đang phục vụ:', e.message);
   }
 }
 
@@ -355,4 +386,4 @@ function applyFilters(items, query = {}, nowRef = null) {
   return out;
 }
 
-module.exports = { getContext, invalidate, applyFilters, normalizeLabels, ctxNow, applyHumanLabels };
+module.exports = { getContext, invalidate, isRefreshing, patchServing, applyFilters, normalizeLabels, ctxNow, applyHumanLabels, applyReviewLabel };

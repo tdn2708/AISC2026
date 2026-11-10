@@ -21,7 +21,21 @@ if (!process.env.MONGODB_URI) {
   process.exit(1);
 }
 
-const client = new MongoClient(process.env.MONGODB_URI);
+/**
+ * Nhóm kết nối: mỗi lần nạp ngữ cảnh mở song song 5-9 truy vấn, cộng luồng ghi
+ * bình luận livestream và các request thường. Giữ sẵn vài kết nối để request
+ * đầu sau lúc rảnh không phải bắt tay TLS lại với Atlas; chặn trên ở 20 vì gói
+ * Atlas miễn phí giới hạn 500 kết nối cho cả cụm.
+ */
+const client = new MongoClient(process.env.MONGODB_URI, {
+  appName: 'customer-radar',
+  maxPoolSize: 20,
+  minPoolSize: 2,
+  maxIdleTimeMS: 5 * 60 * 1000,
+  serverSelectionTimeoutMS: 10000,
+  retryWrites: true,
+  retryReads: true
+});
 
 process.on('uncaughtException', (err) => {
   console.error('[UNCAUGHT EXCEPTION]', err);
@@ -45,6 +59,12 @@ async function ensureIndexes(db) {
     ['feedbacks', { dedupKey: 1 }, { unique: true, partialFilterExpression: { dedupKey: { $type: 'string' } } }],
     ['transactions', { orderId: 1 }, { unique: true }],
     ['review_labels', { feedbackId: 1 }, { unique: true }],
+    // Nhãn người duyệt và nhãn mô hình thầy: ghi theo feedbackId (upsert)
+    ['audit_labels', { feedbackId: 1 }, { unique: true }],
+    ['teacher_labels', { feedbackId: 1 }],
+    // Livestream: Hộp việc hôm nay đếm đơn chưa lên và khiếu nại chưa đưa theo phiên
+    ['live_comments', { sessionId: 1, intent: 1, orderStatus: 1 }],
+    ['live_comments', { sessionId: 1, intent: 1, pushedToFeedback: 1 }],
     ['recommendation_log', { alertId: 1 }, { unique: true }]
   ];
   // Một chỉ mục tạo hỏng (ví dụ dữ liệu cũ đang trùng khóa) chỉ được cảnh báo,

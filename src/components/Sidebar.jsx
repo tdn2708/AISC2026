@@ -7,6 +7,7 @@ import { NAV } from '../lib/nav';
 import { WORKSPACES, getWorkspace, switchWorkspace } from '../lib/workspace';
 import { initials } from '../lib/format';
 import { useBrowserModelStatus } from '../lib/analyze';
+import { useRefreshing, useDataVersion, reportRefreshing } from '../lib/dataVersion';
 
 /**
  * THANH BÊN — áp sát mép trái: kho dữ liệu đang xem, sáu trang chính (kèm
@@ -16,6 +17,8 @@ import { useBrowserModelStatus } from '../lib/analyze';
  */
 
 const STATUS_POLL_MS = 60000;
+// Máy chủ đang tính lại số liệu sau một thao tác ghi: hỏi dày hơn để trang tự tải lại ngay khi xong
+const REFRESH_POLL_MS = 4000;
 
 /**
  * CHỌN KHO DỮ LIỆU — đặt ngay dưới logo như ô chọn tổ chức của phần mềm
@@ -173,21 +176,28 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
     return () => document.removeEventListener('mousedown', onDown);
   }, []);
 
+  const refreshing = useRefreshing();
+  const dataVersion = useDataVersion();
+
   useEffect(() => {
     let alive = true;
     const load = () => {
       // Hai yêu cầu song song: /nav/status chạy Trust Layer trên cả kho nên
       // chậm, không được bắt trạng thái mô hình chờ theo nó
-      axios.get('/nav/status').then((r) => alive && setStatus(r.data)).catch(() => alive && setStatus(null));
+      axios.get('/nav/status').then((r) => {
+        if (!alive) return;
+        setStatus(r.data);
+        reportRefreshing(r.data?.refreshing);
+      }).catch(() => alive && setStatus(null));
       axios.get('/nlp/status').then((r) => alive && setNlp(r.data)).catch(() => alive && setNlp(null));
     };
     load();
-    const id = setInterval(load, STATUS_POLL_MS);
+    const id = setInterval(load, refreshing ? REFRESH_POLL_MS : STATUS_POLL_MS);
     return () => {
       alive = false;
       clearInterval(id);
     };
-  }, []);
+  }, [refreshing, dataVersion]);
 
   const counts = { alerts: status?.openAlerts || null, queue: status?.reviewQueue || null };
   const health = status?.dataHealth;

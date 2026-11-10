@@ -7,6 +7,7 @@ import { useSearchParams } from 'react-router-dom';
 import { PageHeader, GlassPanel, PanelHeader, Stepper, Switch, Badge, ProgressBar, EmptyState, Button, Tabs } from './ui';
 import Audit from './trust/Audit';
 import { fmtInt, fmtDateTime } from '../lib/format';
+import { reportRefreshing } from '../lib/dataVersion';
 
 /**
  * TIN CẬY DỮ LIỆU
@@ -101,6 +102,7 @@ const TrustOverview = () => {
       setLabelling(feedbackId);
       setLabelError(null);
       await axios.post('/trust/label', { feedbackId, label });
+      reportRefreshing(true);
       setQueue((prev) => prev.filter((q) => q._id !== feedbackId));
       load();
     } catch (e) {

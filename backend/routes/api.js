@@ -3,7 +3,7 @@ const router = express.Router();
 
 const { scrapeShopeeReviews } = require('../services/scraper');
 const { generateRiskAlertsBatch, classifyByRulesFallback } = require('../services/ai_analyzer');
-const { getContext, invalidate, applyFilters, ctxNow } = require('../services/analysis_context');
+const { getContext, invalidate, isRefreshing, patchServing, applyFilters, ctxNow, applyHumanLabels, applyReviewLabel } = require('../services/analysis_context');
 const trustLayer = require('../services/trust_layer');
 const alertEngine = require('../services/alert_engine');
 const metrics = require('../services/metrics');
@@ -146,6 +146,53 @@ function publicItem(f) {
 // PHẢN HỒI
 // ==================================================================
 
+/** Gấp tiếng Việt về không dấu, chữ thường (khớp foldVi ở giao diện) */
+const foldVi = (v) => String(v ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+// Chuỗi để tìm của mỗi phản hồi, tính một lần cho mỗi bản ngữ cảnh
+const haystacks = new WeakMap();
+const haystackOf = (f) => {
+  let h = haystacks.get(f);
+  if (h === undefined) {
+    h = foldVi(`${f.originalText || ''} ${f.author || ''} ${f.productName || ''}`);
+    haystacks.set(f, h);
+  }
+  return h;
+};
+
+/** Phản hồi đứng trên bằng chứng gì (khớp evidenceOf ở giao diện) */
+function evidenceKind(f) {
+  const t = f.trust || {};
+  if (t.humanLabel) return 'human';
+  if (f.verifiedPurchase === true || f.orderId || t.tier === 'P1' || t.tier === 'P2') return 'verified';
+  return 'inferred';
+}
+
+/** Bản gọn cho trang Phân tích nguyên nhân: chỉ các trường trang đó dùng */
+const slimItem = (f) => ({
+  _id: f._id,
+  timestamp: f.timestamp,
+  source: f.source,
+  productName: f.productName,
+  sentiment: f.sentiment,
+  category: f.category,
+  categoryLabel: f.categoryLabel || taxonomy.categoryLabel(f.category),
+  subCategory: f.subCategory,
+  causeLabel: f.causeLabel || taxonomy.causeLabel(f.category, f.subCategory),
+  originalText: f.originalText
+});
+
+/**
+ * PHẢN HỒI — phân trang, tìm và lọc ở máy chủ.
+ * Bản cũ trả cả kho mỗi lần (đo trên demo: 11 MB cho 14 nghìn phản hồi) để
+ * trình duyệt tự cắt 10 dòng; trang Tổng quan, Phản hồi và Phân tích đều tải
+ * nguyên khối đó.
+ *   ?page&limit            một trang { items, total, page, pages, counts }
+ *   ?q=                    tìm không phân biệt dấu trong nội dung, tác giả, sản phẩm
+ *   ?sentiment= &evidence= lọc; `counts` đếm theo kết quả TÌM (trước khi lọc)
+ *                          để các nút lọc hiện đúng số
+ *   ?view=negative         bản gọn của phản hồi tiêu cực + mốc thời gian (trang Phân tích)
+ *   không có page/limit    cả danh sách (chỉ còn dùng cho xuất CSV)
+ */
 router.get('/feedbacks', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   let items = applyFilters(ctx.items, req.query, ctx.asOf);
@@ -157,7 +204,49 @@ router.get('/feedbacks', wrap(async (req, res) => {
     items = items.filter(metrics.isCountable);
   }
 
-  res.json(items.map(publicItem));
+  if (req.query.view === 'negative') {
+    let latest = 0;
+    for (const f of items) {
+      const t = new Date(f.timestamp).getTime();
+      if (t > latest) latest = t;
+    }
+    return res.json({
+      total: items.length,
+      anchor: latest ? new Date(latest).toISOString() : null,
+      items: items.filter((f) => f.sentiment === 'Negative').map(slimItem)
+    });
+  }
+
+  if (req.query.limit == null && req.query.page == null) {
+    return res.json(items.map(publicItem));
+  }
+
+  const q = foldVi(readText(req.query.q) || '').trim().slice(0, 120);
+  const searched = q ? items.filter((f) => haystackOf(f).includes(q)) : items;
+  const counts = { all: searched.length, counted: 0, sentiment: { Positive: 0, Neutral: 0, Negative: 0 }, evidence: { verified: 0, human: 0, inferred: 0 } };
+  for (const f of searched) {
+    if (counts.sentiment[f.sentiment] != null) counts.sentiment[f.sentiment] += 1;
+    counts.evidence[evidenceKind(f)] += 1;
+    if (metrics.isCountable(f)) counts.counted += 1;
+  }
+  const sentiment = counts.sentiment[req.query.sentiment] != null ? req.query.sentiment : null;
+  const evidence = counts.evidence[req.query.evidence] != null ? req.query.evidence : null;
+  const filtered = sentiment || evidence
+    ? searched.filter((f) => (!sentiment || f.sentiment === sentiment) && (!evidence || evidenceKind(f) === evidence))
+    : searched;
+
+  const limit = clampInt(req.query.limit, 20, 1, 200);
+  const pages = Math.max(1, Math.ceil(filtered.length / limit));
+  const page = clampInt(req.query.page, 1, 1, pages);
+  res.json({
+    items: filtered.slice((page - 1) * limit, page * limit).map(publicItem),
+    total: filtered.length,
+    page,
+    pages,
+    limit,
+    counts,
+    refreshing: Boolean(ctx.refreshing)
+  });
 }));
 
 router.get('/products', wrap(async (req, res) => {
@@ -176,8 +265,23 @@ router.get('/regions', wrap(async (req, res) => {
 // CHỈ SỐ — mỗi thẻ kèm MẪU SỐ và ĐỘ PHỦ
 // ==================================================================
 
+/**
+ * Thẻ chỉ số quét cả kho ba lượt (thẻ, so sánh hai kỳ, bằng chứng). Trang nào
+ * cũng gọi /stats, nên nhớ kết quả theo đúng bản ngữ cảnh và bộ lọc; bản ngữ
+ * cảnh đổi (computedAt) là tính lại. Hết hạn sau 5 phút để cửa sổ thời gian trượt.
+ */
+const statsMemo = new Map();
 router.get('/stats', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
+  const memoKey = `${ctx.dbName}|${ctx.computedAt}|${ctx.refreshing ? 'stale' : 'ok'}|${ctx.patchedAt || 0}|${JSON.stringify([req.query.time, req.query.source, req.query.product, req.query.region])}`;
+  const hit = statsMemo.get(memoKey);
+  if (hit && Date.now() - hit.at < ALERT_MEMO_TTL_MS) return res.json(hit.body);
+  const sendStats = res.json.bind(res);
+  res.json = (body) => {
+    if (statsMemo.size > 60) statsMemo.clear();
+    statsMemo.set(memoKey, { at: Date.now(), body });
+    return sendStats(body);
+  };
   const items = applyFilters(ctx.items, req.query, ctx.asOf);
 
   const cards = metrics.buildMetricCards(items, ctx.transactionCount, ctxNow(ctx));
@@ -410,7 +514,9 @@ router.get('/nav/status', wrap(async (req, res) => {
     reviewQueue: queueCount,
     dataHealth: ctx.funnel.dataHealthScore ?? null,
     validFeedbacks: ctx.items.filter((f) => f.trust && f.trust.weight > 0).length,
-    computedAt: ctx.computedAt
+    computedAt: ctx.computedAt,
+    // Vừa có thao tác ghi: số liệu đang được tính lại ở nền, giao diện báo và tự tải lại khi xong
+    refreshing: isRefreshing(req.db)
   });
 }));
 
@@ -527,6 +633,12 @@ router.post('/trust/label', wrap(async (req, res) => {
   );
 
   invalidate(req.db);
+  // Thấy kết quả ngay trên bản đang phục vụ; bản tính lại đầy đủ chạy ở nền
+  patchServing(req.db, (ctx) => {
+    const item = ctx.items.find((f) => String(f._id) === String(feedbackId));
+    if (item) applyReviewLabel(item, { label, by: by || 'admin', at: new Date() });
+    ctx.patchedAt = Date.now();
+  });
   const total = await req.db.collection('review_labels').countDocuments();
   res.json({
     success: true,
@@ -1164,6 +1276,13 @@ router.post('/audit/label', wrap(async (req, res) => {
   const machine = item.machineLabel || item;
   const cat = categoryCorrect ? machine.category || 'Other' : correctCategory;
   const causeOk = correctCause && cat !== 'Other' && taxonomy.normalizeCause(cat, correctCause) === correctCause;
+  const humanLabel = {
+    feedbackId: String(feedbackId),
+    correctSentiment: sentimentCorrect ? machine.sentiment : correctSentiment,
+    correctCategory: cat,
+    correctCause: categoryCorrect ? machine.subCategory || null : causeOk ? correctCause : null,
+    sarcasm: typeof sarcasm === 'boolean' ? sarcasm : null
+  };
   await req.db.collection('audit_labels').updateOne(
     { feedbackId: String(feedbackId) },
     {
@@ -1188,8 +1307,18 @@ router.post('/audit/label', wrap(async (req, res) => {
     },
     { upsert: true }
   );
-  // Nhãn người phải có hiệu lực ngay trong mọi chỉ số
+  // Nhãn người phải có hiệu lực ngay trong mọi chỉ số: vá bản đang phục vụ,
+  // bản tính lại đầy đủ (Trust Layer đọc nhãn cảm xúc) chạy ở nền
   invalidate(req.db);
+  patchServing(req.db, (c) => {
+    const target = c.items.find((f) => String(f._id) === String(feedbackId));
+    if (target) {
+      applyHumanLabels([target], [humanLabel]);
+      target.categoryLabel = taxonomy.categoryLabel(target.category);
+      target.causeLabel = taxonomy.causeLabel(target.category, target.subCategory);
+    }
+    c.patchedAt = Date.now();
+  });
   const labels = await req.db.collection('audit_labels').find({}).toArray();
   res.json({ success: true, summary: insights.auditSummary(labels) });
 }));

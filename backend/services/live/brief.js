@@ -5,7 +5,6 @@
  */
 
 const hub = require('./hub');
-const { buildReport } = require('./report');
 
 const money = (n) => (n == null ? 'chưa rõ' : n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} triệu đồng` : `${Math.round(n / 1000).toLocaleString('vi-VN')} nghìn đồng`);
 const pct = (x) => (x == null ? 'chưa rõ' : `${Math.round(x * 100)}%`);
@@ -25,7 +24,7 @@ async function liveBriefing(db, workspace) {
 
   const target = running ? running.s : sessions.find((s) => s.status === 'ended');
   if (target) {
-    const rep = await buildReport(db, target);
+    const rep = await hub.reportFor(db, target, running ? running.r : null);
     const label = running ? 'Phiên đang live tính đến hiện tại' : `Phiên gần nhất "${target.title}"${target.simulated && !/mô phỏng/i.test(target.title) ? ' (mô phỏng)' : ''}`;
     facts.push(`${label}: doanh thu ước tính từ bình luận chốt ${money(rep.revenue.estimated)}, doanh thu lỡ vì hết hàng ${money(rep.revenue.lostTotal)}, ${pct(rep.response.answeredShare)} khách hỏi được trả lời.`);
     if (rep.revenue.lost[0]) {

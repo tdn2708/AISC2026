@@ -9,6 +9,7 @@ import Segments from './Segments';
 import Compare from './analytics/Compare';
 import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat } from './ui';
 import { buildQuery, fmtInt, fmtPct, fmtSignedPct, fmtDate } from '../lib/format';
+import { useDataVersion } from '../lib/dataVersion';
 
 /**
  * PHÂN TÍCH NGUYÊN NHÂN
@@ -117,6 +118,8 @@ const TrendTip = ({ active, payload, label }) =>
 const RootCauses = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
+  const [anchorAt, setAnchorAt] = useState(null);
+  const dataVersion = useDataVersion();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -141,14 +144,17 @@ const RootCauses = () => {
   useEffect(() => {
     setLoading(true);
     axios
-      .get(`/feedbacks${buildQuery({ time: timeFilter, source: sourceFilter, product: productFilter })}`)
+      .get(`/feedbacks${buildQuery({ time: timeFilter, source: sourceFilter, product: productFilter }, { view: 'negative' })}`)
       .then((r) => {
-        setItems(Array.isArray(r.data) ? r.data : []);
+        // Chỉ phản hồi tiêu cực (bản gọn) và mốc thời gian của cả phạm vi:
+        // trang này chỉ phân tích khiếu nại, không cần tải cả kho
+        setItems(Array.isArray(r.data?.items) ? r.data.items : []);
+        setAnchorAt(r.data?.anchor ? new Date(r.data.anchor).getTime() : null);
         setError(null);
       })
       .catch(() => setError('Không tải được dữ liệu phân tích.'))
       .finally(() => setLoading(false));
-  }, [timeFilter, sourceFilter, productFilter]);
+  }, [timeFilter, sourceFilter, productFilter, dataVersion]);
 
   // Phân tích nguyên nhân trên KHIẾU NẠI — phản hồi tiêu cực đã được phân loại
   const complaints = useMemo(() => items.filter((f) => f.sentiment === 'Negative' && f.category && f.category !== 'Other'), [items]);
@@ -157,7 +163,7 @@ const RootCauses = () => {
   const scoped = useMemo(() => (current ? complaints.filter((f) => f.category === current.key) : []), [complaints, current]);
   const causes = useMemo(() => groupCount(scoped, (f) => f.subCategory, (f) => f.causeLabel || f.subCategory), [scoped]);
   const products = useMemo(() => groupCount(scoped, (f) => f.productName, (f) => f.productName).slice(0, 5), [scoped]);
-  const anchor = useMemo(() => anchorOf(items), [items]);
+  const anchor = useMemo(() => (anchorAt && anchorAt < Date.now() ? anchorAt : anchorOf(items)), [anchorAt, items]);
   const series = useMemo(() => dailySeries(scoped, anchor), [scoped, anchor]);
   const delta = useMemo(() => weekDelta(scoped, anchor), [scoped, anchor]);
   const samples = useMemo(

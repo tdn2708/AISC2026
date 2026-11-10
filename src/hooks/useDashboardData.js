@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { buildQuery } from '../lib/format';
+import { useDataVersion } from '../lib/dataVersion';
 
 /**
  * Dữ liệu trang Tổng quan.
@@ -16,6 +17,8 @@ export const useDashboardData = (timeFilter = 'All', sourceFilter = 'All', produ
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Máy chủ vừa tính xong số liệu mới (sau một thao tác ghi): tải lại
+  const version = useDataVersion();
 
   useEffect(() => {
     let alive = true;
@@ -48,7 +51,7 @@ export const useDashboardData = (timeFilter = 'All', sourceFilter = 'All', produ
     return () => {
       alive = false;
     };
-  }, [timeFilter, sourceFilter, productFilter]);
+  }, [timeFilter, sourceFilter, productFilter, version]);
 
   return { stats, sentiments, alerts, trend, loading, error };
 };

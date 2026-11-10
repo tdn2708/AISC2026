@@ -7,6 +7,7 @@ import {
 import { PageHeader, GlassPanel, PanelHeader, Tabs, Button, TextField, Select, Modal, Badge, EmptyState } from './ui';
 import { fmtInt } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
+import { reportRefreshing } from '../lib/dataVersion';
 
 /**
  * NGUỒN DỮ LIỆU
@@ -181,6 +182,7 @@ const DataSources = () => {
         : r)));
       setLastResult(res.data);
       setUrl('');
+      if (res.data.count) reportRefreshing(true);
     } catch (err) {
       // 422 = trang chặn truy cập hoặc không có bình luận: kết quả hợp lệ, không phải lỗi hệ thống
       const status = err.response?.status;

@@ -5,6 +5,7 @@ import { Send, ArrowRight, CircleCheck } from 'lucide-react';
 import { GlassPanel, PanelHeader, Button, Badge, EmptyState } from '../ui';
 import { fmtInt, fmtPct } from '../../lib/format';
 import { EffectLine } from './ActionCoach';
+import { reportRefreshing } from '../../lib/dataVersion';
 import { clock } from './shared';
 
 /**
@@ -79,6 +80,7 @@ const Report = ({ sessionId }) => {
     try {
       const x = await axios.post(`/live/sessions/${sessionId}/push-feedback`);
       setPush({ done: true, inserted: x.data.inserted, duplicates: x.data.duplicates, message: x.data.message });
+      if (x.data.inserted) reportRefreshing(true);
       load();
     } catch (e) {
       setPush({ error: e.response?.data?.error || 'Không đưa được' });

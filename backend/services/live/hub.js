@@ -491,8 +491,56 @@ async function startSession(db, workspace, session) {
   return r;
 }
 
+/**
+ * BỘ NHỚ CHO PHIÊN KHÔNG CÒN CHẠY
+ * Số liệu và báo cáo của phiên đã kết thúc chỉ đổi khi có thao tác ghi (đánh
+ * dấu đơn, sửa nhãn, nhập bổ sung, sửa danh mục). Mỗi lần mở lại phiên, giao
+ * diện gọi 3-4 API và trước đây mỗi API đọc lại toàn bộ bình luận của phiên.
+ * Mọi request ghi vào /sessions/:id gọi dropMemo (routes/live.js).
+ */
+const idleMemo = new Map();
+const memoVersion = new Map();
+const IDLE_MEMO_TTL_MS = 10 * 60 * 1000;
+
+function dropMemo(id) {
+  const key = String(id);
+  idleMemo.delete(key);
+  memoVersion.set(key, (memoVersion.get(key) || 0) + 1);
+  if (memoVersion.size > 500) memoVersion.clear();
+}
+
+async function memoized(id, kind, fn) {
+  const key = String(id);
+  const hit = idleMemo.get(key);
+  if (hit && Date.now() - hit.at < IDLE_MEMO_TTL_MS && hit[kind]) return hit[kind];
+  const version = memoVersion.get(key) || 0;
+  const value = await fn();
+  // Có thao tác ghi trong lúc đang dựng: kết quả này đã cũ, không nhớ
+  if ((memoVersion.get(key) || 0) === version) {
+    const entry = idleMemo.get(key);
+    if (entry && Date.now() - entry.at < IDLE_MEMO_TTL_MS) entry[kind] = value;
+    else idleMemo.set(key, { at: Date.now(), [kind]: value });
+    if (idleMemo.size > 50) idleMemo.delete(idleMemo.keys().next().value);
+  }
+  return value;
+}
+
+/** Báo cáo của một phiên; phiên đang chạy thì luôn tính mới */
+async function reportFor(db, session, runtime) {
+  const { buildReport } = require('./report');
+  if (runtime) {
+    await runtime.flush();
+    return buildReport(db, { ...session, ...runtime.session, summary: { ...(session.summary || {}), viewers: runtime.agg.viewers } });
+  }
+  return memoized(session._id, 'report', () => buildReport(db, session));
+}
+
 /** Số liệu của phiên không còn chạy: dựng lại từ các bình luận đã lưu */
-async function rebuildSnapshot(db, session) {
+function rebuildSnapshot(db, session) {
+  return memoized(session._id, 'snapshot', () => buildSnapshot(db, session));
+}
+
+async function buildSnapshot(db, session) {
   const agg = new LiveAggregator(session);
   const cursor = db.collection('live_comments').find({ sessionId: session._id }).sort({ ts: 1 });
   for await (const d of cursor) agg.add(d);
@@ -528,6 +576,8 @@ module.exports = {
   loadSession,
   startSession,
   rebuildSnapshot,
+  reportFor,
+  dropMemo,
   refreshRuntime,
   summarize,
   authorHash,

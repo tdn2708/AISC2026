@@ -6,5 +6,6 @@ export { Chip, ChipGroup, Segmented, Tabs } from './Chips';
 export { Modal, Drawer } from './Overlay';
 export { PageHeader, SectionLabel, Badge, ProgressBar, Stepper, SentimentFace, Toast, Stat } from './Display';
 export { EmptyState } from './EmptyState';
+export { Pager } from './Pager';
 export { AnimatedNumber } from './AnimatedNumber';
 export { EvidenceBar, EvidenceLegend, EvidenceSwatch, EvidenceTag, EVIDENCE_KINDS, evidenceSentence } from './EvidenceBar';

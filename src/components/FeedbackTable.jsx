@@ -1,188 +1,62 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { EvidenceTag } from './ui';
-import { evidenceOf } from '../lib/format';
+import { ArrowUpRight } from 'lucide-react';
+import { EmptyState, Pager } from './ui';
+import { fmtInt } from '../lib/format';
+import useFeedbackPage from '../hooks/useFeedbackPage';
+import FeedbackList, { FeedbackListSkeleton } from './feedback/FeedbackList';
+import FeedbackDetail from './feedback/FeedbackDetail';
 
-const SENTIMENT = {
-  Positive: { label: 'Tích cực', cls: 'fb-pos' },
-  Negative: { label: 'Tiêu cực', cls: 'fb-neg' },
-  Neutral:  { label: 'Trung tính', cls: 'fb-neu' },
-};
+/**
+ * PHẢN HỒI GẦN ĐÂY (trang Tổng quan)
+ * Mười phản hồi mới nhất theo bộ lọc đang chọn, tải từng trang từ máy chủ.
+ * Bấm một dòng mở chi tiết ngay tại chỗ, không phải sang trang Phản hồi.
+ */
 
-const initials = (name) =>
-  name.trim().split(/\s+/).slice(-2).map(w => w[0]).join('').toUpperCase();
-
-const formatDateTime = (ts) => {
-  const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return '—';
-  const date = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-  return `${date} ${time}`;
-};
+const PAGE_SIZE = 10;
 
 const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
-  const [feedbacks, setFeedbacks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState(null);
+  useEffect(() => setPage(1), [timeFilter, sourceFilter, productFilter]);
 
-  useEffect(() => {
-    const loadFeedbacks = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-        if (timeFilter && timeFilter !== 'All') params.append('time', timeFilter);
-        if (sourceFilter && sourceFilter !== 'All') params.append('source', sourceFilter);
-        if (productFilter && productFilter !== 'All') params.append('product', productFilter);
-        const q = params.toString() ? `?${params.toString()}` : '';
+  const { items, total, pages, loading, error } = useFeedbackPage({
+    time: timeFilter, source: sourceFilter, product: productFilter, page, limit: PAGE_SIZE
+  });
 
-        const response = await axios.get(`/feedbacks${q}`);
-        setFeedbacks(response.data);
-        setCurrentPage(1); // Reset to page 1 when data changes
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadFeedbacks();
-  }, [timeFilter, sourceFilter, productFilter]);
-
-  const totalPages = Math.ceil(feedbacks.length / itemsPerPage);
-  const startIdx = (currentPage - 1) * itemsPerPage;
-  const currentFeedbacks = feedbacks.slice(startIdx, startIdx + itemsPerPage);
-
-  const getSentiment = (sentiment) => {
-    const s = SENTIMENT[sentiment] || SENTIMENT.Neutral;
-    return <span className={`fb-status ${s.cls}`}>{s.label}</span>;
-  };
-
-  // Bằng chứng của từng phản hồi — cùng ngôn ngữ với thanh bằng chứng phía trên
-  const getTrust = (item) => (item.trust ? <EvidenceTag evidence={evidenceOf(item)} /> : <span className="fb-source">—</span>);
-
-  const pageItems = (() => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-    if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
-    if (currentPage >= totalPages - 3) return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-  })();
+  // Giữ nguyên bộ lọc khi sang trang Phản hồi
+  const all = new URLSearchParams();
+  if (timeFilter && timeFilter !== 'All') all.set('time', timeFilter);
+  if (sourceFilter && sourceFilter !== 'All') all.set('source', sourceFilter);
+  if (productFilter && productFilter !== 'All') all.set('product', productFilter);
+  const allHref = `/feedbacks${all.toString() ? `?${all}` : ''}`;
 
   return (
-    <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
-      <div className="fb-panel-head">
+    <div className="overflow-hidden rounded-[12px] border border-line bg-surface">
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-line-soft px-5 py-4 sm:px-6">
         <div>
-          <h3>Phản hồi gần đây</h3>
-          <p>Mới nhất trước, chỉ gồm phản hồi được tính vào chỉ số</p>
+          <h2 className="text-[1.05rem] font-semibold text-ink-hi">Phản hồi gần đây</h2>
+          <p className="mt-0.5 text-sm text-ink-mid">Mới nhất trước, chỉ gồm phản hồi được tính vào chỉ số. Bấm một dòng để xem chi tiết.</p>
         </div>
-        {!loading && feedbacks.length > 0 && (
-          <Link to="/feedbacks" className="fb-count hover:underline">
-            <b>{feedbacks.length.toLocaleString('vi-VN')}</b> phản hồi, xem tất cả
+        {total > 0 && (
+          <Link to={allHref} className="inline-flex items-center gap-1 text-sm font-semibold text-accent-hi hover:underline">
+            Xem cả {fmtInt(total)} phản hồi <ArrowUpRight size={15} aria-hidden="true" />
           </Link>
         )}
-      </div>
+      </header>
 
-      <div style={{ overflowX: 'auto' }}>
-        <table className="fb-table">
-          <colgroup>
-            <col style={{ width: '18%' }} />
-            <col style={{ width: '29%' }} />
-            <col style={{ width: '13%' }} />
-            <col style={{ width: '11%' }} />
-            <col style={{ width: '9%' }} />
-            <col style={{ width: '11%' }} />
-            <col style={{ width: '9%' }} />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Khách hàng</th>
-              <th>Nội dung</th>
-              <th>Sản phẩm</th>
-              <th>Nhóm vấn đề</th>
-              <th>Cảm xúc</th>
-              <th>Bằng chứng</th>
-              <th>Nguồn</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading || feedbacks.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="fb-empty">
-                  {loading ? 'Đang tải…' : 'Không có phản hồi nào khớp bộ lọc'}
-                </td>
-              </tr>
-            ) : (
-              currentFeedbacks.map((item, idx) => {
-                const author = item.author || 'Ẩn danh';
-                const category = item.categoryLabel || item.category;
-                return (
-                  <tr key={item.id ?? `${startIdx}-${idx}`}>
-                    <td className="fb-c-user">
-                      <div className="fb-user">
-                        <span className="fb-avatar" aria-hidden="true">{initials(author)}</span>
-                        <div className="fb-user-text">
-                          <div className="fb-user-name" title={author}>{author}</div>
-                          <div className="fb-meta">{formatDateTime(item.timestamp)}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="fb-c-text">
-                      <div className="fb-clamp" title={item.originalText}>{item.originalText}</div>
-                    </td>
-                    <td className="fb-c-product">
-                      <div className="fb-clamp fb-product" title={item.productName}>{item.productName || '—'}</div>
-                    </td>
-                    <td className="fb-c-cat">{category && item.category !== 'Other' ? <span className="fb-chip" title={category}>{category}</span> : <span className="text-ink-lo" title="Không nêu vấn đề cụ thể">—</span>}</td>
-                    <td className="fb-c-sent">{getSentiment(item.sentiment)}</td>
-                    <td className="fb-c-trust">{getTrust(item)}</td>
-                    <td className="fb-c-src"><span className="fb-source">{item.source}</span></td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {!loading && feedbacks.length > itemsPerPage && (
-        <div className="fb-pager">
-          <span className="fb-pager-info">
-            {startIdx + 1}–{Math.min(startIdx + itemsPerPage, feedbacks.length)} / {feedbacks.length.toLocaleString('vi-VN')}
-          </span>
-          <div className="fb-pager-btns">
-            <button
-              className="fb-page-btn"
-              onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-              disabled={currentPage === 1}
-              aria-label="Trang trước"
-            >
-              ‹ Trước
-            </button>
-            {pageItems.map((page, index) =>
-              page === '...' ? (
-                <span key={`gap-${index}`} className="fb-page-gap">…</span>
-              ) : (
-                <button
-                  key={page}
-                  className={`fb-page-btn${currentPage === page ? ' is-active' : ''}`}
-                  onClick={() => setCurrentPage(page)}
-                  aria-current={currentPage === page ? 'page' : undefined}
-                >
-                  {page}
-                </button>
-              )
-            )}
-            <button
-              className="fb-page-btn"
-              onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              aria-label="Trang sau"
-            >
-              Sau ›
-            </button>
-          </div>
-        </div>
+      {error ? (
+        <EmptyState variant="error" compact title="Không tải được phản hồi" description={error} />
+      ) : loading && items.length === 0 ? (
+        <FeedbackListSkeleton rows={6} />
+      ) : items.length === 0 ? (
+        <EmptyState compact title="Không có phản hồi nào khớp bộ lọc" description="Đổi khoảng thời gian, nguồn hoặc sản phẩm ở thanh lọc phía trên." />
+      ) : (
+        <FeedbackList items={items} showProduct onSelect={setSelected} dimmed={loading} />
       )}
+
+      <Pager page={page} pages={pages} total={total} pageSize={PAGE_SIZE} onChange={setPage} />
+      <FeedbackDetail item={selected} onClose={() => setSelected(null)} />
     </div>
   );
 };
