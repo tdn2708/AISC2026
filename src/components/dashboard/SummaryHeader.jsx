@@ -93,7 +93,7 @@ const SummaryHeader = ({ stats, todo = [], loading, error, lastUpdated, ledger, 
 
   const asOfLine = real
     ? `Dữ liệu thật thu thập từ sàn, tên người mua đã che. Tính đến đánh giá mới nhất ngày ${fmtDate(stats.asOf)}${stats.ingestedAt ? `, thu thập lần gần nhất ${fmtDateTime(stats.ingestedAt)}` : ''}.`
-    : `Dữ liệu mô phỏng, cập nhật lúc ${loading ? '…' : lastUpdated}.`;
+    : loading ? 'Dữ liệu mô phỏng, đang tải.' : `Dữ liệu mô phỏng, cập nhật lúc ${lastUpdated}.`;
 
   return (
     <section aria-labelledby="summary-title" className="mb-6 rounded-xl bg-strip px-6 py-6 text-white sm:px-8 sm:py-8">

@@ -243,7 +243,7 @@ function summarize(alert) {
   if (alert.type === 'SUSTAINED_DRIFT') {
     const st = alert.statistics;
     const level = st.unit === '%'
-      ? ` (tỉ lệ khiếu nại ${st.ewmaCurrent}% so với nền ${st.baselineMean}%)`
+      ? ` (tỉ lệ khiếu nại ${String(st.ewmaCurrent).replace('.', ',')}% so với nền ${String(st.baselineMean).replace('.', ',')}%)`
       : '';
     return `${what}${scope} đang xấu đi đều đặn${level}, vượt ngưỡng kiểm soát ${st.consecutiveBreaches} kỳ liên tiếp. Không có ngày nào tăng vọt, nhưng xu hướng đã lệch khỏi mức bình thường.`;
   }

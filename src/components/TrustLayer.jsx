@@ -130,6 +130,8 @@ const TrustOverview = () => {
 
   const shown = trustOn ? impact?.withTrustLayer : impact?.withoutTrustLayer;
   const comps = health.components || {};
+  const counted = health.countedForMetrics ?? health.validForAnalysis;
+  const aged = Math.max(0, health.validForAnalysis - counted);
 
   return (
     <div>
@@ -149,8 +151,11 @@ const TrustOverview = () => {
                 tone: 'crit',
                 sub: health.inauthenticFlagged.duplicateClusters ? `${pct1(health.inauthenticFlagged.pct)}, ${health.inauthenticFlagged.duplicateClusters} cụm` : pct1(health.inauthenticFlagged.pct)
               },
-              { label: 'Chờ người duyệt', value: fmtInt(health.pendingReview.count), tone: 'med', sub: pct1(health.pendingReview.pct) },
-              { label: 'Được tính vào chỉ số', value: fmtInt(health.validForAnalysis), tone: 'ok', marker: '✓' }
+              { label: 'Chờ người duyệt', value: `−${fmtInt(health.pendingReview.count)}`, tone: 'med', sub: pct1(health.pendingReview.pct) },
+              // Cùng phép tính với sổ đối chiếu ở trang Tổng quan: phản hồi quá cũ
+              // không còn trọng số nên không góp vào chỉ số, hai trang phải ra cùng một số
+              ...(aged > 0 ? [{ label: 'Quá cũ, không còn trọng số', value: `−${fmtInt(aged)}`, tone: 'neutral' }] : []),
+              { label: 'Được tính vào chỉ số', value: fmtInt(counted), tone: 'ok', marker: '✓' }
             ]}
           />
           <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-line-soft pt-4 text-xs">

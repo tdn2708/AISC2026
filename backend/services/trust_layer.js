@@ -1127,7 +1127,8 @@ function buildFunnel(items, clusters, now = new Date(), options = {}) {
     effectiveWeight: Number(
       items.reduce((sum, it) => sum + (it.trust.weight || 0), 0).toFixed(2)
     ),
-    channelCoverage: { covered: channels.size, expected: EXPECTED_CHANNELS },
+    // Có thêm kênh ngoài danh sách dự kiến (như livestream) thì mẫu số nới theo, không hiện kiểu 6/5
+    channelCoverage: { covered: channels.size, expected: Math.max(EXPECTED_CHANNELS, channels.size) },
     reconciliationRate: Number((reconciliationRate * 100).toFixed(1)),
     medianAgeDays: Number(medianAge.toFixed(1)),
     ingestionLagMinutes: ingestionLagHours === null ? null : Math.round(ingestionLagHours * 60),

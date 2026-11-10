@@ -16,9 +16,9 @@ import { StatusPill, PLATFORM_LABEL, duration } from './live/shared';
  * sau khi tải lại trang vẫn đúng phiên.
  */
 
-const SessionList = ({ sessions, onOpen, onDeleted }) => {
+const SessionList = ({ sessions, onOpen, onDeleted, empty }) => {
   if (!sessions.length) {
-    return <EmptyState title="Chưa có phiên live nào" description="Mở phiên đầu tiên để bắt đầu thu bình luận." />;
+    return empty || <EmptyState title="Chưa có phiên live nào" description="Mở phiên đầu tiên để bắt đầu thu bình luận." />;
   }
   return (
     <ul className="flex list-none flex-col">
@@ -117,13 +117,19 @@ const Live = () => {
       )}
 
       <GlassPanel tone="strong" className="p-4 sm:p-5">
-        <PanelHeader title="Các phiên live" subtitle="Bình luận đã chuẩn hóa của mọi phiên được lưu lại, mở lại và xuất được bất cứ lúc nào." />
+        <PanelHeader title={running.length ? "Các phiên đã kết thúc" : "Các phiên live"} subtitle="Bình luận đã chuẩn hóa của mọi phiên được lưu lại, mở lại và xuất được bất cứ lúc nào." />
         {error ? (
           <EmptyState variant="error" compact title={error} />
         ) : sessions === null ? (
           <div className="h-24 animate-pulse rounded-lg bg-raised" />
         ) : (
-          <SessionList sessions={sessions.filter((s) => !running.includes(s))} onOpen={open} onDeleted={load} />
+          <SessionList
+            sessions={sessions.filter((s) => !running.includes(s))}
+            onOpen={open}
+            onDeleted={load}
+            // Đang có phiên chạy ở trên thì ô này không được nói "chưa có phiên nào"
+            empty={running.length ? <p className="py-4 text-sm text-ink-mid">Chưa có phiên nào kết thúc. Khi phiên đang live kết thúc, báo cáo sau phiên sẽ nằm ở đây.</p> : null}
+          />
         )}
       </GlassPanel>
     </div>

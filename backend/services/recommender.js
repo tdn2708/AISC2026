@@ -79,7 +79,7 @@ function formatVnd(n) {
 }
 
 function formatPct(fraction, digits = 1) {
-  return `${(fraction * 100).toFixed(digits)}%`;
+  return `${(fraction * 100).toFixed(digits).replace('.', ',')}%`;
 }
 
 // ==================================================================
@@ -163,7 +163,7 @@ function buildSlots(alert, profile, ctx) {
     const top = focused.sort((a, b) => b.lift - a.lift)[0];
     slots.topShare = formatPct(top.share, 0);
     slots.topBaselineShare = formatPct(top.baselineShare, 0);
-    slots.topLift = `${top.lift.toFixed(1)} lần`;
+    slots.topLift = `${top.lift.toFixed(1).replace('.', ',')} lần`;
   }
 
   for (const k of Object.keys(slots)) if (slots[k] == null) delete slots[k];

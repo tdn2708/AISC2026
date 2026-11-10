@@ -272,7 +272,7 @@ function profileEvidence(evidence, baseline, options = {}) {
     slots[dim.slot] = d.topValue;
     facts.push({
       dimension: dim.key,
-      text: `${d.topValue} chiếm ${(d.share * 100).toFixed(0)}% phản hồi trong cảnh báo này, so với ${(d.baselineShare * 100).toFixed(0)}% ở nền (gấp ${d.lift.toFixed(1)} lần, z = ${d.z})`,
+      text: `${d.topValue} chiếm ${(d.share * 100).toFixed(0)}% phản hồi trong cảnh báo này, so với ${(d.baselineShare * 100).toFixed(0)}% ở nền (gấp ${d.lift.toFixed(1).replace('.', ',')} lần, z = ${String(d.z).replace('.', ',')})`,
       numbers: [d.topCount, Number((d.share * 100).toFixed(0)), Number((d.baselineShare * 100).toFixed(0)), d.lift, d.z]
     });
   }

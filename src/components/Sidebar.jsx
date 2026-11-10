@@ -269,7 +269,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
         {/* Dải trạng thái hệ thống */}
         <div className="shrink-0 px-3 pb-2">
           {collapsed ? (
-            <div className="flex flex-col items-center gap-2 py-2" title={`Sức khoẻ dữ liệu ${health ?? '—'} · ${nlpView.label}`}>
+            <div className="flex flex-col items-center gap-2 py-2" title={`Sức khoẻ dữ liệu ${health ?? '—'}, ${nlpView.label}`}>
               <span className={`size-2 rounded-full ${healthTone}`} />
               <span className={`size-2 rounded-full ${nlpView.dot}`} />
             </div>

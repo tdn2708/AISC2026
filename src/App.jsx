@@ -110,6 +110,7 @@ function App() {
         <Route path="/feedbacks" element={page(<Feedbacks />)} />
         <Route path="/live" element={page(<Live />)} />
         <Route path="/analytics" element={page(<Analytics />)} />
+        <Route path="/alerts" element={<Navigate to="/risk" replace />} />
         <Route path="/segments" element={<Navigate to="/analytics?tab=segments" replace />} />
         <Route path="/trust" element={page(<TrustLayerPage />)} />
         <Route path="/lab" element={page(<Lab />)} />

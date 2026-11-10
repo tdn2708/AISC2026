@@ -242,7 +242,7 @@ const VersusDemo = () => {
                       <li key={`${a.category}-${a.cause}-${i}`} className="rounded-lg bg-raised px-3.5 py-2.5">
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-sm font-semibold text-ink-hi">
-                            {a.categoryLabel}{a.causeLabel ? <span className="font-normal text-ink-mid"> → {a.causeLabel}</span> : null}
+                            {a.categoryLabel}{a.causeLabel ? <span className="font-normal text-ink-mid">: {a.causeLabel}</span> : null}
                           </p>
                           {a.confidence != null && <span className="data-num shrink-0 text-xs text-ink-lo">{Math.round(a.confidence * 100)}%</span>}
                         </div>

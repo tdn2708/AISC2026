@@ -23,7 +23,7 @@ const playbook = require('./playbook');
 const retrieval = require('./retrieval');
 const { applyFilters, ctxNow } = require('./analysis_context');
 
-const pct = (n) => `${(n * 100).toFixed(1)}%`;
+const pct = (n) => `${(n * 100).toFixed(1).replace('.', ',')}%`;
 const num = (n) => new Intl.NumberFormat('vi-VN').format(n);
 
 /**

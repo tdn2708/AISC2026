@@ -59,7 +59,7 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
   const confidence = rec?.confidence ?? alert.recommendation?.confidence;
   const evidence = rec?.evidence || {};
   const facts = [
-    ['Khách bị ảnh hưởng', evidence.affectedCustomers != null ? fmtInt(evidence.affectedCustomers) : '—'],
+    ['Khách bị ảnh hưởng', evidence.affectedCustomers != null ? fmtInt(evidence.affectedCustomers) : 'Chưa ước tính (xu hướng kéo dài, không có đợt tăng riêng)'],
     [
       'Phản hồi làm bằng chứng',
       <>
