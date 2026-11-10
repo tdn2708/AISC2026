@@ -1492,6 +1492,34 @@ router.get('/segments', wrap(async (req, res) => {
 // THU THẬP DỮ LIỆU
 // ==================================================================
 
+// ---------------------------------------------------------------
+// TỰ THU THẬP KHO THẬT (services/real_collector.js)
+// Chỉ kho "real" có luồng này; kho mô phỏng trả applicable:false.
+// ---------------------------------------------------------------
+const realCollector = require('../services/real_collector');
+
+router.get('/collector/status', wrap(async (req, res) => {
+  if (req.workspace !== 'real') return res.json({ applicable: false });
+  res.json({ applicable: true, ...(await realCollector.collectorStatus(req.db)) });
+}));
+
+router.post('/collector/run', wrap(async (req, res) => {
+  if (req.workspace !== 'real') return res.status(400).json({ error: 'Chỉ kho Dữ liệu thật mới tự thu thập' });
+  if (!realCollector.saltReady()) {
+    return res.status(409).json({ error: 'Máy chủ chưa có PII_SALT bí mật nên chưa thu thập được. Thêm biến PII_SALT trong phần Environment của Render.' });
+  }
+  // Bấm tay vẫn giữ khoảng cách tối thiểu 30 phút, để không ai vô tình chạy dồn
+  const r = await realCollector.runOnce(req.db, { trigger: 'manual', minGapMs: realCollector.MANUAL_GAP_MS });
+  const status = await realCollector.collectorStatus(req.db);
+  if (!r.started) {
+    return res.status(409).json({
+      error: status.running ? 'Đang có một lượt thu thập chạy.' : 'Vừa thu thập xong trong 30 phút qua, thử lại sau.',
+      status
+    });
+  }
+  res.status(202).json({ started: true, status });
+}));
+
 router.post('/scrape', wrap(async (req, res) => {
   const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
   if (!url) return res.status(400).json({ error: 'Cần trường url' });

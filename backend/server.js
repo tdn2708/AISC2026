@@ -180,6 +180,12 @@ async function startServer() {
           }
         }
       })();
+
+      // Kho thật tự thu thập đánh giá mới mỗi 24 giờ, ngay trong máy chủ này.
+      // Không cần workflow hay máy nào khác; Render ngủ thì thức dậy là bù.
+      if (workspaces.real.databaseName !== workspaces.demo.databaseName) {
+        require('./services/real_collector').startAutoCollect(workspaces.real);
+      }
     });
   } catch (e) {
     console.error('Không kết nối được MongoDB:', e.message);

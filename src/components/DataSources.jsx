@@ -8,6 +8,7 @@ import { PageHeader, GlassPanel, PanelHeader, Tabs, Button, TextField, Select, M
 import { fmtInt } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
 import { reportRefreshing } from '../lib/dataVersion';
+import AutoCollect from './datasources/AutoCollect';
 
 /**
  * NGUỒN DỮ LIỆU
@@ -208,6 +209,8 @@ const DataSources = () => {
         subtitle={`Thu thập phản hồi từ sàn.${trackedProducts ? ` Đang theo dõi ${fmtInt(trackedProducts)} sản phẩm.` : ''}`}
         actions={<Button variant="secondary" icon={Plus} onClick={() => setShowAdd(true)}>Thêm gian hàng</Button>}
       />
+
+      <AutoCollect />
 
       <Tabs
         className="mb-6"
