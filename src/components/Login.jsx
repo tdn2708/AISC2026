@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, EyeOff, Eye } from 'lucide-react';
 import Logo from './Logo';
 import { Button, TextField, EvidenceSwatch } from './ui';
+import { Ledger } from './dashboard/SummaryHeader';
 
 /**
  * ĐĂNG NHẬP
@@ -27,6 +29,16 @@ const Login = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  // Sổ đối chiếu thật của kho đang chọn: người mở link thấy sản phẩm làm gì
+  // trước cả khi đăng nhập. Không tải được thì quay về danh sách ba loại bằng chứng.
+  const [ledger, setLedger] = useState(null);
+  const [ledgerFailed, setLedgerFailed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    axios.get('/trust/health').then((r) => alive && setLedger(r.data)).catch(() => alive && setLedgerFailed(true));
+    return () => { alive = false; };
+  }, []);
 
   const submit = (e) => {
     e.preventDefault();
@@ -58,6 +70,11 @@ const Login = ({ onLogin }) => {
             Đánh giá ảo, quảng cáo và chiến dịch có tổ chức bị lọc trước khi được tính. Phần còn lại cho bạn biết
             con số nào dựa trên chứng từ, con số nào do AI đoán.
           </p>
+          {!ledgerFailed ? (
+            <div className="mt-8 max-w-[400px]">
+              <Ledger ledger={ledger} showLink={false} />
+            </div>
+          ) : (
           <ul className="mt-8 flex list-none flex-col gap-3 text-sm text-white/85">
             {PROOF.map((p) => (
               <li key={p.kind} className="flex items-center gap-3">
@@ -67,6 +84,7 @@ const Login = ({ onLogin }) => {
               </li>
             ))}
           </ul>
+          )}
         </div>
         <p className="text-xs text-white/55">© 2026 Customer Radar, đội LDS, Trường Đại học Công nghệ Thông tin</p>
       </section>

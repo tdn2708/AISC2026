@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Check, TriangleAlert } from 'lucide-react';
 import { Button } from '../ui';
 import { fmtDate, fmtDateTime, fmtInt } from '../../lib/format';
 
@@ -27,8 +27,12 @@ const LedgerRow = ({ label, value, sign }) => (
   </div>
 );
 
-/** Sổ đối chiếu: thu thập, trừ phần bị loại, ra số được tính; trong đó bao nhiêu có chứng từ */
-const Ledger = ({ ledger, evidence }) => {
+/**
+ * Sổ đối chiếu: thu thập, trừ phần bị loại, ra số được tính; trong đó bao
+ * nhiêu có chứng từ. Dòng cuối tự cộng trừ lại các dòng phía trên: khớp thì
+ * đóng dấu, lệch thì nói lệch bao nhiêu. Không có chỗ nào để con số "đẹp" hơn.
+ */
+export const Ledger = ({ ledger, evidence, showLink = true }) => {
   if (!ledger) {
     return <div className="h-64 animate-pulse rounded-lg border border-line bg-(--sheet)" aria-hidden="true" />;
   }
@@ -39,11 +43,13 @@ const Ledger = ({ ledger, evidence }) => {
   const aged = Math.max(0, validForAnalysis - counted);
   const verifiedShare = evidence?.total ? (evidence.verified + evidence.human) / evidence.total : null;
   const pct = verifiedShare == null ? null : Math.round(verifiedShare * 100);
+  const removed = (spamRemoved?.count ?? 0) + (inauthenticFlagged?.count ?? 0) + (pendingReview?.count ?? 0) + aged;
+  const diff = rawCollected - removed - counted;
   return (
     <figure className="rounded-lg border border-line bg-(--sheet) px-5 pt-4 pb-5">
       <figcaption className="flex items-baseline justify-between gap-3">
         <span className="text-base font-semibold text-ink-hi">Số liệu này đứng trên gì</span>
-        <Link to="/trust" className="shrink-0 text-sm font-medium text-accent-hi underline-offset-4 hover:underline">Xem phễu</Link>
+        {showLink && <Link to="/trust" className="shrink-0 text-sm font-medium text-accent-hi underline-offset-4 hover:underline">Xem phễu</Link>}
       </figcaption>
       <dl className="mt-2 text-sm">
         <LedgerRow label="Phản hồi thu thập được" value={rawCollected} />
@@ -57,6 +63,19 @@ const Ledger = ({ ledger, evidence }) => {
           <dd className="text-right font-mono text-metric font-semibold tracking-[-0.02em] tabular-nums text-ink-hi">{fmtInt(counted)}</dd>
         </div>
       </dl>
+      <p role="status" className={`mt-3 flex items-start gap-2 text-sm leading-snug ${diff === 0 ? 'text-ink-mid' : 'text-crit'}`}>
+        {diff === 0 ? (
+          <>
+            <span className="grid size-5 shrink-0 place-items-center rounded-full border border-accent text-accent-hi" aria-hidden="true"><Check size={12} strokeWidth={3} /></span>
+            <span>Phép trừ khớp: {fmtInt(rawCollected)} trừ {fmtInt(removed)} đúng bằng {fmtInt(counted)}</span>
+          </>
+        ) : (
+          <>
+            <TriangleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <span>Phép trừ lệch {fmtInt(Math.abs(diff))} phản hồi so với số được tính</span>
+          </>
+        )}
+      </p>
       {pct != null && (
         <div className="mt-4">
           <div className="flex h-2 overflow-hidden rounded-sm bg-raised" aria-hidden="true">

@@ -105,7 +105,7 @@ const Dashboard = () => {
       <div className={`transition-opacity duration-200 ${loading ? 'opacity-60' : ''}`} aria-busy={loading}>
         <TodayInbox alerts={alerts} items={inbox} loading={loading} />
 
-        <StoreHealth stats={stats} />
+        <StoreHealth stats={stats} trend={trend} />
 
         <div className="mb-8 grid grid-cols-12 items-start gap-6">
           <section aria-label="Diễn biến cảm xúc" className="col-span-12 xl:col-span-8">

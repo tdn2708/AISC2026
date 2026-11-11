@@ -1,29 +1,13 @@
 import React from 'react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { GlassPanel, PanelHeader } from '../ui';
 import { fmtInt, fmtPct, SENTIMENT } from '../../lib/format';
 
 /**
- * DONUT — phân bổ cảm xúc.
- * Donut hợp lệ ở đây vì chỉ có BA phần và câu hỏi là "tỉ trọng trên tổng
- * thể", không phải so sánh các giá trị sát nhau. Tâm donut chứa đúng một
- * con số cần quyết định: phần trăm tiêu cực. Bảng chú giải bên dưới ghi
- * đủ số lượng, nên không giá trị nào chỉ đọc được qua tooltip.
+ * PHÂN BỔ CẢM XÚC — một thanh ngang chia ba phần.
+ * Mắt so độ dài chính xác hơn so góc, nên phần của tổng thể vẽ thành thanh
+ * chứ không phải vòng tròn. Con số cần quyết định (phần trăm tiêu cực) đặt
+ * to ở trên; bảng bên dưới ghi đủ số lượng, không giá trị nào phải rê chuột.
  */
-
-const DonutTooltip = ({ active, payload, total }) => {
-  if (!active || !payload?.length) return null;
-  const p = payload[0];
-  return (
-    <div className="glass rounded-lg px-3 py-2 text-xs shadow-2xl">
-      <p className="flex items-center gap-2">
-        <span className="size-2 rounded-sm bg-(--c)" style={{ '--c': p.payload.color }} aria-hidden="true" />
-        <span className="font-semibold tabular-nums text-ink-hi">{fmtPct(total ? p.value / total : null)}</span>
-        <span className="text-ink-mid">{p.name}</span>
-      </p>
-    </div>
-  );
-};
 
 const SentimentDonut = ({ data = [] }) => {
   const rows = SENTIMENT.map((s) => ({ ...s, value: data.find((d) => d.key === s.key)?.value ?? 0 }));
@@ -40,38 +24,19 @@ const SentimentDonut = ({ data = [] }) => {
         </div>
       ) : (
         <>
-          <div className="relative mx-auto aspect-square w-full max-w-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={rows}
-                  dataKey="value"
-                  nameKey="label"
-                  innerRadius="74%"
-                  outerRadius="100%"
-                  startAngle={90}
-                  endAngle={-270}
-                  paddingAngle={2}
-                  cornerRadius={3}
-                  stroke="none"
-                  isAnimationActive={false}
-                >
-                  {rows.map((r) => (
-                    <Cell key={r.key} fill={r.color} />
-                  ))}
-                </Pie>
-                <Tooltip content={<DonutTooltip total={total} />} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-              <span className="text-3xl font-semibold leading-none text-ink-hi proportional-nums">{fmtPct(negShare, 0)}</span>
-              <span className="mt-1 text-xs text-ink-lo">tiêu cực</span>
-            </div>
+          <p className="flex items-baseline gap-2">
+            <span className="font-mono text-metric font-semibold tracking-[-0.02em] text-ink-hi">{fmtPct(negShare, 0)}</span>
+            <span className="text-base text-ink-mid">tiêu cực</span>
+          </p>
+          <div className="mt-4 flex h-3 w-full gap-0.5 overflow-hidden rounded-sm" role="img" aria-label={rows.map((r) => `${r.label} ${fmtPct(r.value / total)}`).join(', ')}>
+            {rows.filter((r) => r.value > 0).map((r) => (
+              <span key={r.key} className="h-full bg-(--c)" style={{ '--c': r.color, flexGrow: r.value, flexBasis: 0 }} title={`${r.label}: ${fmtPct(r.value / total)}`} />
+            ))}
           </div>
 
-          <ul className="mt-5 flex list-none flex-col gap-2 text-xs">
+          <ul className="mt-5 flex list-none flex-col text-sm">
             {rows.map((r) => (
-              <li key={r.key} className="grid grid-cols-[auto_1fr_auto_3.5rem] items-center gap-2">
+              <li key={r.key} className="grid grid-cols-[auto_1fr_auto_4rem] items-center gap-2 border-b border-line-soft py-2 last:border-b-0">
                 <span className="size-2.5 rounded-sm bg-(--c)" style={{ '--c': r.color }} aria-hidden="true" />
                 <span className="text-ink-mid">{r.label}</span>
                 <span className="tabular-nums text-ink-lo">{fmtInt(r.value)}</span>

@@ -36,7 +36,35 @@ const Delta = ({ rel }) => {
   );
 };
 
-const Metric = ({ label, children, sub, note, bad, onOpen }) => (
+/**
+ * Đường nhỏ dưới con số: số phản hồi tiêu cực từng kỳ, lấy đúng dữ liệu của
+ * biểu đồ diễn biến bên dưới. Không trục, không lưới; chỉ đánh dấu kỳ cuối.
+ */
+const Sparkline = ({ points }) => {
+  if (!points || points.length < 3) return null;
+  const W = 240, H = 40, P = 4;
+  const max = Math.max(...points.map((p) => p.v), 1);
+  const x = (i) => P + (i * (W - 2 * P)) / (points.length - 1);
+  const y = (v) => H - P - (v / max) * (H - 2 * P);
+  const d = points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+  const last = points[points.length - 1];
+  return (
+    <span className="mt-3 block">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="block h-10 w-full max-w-[240px] overflow-visible"
+        role="img"
+        aria-label={`Số phản hồi tiêu cực theo ${points.length} kỳ gần nhất, kỳ cuối ${fmtInt(last.v)}`}
+      >
+        <path d={d} fill="none" stroke="var(--viz-neg)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <circle cx={x(points.length - 1)} cy={y(last.v)} r="3.5" fill="var(--viz-neg)" />
+      </svg>
+      <span className="mt-1 block text-xs text-ink-lo">Tiêu cực {points.length} kỳ gần nhất, kỳ {last.name}: {fmtInt(last.v)}</span>
+    </span>
+  );
+};
+
+const Metric = ({ label, children, sub, note, extra, bad, onOpen }) => (
   <button
     type="button"
     onClick={onOpen}
@@ -48,13 +76,15 @@ const Metric = ({ label, children, sub, note, bad, onOpen }) => (
     <span className="mt-2 text-metric leading-none font-semibold tracking-[-0.02em] text-ink-hi">{children}</span>
     {sub && <span className="mt-2.5">{sub}</span>}
     {note && <span className="mt-1 text-sm text-ink-mid">{note}</span>}
+    {extra}
     <span className="mt-3 inline-flex items-center gap-0.5 text-sm font-semibold text-accent-hi opacity-80 group-hover:underline group-hover:opacity-100">
       Cách tính <ChevronRight size={14} aria-hidden="true" />
     </span>
   </button>
 );
 
-const StoreHealth = ({ stats }) => {
+const StoreHealth = ({ stats, trend = [] }) => {
+  const spark = trend.slice(-14).map((t) => ({ name: t.name, v: t.complaints || 0 }));
   const [open, setOpen] = useState(null);
   const ev = stats?.evidence;
   const wcr = stats?.weightedComplaintRate;
@@ -66,7 +96,7 @@ const StoreHealth = ({ stats }) => {
   const wcrRel = cmp?.deltas?.wcr?.rel;
   const sonRel = cmp?.deltas?.shareOfNegative?.rel;
   const hasPrev = wcrRel != null && Number.isFinite(wcrRel);
-  const trend = v == null ? null : v > 0.2 ? ['text-crit', 'tăng nhanh'] : v > 0.05 ? ['text-high', 'đang tăng'] : v < -0.05 ? ['text-ok', 'đang giảm'] : ['text-ink-mid', 'ổn định'];
+  const velocity = v == null ? null : v > 0.2 ? ['text-crit', 'tăng nhanh'] : v > 0.05 ? ['text-high', 'đang tăng'] : v < -0.05 ? ['text-ok', 'đang giảm'] : ['text-ink-mid', 'ổn định'];
   const trust = health == null ? null : health >= 75 ? ['text-ok', 'Đáng tin'] : health >= 50 ? ['text-high', 'Cần chú ý'] : ['text-crit', 'Chưa đáng tin'];
 
   return (
@@ -86,7 +116,8 @@ const StoreHealth = ({ stats }) => {
           label="Khách không hài lòng"
           bad={judge(sonRel) === 'bad'}
           sub={son?.available && <Delta rel={sonRel} />}
-          note={trend && <>Phản hồi tiêu cực 7 ngày gần đây <span className={`font-semibold ${trend[0]}`}>{trend[1]}</span></>}
+          note={velocity && <>Phản hồi tiêu cực 7 ngày gần đây <span className={`font-semibold ${velocity[0]}`}>{velocity[1]}</span></>}
+          extra={son?.available && <Sparkline points={spark} />}
           onOpen={() => setOpen('negative')}
         >
           {son?.available ? (
