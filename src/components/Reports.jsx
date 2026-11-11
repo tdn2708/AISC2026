@@ -198,6 +198,10 @@ const Reports = () => {
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       if (document.fonts?.ready) await document.fonts.ready;
 
+      // Chờ bản in tự dàn trang xong (đo chiều cao từng khối rồi xếp vào tờ)
+      for (let i = 0; i < 60 && pdfTemplateRef.current?.dataset.ready !== '1'; i += 1) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
       const root = pdfTemplateRef.current;
       const pages = root ? Array.from(root.querySelectorAll('[data-page]')) : [];
       if (!pages.length) throw new Error('Chưa dựng được bản báo cáo');
@@ -247,7 +251,7 @@ const Reports = () => {
       {previewMode ? (
         <PageHeader
           title="Bản in báo cáo"
-          subtitle="Năm tờ A4 đúng như tệp PDF sẽ tải về. Đổi bộ lọc bên dưới thì bản in dựng lại theo."
+          subtitle="Các tờ A4 đúng như tệp PDF sẽ tải về, tự dàn trang theo dữ liệu. Đổi bộ lọc bên dưới thì bản in dựng lại theo."
           actions={
             <>
               <Button variant="ghost" icon={ArrowLeft} onClick={() => window.location.assign('/reports')}>Quay lại</Button>
@@ -279,7 +283,7 @@ const Reports = () => {
             icon: FileText,
             title: 'Báo cáo điều hành',
             ext: 'PDF, khổ A4',
-            text: 'Năm trang A4: tóm tắt điều hành và chỉ số chính, diễn biến và cơ cấu khiếu nại, nguyên nhân, việc cần quyết, phụ lục về độ tin cậy dữ liệu. Hành động lấy từ thư viện hành động đã chuẩn hoá, không có đoạn nào do AI viết tự do.',
+            text: 'Khổ A4, tự dàn trang theo dữ liệu: tóm tắt điều hành và chỉ số chính, diễn biến khiếu nại, nhóm vấn đề, nguyên nhân, kế hoạch hành động, phụ lục về độ tin cậy dữ liệu. Hành động lấy từ thư viện hành động đã chuẩn hoá, không có đoạn nào do AI viết tự do.',
             loading: generatingPdf,
             cta: generatingPdf ? 'Đang dựng PDF…' : 'Tạo báo cáo PDF'
           },

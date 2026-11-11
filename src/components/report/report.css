@@ -1,14 +1,13 @@
-/* Hallmark · shape: document, four A4 sheets · genre: modern-minimal · theme: brand · redesign: full
+/* Hallmark · shape: document, A4 sheets paginated from measured blocks · genre: modern-minimal · theme: brand · redesign: full
  * paper: #FFFFFF · ink: #17242A · accent: #0E6B5E · display: Be Vietnam Pro · body: Be Vietnam Pro
- * signature: the reconciliation ledger on the cover, its subtraction checked on paper · states: loading, empty, full
+ * signature: the reconciliation ledger beside the executive summary, its subtraction checked on paper · states: loading, empty, full
  * axes: light/grotesk-sans/chromatic-teal · posture: restrained · contrast: pass · v2.0.0 */
 /* Hallmark · tokens: the colours live in REPORT_VARS (report_kit.jsx) and are declared on .rpt, the document's own theme block · a PDF prints the same in light and dark mode, and the SVG charts need the same hex values as attributes because html2canvas serialises SVG without the page's stylesheet */
-/* Hallmark · dropped the recharts legends "Khiếu nại", "Hài lòng", "Luỹ kế", "Số phản hồi" · the series are now labelled at the line ends and in the table heads (Hình 1, Bảng 1), so no legend is needed */
-/* Hallmark · reworded the report heads: "Báo cáo phân tích phản hồi khách hàng" to "Báo cáo phản hồi khách hàng", "Điểm nhấn cần quyết" to "Tóm tắt điều hành" plus "Việc cần quyết", "Diễn biến theo thời gian" to "Hình 1", "Ưu tiên theo nhóm vấn đề" to "Bảng 1" · a business report numbers its figures and tables; "—/100" and "Không khả dụng" were empty states of the old cards; 73,9% was the mislabelled "chưa phân loại" note, now the count of feedback with no issue group */
-/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: S, a report has to look like other reports; spent the change on the ruled tables, the running heads and the ledger with its checked subtraction */
+/* Hallmark · dropped the recharts legends "Khiếu nại", "Hài lòng", "Luỹ kế", "Số phản hồi" · the series are labelled at the line ends and in the table heads, so no legend is needed */
+/* Hallmark · reworded the report heads to action titles built from the data ("Giao hàng và chất lượng sản phẩm chiếm 60,9% số khiếu nại có nêu vấn đề") with numbered exhibits (Hình 1, Bảng 1 to 4, A1 to A4) · a business report states its finding in the head; "—/100" and "Không khả dụng" were empty states of the old cards; 73,9% was the mislabelled "chưa phân loại" note */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 · weakest: S, a report has to look like other reports; spent the change on the cover band, the action titles, the ruled financial tables and the ledger with its checked subtraction */
 
-/* Một trang A4 ở 96 dpi: 794 x 1123 px. Mỗi .rpt-page được chụp riêng thành
-   một trang PDF, nên không còn cảnh một biểu đồ bị cắt đôi giữa hai trang. */
+/* Một tờ A4 ở 96 dpi: 794 x 1123 px, lề trái phải 60 px, vùng chữ 674 px */
 .rpt {
   font-family: var(--font-sans);
   color: var(--r-ink);
@@ -16,143 +15,125 @@
   line-height: 1.55;
   font-variant-numeric: tabular-nums;
 }
+:where(.rpt) :where(h1, h2, h3, p, dl, dd, figure, table) { margin: 0; }
 
-.rpt-desk {
-  background: var(--r-desk);
-  padding: 24px 0 48px;
-  overflow-x: auto;
-}
-.rpt-desk .rpt-page { margin: 0 auto 24px; box-shadow: 0 1px 2px color-mix(in srgb, var(--r-ink) 8%, transparent), 0 8px 24px color-mix(in srgb, var(--r-ink) 8%, transparent); }
-
-.rpt-offscreen { position: fixed; left: -12000px; top: 0; }
+.rpt-desk { background: var(--r-desk); padding: 24px 0 48px; overflow-x: auto; }
+.rpt-desk .rpt-page { margin: 0 auto 24px; box-shadow: 0 1px 2px color-mix(in srgb, var(--r-ink) 10%, transparent), 0 8px 24px color-mix(in srgb, var(--r-ink) 8%, transparent); }
+.rpt-offscreen { position: absolute; left: -12000px; top: 0; }
+.rpt-measure { position: fixed; left: -12000px; top: 0; visibility: hidden; pointer-events: none; }
+.rpt-measure-col { width: 674px; }
 
 .rpt-page {
   position: relative;
   width: 794px;
   height: 1123px;
   box-sizing: border-box;
-  padding: 44px 60px 0;
+  padding: 40px 60px 0;
   background: var(--r-paper);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
-.rpt-page[data-overflow='true'] { outline: 3px solid var(--r-bad); }
+.rpt-page.is-cover { padding-top: 0; }
 
-/* ---------- Tiêu đề chạy và chân trang ---------- */
+/* ---------- Tiêu đề chạy, chân trang ---------- */
 .rpt-run {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--r-ink);
-  font-size: 11px;
-  color: var(--r-ink3);
+  display: flex; justify-content: space-between; gap: 24px;
+  padding-bottom: 8px; margin-bottom: 28px;
+  border-bottom: 1px solid var(--r-rule);
+  font-size: 12px; color: var(--r-ink3);
 }
-.rpt-run b { color: var(--r-ink); font-weight: 600; }
-.rpt-body { flex: 1; min-height: 0; padding-top: 24px; }
+.rpt-run span:last-child { color: var(--r-brand); font-weight: 600; }
+.rpt-flow { flex: 1; min-height: 0; }
 .rpt-foot {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  height: 52px;
-  align-items: center;
-  border-top: 1px solid var(--r-rule);
-  font-size: 11px;
-  color: var(--r-ink3);
+  display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  height: 48px; border-top: 1px solid var(--r-rule);
+  font-size: 12px; color: var(--r-ink3);
 }
+.rpt-folio { font-weight: 600; color: var(--r-ink); }
+
+/* ---------- Bìa ---------- */
+.rpt-cover { margin: 0 -60px 24px; }
+.rpt-band {
+  background: var(--r-brand-ink);
+  color: var(--r-on-ink);
+  height: 224px;
+  box-sizing: border-box;
+  padding: 32px 60px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.rpt-band-brand { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; }
+.rpt h1 { font-size: 38px; line-height: 1.12; font-weight: 600; letter-spacing: -0.02em; color: var(--r-on-ink); max-width: 560px; text-wrap: balance; overflow-wrap: break-word; min-width: 0; }
+.rpt-band-sub { margin-top: 12px; font-size: 15px; color: var(--r-on-ink-muted); }
+.rpt-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0 60px; border-bottom: 1px solid var(--r-rule); }
+.rpt-facts div { padding: 12px 12px 12px 0; }
+.rpt-facts div + div { padding-left: 16px; border-left: 1px solid var(--r-rule-soft); }
+.rpt-facts dt { font-size: 12px; color: var(--r-ink3); }
+.rpt-facts dd { font-size: 13px; font-weight: 600; margin-top: 2px; }
+.rpt-sim { margin: 8px 60px 0; }
 
 /* ---------- Chữ ---------- */
-:where(.rpt) :where(h1, h2, h3, p, ol, dl, dd, figure) { margin: 0; }
-.rpt h1 { text-wrap: balance; font-size: 34px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; color: var(--r-ink); overflow-wrap: break-word; min-width: 0; }
-.rpt h2 { font-size: 19px; line-height: 1.3; font-weight: 600; color: var(--r-ink); }
-.rpt h3 { font-size: 14px; line-height: 1.4; font-weight: 600; color: var(--r-ink); }
-.rpt-sec { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
-.rpt-sec-no { font-size: 19px; font-weight: 600; color: var(--r-brand); min-width: 22px; }
-.rpt-lead { color: var(--r-ink2); margin-bottom: 16px; }
+.rpt-h2 { font-size: 20px; line-height: 1.35; font-weight: 600; letter-spacing: -0.01em; color: var(--r-ink); max-width: 620px; text-wrap: balance; }
+.rpt-h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.rpt-lead { margin-top: 8px; color: var(--r-ink2); max-width: 620px; }
 .rpt-small { font-size: 12px; line-height: 1.5; color: var(--r-ink3); }
+.rpt-sub { display: block; font-size: 12px; line-height: 1.5; color: var(--r-ink3); font-weight: 400; margin-top: 2px; }
 .rpt-muted { color: var(--r-ink3); }
 .rpt-strong { font-weight: 600; color: var(--r-ink); }
 .rpt-good { color: var(--r-good); font-weight: 600; }
 .rpt-bad { color: var(--r-bad); font-weight: 600; }
 .rpt-warn { color: var(--r-warn); font-weight: 600; }
+.rpt-cap { font-size: 13px; font-weight: 600; color: var(--r-ink); margin-bottom: 12px; }
+.rpt-source { margin-top: 8px; font-size: 12px; line-height: 1.5; color: var(--r-ink3); }
 
-/* ---------- Bìa ---------- */
-.rpt-brandline { display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; color: var(--r-brand); }
-.rpt-brandmark { width: 22px; height: 22px; border-radius: 5px; background: var(--r-brand); display: grid; place-items: center; }
-.rpt-brandmark span { width: 8px; height: 8px; border-radius: 99px; border: 2px solid var(--r-paper); }
-.rpt-cover-title { margin-top: 24px; }
-.rpt-cover-sub { margin-top: 12px; font-size: 15px; color: var(--r-ink2); }
-.rpt-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 24px; border-top: 1px solid var(--r-ink); border-bottom: 1px solid var(--r-rule); }
-.rpt-facts div { padding: 12px 12px 12px 0; }
-.rpt-facts div + div { padding-left: 12px; border-left: 1px solid var(--r-rule-soft); }
-.rpt-facts dt { font-size: 11px; color: var(--r-ink3); }
-.rpt-facts dd { font-size: 13px; font-weight: 600; color: var(--r-ink); margin-top: 2px; }
-.rpt-note { margin-top: 12px; padding: 8px 12px; background: var(--r-tint); font-size: 12px; color: var(--r-ink2); }
+/* ---------- Tóm tắt điều hành + sổ đối chiếu ---------- */
+.rpt-exec { display: grid; grid-template-columns: minmax(0, 1fr) 252px; gap: 32px; }
+.rpt-findings { margin-top: 12px; }
+.rpt-findings p { font-size: 13.5px; line-height: 1.65; padding: 8px 0; border-top: 1px solid var(--r-rule-soft); }
+.rpt-findings p:first-child { border-top: 0; padding-top: 0; }
+.rpt-findings strong { font-weight: 600; color: var(--r-brand); }
 
-.rpt-cols { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 32px; margin-top: 24px; }
-.rpt-findings { list-style: none; padding: 0; counter-reset: f; }
-.rpt-findings li { counter-increment: f; display: grid; grid-template-columns: 26px minmax(0, 1fr); padding: 8px 0; border-top: 1px solid var(--r-rule-soft); font-size: 13.5px; line-height: 1.6; }
-.rpt-findings li:first-child { border-top: 0; padding-top: 4px; }
-.rpt-findings li::before { content: counter(f); font-weight: 600; color: var(--r-brand); }
+.rpt-ledger { padding: 16px 16px 12px; background: var(--r-tint); }
+.rpt-ledger h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.rpt-ledger table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.rpt-ledger td { padding: 4px 0; border-bottom: 1px solid var(--r-rule-soft); color: var(--r-ink2); }
+.rpt-ledger td.num { text-align: right; color: var(--r-ink); white-space: nowrap; }
+.rpt-ledger tfoot td { border-bottom: 0; border-top: 2px solid var(--r-ink); padding-top: 8px; vertical-align: baseline; font-weight: 600; color: var(--r-ink); }
+.rpt-ledger tfoot td.num { font-size: 20px; letter-spacing: -0.01em; }
+.rpt-check { margin-top: 8px; font-size: 12px; line-height: 1.5; color: var(--r-ink2); }
 
-/* ---------- Sổ đối chiếu (điểm nhấn) ---------- */
-.rpt-ledger { border-top: 2px solid var(--r-brand); padding-top: 12px; }
-.rpt-ledger h3 { margin-bottom: 4px; }
-.rpt-ledger-row { display: grid; grid-template-columns: minmax(0, 1fr) 12px auto; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--r-rule-soft); font-size: 12.5px; }
-.rpt-ledger-row span:first-child { color: var(--r-ink2); }
-.rpt-ledger-row span:nth-child(2) { color: var(--r-ink3); text-align: center; }
-.rpt-ledger-row span:last-child { text-align: right; }
-.rpt-ledger-total { margin-top: 1px; border-top: 1px solid var(--r-ink); padding-top: 2px; }
-.rpt-ledger-total > div { border-top: 1px solid var(--r-ink); display: flex; justify-content: space-between; align-items: baseline; padding-top: 8px; }
-.rpt-ledger-total b { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
-.rpt-check { margin-top: 12px; font-size: 12px; line-height: 1.5; }
-
-/* ---------- Bảng ---------- */
+/* ---------- Bảng kiểu báo cáo tài chính ---------- */
 .rpt-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.rpt-table caption { caption-side: top; text-align: left; padding-bottom: 8px; }
-.rpt-table th { text-align: left; font-weight: 600; font-size: 11.5px; color: var(--r-ink2); padding: 0 12px 8px 0; border-bottom: 1px solid var(--r-ink); vertical-align: bottom; }
-.rpt-table td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--r-rule-soft); vertical-align: top; }
-.rpt-table tr:last-child td { border-bottom: 1px solid var(--r-rule); }
-.rpt-table .num { text-align: right; white-space: nowrap; }
+.rpt-table caption { caption-side: top; text-align: left; font-size: 13px; font-weight: 600; color: var(--r-ink); padding-bottom: 8px; }
+.rpt-table thead tr { border-top: 2px solid var(--r-ink); }
+.rpt-table tbody:first-child tr:first-child { border-top: 2px solid var(--r-ink); }
+.rpt-table th { text-align: left; font-weight: 600; font-size: 12px; color: var(--r-ink2); padding: 4px 12px 4px 0; border-bottom: 1px solid var(--r-ink); vertical-align: bottom; }
+.rpt-table td { padding: 4px 12px 4px 0; line-height: 1.5; border-bottom: 1px solid var(--r-rule-soft); vertical-align: top; }
+.rpt-table tbody tr:last-child td { border-bottom: 1px solid var(--r-ink); }
 .rpt-table th:last-child, .rpt-table td:last-child { padding-right: 0; }
+.rpt-table .num { text-align: right; white-space: nowrap; }
 .rpt-table tfoot td { border-bottom: 0; font-weight: 600; padding-top: 8px; }
-.rpt-table .rpt-vital td:first-child { color: var(--r-brand); font-weight: 600; }
-.rpt-kpi td:first-child { font-weight: 600; }
-.rpt-kpi .rpt-kpi-val { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.rpt-kpi td { padding-top: 8px; padding-bottom: 8px; }
+.rpt-kpi td.num.rpt-strong { font-size: 15px; }
+.rpt-plan td { padding-top: 8px; padding-bottom: 8px; }
 
-.rpt-bar { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
-.rpt-bar-track { width: 120px; height: 8px; background: var(--r-rule-soft); }
-.rpt-bar-fill { height: 100%; background: var(--r-brand); }
-.rpt-bar-fill.is-quiet { background: var(--r-ink3); }
-
-.rpt-cap { margin-top: 8px; }
-.rpt-fig { margin-bottom: 24px; }
-.rpt-fig-title { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 12px; }
+.rpt-ibar { display: block; height: 8px; margin-top: 4px; }
+.rpt-ibar span { display: block; height: 100%; background: var(--r-rule); }
+.rpt-ibar span.is-strong { background: var(--r-brand); }
 
 /* ---------- Biểu đồ: SVG vẽ nét, chữ là HTML để giữ đúng font ---------- */
 .rpt-chart { position: relative; }
 .rpt-chart svg { display: block; }
-.rpt-chart .lbl { position: absolute; font-size: 11px; line-height: 1; color: var(--r-ink3); white-space: nowrap; }
-.rpt-chart .lbl.y { text-align: right; width: 34px; }
+.rpt-chart .lbl { position: absolute; font-size: 12px; line-height: 1; color: var(--r-ink3); white-space: nowrap; }
+.rpt-chart .lbl.y { text-align: right; width: 32px; }
 .rpt-chart .lbl.x { transform: translateX(-50%); }
-.rpt-chart .lbl.end { font-size: 11.5px; font-weight: 600; }
-.rpt-chart .lbl.peak { font-size: 11px; font-weight: 600; color: var(--r-bad); }
-
-/* ---------- Việc cần quyết ---------- */
-.rpt-actions { border-top: 1px solid var(--r-ink); }
-.rpt-action { display: grid; grid-template-columns: 26px minmax(0, 1fr); padding: 16px 0; border-bottom: 1px solid var(--r-rule); }
-.rpt-action-no { font-weight: 600; color: var(--r-brand); }
-.rpt-action-head { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
-.rpt-action-head h3 { font-size: 14px; }
-.rpt-action-sum { margin-top: 4px; color: var(--r-ink2); font-size: 12.5px; }
-.rpt-action-grid { display: grid; grid-template-columns: 136px minmax(0, 1fr); gap: 4px 12px; margin-top: 8px; font-size: 12.5px; }
-.rpt-action-grid dt { color: var(--r-ink3); }
+.rpt-chart .lbl.end { font-weight: 600; }
+.rpt-chart .lbl.end.is-quiet { color: var(--r-ink3); }
+.rpt-chart .lbl.peak { color: var(--r-ink); font-weight: 600; }
 
 /* ---------- Phụ lục ---------- */
-.rpt-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
-.rpt-defs { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px 16px; font-size: 12px; line-height: 1.55; }
+.rpt-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; }
+.rpt-defs { display: grid; grid-template-columns: 184px minmax(0, 1fr); gap: 4px 16px; font-size: 12px; line-height: 1.5; border-top: 2px solid var(--r-ink); padding-top: 12px; }
 .rpt-defs dt { font-weight: 600; }
 .rpt-defs dd { color: var(--r-ink2); }
-.rpt-mt { margin-top: 24px; }
-.rpt-mt-s { margin-top: 12px; }
+.rpt-two > * { align-self: start; }

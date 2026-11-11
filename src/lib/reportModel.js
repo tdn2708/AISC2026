@@ -156,9 +156,6 @@ export function buildReportModel({ data, filters = {}, workspaceLabel, generated
   const issueTotal = pareto.data.length ? pareto.total : 0;
   const noIssue = pareto.unclassified?.value ?? 0;
 
-  // ---------- Diễn biến ----------
-  const peak = findPeak(trend);
-  const series = trend.map((d) => ({ name: d.name, complaints: d.complaints ?? 0, satisfaction: d.satisfaction ?? 0 }));
 
   // ---------- Nguyên nhân ----------
   const causeRows = causes.slice(0, 10).map((c, i) => ({
@@ -212,39 +209,69 @@ export function buildReportModel({ data, filters = {}, workspaceLabel, generated
   ] : [];
 
   // ---------- Tóm tắt điều hành: chỉ những câu số liệu chống lưng được ----------
+  // Mỗi ý mở bằng một cụm chữ đậm (lead), như báo cáo tư vấn, thay cho số thứ tự
   const findings = [];
   if (tf.value) {
-    findings.push(
-      `${fmtInt(tf.valid)} trên ${fmtInt(tf.value)} phản hồi thu thập được (${pctVi(tf.valid / tf.value, 1)}) đủ tin cậy để đưa vào chỉ số` +
-      (verifiedShare != null ? `; ${pctVi(verifiedShare, 0)} trong số đó có chứng từ mua hàng hoặc đã được người duyệt.` : '.')
-    );
+    findings.push({
+      lead: 'Dữ liệu.',
+      text: `${fmtInt(tf.valid)} trên ${fmtInt(tf.value)} phản hồi thu thập được (${pctVi(tf.valid / tf.value, 1)}) đủ tin cậy để đưa vào chỉ số` +
+        (verifiedShare != null ? `; ${pctVi(verifiedShare, 0)} trong số đó có chứng từ mua hàng hoặc đã được người duyệt.` : '.')
+    });
   }
   if (wcr.available) {
     const d = deltaWords(cmp?.deltas?.wcr, minSample);
-    findings.push(
-      `Tỉ lệ khiếu nại có trọng số là ${wcr.display}, tính trên ${fmtInt(wcr.denominator)} giao dịch có chứng từ` +
-      (d.tone !== 'muted' ? `; ${cmp.label.toLowerCase()}, tỉ lệ này ${d.text.toLowerCase()}.` : '.')
-    );
+    findings.push({
+      lead: 'Khiếu nại.',
+      text: `Tỉ lệ khiếu nại có trọng số là ${wcr.display}, tính trên ${fmtInt(wcr.denominator)} giao dịch có chứng từ` +
+        (d.tone !== 'muted' ? `; ${cmp.label.toLowerCase()}, tỉ lệ này ${d.text.toLowerCase()}.` : '.')
+    });
   } else if (neg.available) {
-    findings.push(`Phản hồi tiêu cực chiếm ${neg.display} tổng phản hồi hợp lệ (tính theo trọng số tin cậy).`);
+    findings.push({ lead: 'Khiếu nại.', text: `Phản hồi tiêu cực chiếm ${neg.display} tổng phản hồi hợp lệ, tính theo trọng số tin cậy. Chưa có dữ liệu giao dịch để tính tỉ lệ khiếu nại.` });
   }
   if (categories.length) {
     const top = categories[0];
     const c0 = causeRows[0];
-    findings.push(
-      `${top.name} là nhóm vấn đề lớn nhất với ${fmtInt(top.value)} phản hồi (${pctVi(top.share, 1)} số phản hồi có nêu vấn đề)` +
-      (c0 ? `; nguyên nhân cụ thể gặp nhiều nhất là ${c0.cause.toLowerCase()} (${fmtInt(c0.count)} phản hồi).` : '.')
-    );
+    findings.push({
+      lead: 'Vấn đề lớn nhất.',
+      text: `${top.name} với ${fmtInt(top.value)} phản hồi (${pctVi(top.share, 1)} số phản hồi có nêu vấn đề)` +
+        (c0 ? `; nguyên nhân cụ thể gặp nhiều nhất là ${c0.cause.toLowerCase()} (${fmtInt(c0.count)} phản hồi).` : '.')
+    });
   }
-  if (takeaways.length) {
-    const worst = [...takeaways].sort((a, b) => (SEVERITY[a.severity]?.rank ?? 9) - (SEVERITY[b.severity]?.rank ?? 9))[0];
-    findings.push(
-      `Có ${recs.length} việc cần quyết; việc đứng đầu là ${worst.problem.toLowerCase()}, mức ${worst.severity.toLowerCase()}` +
-      (worst.sla !== '—' ? `, cần xử lý trong ${worst.sla}.` : '.')
-    );
-  } else {
-    findings.push('Không có biến động nào vượt đồng thời ngưỡng thống kê và ngưỡng nghiệp vụ trong kỳ này, nên chưa có việc nào cần quyết.');
-  }
+  const worst = takeaways.length
+    ? [...takeaways].sort((x, y) => (SEVERITY[x.severity]?.rank ?? 9) - (SEVERITY[y.severity]?.rank ?? 9))[0]
+    : null;
+  findings.push(worst
+    ? {
+      lead: 'Cần quyết.',
+      text: `${recs.length} việc; việc đứng đầu là ${worst.problem.toLowerCase()}, mức ${worst.severity.toLowerCase()}` +
+        (worst.sla !== '—' ? `, cần xử lý trong ${worst.sla}.` : '.')
+    }
+    : { lead: 'Cần quyết.', text: 'Không có biến động nào vượt đồng thời ngưỡng thống kê và ngưỡng nghiệp vụ trong kỳ này.' });
+
+  // ---------- Tiêu đề kết luận cho từng phần (action title) ----------
+  const cap1 = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t);
+  const series = trend.map((d) => ({ name: d.name, complaints: d.complaints ?? 0, satisfaction: d.satisfaction ?? 0 }));
+  const lastPoint = series[series.length - 1];
+  const avgComplaints = series.length ? series.reduce((sum, d) => sum + d.complaints, 0) / series.length : 0;
+  const peak = findPeak(trend);
+  const titles = {
+    trend: !series.length
+      ? 'Chưa có dữ liệu theo thời gian trong phạm vi lọc'
+      : peak
+        ? `Khiếu nại lên đỉnh ${fmtInt(peak.value)} ngày ${peak.name}, mốc gần nhất còn ${fmtInt(lastPoint.complaints)}`
+        : `Khiếu nại dao động quanh ${fmtInt(avgComplaints)} mỗi mốc, mốc gần nhất là ${fmtInt(lastPoint.complaints)}`,
+    categories: categories.length >= 2
+      ? `${categories[0].name} và ${categories[1].name.toLowerCase()} chiếm ${pctVi(categories[1].cumulative, 1)} số khiếu nại có nêu vấn đề`
+      : categories.length
+        ? `${categories[0].name} chiếm ${pctVi(categories[0].share, 1)} số khiếu nại có nêu vấn đề`
+        : 'Chưa có khiếu nại nào gắn nhóm vấn đề',
+    causes: causeRows.length
+      ? `${cap1(causeRows[0].cause)} là nguyên nhân gặp nhiều nhất, ${pctVi(causeRows[0].share, 1)} số khiếu nại`
+      : 'Chưa bóc tách được nguyên nhân nào',
+    actions: worst
+      ? `${recs.length} việc cần quyết trong kỳ, việc gấp nhất cần xử lý trong ${worst.sla}`
+      : 'Không có việc nào cần quyết trong kỳ này'
+  };
 
   return {
     meta,
@@ -252,6 +279,7 @@ export function buildReportModel({ data, filters = {}, workspaceLabel, generated
     kpis,
     comparisonLabel: cmp?.label || null,
     approximation: cmp?.approximation || null,
+    titles,
     trend: { series, peak, peakLabel: recs[0]?.alert?.causeLabel || recs[0]?.alert?.categoryLabel || null },
     categories,
     issueTotal,
