@@ -37,27 +37,16 @@ const Signal = ({ s, tone = 'high' }) => {
 };
 
 /** Vòng sức khỏe dữ liệu */
+/** Điểm tin cậy: một con số lớn và một câu đánh giá, không vẽ đồng hồ */
 const HealthDial = ({ score = 0 }) => {
-  const R = 58;
-  const C = 2 * Math.PI * R;
-  const tone = score >= 75 ? 'var(--sev-ok)' : score >= 50 ? 'var(--sev-high)' : 'var(--sev-crit)';
+  const tone = score >= 75 ? 'text-ok' : score >= 50 ? 'text-high' : 'text-crit';
   const label = score >= 75 ? 'Đáng tin cậy' : score >= 50 ? 'Cần chú ý' : 'Rủi ro cao';
   return (
-    <div className="relative size-[150px] shrink-0">
-      <svg viewBox="0 0 150 150" className="size-full -rotate-90" aria-hidden="true">
-        <circle cx="75" cy="75" r={R} fill="none" stroke="var(--raised)" strokeWidth="10" />
-        <circle
-          cx="75" cy="75" r={R} fill="none" stroke={tone} strokeWidth="10" strokeLinecap="round"
-          strokeDasharray={C} strokeDashoffset={C * (1 - Math.max(0, Math.min(100, score)) / 100)}
-          style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(.2,.8,.2,1)' }}
-        />
-      </svg>
-      <div className="absolute inset-0 grid place-content-center text-center">
-        <span className="font-mono text-4xl leading-none font-semibold text-ink-hi">{score}</span>
-        <span className="mt-1 text-xs text-ink-lo">trên 100</span>
-        <span className="mt-1.5 text-xs font-medium" style={{ color: tone }}>{label}</span>
-      </div>
-    </div>
+    <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <span className="font-mono text-metric font-semibold tracking-[-0.02em] text-ink-hi">{score}</span>
+      <span className="text-base text-ink-lo">trên 100</span>
+      <span className={`w-full text-base font-semibold ${tone}`}>{label}</span>
+    </p>
   );
 };
 
@@ -174,10 +163,10 @@ const TrustOverview = () => {
           </dl>
         </GlassPanel>
 
-        <GlassPanel tone="strong" className="flex flex-col items-center p-6 text-center">
-          <PanelHeader title="Độ tin số liệu" className="w-full text-left" />
+        <GlassPanel tone="strong" className="flex flex-col p-6">
+          <PanelHeader title="Độ tin số liệu" />
           <HealthDial score={health.dataHealthScore} />
-          <div className="mt-5 flex w-full flex-col gap-3 text-left">
+          <div className="mt-6 flex w-full flex-col gap-3 border-t border-line-soft pt-5">
             <ProgressBar label="Vượt qua kiểm tra tin cậy" value={(comps.passRate ?? 0) / 100} showValue />
             <ProgressBar label="Số kênh có dữ liệu" value={(comps.channelCoverage ?? 0) / 100} showValue />
             <ProgressBar label="Độ mới của dữ liệu" value={(comps.freshness ?? 0) / 100} showValue />
@@ -202,15 +191,15 @@ const TrustOverview = () => {
             }
           />
 
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-5 lg:grid-cols-4">
             {[
               { label: 'Cảnh báo sinh ra', value: shown?.alertCount ?? 0 },
               { label: 'Tỉ lệ khiếu nại', value: trustOn ? impact.wcrWithTrustLayer : impact.wcrWithoutTrustLayer },
               { label: 'Phản hồi bị loại', value: trustOn ? fmtInt(impact.excludedFeedbacks) : '0' },
               { label: 'Cảnh báo sai được chặn', value: impact.phantomAlerts, keep: true }
             ].map((m) => (
-              <div key={m.label} className={`rounded-lg border p-4 transition-colors ${!trustOn && !m.keep ? 'border-crit/30 bg-crit/8' : 'border-line-soft'}`}>
-                <p className="text-xs text-ink-mid">{m.label}</p>
+              <div key={m.label} className={`min-w-0 border-t-2 pt-3 transition-colors ${!trustOn && !m.keep ? 'border-crit' : 'border-line'}`}>
+                <p className="text-sm text-ink-mid">{m.label}</p>
                 <p className={`mt-1.5 font-mono text-2xl font-semibold ${!trustOn && !m.keep ? 'text-crit' : 'text-ink-hi'}`}>{m.value}</p>
               </div>
             ))}

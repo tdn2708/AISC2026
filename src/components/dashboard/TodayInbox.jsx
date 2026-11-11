@@ -84,7 +84,6 @@ const Row = ({ t, open, onToggle, state, onAccept, onDismiss }) => {
     <li className={`border-b border-line-soft px-5 py-4 last:border-b-0 sm:px-6 ${decided ? 'opacity-70' : ''}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
         <div className="flex shrink-0 items-center gap-2 sm:w-[6.5rem] sm:pt-0.5">
-          <span className={`size-2.5 rounded-full ${sev.dot}`} aria-hidden="true" />
           <span className={`text-sm font-semibold ${sev.text}`}>{sev.label}</span>
           <span className="text-sm text-ink-mid sm:hidden">{SOURCE[t.source] || 'Việc khác'}</span>
         </div>

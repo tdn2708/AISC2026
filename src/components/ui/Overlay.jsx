@@ -31,7 +31,7 @@ const useOverlay = (open, onClose, panelRef) => {
 };
 
 const Backdrop = ({ onClose }) => (
-  <div className="absolute inset-0 bg-[rgb(31_45_53/0.28)] backdrop-blur-[3px] animate-fade-up" onClick={onClose} aria-hidden="true" />
+  <div className="absolute inset-0 bg-(--scrim) backdrop-blur-[3px] animate-fade-up" onClick={onClose} aria-hidden="true" />
 );
 
 /** Hộp thoại — theo nhóm "Модальные окна": biểu tượng tròn, tiêu đề, mô tả, hai nút */

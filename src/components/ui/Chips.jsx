@@ -45,7 +45,7 @@ export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
           onClick={() => onChange(o.value)}
           className={`inline-flex items-center gap-1.5 rounded font-medium transition-[background-color,color,box-shadow] duration-150 ${
             size === 'sm' ? 'h-7 px-3 text-xs' : 'h-9 px-4 text-sm'
-          } ${active ? 'bg-surface text-ink-hi shadow-[0_1px_3px_rgb(31_45_53/0.12)]' : 'text-ink-lo hover:text-ink-mid'}`}
+          } ${active ? 'bg-surface text-ink-hi shadow-(--shadow-knob)' : 'text-ink-lo hover:text-ink-mid'}`}
         >
           {o.icon && <o.icon size={13} aria-hidden="true" />}
           {o.label}

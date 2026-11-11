@@ -43,3 +43,6 @@ nlp_service/deploy/onnx/
 
 # Log loi cua cac tac vu chay ngam
 *.log.err
+
+# Ảnh chụp và bản ghi của hallmark (chấm giao diện)
+.hallmark/

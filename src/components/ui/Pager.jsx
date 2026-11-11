@@ -24,7 +24,7 @@ export const Pager = ({ page, pages, total, pageSize, onChange, className = '' }
   return (
     <nav aria-label="Phân trang" className={`flex flex-wrap items-center justify-between gap-3 border-t border-line-soft px-5 py-3 ${className}`}>
       <p className="text-xs text-ink-mid">
-        <span className="font-mono text-ink-hi">{fmtInt(from)}–{fmtInt(to)}</span> trên <span className="font-mono text-ink-hi">{fmtInt(total)}</span>
+        <span className="font-mono text-ink-hi">{fmtInt(from)} đến {fmtInt(to)}</span> trên <span className="font-mono text-ink-hi">{fmtInt(total)}</span>
       </p>
       {pages > 1 && (
         <div className="flex items-center gap-1">

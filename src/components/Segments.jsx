@@ -15,21 +15,21 @@ const SEGMENTS = [
     key: 'atRisk',
     label: 'Có nguy cơ rời bỏ',
     icon: TriangleAlert,
-    note: 'Đã để lại ít nhất một phản hồi tiêu cực — cần liên hệ trước tiên.',
+    note: 'Đã để lại ít nhất một phản hồi tiêu cực, cần liên hệ trước tiên.',
     tone: 'bg-blush/45 text-[#8E2F45]'
   },
   {
     key: 'promoters',
     label: 'Khách trung thành',
     icon: HeartHandshake,
-    note: 'Phản hồi chủ yếu tích cực — ứng viên cho chương trình giới thiệu.',
+    note: 'Phản hồi chủ yếu tích cực, ứng viên cho chương trình giới thiệu.',
     tone: 'bg-sky/50 text-[#2F5E92]'
   },
   {
     key: 'passives',
     label: 'Trung lập',
     icon: Users,
-    note: 'Cảm xúc lẫn lộn hoặc trung tính — có thể đi theo cả hai hướng.',
+    note: 'Cảm xúc lẫn lộn hoặc trung tính, có thể đi theo cả hai hướng.',
     tone: 'bg-raised text-ink-mid'
   }
 ];
@@ -181,7 +181,7 @@ const Segments = () => {
 
         {list.length > PAGE && (
           <div className="fb-pager">
-            <span className="fb-pager-info">{fmtInt((page - 1) * PAGE + 1)}–{fmtInt(Math.min(page * PAGE, list.length))} / {fmtInt(list.length)} khách</span>
+            <span className="fb-pager-info">{fmtInt((page - 1) * PAGE + 1)} đến {fmtInt(Math.min(page * PAGE, list.length))} / {fmtInt(list.length)} khách</span>
             <div className="fb-pager-btns">
               <button className="fb-page-btn" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} aria-label="Trang trước"><ChevronLeft size={14} /></button>
               <span className="px-2 font-mono text-xs text-ink-mid">{page} / {pages}</span>

@@ -343,7 +343,6 @@ const Reports = () => {
           {
             type: 'PDF',
             icon: FileText,
-            tile: 'bg-accent-dim text-accent',
             title: 'Báo cáo điều hành',
             ext: 'PDF, khổ A4',
             text: 'Việc cần quyết, chỉ số so với kỳ trước, diễn biến theo thời gian, nhóm vấn đề và nguyên nhân. Kế hoạch hành động lấy từ thư viện hành động đã chuẩn hoá, không có đoạn nào do AI viết tự do.',
@@ -353,7 +352,7 @@ const Reports = () => {
           {
             type: 'CSV',
             icon: FileSpreadsheet,
-            tile: 'bg-sky/50 text-[#2F5E92]',
+            secondary: true,
             title: 'Dữ liệu thô',
             ext: 'CSV, mở được bằng Excel',
             text: 'Toàn bộ phản hồi trong phạm vi lọc: thời điểm, nguồn, nội dung gốc, cảm xúc, nhóm vấn đề và mức tin cậy.',
@@ -362,17 +361,13 @@ const Reports = () => {
           }
         ].map((c) => (
           <GlassPanel key={c.type} tone="strong" className="flex flex-col p-6">
-            <div className="flex items-start gap-4">
-              <span className={`grid size-12 shrink-0 place-items-center rounded-lg ${c.tile}`}>
-                <c.icon size={22} aria-hidden="true" />
-              </span>
-              <div>
-                <h3 className="text-heading font-semibold text-ink-hi">{c.title}</h3>
-                <p className="font-mono text-xs text-ink-lo">{c.ext}</p>
-              </div>
-            </div>
+            <h3 className="flex items-center gap-2 text-heading font-semibold text-ink-hi">
+              <c.icon size={18} className="shrink-0 text-ink-lo" aria-hidden="true" />
+              {c.title}
+            </h3>
+            <p className="mt-0.5 text-sm text-ink-lo">{c.ext}</p>
             <p className="mt-4 flex-1 text-sm leading-relaxed text-ink-mid">{c.text}</p>
-            <Button className="mt-5 self-start" icon={Download} loading={c.loading} disabled={busy} onClick={() => openExport(c.type)}>
+            <Button className="mt-5 self-start" variant={c.secondary ? 'secondary' : 'primary'} icon={Download} loading={c.loading} disabled={busy} onClick={() => openExport(c.type)}>
               {c.cta}
             </Button>
           </GlassPanel>

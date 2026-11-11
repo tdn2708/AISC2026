@@ -68,7 +68,7 @@ const MetricBar = ({ label, generic, ours, note }) => (
         <span className="h-2 overflow-hidden rounded-full bg-raised">
           <span className={`block h-full rounded-full ${cls} animate-grow-x origin-left`} style={{ width: `${Math.max(1, (v ?? 0) * 100)}%` }} />
         </span>
-        <span className="data-num text-right font-semibold text-ink-hi">{v == null ? '—' : v.toFixed(2)}</span>
+        <span className="data-num text-right font-semibold text-ink-hi">{v == null ? 'Chưa có' : v.toFixed(2).replace('.', ',')}</span>
       </div>
     ))}
   </div>
@@ -216,7 +216,7 @@ const VersusDemo = () => {
               </Badge>
             </div>
             <p className="mb-5 text-xs leading-relaxed text-ink-lo">
-              {usedModel ? 'Mô hình hiểu tiếng Việt mạng xã hội, bóc tách từng vấn đề' : 'Dịch vụ mô hình chưa sẵn sàng — đang dùng luật từ khóa'}
+              {usedModel ? 'Mô hình hiểu tiếng Việt mạng xã hội, bóc tách từng vấn đề' : 'Dịch vụ mô hình chưa sẵn sàng, đang dùng luật từ khóa'}
             </p>
 
             {spam?.isSpam ? (
@@ -306,7 +306,7 @@ const VersusDemo = () => {
                     ? aspects.map((a) => a.causeLabel || a.categoryLabel).join(', ')
                     : final?.sentiment === 'Negative'
                       ? 'Câu chê này chưa được gắn vào nhóm vấn đề nào'
-                      : 'Biết đây không phải lời phàn nàn — không tạo việc thừa'
+                      : 'Biết đây không phải lời phàn nàn, không tạo việc thừa'
                 }
               />
             )}
@@ -341,7 +341,7 @@ const VersusDemo = () => {
             <MetricBar label="Đoán đúng cảm xúc" generic={mB2.sentimentMacroF1} ours={mM.sentimentMacroF1} note="hai bên gần nhau" />
           </div>
           <p className="mt-4 text-xs leading-relaxed text-ink-lo">
-            Về cảm xúc, hai cách gần ngang nhau — và đó chính là điểm đáng nói: biết khách "không vui" thì công cụ nào cũng làm được.
+            Về cảm xúc, hai cách gần ngang nhau. Đó chính là điểm đáng nói: biết khách “không vui” thì công cụ nào cũng làm được.
             Thứ doanh nghiệp cần là biết khách không vui <b className="text-ink-mid">vì cái gì</b> và <b className="text-ink-mid">ai phải xử lý</b>.
             Số liệu đầy đủ, kể cả các chỉ số chưa đạt mục tiêu, ở tab Kết quả thực nghiệm.
           </p>

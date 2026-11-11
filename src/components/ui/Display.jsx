@@ -51,7 +51,10 @@ export const Badge = ({ tone = 'neutral', icon: Icon, children, mono, className 
   </span>
 );
 
-/** Thanh tiến trình mảnh — theo nhóm "Полоса прогресса" */
+/**
+ * Thanh tiến trình mảnh. Phần tô co giãn bằng transform (scaleX), không
+ * bằng width, để trình duyệt không phải dàn lại trang mỗi khung hình.
+ */
 export const ProgressBar = ({ value = 0, tone = 'accent', label, showValue, height = 6, className = '' }) => {
   const pct = Math.round(Math.max(0, Math.min(1, value)) * 100);
   const fill = { accent: 'bg-accent', crit: 'bg-crit', high: 'bg-high', ok: 'bg-ok', pos: 'bg-pos', neg: 'bg-neg' }[tone] || 'bg-accent';
@@ -64,7 +67,7 @@ export const ProgressBar = ({ value = 0, tone = 'accent', label, showValue, heig
         </div>
       )}
       <div
-        className="w-full overflow-hidden rounded-full bg-raised"
+        className="w-full overflow-hidden rounded-sm bg-raised"
         style={{ height }}
         role="progressbar"
         aria-valuemin={0}
@@ -72,40 +75,27 @@ export const ProgressBar = ({ value = 0, tone = 'accent', label, showValue, heig
         aria-valuenow={pct}
         aria-label={typeof label === 'string' ? label : undefined}
       >
-        <div className={`h-full rounded-full ${fill} transition-[width] duration-700 ease-out`} style={{ width: `${pct}%` }} />
+        <div className={`h-full w-full origin-left ${fill} transition-transform duration-500 ease-out`} style={{ transform: `scaleX(${pct / 100})` }} />
       </div>
     </div>
   );
 };
 
 /**
- * Stepper — theo nhóm "Шаги (прогресс)": các bước đánh số nối bằng đường
- * mảnh. Dùng cho phễu dữ liệu và luồng kết nối nguồn.
+ * Các bước nối tiếp, đọc như một hàng của sổ: tên bước, con số. Không tô màu từng bước; chỉ bước cuối (kết quả) đậm hơn,
+ * ngăn với các bước trước bằng một đường kẻ dọc.
  */
 export const Stepper = ({ steps, className = '' }) => (
   <ol
-    className={`grid list-none grid-cols-2 gap-4 sm:[grid-template-columns:repeat(var(--n),minmax(0,1fr))] sm:gap-0 ${className}`}
+    className={`grid list-none grid-cols-2 gap-x-4 gap-y-5 sm:[grid-template-columns:repeat(var(--n),minmax(0,1fr))] sm:gap-0 ${className}`}
     style={{ '--n': steps.length }}
   >
     {steps.map((s, i) => {
-      const toneCls = {
-        accent: 'bg-accent text-on-accent',
-        crit: 'bg-crit/14 text-crit',
-        high: 'bg-high/14 text-high',
-        med: 'bg-med/14 text-med',
-        ok: 'bg-ok text-white',
-        neutral: 'bg-surface text-ink-mid border border-line'
-      }[s.tone || 'neutral'];
+      const last = i === steps.length - 1;
       return (
-        <li key={s.label} className="relative pr-3">
-          {i < steps.length - 1 && (
-            <span aria-hidden="true" className="absolute top-[15px] right-0 left-10 hidden h-px bg-line sm:block" />
-          )}
-          <span className={`relative z-10 grid size-[30px] place-items-center rounded-md font-mono text-xs font-semibold ${toneCls}`}>
-            {s.marker ?? i + 1}
-          </span>
-          <p className="mt-3 text-xs leading-snug font-medium text-ink-mid">{s.label}</p>
-          <p className="mt-1 font-mono text-xl font-semibold tracking-tight text-ink-hi">{s.value}</p>
+        <li key={s.label} className={`min-w-0 sm:px-4 sm:first:pl-0 ${last ? 'sm:border-l sm:border-line' : ''}`}>
+          <p className="text-sm leading-snug text-ink-mid">{s.label}</p>
+          <p className={`mt-1.5 font-mono text-xl tracking-tight ${last ? 'font-bold text-accent-hi' : 'font-semibold text-ink-hi'}`}>{s.value}</p>
           {s.sub && <p className="mt-0.5 text-xs leading-snug text-ink-lo">{s.sub}</p>}
         </li>
       );
@@ -156,13 +146,13 @@ export const Toast = ({ show, tone = 'ok', children }) => {
   );
 };
 
-/** Ô chỉ số nhỏ trong panel — nhãn trên, số đơn cách dưới */
+/** Chỉ số nhỏ trong panel: đường kẻ trên, nhãn, con số. Không khung riêng, vì panel đã là khung. */
 const STAT_TONE = { crit: 'text-crit', high: 'text-high', ok: 'text-ok', accent: 'text-accent-hi' };
 
 export const Stat = ({ label, value, sub, tone, className = '' }) => (
-  <div className={`rounded-lg border border-line-soft bg-surface p-4 ${className}`}>
-    <p className="eyebrow">{label}</p>
-    <p className={`mt-1.5 font-mono text-2xl font-semibold tracking-tight ${STAT_TONE[tone] || 'text-ink-hi'}`}>{value}</p>
+  <div className={`min-w-0 border-t border-line pt-3 ${className}`}>
+    <p className="text-sm text-ink-mid">{label}</p>
+    <p className={`mt-1 font-mono text-2xl font-semibold tracking-tight ${STAT_TONE[tone] || 'text-ink-hi'}`}>{value}</p>
     {sub && <p className="mt-0.5 text-xs text-ink-lo">{sub}</p>}
   </div>
 );

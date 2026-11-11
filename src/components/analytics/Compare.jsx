@@ -36,7 +36,7 @@ const Side = ({ p, color, tag }) => (
       <div>
         <dt className="text-xs text-ink-lo">Tiêu cực</dt>
         <dd className="mt-0.5 font-mono text-lg font-semibold text-ink-hi">{pct(p.negativeShare.p)}</dd>
-        <dd className="text-xs text-ink-lo">{pct(p.negativeShare.low)} – {pct(p.negativeShare.high)}</dd>
+        <dd className="text-xs text-ink-lo">từ {pct(p.negativeShare.low)} đến {pct(p.negativeShare.high)}</dd>
       </div>
       <div>
         <dt className="text-xs text-ink-lo">Điểm sao</dt>

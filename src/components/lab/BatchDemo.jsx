@@ -42,7 +42,7 @@ const Bar = ({ label, count, max, tone }) => (
   <div className="grid grid-cols-[minmax(0,11rem)_minmax(0,1fr)_3rem] items-center gap-3">
     <span className="truncate text-sm text-ink-mid">{label}</span>
     <span className="h-2 overflow-hidden rounded-full bg-raised">
-      <span className={`block h-full rounded-full transition-[width] duration-500 ${BAR[tone]}`} style={{ width: `${Math.max(1, (count / max) * 100)}%` }} />
+      <span className={`block h-full rounded-full ${BAR[tone]}`} style={{ width: `${Math.max(1, (count / max) * 100)}%` }} />
     </span>
     <span className="text-right font-mono text-sm text-ink-hi">{fmtInt(count)}</span>
   </div>
@@ -137,7 +137,7 @@ export default function BatchDemo() {
         {loading === 'run' && (
           <div role="status" aria-live="polite" className="mt-4">
             <div className="h-1.5 overflow-hidden rounded-full bg-raised">
-              <div className="h-full rounded-full bg-accent transition-[width] duration-200" style={{ width: `${progress?.total ? (progress.done / progress.total) * 100 : 3}%` }} />
+              <div className="h-full rounded-full bg-accent" style={{ width: `${progress?.total ? (progress.done / progress.total) * 100 : 3}%` }} />
             </div>
             <p className="mt-2 text-sm text-ink-mid">
               {!progress || progress.done === 0

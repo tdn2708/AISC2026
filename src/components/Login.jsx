@@ -47,7 +47,7 @@ const Login = ({ onLogin }) => {
     <div className="cx grid min-h-screen min-h-dvh bg-canvas lg:grid-cols-[minmax(0,1fr)_minmax(420px,560px)]">
       <section className="hidden flex-col justify-between bg-strip p-12 text-white lg:flex">
         {/* Đổi token chữ cục bộ để chữ ký thương hiệu đọc được trên nền mực */}
-        <div style={{ '--text-hi': '#FFFFFF', '--accent': '#8FD3C3' }}>
+        <div style={{ '--text-hi': 'var(--on-strip)', '--accent': 'var(--accent-on-strip)' }}>
           <Logo size="md" showTagline={false} />
         </div>
         <div className="max-w-[34rem]">
@@ -62,7 +62,7 @@ const Login = ({ onLogin }) => {
             {PROOF.map((p) => (
               <li key={p.kind} className="flex items-center gap-3">
                 {/* Mẫu tô sáng trên nền mực: cùng ngôn ngữ với thanh bằng chứng trong ứng dụng */}
-                <span style={{ '--accent': '#8FD3C3' }}><EvidenceSwatch kind={p.kind} size={14} /></span>
+                <span style={{ '--accent': 'var(--accent-on-strip)' }}><EvidenceSwatch kind={p.kind} size={14} /></span>
                 {p.text}
               </li>
             ))}

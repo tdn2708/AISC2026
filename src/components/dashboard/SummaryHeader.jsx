@@ -1,12 +1,13 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, RefreshCw } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { RefreshCw } from 'lucide-react';
+import { Button } from '../ui';
 import { fmtDate, fmtDateTime, fmtInt } from '../../lib/format';
 
 /**
- * CÂU TRẢ LỜI ĐỨNG TRƯỚC — VÀ CUỐN SỔ ĐỐI CHIẾU ĐỨNG NGAY CẠNH
+ * CÂU TRẢ LỜI ĐỨNG TRƯỚC, CUỐN SỔ ĐỐI CHIẾU ĐỨNG NGAY CẠNH
  * ------------------------------------------------------------------
- * Khối mực duy nhất trên trang. Bên trái: một câu nói hôm nay có mấy việc và
+ * Đầu trang, trên nền giấy. Bên trái: một câu nói hôm nay có mấy việc và
  * việc nào gấp nhất. Bên phải: phép tính từ số phản hồi thu thập được tới số
  * được đưa vào chỉ số — bao nhiêu bị loại vì rác, vì nghi ảo, còn lại bao
  * nhiêu, trong đó bao nhiêu có chứng từ. Đây là thứ các công cụ khác không
@@ -18,23 +19,18 @@ import { fmtDate, fmtDateTime, fmtInt } from '../../lib/format';
 
 const lower1 = (s) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
 
-const LedgerRow = ({ label, value, sign, strong, hint }) => (
-  <div className={`flex items-baseline justify-between gap-4 ${strong ? 'pt-2.5' : 'py-1'}`}>
-    <dt className={`min-w-0 ${strong ? 'font-semibold text-white' : 'text-white/75'}`}>
-      {label}
-      {hint && <span className="block text-xs text-white/55">{hint}</span>}
-    </dt>
-    <dd className={`shrink-0 font-mono tabular-nums ${strong ? 'text-[1.35rem] font-semibold text-white' : 'text-white/90'}`}>
-      {sign && <span className="mr-1 text-white/50" aria-hidden="true">{sign}</span>}
-      {fmtInt(value)}
-    </dd>
+const LedgerRow = ({ label, value, sign }) => (
+  <div className="grid grid-cols-[minmax(0,1fr)_1rem_auto] items-baseline gap-x-2 border-b border-(--sheet-rule) py-2">
+    <dt className="min-w-0 text-ink-mid">{label}</dt>
+    <dd className="text-right font-mono text-ink-lo" aria-hidden={!sign}>{sign || ''}</dd>
+    <dd className="text-right font-mono tabular-nums text-ink-hi">{fmtInt(value)}</dd>
   </div>
 );
 
-/** Sổ đối chiếu: thu thập → loại → được tính → trong đó có chứng từ */
+/** Sổ đối chiếu: thu thập, trừ phần bị loại, ra số được tính; trong đó bao nhiêu có chứng từ */
 const Ledger = ({ ledger, evidence }) => {
   if (!ledger) {
-    return <div className="h-48 animate-pulse rounded-lg bg-white/[0.06]" aria-hidden="true" />;
+    return <div className="h-64 animate-pulse rounded-lg border border-line bg-(--sheet)" aria-hidden="true" />;
   }
   const { rawCollected, spamRemoved, inauthenticFlagged, pendingReview, validForAnalysis, countedForMetrics } = ledger;
   // Con số cuối là số phản hồi góp vào chỉ số, khớp với mọi trang khác. Phần
@@ -42,31 +38,42 @@ const Ledger = ({ ledger, evidence }) => {
   const counted = countedForMetrics ?? validForAnalysis;
   const aged = Math.max(0, validForAnalysis - counted);
   const verifiedShare = evidence?.total ? (evidence.verified + evidence.human) / evidence.total : null;
+  const pct = verifiedShare == null ? null : Math.round(verifiedShare * 100);
   return (
-    <figure className="rounded-lg border border-white/12 bg-white/[0.04] px-5 py-4">
-      <figcaption className="text-sm font-semibold text-white">Số liệu này đứng trên gì</figcaption>
+    <figure className="rounded-lg border border-line bg-(--sheet) px-5 pt-4 pb-5">
+      <figcaption className="flex items-baseline justify-between gap-3">
+        <span className="text-base font-semibold text-ink-hi">Số liệu này đứng trên gì</span>
+        <Link to="/trust" className="shrink-0 text-sm font-medium text-accent-hi underline-offset-4 hover:underline">Xem phễu</Link>
+      </figcaption>
       <dl className="mt-2 text-sm">
         <LedgerRow label="Phản hồi thu thập được" value={rawCollected} />
         <LedgerRow label="Rác, quảng cáo" value={spamRemoved?.count ?? 0} sign="−" />
         <LedgerRow label="Nghi đánh giá ảo" value={inauthenticFlagged?.count ?? 0} sign="−" />
         {(pendingReview?.count ?? 0) > 0 && <LedgerRow label="Chờ người duyệt" value={pendingReview.count} sign="−" />}
         {aged > 0 && <LedgerRow label="Quá cũ, không còn trọng số" value={aged} sign="−" />}
-        <div className="mt-1.5 border-t border-white/20">
-          <LedgerRow label="Được tính vào chỉ số" value={counted} strong />
+        {/* Gạch đôi trên dòng tổng, như sổ kế toán */}
+        <div className="mt-px grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2 border-0 border-t-[3px] border-double border-ink-lo pt-2.5">
+          <dt className="font-semibold text-ink-hi">Được tính vào chỉ số</dt>
+          <dd className="text-right font-mono text-metric font-semibold tracking-[-0.02em] tabular-nums text-ink-hi">{fmtInt(counted)}</dd>
         </div>
       </dl>
-      {verifiedShare != null && (
-        <div className="mt-3">
-          <div className="flex h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
-            <span className="h-full bg-[#6CC2AF]" style={{ width: `${verifiedShare * 100}%` }} />
+      {pct != null && (
+        <div className="mt-4">
+          <div className="flex h-2 overflow-hidden rounded-sm bg-raised" aria-hidden="true">
+            <span className="h-full bg-accent" style={{ flexBasis: `${pct}%` }} />
           </div>
-          <p className="mt-1.5 text-xs text-white/70">
-            <span className="font-semibold text-white">{Math.round(verifiedShare * 100)}%</span> có chứng từ hoặc người đã duyệt, phần còn lại do AI đoán
+          <p className="mt-2 text-sm leading-snug text-ink-mid">
+            <span className="font-semibold text-ink-hi">{pct}%</span> có chứng từ hoặc người đã duyệt, {100 - pct}% do AI đoán
           </p>
         </div>
       )}
     </figure>
   );
+};
+
+const todayLabel = () => {
+  const s = new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric', year: 'numeric' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
 /** todo: danh sách việc đã gộp và xếp (TodayInbox.buildTodo) */
@@ -96,32 +103,24 @@ const SummaryHeader = ({ stats, todo = [], loading, error, lastUpdated, ledger, 
     : loading ? 'Dữ liệu mô phỏng, đang tải.' : `Dữ liệu mô phỏng, cập nhật lúc ${lastUpdated}.`;
 
   return (
-    <section aria-labelledby="summary-title" className="mb-6 rounded-xl bg-strip px-6 py-6 text-white sm:px-8 sm:py-8">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)] lg:items-center">
+    <section aria-labelledby="summary-title" className="mb-8 border-b border-line pt-4 pb-8">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:items-center lg:gap-12">
         <div className="min-w-0">
-          <h1 id="summary-title" className="text-sm font-medium text-white/70">Tổng quan</h1>
-          <p className="mt-2 max-w-[38ch] text-display font-semibold tracking-[-0.015em] text-balance" aria-live="polite">
+          <p className="text-sm text-ink-mid"><time>{todayLabel()}</time></p>
+          <h1 id="summary-title" className="mt-3 max-w-[30ch] text-display font-semibold tracking-[-0.02em] text-ink-hi" aria-live="polite">
             {sentence}
-          </p>
+          </h1>
           <div className="mt-6 flex flex-wrap gap-2">
             {top && (
-              <button
-                type="button"
-                onClick={() => document.getElementById('today')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                className="inline-flex h-10 items-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-[#13232B] transition-colors hover:bg-white/90"
-              >
-                Xem việc hôm nay <ArrowRight size={15} aria-hidden="true" />
-              </button>
+              <Button onClick={() => document.getElementById('today')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                Xem việc hôm nay
+              </Button>
             )}
-            <button
-              type="button"
-              onClick={() => navigate('/data')}
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-white/25 px-4 text-sm font-medium text-white/90 transition-colors hover:bg-white/10"
-            >
-              <RefreshCw size={14} aria-hidden="true" /> Thu thập dữ liệu mới
-            </button>
+            <Button variant="secondary" icon={RefreshCw} onClick={() => navigate('/data')}>
+              Thu thập dữ liệu mới
+            </Button>
           </div>
-          <p className="mt-4 text-xs leading-relaxed text-white/60">{asOfLine}</p>
+          <p className="mt-5 max-w-[60ch] text-sm leading-relaxed text-ink-lo">{asOfLine}</p>
         </div>
         <Ledger ledger={ledger} evidence={evidence} />
       </div>

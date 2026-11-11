@@ -71,10 +71,10 @@ const RisingIssues = ({ alerts = [] }) => {
                   </span>
                 </div>
 
-                <div className="mt-1.5 h-2 w-full rounded-full bg-raised/50">
+                <div className="mt-1.5 h-2 w-full overflow-hidden rounded-sm bg-raised">
                   <div
-                    className="h-full origin-left rounded-full bg-neg transition-[width,filter] duration-500 animate-grow-x group-hover:brightness-125 group-focus-visible:brightness-125"
-                    style={{ width: `${width}%` }}
+                    className="h-full w-full origin-left rounded-sm bg-neg transition-[transform,filter] duration-500 group-hover:brightness-125 group-focus-visible:brightness-125"
+                    style={{ transform: `scaleX(${width / 100})` }}
                   />
                 </div>
 

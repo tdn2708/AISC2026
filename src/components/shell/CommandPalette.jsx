@@ -112,7 +112,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
 
   return createPortal(
     <div className="cx fixed inset-0 z-[2200] flex items-start justify-center p-4 pt-[12vh]">
-      <div className="absolute inset-0 bg-[rgb(31_45_53/0.3)] backdrop-blur-[3px]" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-(--scrim) backdrop-blur-[3px]" onClick={onClose} aria-hidden="true" />
       <div
         role="dialog"
         aria-modal="true"

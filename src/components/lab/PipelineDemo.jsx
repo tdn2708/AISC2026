@@ -134,7 +134,7 @@ const ProbBar = ({ label, p, winner, tone = 'accent' }) => (
     <div className="min-w-0">
       <p className={`truncate text-sm ${winner ? 'font-semibold text-ink-hi' : 'text-ink-mid'}`}>{label}</p>
       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-raised">
-        <div className={`h-full rounded-full transition-[width] duration-700 ${winner ? BAR_TONE[tone] : 'bg-line'}`} style={{ width: `${Math.max(0.5, p * 100)}%` }} />
+        <div className={`h-full rounded-full ${winner ? BAR_TONE[tone] : 'bg-line'}`} style={{ width: `${Math.max(0.5, p * 100)}%` }} />
       </div>
     </div>
     <span className={`text-right font-mono text-xs ${winner ? 'text-ink-hi' : 'text-ink-mid'}`}>{(p * 100).toFixed(1).replace('.', ',')}%</span>
@@ -317,7 +317,7 @@ function StepInference({ t }) {
         <Chip mono><Zap size={12} aria-hidden="true" /> suy luận {m.timings.inferenceMs} ms</Chip>
       </Row>
       <Note>
-        Nguyên nhân chỉ được chọn trong danh mục đã chọn, nên không có tổ hợp vô nghĩa như "Giao hàng: Trừ tiền hai lần".
+        Nguyên nhân chỉ được chọn trong danh mục đã chọn, nên không có tổ hợp vô nghĩa như “Giao hàng: Trừ tiền hai lần”.
         {m.multiLabel
           ? ` Danh mục dùng xác suất ĐỘC LẬP (sigmoid) nên các cột không cộng lại thành 100%: mọi danh mục vượt ngưỡng ${m.thresholds?.category ?? 0.5} đều được ghi nhận, nhờ vậy một câu nêu được nhiều vấn đề.`
           : ' Danh mục dùng softmax nên tổng bằng 100% và chỉ chọn được một danh mục.'}
@@ -373,11 +373,11 @@ function StepExplain({ t }) {
           const after = imp.probAfter?.[i];
           const a = v >= 0 ? Math.min(1, v / maxPos) : Math.min(1, -v / maxNeg);
           // Màu nhiệt động: cam ủng hộ kết luận, xanh kéo ngược; đậm nhạt theo mức ảnh hưởng
-          const bg = v >= 0 ? `rgba(240, 166, 75, ${0.1 + a * 0.62})` : `rgba(43, 163, 199, ${0.1 + a * 0.45})`;
+          const bg = v >= 0 ? `rgb(var(--viz-support) / ${0.1 + a * 0.62})` : `rgb(var(--viz-oppose) / ${0.1 + a * 0.45})`;
           return (
             <span
               key={i}
-              title={after != null ? `Bỏ từ này: xác suất còn ${(after * 100).toFixed(2)}%` : ''}
+              title={after != null ? `Bỏ từ này: xác suất còn ${(after * 100).toFixed(2).replace('.', ',')}%` : ''}
               className={`rounded px-1.5 text-base text-ink-hi ${v > 0 && a > 0.5 ? 'font-semibold' : ''}`}
               style={{ background: Math.abs(v) < 0.05 ? 'transparent' : bg }}
             >
@@ -388,8 +388,8 @@ function StepExplain({ t }) {
       </div>
 
       <div className="mt-2 flex flex-wrap gap-4 text-xs text-ink-mid">
-        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[rgba(240,166,75,0.7)]" aria-hidden="true" />ủng hộ kết luận</span>
-        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[rgba(43,163,199,0.55)]" aria-hidden="true" />kéo ngược kết luận</span>
+        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[rgb(var(--viz-support)/0.7)]" aria-hidden="true" />ủng hộ kết luận</span>
+        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[rgb(var(--viz-oppose)/0.55)]" aria-hidden="true" />kéo ngược kết luận</span>
         <span>rê chuột lên từng từ để xem xác suất khi bỏ từ đó</span>
       </div>
 

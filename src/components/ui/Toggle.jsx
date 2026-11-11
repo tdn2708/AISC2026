@@ -17,7 +17,7 @@ export const Switch = ({ checked, onChange, label, disabled, size = 'md' }) => {
       }`}
     >
       <span
-        className={`${dims.knob} rounded-full bg-white shadow-[0_1px_3px_rgb(31_45_53/0.3)] transition-transform duration-200 ${checked ? dims.on : 'translate-x-0'}`}
+        className={`${dims.knob} rounded-full bg-surface shadow-(--shadow-knob) transition-transform duration-200 ${checked ? dims.on : 'translate-x-0'}`}
       />
     </button>
   );

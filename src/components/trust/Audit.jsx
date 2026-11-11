@@ -45,7 +45,7 @@ const Result = ({ label, r }) => (
       <>
         <p className="mt-1.5 font-mono text-metric leading-none font-semibold text-ink-hi">{fmtPct(r.p, 0)}</p>
         <p className="mt-1.5 text-xs text-ink-lo">
-          Khoảng tin cậy 95%: <span className="font-mono text-ink-mid">{fmtPct(r.low, 0)} – {fmtPct(r.high, 0)}</span>
+          Khoảng tin cậy 95%: <span className="font-mono text-ink-mid">từ {fmtPct(r.low, 0)} đến {fmtPct(r.high, 0)}</span>
         </p>
       </>
     ) : (

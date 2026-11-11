@@ -24,7 +24,7 @@ const TABS = [
   { value: 'eval', label: 'Kết quả thực nghiệm' }
 ];
 
-const f4 = (v) => (v == null ? '—' : v.toFixed(4));
+const f4 = (v) => (v == null ? 'Chưa có' : v.toFixed(4).replace('.', ','));
 
 // ==================================================================
 // KẾT QUẢ THỰC NGHIỆM
@@ -188,9 +188,9 @@ const Experiments = () => {
           <span className="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
           <h3 className="text-heading font-semibold text-ink-hi">Phát hiện chính: bộ phân loại luật không khái quát hóa được</h3>
           <p className="mt-2 max-w-[78ch] text-sm leading-relaxed text-ink-mid">
-            Cùng một bộ phân loại luật đạt Macro-F1 <strong className="font-mono text-ok">{b1.devCategoryMacroF1.toFixed(2)}</strong> trên tập đã dùng
-            để tinh chỉnh từ khóa, nhưng chỉ còn <strong className="font-mono text-crit">{b1.categoryMacroF1.toFixed(2)}</strong> trên tập kiểm tra giữ
-            riêng, chênh {gap.toFixed(2)}. Thêm từ khóa chỉ giúp khớp đúng những câu đã thấy, không giúp hiểu câu mới. Đây là lập luận định lượng cho
+            Cùng một bộ phân loại luật đạt Macro-F1 <strong className="font-mono text-ok">{b1.devCategoryMacroF1.toFixed(2).replace('.', ',')}</strong> trên tập đã dùng
+            để tinh chỉnh từ khóa, nhưng chỉ còn <strong className="font-mono text-crit">{b1.categoryMacroF1.toFixed(2).replace('.', ',')}</strong> trên tập kiểm tra giữ
+            riêng, chênh {gap.toFixed(2).replace('.', ',')}. Thêm từ khóa chỉ giúp khớp đúng những câu đã thấy, không giúp hiểu câu mới. Đây là lập luận định lượng cho
             việc dùng một mô hình ngôn ngữ được tinh chỉnh, thay vì tiếp tục mở rộng danh sách từ khóa.
           </p>
         </GlassPanel>
@@ -211,10 +211,10 @@ const Experiments = () => {
                 <div key={label} className="rounded-lg border border-line-soft bg-canvas px-4 py-3.5">
                   <p className="text-xs leading-snug text-ink-mid">{label}</p>
                   <p className={`mt-1.5 font-mono text-display font-semibold ${pass ? 'text-ok' : 'text-crit'}`}>
-                    {lowerIsBetter ? `${(value * 100).toFixed(1)}%` : value.toFixed(3)}
+                    {lowerIsBetter ? `${(value * 100).toFixed(1).replace('.', ',')}%` : value.toFixed(3).replace('.', ',')}
                   </p>
                   <p className="mt-1.5 flex items-center gap-2 text-xs text-ink-mid">
-                    Mục tiêu {lowerIsBetter ? `≤ ${(target * 100).toFixed(0)}%` : `≥ ${target}`}
+                    Mục tiêu {lowerIsBetter ? `≤ ${(target * 100).toFixed(0)}%` : `≥ ${String(target).replace('.', ',')}`}
                     <Badge tone={pass ? 'ok' : 'crit'}>{pass ? 'Đạt' : 'Chưa đạt'}</Badge>
                   </p>
                 </div>

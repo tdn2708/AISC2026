@@ -63,7 +63,7 @@ const FeedbackList = ({ items, showProduct = false, onSelect, dimmed = false }) 
               <td className="fb-c-cat">
                 {f.categoryLabel && f.category !== 'Other'
                   ? <span className="fb-chip" title={f.causeLabel ? `${f.categoryLabel}: ${f.causeLabel}` : f.categoryLabel}>{f.categoryLabel}</span>
-                  : <span className="text-ink-lo" title="Không nêu vấn đề cụ thể">—</span>}
+                  : <span className="text-ink-lo" title="Không nêu vấn đề cụ thể">Không rõ</span>}
               </td>
               <td className="fb-c-sent">
                 <span className="inline-flex items-center gap-2 text-sm text-ink-mid">

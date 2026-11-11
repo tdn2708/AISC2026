@@ -287,7 +287,7 @@ const DataSources = () => {
           </form>
           <p className="mt-4 flex gap-2 text-xs leading-relaxed text-ink-lo">
             <Clock size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-            Hỗ trợ Tiki: tối đa 100 đánh giá mới nhất mỗi lần, khoảng 20–30 giây. Shopee và Lazada chặn truy cập tự động.
+            Hỗ trợ Tiki: tối đa 100 đánh giá mới nhất mỗi lần, khoảng 20 đến 30 giây. Shopee và Lazada chặn truy cập tự động.
           </p>
 
           {lastResult && <ScrapeResult result={lastResult} />}

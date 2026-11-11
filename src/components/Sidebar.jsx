@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X, Database, Check } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X, Database, Check, ShieldCheck } from 'lucide-react';
 import Logo, { LogoMark } from './Logo';
 import { NAV } from '../lib/nav';
 import { WORKSPACES, getWorkspace, switchWorkspace } from '../lib/workspace';
@@ -42,7 +42,6 @@ const WorkspacePicker = ({ collapsed }) => {
     };
   }, [open]);
 
-  const dot = (key) => (key === 'real' ? 'bg-accent' : 'bg-ink-lo');
 
   return (
     <div ref={ref} className={`relative shrink-0 ${collapsed ? 'px-3' : 'px-3'} pb-2`}>
@@ -60,7 +59,6 @@ const WorkspacePicker = ({ collapsed }) => {
             <span className="min-w-0 flex-1">
               <span className="block text-xs text-ink-lo">Kho dữ liệu</span>
               <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink-hi">
-                <span className={`size-1.5 shrink-0 rounded-full ${dot(current)}`} aria-hidden="true" />
                 {WORKSPACES[current].label}
               </span>
             </span>
@@ -84,7 +82,6 @@ const WorkspacePicker = ({ collapsed }) => {
                 }}
                 className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left hover:bg-raised"
               >
-                <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${dot(key)}`} aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-ink-hi">{ws.label}</span>
                   <span className="mt-0.5 block text-xs leading-snug text-ink-lo">{ws.hint}</span>
@@ -281,7 +278,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
                 title={updatedAt ? `Tính lúc ${updatedAt}` : undefined}
                 className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-xs text-ink-mid hover:bg-raised hover:text-ink-hi"
               >
-                <span className={`size-1.5 shrink-0 rounded-full ${healthTone}`} aria-hidden="true" />
+                <ShieldCheck size={13} className="shrink-0 text-ink-lo" aria-hidden="true" />
                 <span className="flex-1">Độ tin số liệu</span>
                 <span className={`font-mono font-semibold ${healthText}`}>{health ?? '—'}</span>
               </button>
@@ -292,9 +289,8 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
                 title={nlpView.title}
                 className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-xs text-ink-mid hover:bg-raised hover:text-ink-hi"
               >
-                <span className={`size-1.5 shrink-0 rounded-full ${nlpView.dot}`} aria-hidden="true" />
+                <Cpu size={13} className="shrink-0 text-ink-lo" aria-hidden="true" />
                 <span className="flex-1 truncate">{nlpView.label}</span>
-                <Cpu size={12} className="shrink-0 text-ink-lo" aria-hidden="true" />
               </button>
             </div>
           )}

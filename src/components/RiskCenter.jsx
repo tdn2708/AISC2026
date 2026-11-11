@@ -21,19 +21,16 @@ import { alertTitle, alertInWords, fmtInt, fmtPct, fmtDateTime, SEVERITY, SEVERI
  */
 
 const AlertRow = ({ alert, status, active, onClick }) => {
-  const meta = SEVERITY[alert.severity] || SEVERITY.Low;
   return (
     <li>
       <button
         type="button"
         onClick={onClick}
         aria-current={active || undefined}
-        className={`relative w-full rounded-lg border p-4 pl-5 text-left transition-colors ${
-          active ? 'border-accent bg-surface' : 'border-transparent hover:bg-raised'
+        className={`relative w-full rounded-md p-4 text-left transition-colors ${
+          active ? 'bg-accent-dim' : 'hover:bg-raised'
         }`}
-        style={{ '--sev': meta.color }}
       >
-        <span aria-hidden="true" className="absolute inset-y-3 left-0 w-[3px] rounded-r-full bg-(--sev)" />
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm leading-snug font-semibold text-ink-hi">{alertTitle(alert)}</p>
           <SeverityBadge level={alert.severity} />
@@ -220,7 +217,7 @@ const pctSmart = (v) => fmtPct(v, v != null && v > 0 && v < 0.01 ? 2 : 1);
  * trước so với 7 ngày sau. Ghi rõ là so sánh trước/sau, chưa loại trừ yếu tố khác.
  */
 const Effect = ({ e }) => {
-  if (!e) return <span className="text-ink-lo">—</span>;
+  if (!e) return <span className="text-ink-lo">Chưa có</span>;
   if (e.status === 'pending') {
     return <span className="text-ink-lo">Còn {e.daysLeft} ngày nữa mới đủ 7 ngày để đo</span>;
   }

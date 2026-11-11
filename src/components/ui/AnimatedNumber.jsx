@@ -38,7 +38,7 @@ export const AnimatedNumber = ({ value, decimals = 0, signed = false, unit, unit
     return () => cancelAnimationFrame(raf);
   }, [value, duration]);
 
-  if (value == null || !Number.isFinite(value)) return <span className={className}>—</span>;
+  if (value == null || !Number.isFinite(value)) return <span className={className}>Chưa có</span>;
 
   const abs = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(Math.abs(shown));
   const isZero = Number(Math.abs(shown).toFixed(decimals)) === 0;

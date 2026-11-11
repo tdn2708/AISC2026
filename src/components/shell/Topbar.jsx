@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Bell, Menu, Moon, Search, Sun, MessageSquareText } from 'lucide-react';
+import { Bell, Menu, Moon, Search, Sun, MessageSquareText, Loader2 } from 'lucide-react';
 import { openAssistant } from '../../lib/assistant';
 import { IconButton } from '../ui';
 import { findPage } from '../../lib/nav';
@@ -191,7 +191,7 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
         {/* Sau một thao tác ghi, máy chủ tính lại số liệu ở nền; trang tự tải lại khi xong */}
         {refreshing && (
           <span role="status" className="hidden shrink-0 items-center gap-2 rounded-full bg-accent-dim px-3 py-1.5 text-xs font-medium text-accent-hi md:inline-flex">
-            <span className="size-1.5 animate-pulse rounded-full bg-accent" aria-hidden="true" />
+            <Loader2 size={13} className="animate-spin" aria-hidden="true" />
             Đang cập nhật số liệu
           </span>
         )}

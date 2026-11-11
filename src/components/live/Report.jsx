@@ -27,7 +27,7 @@ const Big = ({ label, value, sub, tone }) => (
 );
 
 const Delta = ({ now, prev, fmt = fmtInt, pctMode }) => {
-  if (prev == null || now == null) return <span className="text-ink-lo">—</span>;
+  if (prev == null || now == null) return <span className="text-ink-lo">Chưa so được</span>;
   const d = now - prev;
   const txt = pctMode ? `${d >= 0 ? '+' : ''}${Math.round(d * 100)} điểm` : `${d >= 0 ? '+' : ''}${fmt(d)}`;
   return <span className={d > 0 ? 'text-ok' : d < 0 ? 'text-crit' : 'text-ink-lo'}>{txt}</span>;

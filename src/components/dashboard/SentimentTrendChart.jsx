@@ -63,7 +63,7 @@ const SentimentTrendChart = ({ data = [] }) => {
             type="button"
             aria-pressed={view === key}
             onClick={() => setView(key)}
-            className={`rounded px-2 py-0.5 transition-colors ${view === key ? 'bg-raised text-ink-hi' : 'text-ink-lo hover:text-ink-mid'}`}
+            className={`rounded px-2 py-0.5 whitespace-nowrap transition-colors ${view === key ? 'bg-raised text-ink-hi' : 'text-ink-lo hover:text-ink-mid'}`}
           >
             {label}
           </button>

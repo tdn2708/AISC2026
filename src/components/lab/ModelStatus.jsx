@@ -27,7 +27,7 @@ const ModelStatus = ({ className = '' }) => {
         <Cpu size={15} className="mt-0.5 shrink-0 text-accent" />
         <span>
           <b className="font-semibold text-ink-hi">ViSoBERT đang chạy ngay trên trình duyệt của bạn.</b>{' '}
-          Mô hình nằm trên máy này — câu phản hồi không gửi tới máy chủ mô hình nào.
+          Mô hình nằm trên máy này: câu phản hồi không gửi tới máy chủ mô hình nào.
         </span>
       </p>
     );
@@ -45,7 +45,7 @@ const ModelStatus = ({ className = '' }) => {
             : 'Đang chuẩn bị mô hình ViSoBERT…'}
       </p>
       <div className="h-1.5 overflow-hidden rounded-full bg-raised">
-        <div className="h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${pct}%` }} />
+        <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
