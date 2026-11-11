@@ -415,6 +415,33 @@ router.get('/trend', wrap(async (req, res) => {
   res.json(metrics.weightedTimeSeries(items, buckets, ctxNow(ctx), spanDays));
 }));
 
+/**
+ * Khối dữ liệu cho trang Bảng số liệu (services/bi_cube.js): mỗi phản hồi được
+ * tính là một hàng số nguyên, trình duyệt tự lọc chéo. Không theo bộ lọc của
+ * trang khác; nhớ theo bản ngữ cảnh, đổi bản là tính lại.
+ */
+const { buildCube } = require('../services/bi_cube');
+const cubeMemo = new Map();
+router.get('/bi/cube', wrap(async (req, res) => {
+  const ctx = await getContext(req.db);
+  const key = `${ctx.dbName}|${ctx.computedAt}|${ctx.patchedAt || 0}`;
+  let body = cubeMemo.get(ctx.dbName);
+  if (!body || body.key !== key) {
+    body = {
+      key,
+      data: buildCube(ctx.items, {
+        asOf: ctxNow(ctx),
+        evidenceKind,
+        isCountable: metrics.isCountable,
+        categoryLabel: taxonomy.categoryLabel,
+        causeLabel: taxonomy.causeLabel
+      })
+    };
+    cubeMemo.set(ctx.dbName, body);
+  }
+  res.json({ ...body.data, workspace: req.workspace, refreshing: Boolean(ctx.refreshing) });
+}));
+
 // ==================================================================
 // TRUST LAYER
 // ==================================================================

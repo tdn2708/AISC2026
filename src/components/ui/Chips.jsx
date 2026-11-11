@@ -34,7 +34,7 @@ export const ChipGroup = ({ options, value, onChange, label, className = '' }) =
 
 /** Điều khiển phân đoạn — chuyển chế độ xem trong cùng một panel */
 export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
-  <div role="group" aria-label={label} className="inline-flex rounded-md border border-line-soft bg-raised p-0.5">
+  <div role="group" aria-label={label} className="inline-flex max-w-full overflow-x-auto rounded-md border border-line-soft bg-raised p-0.5 [scrollbar-width:none]">
     {options.map((o) => {
       const active = o.value === value;
       return (
@@ -43,7 +43,7 @@ export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
           type="button"
           aria-pressed={active}
           onClick={() => onChange(o.value)}
-          className={`inline-flex items-center gap-1.5 rounded font-medium transition-[background-color,color,box-shadow] duration-150 ${
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded font-medium whitespace-nowrap transition-[background-color,color,box-shadow] duration-150 ${
             size === 'sm' ? 'h-7 px-3 text-xs' : 'h-9 px-4 text-sm'
           } ${active ? 'bg-surface text-ink-hi shadow-(--shadow-knob)' : 'text-ink-lo hover:text-ink-mid'}`}
         >

@@ -43,6 +43,28 @@ function near(actual, expected, tolerance, label) {
   );
 }
 
+test('Bảng số liệu: khối dữ liệu chỉ gồm phản hồi được tính, mã hoá đúng từ điển', () => {
+  const { buildCube } = require('../services/bi_cube');
+  const asOf = '2026-11-10T12:00:00Z';
+  const items = [
+    { timestamp: '2026-11-10T08:00:00Z', source: 'Shopee', category: 'Delivery', subCategory: 'Late', sentiment: 'Negative', productName: 'Áo', rating: 2, trust: { weight: 0.8 } },
+    { timestamp: '2026-11-08T08:00:00Z', source: 'Shopee', category: 'Other', sentiment: 'Positive', productName: ' ', rating: 5, trust: { weight: 1 } },
+    { timestamp: '2026-11-09T08:00:00Z', source: 'Tiki', category: 'Delivery', sentiment: 'Neutral', trust: { weight: 0 } }
+  ];
+  const cube = buildCube(items, {
+    asOf,
+    evidenceKind: (f) => (f.rating === 5 ? 'verified' : 'inferred'),
+    isCountable: (f) => f.trust.weight > 0,
+    categoryLabel: (k) => `nhom ${k}`,
+    causeLabel: (c, s) => `${c}/${s}`
+  });
+  assert.strictEqual(cube.rows.length, 2, 'phản hồi trọng số 0 không vào khối');
+  assert.deepStrictEqual(cube.dicts.source, ['Shopee']);
+  assert.deepStrictEqual(cube.rows[0], [0, 0, 0, 0, 2, 0, 0, 2, 8000]);
+  assert.deepStrictEqual(cube.rows[1], [2, 0, -1, 2, 0, -1, -1, 5, 10000], 'Other và sản phẩm rỗng thành -1');
+  assert.strictEqual(cube.dicts.cause[0].label, 'Delivery/Late');
+});
+
 // ==================================================================
 console.log('\nTHỐNG KÊ');
 // ==================================================================

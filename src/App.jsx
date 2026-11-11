@@ -7,6 +7,7 @@ import CommandPalette from './components/shell/CommandPalette';
 import Assistant from './components/shell/Assistant';
 import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
+import Insights from './components/Insights';
 import Feedbacks from './components/Feedbacks';
 import Live from './components/Live';
 import RiskCenter from './components/RiskCenter';
@@ -106,6 +107,7 @@ function App() {
         <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLogin} />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={page(<Dashboard />)} />
+        <Route path="/insights" element={page(<Insights />)} />
         <Route path="/risk" element={page(<RiskCenter />)} />
         <Route path="/feedbacks" element={page(<Feedbacks />)} />
         <Route path="/live" element={page(<Live />)} />
