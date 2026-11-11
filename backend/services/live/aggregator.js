@@ -211,4 +211,10 @@ class LiveAggregator {
   }
 }
 
-module.exports = { LiveAggregator, groupKeyOf };
+/**
+ * Các trường KHÔNG cần khi dựng lại số liệu, báo cáo từ bình luận đã lưu.
+ * Bỏ khi đọc để phiên dài (vài chục nghìn bình luận) không làm máy chủ 512 MB hết RAM.
+ */
+const REPLAY_PROJECTION = { piiTypes: 0, reasons: 0, receivedAt: 0, platform: 0, sessionId: 0, sentiment: 0 };
+
+module.exports = { LiveAggregator, groupKeyOf, REPLAY_PROJECTION };

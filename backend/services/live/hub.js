@@ -24,7 +24,7 @@
 const crypto = require('crypto');
 const { ObjectId } = require('mongodb');
 const { classifyComment, INTENT_LABEL, TOPIC_LABEL } = require('./intent');
-const { LiveAggregator, groupKeyOf } = require('./aggregator');
+const { LiveAggregator, groupKeyOf, REPLAY_PROJECTION } = require('./aggregator');
 const { suggestAnswer } = require('./answer');
 const { coach, measureEffect } = require('./coach');
 const { stockReplay } = require('./report');
@@ -194,6 +194,23 @@ function decorateSnapshot(snap, session, agg, active = []) {
 
 const ACTION_COOLDOWN_MS = 10 * 60 * 1000;
 
+// Nạp lại bình luận theo từng đợt, chỉ giữ phần cần thiết trong RAM
+const REPLAY_BATCH = 500;
+const RECENT_KEEP = 200;
+const SEEN_KEEP = 10000;
+// Trần bình luận cho phiên mô phỏng: simulator sinh khoảng 2 câu/giây, để
+// chạy cả ngày thì phiên phình tới hàng trăm nghìn câu và máy chủ hết RAM
+const SIM_MAX_COMMENTS = Math.max(1000, Number(process.env.LIVE_SIM_MAX_COMMENTS) || 50000);
+const SIM_CAP_REASON = `Phiên mô phỏng đã đủ ${SIM_MAX_COMMENTS.toLocaleString('vi-VN')} bình luận, tự dừng để máy chủ không hết bộ nhớ`;
+
+/** Đọc bình luận của một phiên theo thời gian, bằng cursor, bỏ các trường không dùng */
+function replayCursor(db, sessionId, extra = {}) {
+  return db.collection('live_comments')
+    .find({ sessionId, ...extra }, { projection: REPLAY_PROJECTION })
+    .sort({ ts: 1 })
+    .batchSize(REPLAY_BATCH);
+}
+
 // ==================================================================
 // Runtime
 // ==================================================================
@@ -263,13 +280,20 @@ class Runtime {
   }
 
   async preload() {
-    // Phiên nối lại sau khi máy chủ khởi động lại: nạp các bình luận đã có
-    const docs = await this.db.collection('live_comments').find({ sessionId: this.session._id }).sort({ ts: 1 }).toArray();
-    for (const d of docs) {
+    // Phiên nối lại sau khi máy chủ khởi động lại: nạp các bình luận đã có.
+    // Đọc bằng cursor từng đợt, không .toArray(): phiên 35 nghìn bình luận
+    // nạp một lần làm máy chủ 512 MB hết RAM và khởi động lại.
+    const recent = [];
+    for await (const d of replayCursor(this.db, this.session._id)) {
       this.agg.add(d);
-      if (d.platformMsgId) this.seen.add(d.platformMsgId);
+      if (d.platformMsgId) {
+        this.seen.add(d.platformMsgId);
+        if (this.seen.size > SEEN_KEEP * 2) this.seen = new Set([...this.seen].slice(-SEEN_KEEP));
+      }
+      recent.push(d);
+      if (recent.length > RECENT_KEEP * 2) recent.splice(0, recent.length - RECENT_KEEP);
     }
-    this.recent = docs.slice(-200);
+    this.recent = recent.slice(-RECENT_KEEP);
     const s = this.session.summary;
     if (s?.viewers?.peak) this.agg.setViewers(s.viewers.now || s.viewers.peak);
   }
@@ -346,9 +370,21 @@ class Runtime {
     }
   }
 
+  /** Phiên mô phỏng đã chạm trần bình luận */
+  overCap() {
+    return this.session.platform === 'simulator' && this.agg.total >= SIM_MAX_COMMENTS;
+  }
+
   /** @returns {object|null} tài liệu đã nhận, null nếu trùng hoặc rỗng */
   ingest(ev) {
     if (!ev.text || !String(ev.text).trim()) return null;
+    if (this.overCap()) {
+      if (!this.capping) {
+        this.capping = true;
+        this.stop(SIM_CAP_REASON).catch((e) => console.warn('[LIVE] Dừng phiên lỗi:', e.message));
+      }
+      return null;
+    }
     if (ev.platformMsgId) {
       const k = String(ev.platformMsgId);
       if (this.seen.has(k)) return null;
@@ -423,7 +459,7 @@ class Runtime {
     const summary = summarize(snap);
     // Doanh thu ước tính từ bình luận chốt, để so sánh giữa các phiên
     try {
-      const comments = await this.db.collection('live_comments').find({ sessionId: this.session._id, intent: 'order' }).sort({ ts: 1 }).toArray();
+      const comments = await replayCursor(this.db, this.session._id, { intent: 'order' }).toArray();
       const money = stockReplay(comments, this.session.products || []);
       summary.revenue = money.revenue;
       summary.lostRevenue = money.lost.reduce((s, l) => s + l.value, 0);
@@ -492,6 +528,10 @@ async function startSession(db, workspace, session) {
   const r = new Runtime(session, db, workspace);
   runtimes.set(r.id, r);
   if (session.startedAt) await r.preload();
+  if (r.overCap()) {
+    await r.stop(SIM_CAP_REASON);
+    return r;
+  }
   r.start();
   return r;
 }
@@ -547,8 +587,7 @@ function rebuildSnapshot(db, session) {
 
 async function buildSnapshot(db, session) {
   const agg = new LiveAggregator(session);
-  const cursor = db.collection('live_comments').find({ sessionId: session._id }).sort({ ts: 1 });
-  for await (const d of cursor) agg.add(d);
+  for await (const d of replayCursor(db, session._id)) agg.add(d);
   if (session.summary?.viewers) {
     agg.viewers = { ...session.summary.viewers };
   }
@@ -562,8 +601,7 @@ async function refreshRuntime(runtime) {
   agg.viewers = { ...runtime.agg.viewers };
   agg.likes = runtime.agg.likes;
   await runtime.flush();
-  const cursor = runtime.db.collection('live_comments').find({ sessionId: runtime.session._id }).sort({ ts: 1 });
-  for await (const d of cursor) agg.add(d);
+  for await (const d of replayCursor(runtime.db, runtime.session._id)) agg.add(d);
   runtime.agg = agg;
   runtime.dirty = true;
   runtime.pushStats();
@@ -586,5 +624,8 @@ module.exports = {
   refreshRuntime,
   summarize,
   authorHash,
+  SIM_MAX_COMMENTS,
+  SIM_CAP_REASON,
+  Runtime,
   _runtimes: runtimes
 };

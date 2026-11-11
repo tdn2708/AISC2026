@@ -228,6 +228,11 @@ router.post('/sessions/:id/resume', wrap(async (req, res) => {
   const s = await sessionOr404(req);
   if (hub.runtimeFor(s._id, req.workspace)) throw bad('Phiên đang chạy');
   if (s.platform === 'simulator' && req.workspace !== 'demo') throw bad('Phiên mô phỏng chỉ chạy trong kho demo');
+  if (s.platform === 'simulator') {
+    // Đếm trước khi nạp: phiên đã đủ trần thì không nạp lại cả phiên vào RAM
+    const n = await req.db.collection('live_comments').countDocuments({ sessionId: s._id });
+    if (n >= hub.SIM_MAX_COMMENTS) throw bad(`Phiên mô phỏng đã có ${n.toLocaleString('vi-VN')} bình luận, quá trần ${hub.SIM_MAX_COMMENTS.toLocaleString('vi-VN')}. Tạo phiên mô phỏng mới để chạy tiếp.`);
+  }
   await req.db.collection('live_sessions').updateOne({ _id: s._id }, { $set: { status: 'connecting', error: null }, $unset: { endedAt: '' } });
   const r = await hub.startSession(req.db, req.workspace, { ...s, status: 'connecting', error: null, endedAt: null });
   res.json({ session: hub.publicSession(r.session, r) });

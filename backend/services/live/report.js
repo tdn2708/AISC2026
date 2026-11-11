@@ -15,7 +15,7 @@
  * ở đây là ước tính từ lượt chốt trên bình luận, không phải số tiền sàn ghi nhận.
  */
 
-const { LiveAggregator } = require('./aggregator');
+const { LiveAggregator, REPLAY_PROJECTION } = require('./aggregator');
 const { measureEffect, stockKeys } = require('./coach');
 const { suggestAnswer } = require('./answer');
 const { TOPIC_LABEL, fold } = require('./intent');
@@ -94,7 +94,7 @@ function stockReplay(comments, products) {
  * @param {object} session tài liệu live_sessions
  */
 async function buildReport(db, session) {
-  const comments = await db.collection('live_comments').find({ sessionId: session._id }).sort({ ts: 1 }).toArray();
+  const comments = await db.collection('live_comments').find({ sessionId: session._id }, { projection: REPLAY_PROJECTION }).sort({ ts: 1 }).batchSize(500).toArray();
   const products = session.products || [];
   const byId = new Map(products.map((p) => [p.id, p]));
   const agg = new LiveAggregator(session);

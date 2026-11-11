@@ -1611,7 +1611,122 @@ test('Muối băm: giá trị mặc định công khai hoặc quá ngắn không
 });
 
 // ==================================================================
-console.log(`\n${'='.repeat(52)}`);
-console.log(`Kết quả: ${passed} đạt, ${failed} lỗi`);
-console.log('='.repeat(52));
-process.exit(failed > 0 ? 1 : 0);
+// Test bất đồng bộ (cần await): chạy lần lượt sau các test đồng bộ
+// ==================================================================
+const asyncTests = [];
+function testAsync(name, fn) {
+  asyncTests.push({ name, fn });
+}
+
+/**
+ * Database giả cho live: find() trả cursor đọc dần (async iterator) và ghi lại
+ * cách được gọi, để kiểm tra không ai nạp cả phiên bằng .toArray().
+ */
+function fakeLiveDb(makeDocs) {
+  const calls = { find: [], toArray: 0, iterated: 0 };
+  const cursor = (q, opts) => {
+    calls.find.push({ q, opts });
+    const c = {
+      sort() { return c; },
+      batchSize(n) { calls.batch = n; return c; },
+      async toArray() {
+        calls.toArray += 1;
+        return [...makeDocs()].filter((d) => !q.intent || d.intent === q.intent);
+      },
+      async *[Symbol.asyncIterator]() {
+        for (const d of makeDocs()) { calls.iterated += 1; yield d; }
+      }
+    };
+    return c;
+  };
+  const col = {
+    find: cursor,
+    createIndex: async () => {},
+    updateOne: async () => ({}),
+    insertMany: async () => ({}),
+    countDocuments: async () => 0
+  };
+  return { calls, db: { collection: () => col } };
+}
+
+function liveSimSession() {
+  const { ObjectId } = require('mongodb');
+  return { _id: new ObjectId(), platform: 'simulator', simulated: true, products: [], startedAt: new Date('2026-11-11T12:00:00Z'), title: 'Thử' };
+}
+
+function* simComments(session, n) {
+  const hub = require('../services/live/hub');
+  const texts = ['giá bao nhiêu shop', 'chốt 1 cái size M', 'đẹp quá', 'hi shop', 'giao hàng chậm quá shop ơi'];
+  const t0 = Date.parse('2026-11-11T12:00:00Z');
+  for (let i = 0; i < n; i += 1) {
+    yield hub.buildCommentDoc(session, {
+      text: texts[i % texts.length], ts: new Date(t0 + i * 500), platformMsgId: `sim-1-a-${i}`,
+      author: { handle: `khach${i % 300}`, platformUserId: `u${i % 300}` }
+    });
+  }
+}
+
+testAsync('Live: nạp lại phiên đọc bằng cursor, bỏ trường thừa, chỉ giữ 200 bình luận gần nhất', async () => {
+  const hub = require('../services/live/hub');
+  const session = liveSimSession();
+  const { db, calls } = fakeLiveDb(() => simComments(session, 1200));
+  const r = new hub.Runtime(session, db, 'demo');
+  try {
+    await r.preload();
+    assert.strictEqual(calls.toArray, 0, 'preload không được gọi .toArray()');
+    assert.strictEqual(calls.iterated, 1200);
+    assert.strictEqual(r.agg.total, 1200);
+    assert.strictEqual(r.recent.length, 200);
+    assert.strictEqual(r.recent[199].platformMsgId, 'sim-1-a-1199', 'phải là 200 bình luận cuối');
+    assert.strictEqual(calls.find[0].opts.projection.piiTypes, 0, 'phải bỏ trường không dùng');
+    assert.ok(calls.batch > 0 && calls.batch <= 1000, 'đọc theo đợt nhỏ');
+    assert.ok(r.seen.has('sim-1-a-0'), 'vẫn nhớ mã tin để chống trùng');
+  } finally {
+    r.dispose();
+  }
+});
+
+testAsync('Live: phiên mô phỏng chạm trần thì tự dừng, không nhận thêm bình luận', async () => {
+  const hub = require('../services/live/hub');
+  const session = liveSimSession();
+  const { db } = fakeLiveDb(() => []);
+  const r = new hub.Runtime(session, db, 'demo');
+  r.status = 'live';
+  r.agg.total = hub.SIM_MAX_COMMENTS;
+  const got = r.ingest({ text: 'chốt 1 cái size M', ts: new Date(), platformMsgId: 'x1' });
+  assert.strictEqual(got, null, 'không nhận bình luận vượt trần');
+  await new Promise((done) => setTimeout(done, 20));
+  assert.strictEqual(r.status, 'ended');
+  assert.strictEqual(r.session.summary != null, true, 'phải chốt số liệu khi dừng');
+  assert.strictEqual(r.pending.length, 0);
+});
+
+testAsync('Live: nối lại phiên mô phỏng đã quá trần thì dừng ngay, không bật simulator', async () => {
+  const hub = require('../services/live/hub');
+  const session = liveSimSession();
+  const n = hub.SIM_MAX_COMMENTS;
+  const { db } = fakeLiveDb(function* () {
+    for (let i = 0; i < n; i += 1) yield { _id: `c${i}`, ts: new Date(1e12 + i * 1000), intent: 'chatter', author: { hash: `h${i % 50}` } };
+  });
+  const r = await hub.startSession(db, 'demo', { ...session, status: 'connecting' });
+  assert.strictEqual(r.status, 'ended');
+  assert.strictEqual(r.connector, null, 'không được bật simulator');
+  assert.strictEqual(hub.runtimeFor(session._id, 'demo'), null, 'không còn runtime chạy nền');
+});
+
+(async () => {
+  for (const t of asyncTests) {
+    try {
+      await t.fn();
+      passed += 1;
+      console.log(`  OK   ${t.name}`);
+    } catch (e) {
+      failed += 1;
+      console.error(`  FAIL ${t.name}\n       ${e.message}`);
+    }
+  }
+  console.log(`\n${'='.repeat(52)}`);
+  console.log(`Kết quả: ${passed} đạt, ${failed} lỗi`);
+  console.log('='.repeat(52));
+  process.exit(failed > 0 ? 1 : 0);
+})();
