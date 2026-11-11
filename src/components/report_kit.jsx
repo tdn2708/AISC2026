@@ -35,7 +35,38 @@ export const REPORT = {
   high: '#8F5509',
   highDim: '#F6ECDD',
   ok: '#2E7350',
-  okDim: '#E2F0E8'
+  okDim: '#E2F0E8',
+  // Bản in A4 (components/report): giấy trắng, mực xanh đen, một màu nhấn
+  // xanh rêu của thương hiệu. Màu xấu và màu tốt chỉ dùng cho số thay đổi.
+  paper: '#FFFFFF',
+  ink: '#17242A',
+  ink2: '#3E4E55',
+  ink3: '#5F6E74',
+  rule: '#CBD5D2',
+  ruleSoft: '#E4EAE8',
+  tint: '#F3F6F5',
+  brand: '#0E6B5E',
+  brandSoft: '#D9EAE5',
+  bad: '#A3303D',
+  good: '#1D6A46',
+  warn: '#875200'
+};
+
+/** Biến CSS cho bản in, đặt lên phần tử gốc của tài liệu (report.css đọc các biến này) */
+export const REPORT_VARS = {
+  '--r-paper': REPORT.paper,
+  '--r-ink': REPORT.ink,
+  '--r-ink2': REPORT.ink2,
+  '--r-ink3': REPORT.ink3,
+  '--r-rule': REPORT.rule,
+  '--r-rule-soft': REPORT.ruleSoft,
+  '--r-tint': REPORT.tint,
+  '--r-brand': REPORT.brand,
+  '--r-brand-soft': REPORT.brandSoft,
+  '--r-bad': REPORT.bad,
+  '--r-good': REPORT.good,
+  '--r-warn': REPORT.warn,
+  '--r-desk': REPORT.raised
 };
 
 export const fmtInt = (n) => new Intl.NumberFormat('vi-VN').format(Math.round(n ?? 0));
@@ -150,10 +181,9 @@ export function buildTakeaways(recommendations = [], limit = 4) {
       impact.push(`giá trị đơn liên quan ${money}${rev.isLowerBound ? ' trở lên' : ''}`);
     }
     if (st.currentRate != null && st.baselineRate != null) {
-      impact.push(
-        `tỉ lệ tăng từ ${(st.baselineRate * 100).toFixed(1).replace('.', ',')}% ` +
-        `lên ${(st.currentRate * 100).toFixed(1).replace('.', ',')}%`
-      );
+      // Tỉ lệ dưới 1% giữ 2 chữ số, để 0,04% không thành "0,0%"
+      const rate = (x) => (x * 100).toFixed(x * 100 < 1 ? 2 : 1).replace('.', ',');
+      impact.push(`tỉ lệ tăng từ ${rate(st.baselineRate)}% lên ${rate(st.currentRate)}%`);
     }
 
     // Hành động: lấy việc xếp hạng cao nhất mà KHÔNG phải việc thu thập

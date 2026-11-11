@@ -467,6 +467,8 @@ router.get('/trust/health', wrap(async (req, res) => {
     // Số phản hồi thực sự góp vào chỉ số (trọng số > 0): khớp con số trên mọi
     // trang; khác validForAnalysis ở phần phản hồi quá cũ, trọng số về 0
     countedForMetrics: ctx.items.filter(metrics.isCountable).length,
+    // Các phần của phép trừ trên sổ đối chiếu, tách đúng theo trọng số
+    ledger: metrics.ledgerSplit(ctx.items),
     dictionarySize: normalizer.DICTIONARY_SIZE,
     computedAt: ctx.computedAt
   });

@@ -356,7 +356,28 @@ function buildEvidence(items, now = new Date(), sampleSize = 5) {
   };
 }
 
+/**
+ * Tách các phần bị loại khỏi chỉ số cho SỔ ĐỐI CHIẾU, sao cho phép trừ
+ * thu thập - rác - nghi ảo - chờ duyệt chưa tính - quá cũ = số được tính
+ * luôn khớp. Phản hồi chờ duyệt (GRAY_ZONE) vẫn có thể mang trọng số > 0
+ * và được tính tạm; trừ cả nhóm đó thì sổ lệch (kho thật từng lệch 49).
+ */
+function ledgerSplit(items = []) {
+  const out = { spam: 0, inauthentic: 0, pendingNotCounted: 0, pendingCounted: 0, aged: 0, counted: 0, removedButCounted: 0 };
+  for (const f of items) {
+    const band = f.trust?.band;
+    const counted = isCountable(f);
+    if (counted) out.counted += 1;
+    if (band === 'SPAM') { out.spam += 1; if (counted) out.removedButCounted += 1; }
+    else if (band === 'LIKELY_INAUTHENTIC') { out.inauthentic += 1; if (counted) out.removedButCounted += 1; }
+    else if (band === 'GRAY_ZONE') { if (counted) out.pendingCounted += 1; else out.pendingNotCounted += 1; }
+    else if (!counted) out.aged += 1;
+  }
+  return out;
+}
+
 module.exports = {
+  ledgerSplit,
   evidenceMix,
   buildEvidence,
   isComplaint,

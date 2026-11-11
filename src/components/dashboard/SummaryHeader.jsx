@@ -40,10 +40,13 @@ export const Ledger = ({ ledger, evidence, showLink = true }) => {
   // Con số cuối là số phản hồi góp vào chỉ số, khớp với mọi trang khác. Phần
   // chênh với số qua bộ lọc là phản hồi quá cũ, trọng số đã giảm về 0.
   const counted = countedForMetrics ?? validForAnalysis;
-  const aged = Math.max(0, validForAnalysis - counted);
+  // ledger (máy chủ mới): phản hồi chờ duyệt còn trọng số được tính tạm, không trừ
+  const split = ledger.ledger;
+  const aged = split ? split.aged : Math.max(0, validForAnalysis - counted);
+  const pendingOut = split ? split.pendingNotCounted : (pendingReview?.count ?? 0);
   const verifiedShare = evidence?.total ? (evidence.verified + evidence.human) / evidence.total : null;
   const pct = verifiedShare == null ? null : Math.round(verifiedShare * 100);
-  const removed = (spamRemoved?.count ?? 0) + (inauthenticFlagged?.count ?? 0) + (pendingReview?.count ?? 0) + aged;
+  const removed = (spamRemoved?.count ?? 0) + (inauthenticFlagged?.count ?? 0) + pendingOut + aged;
   const diff = rawCollected - removed - counted;
   return (
     <figure className="rounded-lg border border-line bg-(--sheet) px-5 pt-4 pb-5">
@@ -55,7 +58,7 @@ export const Ledger = ({ ledger, evidence, showLink = true }) => {
         <LedgerRow label="Phản hồi thu thập được" value={rawCollected} />
         <LedgerRow label="Rác, quảng cáo" value={spamRemoved?.count ?? 0} sign="−" />
         <LedgerRow label="Nghi đánh giá ảo" value={inauthenticFlagged?.count ?? 0} sign="−" />
-        {(pendingReview?.count ?? 0) > 0 && <LedgerRow label="Chờ người duyệt" value={pendingReview.count} sign="−" />}
+        {pendingOut > 0 && <LedgerRow label={split?.pendingCounted ? 'Chờ duyệt, chưa tính' : 'Chờ người duyệt'} value={pendingOut} sign="−" />}
         {aged > 0 && <LedgerRow label="Quá cũ, không còn trọng số" value={aged} sign="−" />}
         {/* Gạch đôi trên dòng tổng, như sổ kế toán */}
         <div className="mt-px grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2 border-0 border-t-[3px] border-double border-ink-lo pt-2.5">
@@ -67,7 +70,10 @@ export const Ledger = ({ ledger, evidence, showLink = true }) => {
         {diff === 0 ? (
           <>
             <span className="grid size-5 shrink-0 place-items-center rounded-full border border-accent text-accent-hi" aria-hidden="true"><Check size={12} strokeWidth={3} /></span>
-            <span>Phép trừ khớp: {fmtInt(rawCollected)} trừ {fmtInt(removed)} đúng bằng {fmtInt(counted)}</span>
+            <span>
+              Phép trừ khớp: {fmtInt(rawCollected)} trừ {fmtInt(removed)} đúng bằng {fmtInt(counted)}
+              {split?.pendingCounted > 0 && `. ${fmtInt(split.pendingCounted)} phản hồi chờ duyệt vẫn được tính tạm theo trọng số`}
+            </span>
           </>
         ) : (
           <>

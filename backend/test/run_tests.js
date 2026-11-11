@@ -1610,6 +1610,21 @@ test('Muối băm: giá trị mặc định công khai hoặc quá ngắn không
   if (keep === undefined) delete process.env.PII_SALT; else process.env.PII_SALT = keep;
 });
 
+test('Sổ đối chiếu: phản hồi chờ duyệt còn trọng số được tính tạm, phép trừ vẫn khớp', () => {
+  const mk = (band, weight) => ({ trust: { band, weight } });
+  const items = [
+    mk('ACCEPTED', 0.8), mk('ACCEPTED', 0.5), mk('ACCEPTED', 0),
+    mk('SPAM', 0), mk('LIKELY_INAUTHENTIC', 0),
+    mk('GRAY_ZONE', 0.3), mk('GRAY_ZONE', 0)
+  ];
+  const l = metrics.ledgerSplit(items);
+  assert.deepStrictEqual(
+    { spam: l.spam, inauthentic: l.inauthentic, pendingNotCounted: l.pendingNotCounted, pendingCounted: l.pendingCounted, aged: l.aged, counted: l.counted },
+    { spam: 1, inauthentic: 1, pendingNotCounted: 1, pendingCounted: 1, aged: 1, counted: 3 }
+  );
+  assert.strictEqual(items.length - l.spam - l.inauthentic - l.pendingNotCounted - l.aged, l.counted, 'phép trừ phải khớp số được tính');
+});
+
 // ==================================================================
 // Test bất đồng bộ (cần await): chạy lần lượt sau các test đồng bộ
 // ==================================================================
