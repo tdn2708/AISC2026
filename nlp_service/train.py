@@ -17,7 +17,7 @@ CHỐNG RÒ RỈ TẬP KIỂM TRA — bắt buộc, không tắt được:
   mọi câu huấn luyện trùng với tập kiểm tra giữ riêng (data/gold_test.jsonl)
   bị loại trước khi train, và số câu bị loại được ghi vào meta.json.
   Bài học từ lần mở rộng từ khóa làm F1 nhảy 0.19 -> 0.97 vì học thuộc
-  đáp án (docs/TIEN-DO-VA-BOI-CANH.md, mục 4.1) áp dụng y nguyên ở đây.
+  đáp án áp dụng y nguyên ở đây.
 
 Tập dev (mặc định data/gold_dev.jsonl) chỉ dùng để chọn epoch tốt nhất.
 Con số báo cáo chính thức do `npm run eval` đo trên tập kiểm tra giữ riêng.

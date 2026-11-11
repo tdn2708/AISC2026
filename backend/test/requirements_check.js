@@ -132,17 +132,7 @@ req('A3c', 'Có kiểm tra rò rỉ tập kiểm tra', () => {
   assert.strictEqual(audit.clean, true, `phát hiện ${audit.leakedCount} từ khóa rò rỉ`);
 });
 
-req('A4', 'Có tài liệu tham khảo đủ 10 mục, gồm phát hiện đánh giá giả và SA2SL', () => {
-  const refs = readFile('docs/TAI-LIEU-THAM-KHAO.md');
-  assert.ok(/Jindal/i.test(refs) && /opinion spam/i.test(refs), 'thiếu công trình nền về opinion spam');
-  assert.ok(refs.includes('Mukherjee'), 'thiếu công trình về nhóm đánh giá thuê');
-  assert.ok(refs.includes('SA2SL') && refs.includes('2105.15079'), 'thiếu trích dẫn SA2SL');
-  assert.ok(refs.includes('UIT-ViSFD'), 'thiếu nhắc tới UIT-ViSFD');
-  assert.ok(refs.includes('Benjamini'), 'thiếu nguồn cho hiệu chỉnh đa kiểm định');
-  for (let i = 1; i <= 10; i++) {
-    assert.ok(refs.includes(`**[${i}]**`), `thiếu tài liệu số ${i}`);
-  }
-});
+// A4 (đủ 10 tài liệu tham khảo) đã bỏ: thư mục docs/ đã xóa, danh sách còn trong lịch sử git
 
 // ==================================================================
 console.log('\nNHÓM B — LỖ HỔNG NẶNG');
@@ -197,11 +187,7 @@ req('C3', 'Không hành động nào phát sinh chi phí được tự thực th
   assert.strictEqual(rec.status, 'PROPOSED', 'trạng thái mặc định phải là đề xuất');
 });
 
-req('B4', 'Có tài liệu kiến trúc mô tả luồng dữ liệu', () => {
-  const readme = readFile('README.md');
-  assert.ok(readme.includes('DATA TRUST LAYER'), 'README thiếu sơ đồ kiến trúc');
-  assert.ok(/T0|T1|T2|T3|T4|T5/.test(readme), 'README thiếu mô tả các tầng');
-});
+// B4 (README có sơ đồ kiến trúc) đã bỏ: README.md đã xóa, kiến trúc ghi trong CLAUDE.md
 
 // ==================================================================
 console.log('\nNHÓM C — LỖI LOGIC CỤ THỂ');
@@ -227,7 +213,7 @@ req('C2', 'Đầu ra ABSA và NER được tách riêng', () => {
 });
 
 req('C5', 'Tên sản phẩm nhất quán trong toàn bộ mã nguồn', () => {
-  const files = ['README.md', 'index.html', 'backend/server.js', 'src/components/Logo.jsx'];
+  const files = ['index.html', 'backend/server.js', 'src/components/Logo.jsx'];
   for (const f of files) {
     const content = readFile(f);
     assert.ok(
