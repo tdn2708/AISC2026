@@ -185,6 +185,54 @@ const TYPE_SCALE = [
   ['text-xs', '13px', 'Chú thích, nhãn', 'text-xs', 'Cập nhật 5 phút trước']
 ];
 
+/** Mục Kính (K1): hai lớp kính và panel + giấy, đặt trên các sọc màu để thấy nền phía sau bị làm mờ */
+const GlassDemo = () => (
+  <Cell
+    title="Kính"
+    note="Kính chỉ ở lớp nhìn qua: glass-chrome cho thanh trên, thanh bên, thanh lọc; glass-float cho lớp nổi. Panel số liệu mờ một phần, không làm mờ nền, và vùng chữ dày nằm trên giấy đặc."
+    className="lg:col-span-12"
+  >
+    <div className="grid gap-5 lg:grid-cols-12">
+      <div className="relative min-h-72 overflow-hidden rounded-surf border border-line lg:col-span-7">
+        <div aria-hidden="true" className="absolute inset-0 grid grid-rows-6">
+          <div className="bg-crit/12" />
+          <div className="bg-accent-dim" />
+          <div className="bg-ok/12" />
+          <div className="bg-high/12" />
+          <div className="bg-accent-dim" />
+          <div className="bg-med/12" />
+        </div>
+        <div aria-hidden="true" className="absolute inset-0 flex flex-col justify-around px-5 text-sm font-medium text-ink-lo">
+          {['Giao hàng chậm ở Hà Nội', 'Sản phẩm không đúng mô tả', 'Khách khen đóng gói', 'Hoàn tiền chưa nhận', 'Size nhỏ hơn bảng quy đổi', 'Hỏi tình trạng còn hàng'].map((t) => <span key={t}>{t}</span>)}
+        </div>
+        <div className="glass-chrome relative m-3 flex items-center justify-between gap-3 rounded-surf px-4 py-2.5">
+          <span className="text-sm font-semibold text-ink-hi">glass-chrome</span>
+          <span className="text-sm text-ink-mid">Thanh trên, thanh bên, thanh lọc</span>
+        </div>
+        <div className="glass-float relative mx-3 mt-6 max-w-sm rounded-surf p-4">
+          <p className="text-base font-semibold text-ink-hi">glass-float</p>
+          <p className="mt-1 text-sm text-ink-mid">Lớp nổi có chữ dày: popover, Ctrl+K, hộp thoại, toast. Nền phía sau mờ, bóng lệch xuống.</p>
+          <p className="mt-2 text-xs text-ink-lo">Chữ phụ cỡ 13 vẫn đọc được trên sọc đỏ phía sau.</p>
+        </div>
+      </div>
+      <GlassPanel className="min-w-0 p-5 lg:col-span-5">
+        <h3 className="text-heading font-semibold text-ink-hi">Panel số liệu</h3>
+        <p className="mt-0.5 mb-3 text-sm text-ink-mid">glass-panel: nền mờ một phần, không backdrop-filter. Chữ nhỏ dày đặc nằm trên lớp paper.</p>
+        <div className="paper p-3">
+          <table className="w-full text-sm tabular-nums">
+            <tbody className="divide-y divide-(--border-soft)">
+              {[['Thu thập', '14.128'], ['Trừ rác', '1.204'], ['Trừ nghi ảo', '388'], ['Được tính', '12.536']].map(([k, v]) => (
+                <tr key={k}><td className="py-1.5 text-ink-mid">{k}</td><td className="py-1.5 text-right font-medium text-ink-hi">{v}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-xs text-ink-lo">Tắt Hiệu ứng kính hoặc bật giảm trong suốt thì mọi lớp ở trên về nền đặc.</p>
+      </GlassPanel>
+    </div>
+  </Cell>
+);
+
 const UiKit = () => {
   const [sw1, setSw1] = useState(true);
   const [cb1, setCb1] = useState(true);
@@ -200,10 +248,11 @@ const UiKit = () => {
     <div className="cx">
       <PageHeader
         title="Bộ giao diện"
-        subtitle="Thành phần giao diện của Customer Radar: nền đặc, viền 1px, chữ Be Vietnam Pro, bo 6px cho điều khiển và 10px cho bề mặt."
+        subtitle="Thành phần giao diện của Customer Radar: số liệu trên giấy đặc, kính ở lớp nhìn qua, viền 1px, chữ Be Vietnam Pro, bo 6px cho điều khiển và 10px cho bề mặt."
       />
 
       <div className="grid gap-5 lg:grid-cols-12">
+        <GlassDemo />
         <Cell title="Thương hiệu và màu" className="lg:col-span-7">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-3">
@@ -309,7 +358,7 @@ const UiKit = () => {
           <Pager className="-mx-5 mt-4 -mb-5" page={page} pages={12} total={230} pageSize={20} onChange={setPage} />
         </Cell>
 
-        <Cell title="Lớp nổi" note="Popover cho menu và bộ lọc thả xuống, ChartTooltip cho biểu đồ. Một bề mặt, một bóng." className="lg:col-span-5">
+        <Cell title="Lớp nổi" note="Popover cho menu và bộ lọc thả xuống, ChartTooltip cho biểu đồ. Một bề mặt kính nổi, một bóng." className="lg:col-span-5">
           <div className="flex flex-wrap items-start gap-4">
             <Popover className="w-56 animate-none">
               <MenuItem icon={Settings}>Cài đặt</MenuItem>

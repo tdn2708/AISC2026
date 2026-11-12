@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import Topbar from './components/shell/Topbar';
 import CommandPalette from './components/shell/CommandPalette';
 import Assistant from './components/shell/Assistant';
+import AppAtmosphere from './components/shell/AppAtmosphere';
 import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
 import Insights from './components/Insights';
@@ -63,6 +64,7 @@ const MainLayout = ({ children, onLogout }) => {
 
   return (
     <>
+      <AppAtmosphere />
       <div className="flex min-h-screen">
         <Sidebar
           onLogout={onLogout}
