@@ -16,7 +16,7 @@ import SentimentShare from './dashboard/SentimentShare';
 import RisingIssues from './dashboard/RisingIssues';
 import LiveDigest from './dashboard/LiveDigest';
 import { Button } from './ui';
-import { useReducedMotion, MOTION } from './motion';
+import { useReducedMotion, MOTION, PageEnter, usePageEntered } from './motion';
 
 /**
  * TỔNG QUAN — việc cần làm trước, số liệu sau
@@ -106,6 +106,8 @@ const Dashboard = () => {
   // nào" mới đếm. Không đợi mãi: sổ lỗi, hoặc chưa xong sau một lúc (sổ nằm
   // ngoài khung nhìn), thì vẫn cho đếm. Giảm chuyển động: không có nhịp nào.
   const reduced = useReducedMotion();
+  // M1 (K3-04): các khối đầu trang vào trước; phép trừ chạy và ba số chỉ bắt đầu sau khi khối cuối vào xong
+  const [entered, onEntered] = usePageEntered();
   // Phép trừ chạy MỘT lần mỗi phiên trình duyệt; vào lại thì hiện bảng tĩnh số cuối
   const [playRun] = useState(() => {
     try { return sessionStorage.getItem('cr-ledger-run') !== '1'; } catch { return true; }
@@ -117,14 +119,14 @@ const Dashboard = () => {
   const onLedgerDone = useCallback(() => setLedgerDone(true), []);
   const hasStats = Boolean(stats);
   useEffect(() => {
-    if (ledgerDone || !hasStats) return undefined;
+    if (ledgerDone || !hasStats || !entered) return undefined;
     if (ledgerFailed) {
       setLedgerDone(true);
       return undefined;
     }
     const t = setTimeout(() => setLedgerDone(true), MOTION.story + 2500);
     return () => clearTimeout(t);
-  }, [ledgerDone, hasStats, ledgerFailed]);
+  }, [ledgerDone, hasStats, ledgerFailed, entered]);
 
   const hasFilter = timeFilter !== 'All' || sourceFilter !== 'All' || productFilter !== 'All';
   const clearFilters = () => {
@@ -140,10 +142,10 @@ const Dashboard = () => {
   }, [loading]);
 
   return (
-    <div className="cx pt-2">
+    <PageEnter className="cx pt-2" onDone={onEntered}>
       <SummaryHeader
         stats={stats} todo={todo} todoReady={inboxReady} loading={loading} error={error} lastUpdated={lastUpdated}
-        ledger={ledger} ledgerFailed={ledgerFailed} onRetryLedger={retryLedger} onLedgerDone={onLedgerDone} playRun={playRun}
+        ledger={playRun && !entered ? null : ledger} ledgerFailed={ledgerFailed} onRetryLedger={retryLedger} onLedgerDone={onLedgerDone} playRun={playRun}
         evidence={hasFilter ? null : stats?.evidence?.all}
         hasUrgent={lifted.length > 0}
         urgent={(
@@ -181,7 +183,7 @@ const Dashboard = () => {
       <div className={`transition-opacity duration-short ease-out ${loading && stats ? 'opacity-60' : ''}`} aria-busy={loading}>
         <TodayInbox alerts={alerts} items={inbox} loading={loading} failed={failed || inboxFailed} onRetry={retryAll} skip={lifted.length} decisions={decisions} />
 
-        <StoreHealth stats={stats} trend={trend} loading={loading} failed={failed} onRetry={reload} countStart={reduced || ledgerDone} />
+        <StoreHealth stats={stats} trend={trend} loading={loading} failed={failed} onRetry={reload} countStart={reduced || (entered && ledgerDone)} />
 
         <div className="mb-8 grid grid-cols-12 items-start gap-6">
           <section aria-label="Diễn biến cảm xúc" className="col-span-12 xl:col-span-8">
@@ -202,7 +204,7 @@ const Dashboard = () => {
           <FeedbackTable timeFilter={timeFilter} sourceFilter={sourceFilter} productFilter={productFilter} />
         </section>
       </div>
-    </div>
+    </PageEnter>
   );
 };
 
