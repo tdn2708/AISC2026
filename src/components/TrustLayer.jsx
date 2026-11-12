@@ -6,7 +6,7 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import { PageHeader, GlassPanel, PanelHeader, Switch, Badge, ProgressBar, EmptyState, Button, Tabs, Skeleton } from './ui';
 import Audit from './trust/Audit';
-import { LedgerRun, Pulse, prefersReducedMotion } from './motion';
+import { LedgerRun, Pulse, PageEnter, prefersReducedMotion } from './motion';
 import { fmtInt, fmtDateTime } from '../lib/format';
 import { reportRefreshing } from '../lib/dataVersion';
 
@@ -137,7 +137,9 @@ const TrustOverview = () => {
         <GlassPanel tone="strong" className="flex min-w-0 flex-col p-6 lg:col-span-2">
           <PanelHeader title="Phễu dữ liệu" subtitle="Từ lúc thu thập tới lúc được tính vào chỉ số" />
           {/* Cùng phép trừ chạy với sổ đối chiếu ở Tổng quan; số cuối là countedForMetrics */}
-          <LedgerRun ledger={health} mode="auto" play={false} showLink={false} title={null} bare className="mb-6" />
+          <div className="paper mb-6 p-4">
+            <LedgerRun ledger={health} mode="auto" play={false} showLink={false} title={null} bare />
+          </div>
           <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-line-soft pt-4 text-xs">
             <div className="flex gap-1.5"><dt className="text-ink-lo">Số kênh có dữ liệu</dt><dd className="tabular-nums font-semibold text-ink-hi">{health.channelCoverage.covered}/{health.channelCoverage.expected}</dd></div>
             <div className="flex gap-1.5"><dt className="text-ink-lo">Khớp với đơn hàng</dt><dd className="tabular-nums font-semibold text-ink-hi">{pct1(health.reconciliationRate)}</dd></div>
@@ -206,7 +208,7 @@ const TrustOverview = () => {
         </GlassPanel>
       )}
 
-      <div className="mb-6 grid items-start gap-6 xl:grid-cols-2">
+      <div className="reveal mb-6 grid items-start gap-6 xl:grid-cols-2">
         <GlassPanel tone="strong" className="overflow-hidden">
           <div className="px-5 pt-5">
             <PanelHeader
@@ -214,6 +216,7 @@ const TrustOverview = () => {
               subtitle="Mỗi nguồn có trọng số tối đa riêng. Nguồn hạng P5 chỉ để theo dõi xu hướng, không đủ để bật cảnh báo mức Cao trở lên."
             />
           </div>
+          <div className="paper mx-3 mb-3">
           <table className="data-table">
             <thead>
               <tr><th className="pl-5">Hạng</th><th>Nguồn</th><th className="text-right">Trọng số</th><th className="pr-5 text-right">Phản hồi</th></tr>
@@ -232,6 +235,7 @@ const TrustOverview = () => {
               ))}
             </tbody>
           </table>
+          </div>
         </GlassPanel>
 
         <GlassPanel tone="strong" className="p-5">
@@ -239,7 +243,7 @@ const TrustOverview = () => {
           {clusters.length === 0 ? (
             <EmptyState compact variant="calm" title="Không có cụm nào" description="Chưa thấy nhóm đánh giá nào giống nhau bất thường." />
           ) : (
-            <ul className="flex list-none flex-col divide-y divide-line-soft border-y border-line-soft">
+            <ul className="paper flex list-none flex-col divide-y divide-line-soft">
               {clusters.map((c) => {
                 const isOpen = openCluster === c.clusterId;
                 return (
@@ -280,7 +284,7 @@ const TrustOverview = () => {
         </GlassPanel>
       </div>
 
-      <GlassPanel tone="strong" className="p-5">
+      <GlassPanel tone="strong" className="reveal p-5">
         <PanelHeader
           title="Hàng đợi kiểm duyệt"
           subtitle={`Phản hồi hệ thống phân vân nhất được xếp lên đầu; mỗi nhãn của bạn giúp mô hình học đúng hơn.${health.humanLabelCount > 0 ? ` Đã duyệt ${fmtInt(health.humanLabelCount)} phản hồi.` : ''}`}
@@ -290,7 +294,7 @@ const TrustOverview = () => {
         {queue.length === 0 ? (
           <EmptyState compact variant="calm" title="Hàng đợi trống" description="Không còn phản hồi nào cần người đọc lại." />
         ) : (
-          <ul className="flex list-none flex-col divide-y divide-line-soft border-y border-line-soft">
+          <ul className="paper flex list-none flex-col divide-y divide-line-soft px-3">
             {queue.map((q) => {
               const done = settled[q._id];
               return (
@@ -334,7 +338,7 @@ const TrustLayerPage = () => {
   const [params, setParams] = useSearchParams();
   const tab = params.get('tab') === 'audit' ? 'audit' : 'overview';
   return (
-    <div className="cx">
+    <PageEnter className="cx">
       <PageHeader
         title="Tin cậy dữ liệu"
         subtitle={tab === 'audit'
@@ -351,7 +355,7 @@ const TrustLayerPage = () => {
         ]}
       />
       {tab === 'audit' ? <Audit /> : <TrustOverview />}
-    </div>
+    </PageEnter>
   );
 };
 

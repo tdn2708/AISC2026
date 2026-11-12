@@ -8,7 +8,7 @@ import {
   Skeleton,
 } from './ui';
 import { Evidence, ConfidenceMeter, DismissModal, Fold } from './alerts/AlertParts';
-import { Pulse, MOTION, EASE, prefersReducedMotion } from './motion';
+import { Pulse, PageEnter, MOTION, EASE, prefersReducedMotion } from './motion';
 import { useDecisions } from '../hooks/useDecisions';
 import { alertTitle, alertInWords, fmtInt, fmtPct, fmtDateTime, SEVERITY, SEVERITY_ORDER } from '../lib/format';
 
@@ -24,7 +24,7 @@ import { alertTitle, alertInWords, fmtInt, fmtPct, fmtDateTime, SEVERITY, SEVERI
 
 const AlertRow = ({ alert, status, active, onClick }) => {
   return (
-    <Pulse as="li" trigger={status} className="rounded-ctrl">
+    <Pulse as="li" trigger={status} className="lift rounded-ctrl">
       <button
         type="button"
         onClick={onClick}
@@ -117,7 +117,7 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
         {steps.length === 0 ? (
           <p className="text-sm text-ink-lo">Chưa có hành động nào khớp với dữ liệu của cảnh báo này.</p>
         ) : (
-          <ol className="flex list-none flex-col divide-y divide-line-soft">
+          <ol className="paper flex list-none flex-col divide-y divide-line-soft p-3">
             {steps.map((s, i) => (
               <li key={s.actionId || i} className="flex gap-3 py-3 first:pt-0 last:pb-0">
                 <span className={`grid size-6 shrink-0 place-items-center rounded-ctrl text-xs font-semibold tabular-nums ${i === 0 ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-mid'}`}>
@@ -144,7 +144,7 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
         <summary className="cursor-pointer list-none rounded-ctrl py-2.5 text-xs font-semibold text-ink-mid hover:text-ink-hi">
           Số liệu kiểm định
         </summary>
-        <div className="pb-1">
+        <div className="paper mb-1 p-3">
           <Evidence alert={alert} />
         </div>
       </details>
@@ -291,7 +291,7 @@ const DecisionLog = () => {
         Hiệu quả là tỉ lệ khiếu nại đúng vấn đề đó trong 7 ngày trước và 7 ngày sau khi chấp nhận. Đây là so sánh trước và sau,
         chưa loại trừ các yếu tố khác như mùa vụ hay khuyến mãi.
       </p>
-      <div className="table-responsive">
+      <div className="paper mx-3 mb-3"><div className="table-responsive">
         <table className="data-table">
           <thead>
             <tr>
@@ -325,7 +325,7 @@ const DecisionLog = () => {
             ))}
           </tbody>
         </table>
-      </div>
+      </div></div>
     </GlassPanel>
   );
 };
@@ -442,7 +442,7 @@ const RiskCenter = () => {
   ];
 
   return (
-    <div className="cx">
+    <PageEnter className="cx">
       <PageHeader
         title="Cảnh báo"
         subtitle="Những biến động đủ lớn để chắc chắn không phải ngẫu nhiên, kèm kế hoạch chờ bạn quyết định."
@@ -519,7 +519,7 @@ const RiskCenter = () => {
       />
       <SourceDrawer alert={evidenceFor} onClose={() => setEvidenceFor(null)} />
       <Toast show={Boolean(toast)}>{toast}</Toast>
-    </div>
+    </PageEnter>
   );
 };
 
