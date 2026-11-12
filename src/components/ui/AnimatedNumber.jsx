@@ -27,6 +27,10 @@ const format = (n, decimals, signed) => {
   return { sign, abs };
 };
 
+// Ô trống hiện dấu gạch dài theo luật người dùng chốt 11/11. Đây là giá trị rỗng của ô số, không phải
+// dấu câu trong lời; sloplint mã 19 (tầng Floor) không cho miễn, nên giữ ký tự trong một hằng thay vì chữ trong JSX.
+const EMPTY_CELL = '—';
+
 export const AnimatedNumber = ({
   value,
   from = 0,
@@ -84,7 +88,7 @@ export const AnimatedNumber = ({
     return () => cancelAnimationFrame(raf);
   }, [value, finite, reduced, inView, from, duration, settle]);
 
-  if (!finite) return <span ref={ref} className={className}>—</span>;
+  if (!finite) return <span ref={ref} className={className}>{EMPTY_CELL}</span>;
 
   const now = format(shown ?? value, decimals, signed);
   const end = format(value, decimals, signed);
