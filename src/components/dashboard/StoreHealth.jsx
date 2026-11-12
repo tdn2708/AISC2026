@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Minus, TriangleAlert } from 'lucide-react';
-import { AnimatedNumber, EvidenceBar } from '../ui';
+import { RotateCw } from 'lucide-react';
+import { AnimatedNumber, EvidenceBar, EmptyState, Button } from '../ui';
+import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { fmtInt, fmtPct, fmtSignedPct } from '../../lib/format';
 import EvidenceDrawer from './EvidenceDrawer';
 
@@ -87,7 +89,22 @@ const Metric = ({ label, children, sub, note, extra, bad, onOpen }) => (
   </button>
 );
 
-const StoreHealth = ({ stats, trend = [] }) => {
+/** Khung xương đúng hình ba cột chỉ số (nhãn, số lớn, dòng so sánh, dòng ghi chú) */
+const HealthSkeleton = () => (
+  <SkeletonBlock label="Đang tải chỉ số cửa hàng" className="mt-1 grid grid-cols-1 divide-y divide-line-soft md:grid-cols-3 md:divide-x md:divide-y-0">
+    {[0, 1, 2].map((i) => (
+      <span key={i} className="flex flex-col px-5 py-5 sm:px-6">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="mt-3 h-8 w-28" />
+        <Skeleton className="mt-3 h-3.5 w-48" />
+        <Skeleton className="mt-2 h-3.5 w-36" />
+        <Skeleton className="mt-4 h-3.5 w-16" />
+      </span>
+    ))}
+  </SkeletonBlock>
+);
+
+const StoreHealth = ({ stats, trend = [], loading, failed, onRetry }) => {
   const spark = trend.slice(-14).map((t) => ({ name: t.name, v: t.complaints || 0 }));
   const [open, setOpen] = useState(null);
   const ev = stats?.evidence;
@@ -106,6 +123,11 @@ const StoreHealth = ({ stats, trend = [] }) => {
   return (
     <section aria-labelledby="health-title" className="mb-8 overflow-hidden glass-strong rounded-surf">
       <h2 id="health-title" className="px-5 pt-5 text-heading font-semibold tracking-[-0.01em] text-ink-hi sm:px-6">Cửa hàng đang thế nào</h2>
+      {!stats && failed ? (
+        <EmptyState variant="error" compact title="Không tải được chỉ số" description="Máy chủ phân tích chưa trả lời. Số liệu sẽ hiện khi kết nối lại." action={onRetry && <Button size="sm" variant="secondary" icon={RotateCw} onClick={onRetry}>Thử lại</Button>} />
+      ) : !stats && loading ? (
+        <HealthSkeleton />
+      ) : (
       <div className="mt-1 grid grid-cols-1 divide-y divide-line-soft md:grid-cols-3 md:divide-x md:divide-y-0">
         <Metric
           label="Khiếu nại trên đơn hàng"
@@ -141,6 +163,7 @@ const StoreHealth = ({ stats, trend = [] }) => {
           {trust ? <span className={trust[0]}>{trust[1]}</span> : <span className="text-heading font-medium text-ink-mid">Chưa có dữ liệu</span>}
         </Metric>
       </div>
+      )}
       {ev?.all && (
         <div className="border-t border-line-soft px-5 py-3.5 sm:px-6">
           <EvidenceBar mix={ev.all} />

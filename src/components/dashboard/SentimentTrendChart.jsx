@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
-import { GlassPanel, PanelHeader, Segmented, ChartTooltip } from '../ui';
+import { RotateCw } from 'lucide-react';
+import { GlassPanel, PanelHeader, Segmented, ChartTooltip, EmptyState, Button } from '../ui';
+import { Skeleton } from '../ui/Skeleton';
 import { fmtInt } from '../../lib/format';
 import { AXIS_TICK, CHART_FONT } from '../../lib/tokens';
 
@@ -32,7 +34,7 @@ const TrendTooltip = ({ active, payload, label }) => {
   );
 };
 
-const SentimentTrendChart = ({ data = [] }) => {
+const SentimentTrendChart = ({ data = [], loading, failed, onRetry }) => {
   const [view, setView] = useState('chart');
   const totals = Object.fromEntries(SERIES.map((s) => [s.key, data.reduce((sum, d) => sum + (d[s.key] || 0), 0)]));
   // Chú thích thẳng trên đỉnh khiếu nại: biểu đồ tự nói nó cần người đọc nhìn vào đâu
@@ -48,7 +50,7 @@ const SentimentTrendChart = ({ data = [] }) => {
           <li key={s.key} className="inline-flex items-center gap-1.5">
             <span className="h-0.5 w-3.5 rounded-full bg-(--c)" style={{ '--c': s.color }} aria-hidden="true" />
             {s.label}
-            <span className="tabular-nums text-ink-hi">{fmtInt(totals[s.key])}</span>
+            <span className="tabular-nums text-ink-hi">{data.length ? fmtInt(totals[s.key]) : '—'}</span>
           </li>
         ))}
       </ul>
@@ -72,8 +74,22 @@ const SentimentTrendChart = ({ data = [] }) => {
         right={toggle}
       />
 
-      {data.length === 0 ? (
-        <div className="grid h-[280px] place-items-center text-sm text-ink-lo">Chưa có phản hồi trong khoảng thời gian này</div>
+      {data.length === 0 && loading ? (
+        // Khung xương đúng chỗ của biểu đồ: trục y bên trái, vùng vẽ, trục x
+        <div className="flex h-[280px] gap-3 pt-6" role="status" aria-busy="true">
+          <span className="sr-only">Đang tải biểu đồ cảm xúc</span>
+          <span className="flex w-8 flex-col justify-between pb-7" aria-hidden="true">
+            {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-3 w-7" />)}
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col" aria-hidden="true">
+            <Skeleton className="flex-1 opacity-60" />
+            <Skeleton className="mt-3 h-3 w-full" />
+          </span>
+        </div>
+      ) : data.length === 0 && failed ? (
+        <EmptyState variant="error" compact className="h-[280px]" title="Không tải được biểu đồ" description="Máy chủ phân tích chưa trả lời." action={onRetry && <Button size="sm" variant="secondary" icon={RotateCw} onClick={onRetry}>Thử lại</Button>} />
+      ) : data.length === 0 ? (
+        <EmptyState compact className="h-[280px]" title="Chưa có phản hồi trong khoảng này" description="Đổi bộ lọc thời gian hoặc thu thập thêm dữ liệu." />
       ) : view === 'chart' ? (
         <div className="h-[280px] w-full">
           <ResponsiveContainer width="100%" height="100%">

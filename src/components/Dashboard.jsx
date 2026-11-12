@@ -41,27 +41,45 @@ const Dashboard = () => {
     writeStorage('productFilter', productFilter);
   }, [timeFilter, sourceFilter, productFilter]);
 
-  const { stats, sentiments, alerts, trend, loading, error } = useDashboardData(timeFilter, sourceFilter, productFilter);
+  const { stats, sentiments, alerts, trend, loading, error, reload } = useDashboardData(timeFilter, sourceFilter, productFilter);
+  // Lỗi chỉ tính khi chưa có số nào để hiện; có số cũ thì giữ số cũ (câu tóm tắt đã báo mất kết nối)
+  const failed = Boolean(error) && !stats;
 
   // Việc ngoài cảnh báo (livestream, đơn hàng, duyệt, dữ liệu); làm mới mỗi phút
   const [inbox, setInbox] = useState([]);
+  const [inboxFailed, setInboxFailed] = useState(false);
+  const [inboxAttempt, setInboxAttempt] = useState(0);
   const dataVersion = useDataVersion();
   useEffect(() => {
     let alive = true;
-    const load = () => axios.get('/inbox').then((r) => alive && setInbox(r.data.items || [])).catch(() => {});
+    const load = () => axios.get('/inbox')
+      .then((r) => { if (alive) { setInbox(r.data.items || []); setInboxFailed(false); } })
+      .catch(() => alive && setInboxFailed(true));
     load();
     const t = setInterval(load, 60000);
     return () => { alive = false; clearInterval(t); };
-  }, [dataVersion]);
+  }, [dataVersion, inboxAttempt]);
+  const retryAll = () => {
+    reload();
+    setInboxAttempt((n) => n + 1);
+  };
   const todo = buildTodo(alerts, inbox);
 
   // Sổ đối chiếu ở đầu trang: phễu của cả kho (thu thập, loại, được tính)
   const [ledger, setLedger] = useState(null);
+  const [ledgerFailed, setLedgerFailed] = useState(false);
+  const [ledgerAttempt, setLedgerAttempt] = useState(0);
   useEffect(() => {
     let alive = true;
-    axios.get('/trust/health').then((r) => alive && setLedger(r.data)).catch(() => {});
+    axios.get('/trust/health')
+      .then((r) => { if (alive) { setLedger(r.data); setLedgerFailed(false); } })
+      .catch(() => alive && setLedgerFailed(true));
     return () => { alive = false; };
-  }, [dataVersion]);
+  }, [dataVersion, ledgerAttempt]);
+  const retryLedger = () => {
+    setLedgerFailed(false);
+    setLedgerAttempt((n) => n + 1);
+  };
 
   const hasFilter = timeFilter !== 'All' || sourceFilter !== 'All' || productFilter !== 'All';
   const clearFilters = () => {
@@ -78,7 +96,11 @@ const Dashboard = () => {
 
   return (
     <div className="cx pt-2">
-      <SummaryHeader stats={stats} todo={todo} loading={loading} error={error} lastUpdated={lastUpdated} ledger={ledger} evidence={hasFilter ? null : stats?.evidence?.all} />
+      <SummaryHeader
+        stats={stats} todo={todo} loading={loading} error={error} lastUpdated={lastUpdated}
+        ledger={ledger} ledgerFailed={ledgerFailed} onRetryLedger={retryLedger}
+        evidence={hasFilter ? null : stats?.evidence?.all}
+      />
 
       <FilterBar
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}
@@ -103,20 +125,20 @@ const Dashboard = () => {
       )}
 
       {/* Tải lại thì giữ khung cũ ở độ mờ thấp: không nháy, không nhảy bố cục */}
-      <div className={`transition-opacity duration-200 ${loading ? 'opacity-60' : ''}`} aria-busy={loading}>
-        <TodayInbox alerts={alerts} items={inbox} loading={loading} />
+      <div className={`transition-opacity duration-short ease-out ${loading && stats ? 'opacity-60' : ''}`} aria-busy={loading}>
+        <TodayInbox alerts={alerts} items={inbox} loading={loading} failed={failed || inboxFailed} onRetry={retryAll} />
 
-        <StoreHealth stats={stats} trend={trend} />
+        <StoreHealth stats={stats} trend={trend} loading={loading} failed={failed} onRetry={reload} />
 
         <div className="mb-8 grid grid-cols-12 items-start gap-6">
           <section aria-label="Diễn biến cảm xúc" className="col-span-12 xl:col-span-8">
-            <SentimentTrendChart data={trend} />
+            <SentimentTrendChart data={trend} loading={loading && !stats} failed={failed} onRetry={reload} />
           </section>
           <section aria-label="Phân bổ cảm xúc" className="col-span-12 md:col-span-6 xl:col-span-4">
-            <SentimentDonut data={sentiments} />
+            <SentimentDonut data={sentiments} loading={loading && !stats} failed={failed} onRetry={reload} />
           </section>
           <section aria-label="Vấn đề đang tăng nhanh" className="col-span-12 md:col-span-6 xl:col-span-6 xl:[&:has(+section:empty)]:col-span-12">
-            <RisingIssues alerts={alerts} />
+            <RisingIssues alerts={alerts} loading={loading && !stats} failed={failed} onRetry={reload} />
           </section>
           <section aria-label="Livestream" className="col-span-12 xl:col-span-6 [&>div]:mt-0">
             <LiveDigest />

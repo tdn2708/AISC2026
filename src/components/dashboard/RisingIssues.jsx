@@ -1,6 +1,7 @@
 import React from 'react';
-import { TrendingUp } from 'lucide-react';
-import { GlassPanel, PanelHeader, SeverityBadge, EmptyState } from '../ui';
+import { TrendingUp, RotateCw } from 'lucide-react';
+import { GlassPanel, PanelHeader, SeverityBadge, EmptyState, Button } from '../ui';
+import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { alertTitle, fmtPct, fmtSignedPct, growthOf } from '../../lib/format';
 
 /**
@@ -13,7 +14,7 @@ import { alertTitle, fmtPct, fmtSignedPct, growthOf } from '../../lib/format';
 
 const MAX_ROWS = 5;
 
-const RisingIssues = ({ alerts = [] }) => {
+const RisingIssues = ({ alerts = [], loading, failed, onRetry }) => {
   const spikes = alerts
     .map((a) => ({ alert: a, growth: growthOf(a) }))
     .filter((r) => r.growth != null && r.growth > 0)
@@ -37,7 +38,19 @@ const RisingIssues = ({ alerts = [] }) => {
         }
       />
 
-      {rows.length === 0 ? (
+      {rows.length === 0 && loading ? (
+        <SkeletonBlock as="ol" label="Đang tải vấn đề đang tăng" className="flex list-none flex-col gap-4">
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="flex flex-col gap-2">
+              <span className="flex justify-between gap-3"><Skeleton className="h-3.5 w-2/3" /><Skeleton className="h-3.5 w-12" /></span>
+              <Skeleton className="h-2 w-full" />
+              <Skeleton className="h-3 w-1/3" />
+            </li>
+          ))}
+        </SkeletonBlock>
+      ) : rows.length === 0 && failed ? (
+        <EmptyState variant="error" compact className="flex-1" title="Không tải được vấn đề đang tăng" description="Máy chủ phân tích chưa trả lời." action={onRetry && <Button size="sm" variant="secondary" icon={RotateCw} onClick={onRetry}>Thử lại</Button>} />
+      ) : rows.length === 0 ? (
         <EmptyState
           compact
           variant="calm"

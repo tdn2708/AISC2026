@@ -1,5 +1,7 @@
 import React from 'react';
-import { GlassPanel, PanelHeader } from '../ui';
+import { RotateCw } from 'lucide-react';
+import { GlassPanel, PanelHeader, EmptyState, Button } from '../ui';
+import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { fmtInt, fmtPct, SENTIMENT } from '../../lib/format';
 
 /**
@@ -9,16 +11,31 @@ import { fmtInt, fmtPct, SENTIMENT } from '../../lib/format';
  * to ở trên; bảng bên dưới ghi đủ số lượng, không giá trị nào phải rê chuột.
  */
 
-const SentimentDonut = ({ data = [] }) => {
+const SentimentDonut = ({ data = [], loading, failed, onRetry }) => {
   const rows = SENTIMENT.map((s) => ({ ...s, value: data.find((d) => d.key === s.key)?.value ?? 0 }));
   const total = rows.reduce((sum, r) => sum + r.value, 0);
   const negShare = total ? rows[0].value / total : null;
 
   return (
     <GlassPanel className="flex h-full flex-col p-6">
-      <PanelHeader title="Phân bổ cảm xúc" subtitle={`${fmtInt(total)} phản hồi hợp lệ`} />
+      <PanelHeader title="Phân bổ cảm xúc" subtitle={loading && total === 0 ? 'Đang đếm phản hồi hợp lệ' : failed && total === 0 ? '— phản hồi hợp lệ' : `${fmtInt(total)} phản hồi hợp lệ`} />
 
-      {total === 0 ? (
+      {total === 0 && loading ? (
+        <SkeletonBlock label="Đang tải phân bổ cảm xúc" className="flex flex-col">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="mt-4 h-3 w-full" />
+          <span className="mt-5 flex flex-col" aria-hidden="true">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="flex items-center justify-between gap-3 border-b border-line-soft py-2.5 last:border-b-0">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-3.5 w-12" />
+              </span>
+            ))}
+          </span>
+        </SkeletonBlock>
+      ) : total === 0 && failed ? (
+        <EmptyState variant="error" compact className="flex-1" title="Không tải được phân bổ" description="Máy chủ phân tích chưa trả lời." action={onRetry && <Button size="sm" variant="secondary" icon={RotateCw} onClick={onRetry}>Thử lại</Button>} />
+      ) : total === 0 ? (
         <div className="grid flex-1 place-items-center py-10 text-center text-sm text-ink-lo">
           Chưa có phản hồi nào đạt ngưỡng tin cậy trong kỳ này
         </div>

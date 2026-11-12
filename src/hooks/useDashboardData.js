@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { buildQuery } from '../lib/format';
 import { useDataVersion } from '../lib/dataVersion';
@@ -9,6 +9,7 @@ import { useDataVersion } from '../lib/dataVersion';
  *   Trung tâm hành động không mời "Chấp nhận" lại một việc đã quyết.
  * - Đổi bộ lọc nhanh liên tiếp thì phản hồi về muộn của lần trước bị bỏ,
  *   không ghi đè lên kết quả của lần mới nhất.
+ * - reload(): tải lại sau lỗi (nút "Thử lại" của từng khối).
  */
 export const useDashboardData = (timeFilter = 'All', sourceFilter = 'All', productFilter = 'All') => {
   const [stats, setStats] = useState(null);
@@ -19,6 +20,8 @@ export const useDashboardData = (timeFilter = 'All', sourceFilter = 'All', produ
   const [error, setError] = useState(null);
   // Máy chủ vừa tính xong số liệu mới (sau một thao tác ghi): tải lại
   const version = useDataVersion();
+  const [attempt, setAttempt] = useState(0);
+  const reload = useCallback(() => setAttempt((n) => n + 1), []);
 
   useEffect(() => {
     let alive = true;
@@ -51,7 +54,7 @@ export const useDashboardData = (timeFilter = 'All', sourceFilter = 'All', produ
     return () => {
       alive = false;
     };
-  }, [timeFilter, sourceFilter, productFilter, version]);
+  }, [timeFilter, sourceFilter, productFilter, version, attempt]);
 
-  return { stats, sentiments, alerts, trend, loading, error };
+  return { stats, sentiments, alerts, trend, loading, error, reload };
 };

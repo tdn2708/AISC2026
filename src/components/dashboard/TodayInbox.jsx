@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, CircleSlash, ChevronDown, ShieldCheck } from 'lucide-react';
+import { Check, CircleSlash, ChevronDown, ShieldCheck, RotateCw } from 'lucide-react';
 import { Button, EmptyState } from '../ui';
+import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { ConfidenceMeter, DismissModal } from '../alerts/AlertParts';
 import { useDecisions } from '../../hooks/useDecisions';
 import { alertTitle, alertInWords } from '../../lib/format';
@@ -110,7 +111,24 @@ const Row = ({ t, open, onToggle, state, onAccept, onDismiss }) => {
   );
 };
 
-const TodayInbox = ({ alerts = [], items = [], loading }) => {
+/** Khung xương đúng hình ba dòng việc: mức độ, nguồn, tiêu đề, lý do, nút */
+const InboxSkeleton = () => (
+  <SkeletonBlock as="ol" label="Đang gom việc hôm nay" className="list-none">
+    {[0, 1, 2].map((i) => (
+      <li key={i} className="flex flex-col gap-3 border-b border-line-soft px-5 py-4 last:border-b-0 sm:flex-row sm:items-start sm:gap-5 sm:px-6">
+        <Skeleton className="h-4 w-12 sm:w-[6.5rem] sm:max-w-12" />
+        <span className="flex min-w-0 flex-1 flex-col gap-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3.5 w-1/2" />
+        </span>
+        <Skeleton className="h-8 w-28 shrink-0" />
+      </li>
+    ))}
+  </SkeletonBlock>
+);
+
+const TodayInbox = ({ alerts = [], items = [], loading, failed, onRetry }) => {
   const { states, accept, dismiss } = useDecisions();
   const [openId, setOpenId] = useState(null);
   const [showAll, setShowAll] = useState(false);
@@ -133,14 +151,18 @@ const TodayInbox = ({ alerts = [], items = [], loading }) => {
         <div>
           <h2 id="today-title" className="text-heading font-semibold tracking-[-0.01em] text-ink-hi">Việc hôm nay</h2>
           <p className="mt-0.5 text-sm text-ink-mid">
-            {loading && !todo.length ? 'Đang gom việc…' : remaining ? `${remaining} việc cần làm, việc gấp ở trên` : 'Đã xử lý hết'}
+            {loading && !todo.length ? <Skeleton as="span" className="mt-1 h-3.5 w-44" /> : failed && !todo.length ? 'Chưa gom được việc' : remaining ? `${remaining} việc cần làm, việc gấp ở trên` : 'Đã xử lý hết'}
           </p>
         </div>
         <p className="hidden text-xs text-ink-mid sm:block">Gộp từ cảnh báo, livestream, đơn hàng và hàng đợi duyệt</p>
       </header>
 
-      {todo.length === 0 ? (
-        <EmptyState variant="calm" compact title={loading ? 'Đang tải' : 'Không có việc nào cần làm'} description={loading ? undefined : 'Chỉ số đang trong ngưỡng bình thường, không có đơn hay phản hồi nào đang chờ.'} />
+      {todo.length === 0 && loading ? (
+        <InboxSkeleton />
+      ) : todo.length === 0 && failed ? (
+        <EmptyState variant="error" compact title="Không tải được việc hôm nay" description="Chưa lấy được cảnh báo và việc chờ từ máy chủ, nên chưa thể nói là không có việc." action={onRetry && <Button size="sm" variant="secondary" icon={RotateCw} onClick={onRetry}>Thử lại</Button>} />
+      ) : todo.length === 0 ? (
+        <EmptyState variant="calm" compact title="Không có việc nào cần làm" description="Chỉ số đang trong ngưỡng bình thường, không có đơn hay phản hồi nào đang chờ." />
       ) : (
         <>
           <ol className="list-none">
