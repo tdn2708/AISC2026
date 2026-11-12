@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X, Database, Check, ShieldCheck } from 'lucide-react';
 import { Popover, MenuItem } from './ui';
@@ -9,6 +9,8 @@ import { WORKSPACES, getWorkspace, switchWorkspace } from '../lib/workspace';
 import { initials } from '../lib/format';
 import { useBrowserModelStatus } from '../lib/analyze';
 import { useRefreshing, useDataVersion, reportRefreshing } from '../lib/dataVersion';
+import { useReducedMotion } from './motion';
+import { Skeleton } from './ui/Skeleton';
 
 /**
  * THANH BÊN — áp sát mép trái: kho dữ liệu đang xem, sáu trang chính (kèm
@@ -106,13 +108,10 @@ const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
       onClick={onNavigate}
       title={collapsed ? `${item.label}${count ? ` (${count})` : ''}` : undefined}
       className={({ isActive }) =>
-        `group relative flex h-10 items-center rounded-ctrl text-sm transition-[background-color,color,box-shadow] duration-150 ${
+        // Nền "đang ở trang này" là dấu trượt chung của cả danh sách (NavList), không vẽ ở từng mục
+        `group relative z-[1] flex h-10 items-center rounded-ctrl text-sm transition-colors duration-micro ease-out ${
           collapsed ? 'justify-center' : 'gap-3 px-3'
-        } ${
-          isActive
-            ? 'bg-accent-dim font-semibold text-ink-hi before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-r-ctrl before:bg-accent'
-            : 'text-ink-mid hover:bg-raised hover:text-ink-hi'
-        }`
+        } ${isActive ? 'font-semibold text-ink-hi' : 'text-ink-mid hover:bg-raised hover:text-ink-hi'}`
       }
     >
       {({ isActive }) => (
@@ -136,6 +135,90 @@ const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
         </>
       )}
     </NavLink>
+  );
+};
+
+/*
+ * DẤU "ĐANG Ở TRANG NÀY" (F4-01): một khối nền nhấn nhạt + vạch nhấn 3px,
+ * dùng chung cho cả danh sách, trượt dọc (transform: translateY) tới mục
+ * mới thay vì nhảy. Xa hơn hai mục thì chạy --motion-medium, gần thì
+ * --motion-short, ease-out. Giảm chuyển động: nhảy thẳng, không trượt.
+ * Khung trang có thể dựng lại thanh bên khi đổi trang, nên vị trí cũ giữ ở
+ * biến cấp module: thanh bên mới đặt dấu ở chỗ cũ rồi mới trượt tới chỗ mới.
+ * Trang không nằm trên thanh bên (Báo cáo, Cài đặt...) thì dấu ẩn.
+ */
+const ROW = 42; // h-10 + gap-0.5
+let lastMarkY = null;
+
+const NavList = ({ items, children }) => {
+  const { pathname } = useLocation();
+  const listRef = useRef(null);
+  const markRef = useRef(null);
+  const reduced = useReducedMotion();
+
+  // animate=false: đặt thẳng (lần đầu, giảm chuyển động, thanh bên vừa hiện lại)
+  const place = (animate) => {
+    const list = listRef.current;
+    const mark = markRef.current;
+    if (!list || !mark) return;
+    const active = list.querySelector('a[aria-current="page"]');
+    // Thanh bên đang ẩn (điện thoại, menu đóng): chưa đo được, đợi nó hiện
+    if (!list.offsetParent) return;
+    if (!active) {
+      mark.style.transition = 'none';
+      mark.style.opacity = '0';
+      mark.dataset.hidden = '1';
+      lastMarkY = null;
+      return;
+    }
+    const y = active.offsetTop;
+    const from = mark.dataset.y != null ? Number(mark.dataset.y) : lastMarkY;
+    const wasHidden = mark.dataset.hidden === '1';
+    // Đo lại mà dấu đã đúng chỗ (hoặc đang trượt tới đó): để yên
+    if (!animate && !wasHidden && mark.dataset.y === String(y)) return;
+    mark.dataset.y = String(y);
+    delete mark.dataset.hidden;
+    lastMarkY = y;
+    mark.style.opacity = '1';
+    if (!animate || reduced || from == null || from === y || wasHidden) {
+      mark.style.transition = 'none';
+      mark.style.transform = `translateY(${y}px)`;
+      return;
+    }
+    // Đặt ở chỗ cũ (không chuyển tiếp), ép trình duyệt ghi nhận, rồi trượt
+    mark.style.transition = 'none';
+    mark.style.transform = `translateY(${from}px)`;
+    mark.getBoundingClientRect();
+    const far = Math.abs(y - from) > ROW * 2;
+    mark.style.transition = `transform var(${far ? '--motion-medium' : '--motion-short'}) var(--ease-out)`;
+    mark.style.transform = `translateY(${y}px)`;
+  };
+  const placeRef = useRef(place);
+  placeRef.current = place;
+
+  useLayoutEffect(() => {
+    placeRef.current(true);
+  }, [pathname, reduced, items]);
+
+  // Menu điện thoại mở ra (display: none sang hiện) thì đo lại, không trượt
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || typeof ResizeObserver !== 'function') return undefined;
+    const ro = new ResizeObserver(() => placeRef.current(false));
+    ro.observe(list);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={listRef} className="relative flex flex-col gap-0.5">
+      <span
+        ref={markRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 right-0 left-0 h-10 rounded-ctrl bg-accent-dim before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-r-ctrl before:bg-accent"
+        style={{ opacity: 0 }}
+      />
+      {children}
+    </div>
   );
 };
 
@@ -210,7 +293,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
     browserModel.phase === 'ready' && !nlp?.canLabel
       ? { dot: 'bg-ok', label: 'ViSoBERT trên trình duyệt', title: 'Mô hình chạy ngay trên máy này, không qua máy chủ mô hình' }
       : nlp === undefined
-      ? { dot: 'bg-ink-lo', label: 'Đang kiểm tra…', title: 'Đang hỏi trạng thái dịch vụ mô hình' }
+      ? { dot: 'bg-ink-lo', label: 'Đang hỏi trạng thái mô hình', title: 'Đang hỏi trạng thái dịch vụ mô hình', pending: true }
       : !nlp || !nlp.reachable
         ? { dot: 'bg-ink-lo', label: 'AI chế độ cơ bản', title: nlp?.reason || 'Chưa kết nối dịch vụ ViSoBERT' }
         : nlp.canLabel
@@ -250,7 +333,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
         <nav aria-label="Trang" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-3">
           {NAV.map((g) => (
             <div key={g.group} className="mt-2">
-              <div className="flex flex-col gap-0.5">
+              <NavList items={g.items}>
                 {g.items.map((item) => (
                   <NavItem
                     key={item.to}
@@ -261,7 +344,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
                     onNavigate={onClose}
                   />
                 ))}
-              </div>
+              </NavList>
             </div>
           ))}
         </nav>
@@ -293,7 +376,11 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
                 className="flex w-full items-center gap-2 rounded-ctrl px-3 py-1.5 text-left text-xs text-ink-mid hover:bg-raised hover:text-ink-hi"
               >
                 <Cpu size={13} className="shrink-0 text-ink-lo" aria-hidden="true" />
-                <span className="flex-1 truncate">{nlpView.label}</span>
+                {nlpView.pending ? (
+                  <span className="flex-1"><span className="sr-only">{nlpView.label}</span><Skeleton className="h-3 w-28" /></span>
+                ) : (
+                  <span className="flex-1 truncate">{nlpView.label}</span>
+                )}
               </button>
             </div>
           )}

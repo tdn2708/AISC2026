@@ -39,14 +39,8 @@ export const LogoWordmark = ({ size = 'md', showTagline = true, tagline = 'Radar
       <div className="whitespace-nowrap font-semibold text-ink-hi" style={{ fontSize: `${1 * scale}rem`, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
         Customer Radar
       </div>
-      {showTagline && (
-        <div
-          className="truncate font-semibold text-ink-lo"
-          style={{ fontSize: `${0.62 * scale}rem` }}
-        >
-          {tagline}
-        </div>
-      )}
+      {/* Dòng phụ không bao giờ dưới 13px (text-xs), ở mọi cỡ logo (F4-01) */}
+      {showTagline && <div className="truncate text-xs font-medium text-ink-lo">{tagline}</div>}
     </div>
   );
 };
