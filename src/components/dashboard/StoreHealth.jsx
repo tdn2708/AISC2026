@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Minus, TriangleAlert } from 'lucide-react';
 import { AnimatedNumber, EvidenceBar } from '../ui';
 import { fmtInt, fmtPct, fmtSignedPct } from '../../lib/format';
 import EvidenceDrawer from './EvidenceDrawer';
@@ -71,8 +71,12 @@ const Metric = ({ label, children, sub, note, extra, bad, onOpen }) => (
     aria-haspopup="dialog"
     className="group relative flex min-w-0 flex-col px-5 py-5 text-left transition-colors hover:bg-raised focus-visible:bg-raised sm:px-6"
   >
-    {bad && <span aria-hidden="true" className="absolute top-5 bottom-5 left-0 w-[3px] rounded-r-ctrl bg-crit" />}
-    <span className="text-base font-medium text-ink-mid">{label}</span>
+    {/* Chỉ số xấu: biểu tượng cảnh báo cạnh nhãn (thay sọc đỏ bên trái, F1-05) */}
+    <span className="inline-flex items-center gap-1.5 text-base font-medium text-ink-mid">
+      {bad && <TriangleAlert size={16} className="shrink-0 text-crit" aria-hidden="true" />}
+      {bad && <span className="sr-only">Cần chú ý:</span>}
+      {label}
+    </span>
     <span className="mt-2 text-metric leading-none font-semibold tracking-[-0.02em] text-ink-hi">{children}</span>
     {sub && <span className="mt-2.5">{sub}</span>}
     {note && <span className="mt-1 text-sm text-ink-mid">{note}</span>}
