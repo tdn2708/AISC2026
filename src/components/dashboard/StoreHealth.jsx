@@ -88,13 +88,9 @@ const Sparkline = ({ points }) => {
   );
 };
 
+// Ô chỉ số là vùng đọc; nút duy nhất là "Cách tính" (cao 32px), không biến cả ô thành nút
 const Metric = ({ label, children, sub, note, extra, bad, onOpen }) => (
-  <button
-    type="button"
-    onClick={onOpen}
-    aria-haspopup="dialog"
-    className="group relative flex min-w-0 flex-col px-5 py-5 text-left transition-colors hover:bg-raised focus-visible:bg-raised sm:px-6"
-  >
+  <div className="relative flex min-w-0 flex-col px-5 py-5 text-left sm:px-6">
     {/* Chỉ số xấu: biểu tượng cảnh báo cạnh nhãn (thay sọc đỏ bên trái, F1-05) */}
     <span className="inline-flex items-center gap-1.5 text-base font-medium text-ink-mid">
       {bad && <TriangleAlert size={16} className="shrink-0 text-crit" aria-hidden="true" />}
@@ -105,10 +101,16 @@ const Metric = ({ label, children, sub, note, extra, bad, onOpen }) => (
     {sub && <span className="mt-2.5">{sub}</span>}
     {note && <span className="mt-1 text-sm text-ink-mid">{note}</span>}
     {extra}
-    <span className="mt-3 inline-flex items-center gap-0.5 text-sm font-semibold text-accent-hi opacity-80 group-hover:underline group-hover:opacity-100">
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-haspopup="dialog"
+      aria-label={`Cách tính: ${label}`}
+      className="mt-2 -ml-1 inline-flex h-8 items-center self-start rounded-ctrl px-1 text-sm font-semibold text-accent-hi underline-offset-4 hover:underline"
+    >
       Cách tính
-    </span>
-  </button>
+    </button>
+  </div>
 );
 
 /** Khung xương đúng hình ba cột chỉ số (nhãn, số lớn, dòng so sánh, dòng ghi chú) */

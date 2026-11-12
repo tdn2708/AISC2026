@@ -54,7 +54,7 @@ const WorkspacePicker = ({ collapsed }) => {
         aria-haspopup="listbox"
         aria-expanded={open}
         title={collapsed ? `Kho dữ liệu: ${WORKSPACES[current].label}` : undefined}
-        className={`flex w-full items-center rounded-ctrl border border-line bg-surface text-left transition-colors hover:border-ink-lo ${collapsed ? 'h-10 justify-center' : 'gap-2.5 px-3 py-2'}`}
+        className={`flex w-full items-center rounded-ctrl border border-line bg-surface text-left transition-colors hover:border-ink-lo ${collapsed ? 'h-10 justify-center' : 'gap-2.5 px-3 py-1.5'}`}
       >
         <Database size={15} className="shrink-0 text-ink-lo" aria-hidden="true" />
         {!collapsed && (
