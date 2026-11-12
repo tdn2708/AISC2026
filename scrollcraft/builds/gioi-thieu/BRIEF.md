@@ -4,6 +4,50 @@
 
 Ngày soạn: 12/11/2026. Agent: Trang giới thiệu (F3-01 đến F3-07).
 
+## Đợt 2 (13/11/2026, K5): kính là ống ngắm
+
+Người dùng chọn 1A (phóng to phép trừ), 4B (tối suốt, chỉ sổ là giấy sáng) và yêu cầu kính + chuyển động. Đánh giá F8-06 chấm 6/10: chữ ký chỉ là thẻ 430 px giữa nền rộng, hero theo công thức landing. Bản này **thay** các mục cùng tên bên dưới (đường cảm xúc, bảng điểm, câu kể lại, đỉnh); phần còn lại của brief vẫn đúng. Ngữ pháp vẫn là "Sổ đối chiếu" (một phép trừ làm xương sống, cảnh cắt cứng theo nền, một cảnh ghim dài, chốt sổ).
+
+**Ý chính:** logo A2 là khung ngắm, kính là mặt kính của khung ngắm đó. Vì thế kính chỉ ở nơi "nhìn qua": khung hero (ảnh app phía sau mờ qua kính). Phép trừ là SỐ LIỆU nên là giấy đặc, không kính.
+
+**Bốn thay đổi:**
+1. Hero (K5-02): ba lớp ảnh app đặt quanh một tấm kính `glass-float`; ảnh Bảng số liệu lùi xa lọt sau kính nên mờ, màn Tổng quan và tờ sổ nằm trước kính. Phía sau có lớp không khí (navy, xanh polo, tĩnh). Rê chuột (chỉ chuột) thì tờ sổ lớp trước nghiêng tối đa 3 độ bằng `data-sc-tilt` của engine.
+2. Sổ lớn (K5-03, 1A): sổ chiếm khoảng 57% bề ngang ở 1440, số cuối 72 đến 96 px. Mỗi dòng trừ kèm MỘT bình luận mẫu bị gạch ngang, chép tĩnh từ kho Mô phỏng, ghi "Ví dụ trong kho Mô phỏng". Khi số chốt hiện chấm san hô (chỉ đồ họa).
+3. Tối suốt (K5-04, 4B): ở chế độ tối nền trang tối từ đầu tới cuối; chỉ sổ là khối giấy sáng (`data-theme="light"` trên sổ). Chế độ sáng giữ khối mực quanh sổ.
+4. Khung ngắm (K5-05, động tác riêng của trang): hai góc chữ L của logo phóng to, trôi theo `--sc-p` của nhịp "Cái giá" xuống một danh sách bình luận mẫu. Bình luận lọt trong khung được gắn nhãn theo Trust Layer (Rác, Nghi ảo, Khách thật), rác và ảo mờ đi; ngoài khung để nguyên. Chỉ `transform`, `opacity`, `clip-path`.
+
+### Đường cảm xúc (thay bảng cũ)
+
+| # | Cảm xúc | Thứ trên màn gây ra nó |
+|---|---|---|
+| 1 | Nhận ra | câu hỏi về buổi sáng lướt bình luận; ảnh app thật sau một tấm kính, tờ sổ nổi lên trước |
+| 2 | Ngờ vực, rồi tự tay soi | danh sách bình luận thật; khung ngắm trượt xuống và gọi tên từng cái: rác, ảo, khách thật |
+| 3 | Nhẹ nhõm, tin (ĐỈNH) | cắt cứng sang nền tối, tờ sổ giấy sáng to, mỗi dòng trừ một bình luận bị gạch, số dừng đúng, chấm san hô |
+| 4 | Yên tâm | thanh "khớp với đơn hàng" mở bằng một nhát cắt, ba loại bằng chứng |
+| 5 | Sẵn sàng | ba màn hình làm việc trượt ngang |
+| 6 | Gần gũi | ảnh năm bạn, tên từng người |
+| 7 | Quyết định | gạch đôi, con số được tính, một nút, đứng yên |
+
+**Đỉnh:** nhịp 3, vẫn là phép trừ, vẫn khoảng cuộn dài nhất trang (3,8 vh). Khác bản đầu: sổ rộng gấp rưỡi và mỗi khoản bị trừ có một bình luận thật làm chứng, nên người xem thấy cái gì đang bị trừ chứ không chỉ thấy số giảm.
+
+**Đây là trang mà** lúc cuộn, mày thấy một cái khung ngắm gọi tên từng bình luận rác và ảo, rồi tự tay kéo hơn 15 nghìn xuống đúng con số đáng tin, mỗi khoản bị trừ có một bình luận thật làm chứng.
+
+### Bảng nhịp và thiết bị (thay bảng điểm cũ)
+
+| Nhịp | Thiết bị | Khoảng cuộn | Họ | Vì sao |
+|---|---|---|---|---|
+| 1 Nhận ra mình | `parallax` ba lớp ảnh + tấm kính `glass-float`, tilt tờ sổ bằng chuột | khoảng 1 vh | parallax | chiều sâu thật: ảnh lùi xa mờ sau kính, ảnh chính nét |
+| 2 Cái giá | khung ngắm (viết riêng, đọc `--sc-p`, flow) | khoảng 1,3 vh | quét | chuyển cảnh "xem lướt" thành "soi từng cái"; không ghim vì ngay sau là cảnh ghim |
+| 3 Đỉnh | `pin` + LedgerRun theo cuộn + cue | 3,8 vh (lớn nhất) | ghim | phép trừ cần thời gian dưới tay người xem |
+| 4 Bằng chứng | `reveal` clip-path từ trái | khoảng 1 vh | cắt | một nhát cắt là đổi trạng thái |
+| 5 Việc hôm nay | `pan` rãnh ngang ba ảnh | 2,4 vh | trượt ngang | đi ngang đọc như "những thứ dùng được" |
+| 6 Người làm ra | `in` (flow) | khoảng 1 vh | hiện | gần gũi cần yên |
+| 7 Chốt | tĩnh, không thiết bị | khoảng 0,8 vh | không | nút đứng yên, không mờ dần |
+
+Hai nhịp liền nhau không bao giờ cùng họ (parallax, quét, ghim, cắt, trượt ngang, hiện, tĩnh). Giảm chuyển động: khung ngắm thành bảng tĩnh có nhãn, tilt tắt, không ghim, sổ hiện đủ số.
+
+**Cổng vân tay:** khác hàng "gioi-thieu" đầu tiên ở hero (có tấm kính và tilt), nhịp 2 (khung ngắm thay chữ trơn), chữ ký (thêm bình luận gạch và chấm san hô). Vẫn cùng ngữ pháp và cách chốt, nên đây là bản nâng cấp của cùng một trang, không phải build mới; ghi thêm một hàng vào sổ cho rõ.
+
 ## Tám chủ đề
 
 1. **Khí chất (3 đến 5 từ):** sổ sách thật, gọn, có số, ấm vì có người thật (mục 4.4, lời điều phối). Tham chiếu ngoài web: một cuốn sổ cái kế toán có gạch đôi dưới dòng tổng; tờ hóa đơn có chữ ký; ảnh tập thể chụp trước bức tường trắng của trường.
