@@ -7,7 +7,9 @@ import { useInView } from '../motion/useInView';
  * - Lần đầu: đếm từ `from` (mặc định 0) khi con số VÀO KHUNG NHÌN, không
  *   phải lúc mount: số nằm dưới màn đầu sẽ đếm khi người xem cuộn tới.
  * - Sau đó mỗi lần `value` đổi (lọc, dữ liệu về): đếm từ số đang hiện sang số
- *   mới; ngoài khung nhìn thì đổi ngay, không chạy chuyển động không ai thấy.
+ *   mới (kể cả khi đang đếm dở); ngoài khung nhìn thì đổi ngay, không chạy
+ *   chuyển động không ai thấy, và số chưa ai thấy cũng không giữ số cũ.
+ * - Không có số: hiện "—".
  * - Kết thúc bằng một nhịp "chốt" rất nhỏ (scale 0,965 về 1, chỉ transform).
  * - Giảm chuyển động: hiện ngay giá trị cuối, không đếm, không chốt.
  * Trình đọc màn hình chỉ đọc số cuối (aria-label), không đọc từng số đang đếm.
@@ -43,44 +45,46 @@ export const AnimatedNumber = ({
   // Chưa đếm lần nào: hiện `from` (giữ chỗ đúng bề ngang); giảm chuyển động thì hiện ngay số cuối
   const [shown, setShown] = useState(() => (reduced ? value : from));
   const [settleKey, setSettleKey] = useState(0);
-  const lastRef = useRef(null); // giá trị đã đếm xong gần nhất; null = chưa đếm lần nào
+  // Số đang hiện (kể cả giữa lúc đếm): bị ngắt thì đếm tiếp từ đây, không bật lùi
+  const shownRef = useRef(reduced ? value : from);
+  const startedRef = useRef(false); // đã hiện số thật lần nào chưa
+  const initialRef = useRef(value); // chỉ giá trị lúc mount mới chờ vào khung nhìn để đếm mở đầu
 
   useEffect(() => {
     if (!finite) return undefined;
+    const show = (v) => { shownRef.current = v; setShown(v); };
     if (reduced) {
-      setShown(value);
-      lastRef.current = value;
+      show(value);
+      startedRef.current = true;
       return undefined;
     }
-    const first = lastRef.current == null;
-    if (first && !inView) return undefined; // chờ vào khung nhìn
-    if (!first && !inView) {
-      setShown(value);
-      lastRef.current = value;
+    if (!inView) {
+      // Chưa ai thấy: giữ chỗ chờ đếm mở đầu, trừ khi dữ liệu đã đổi (lọc) thì hiện số mới luôn
+      if (startedRef.current || value !== initialRef.current) {
+        show(value);
+        startedRef.current = true;
+      }
       return undefined;
     }
-    const start = first ? from : lastRef.current;
+    const start = startedRef.current ? shownRef.current : from;
+    startedRef.current = true;
     if (start === value) {
-      setShown(value);
-      lastRef.current = value;
+      show(value);
       return undefined;
     }
     const t0 = performance.now();
     let raf;
     const tick = (now) => {
       const t = Math.min(1, (now - t0) / duration);
-      setShown(start + (value - start) * easeOut(t));
+      show(t < 1 ? start + (value - start) * easeOut(t) : value);
       if (t < 1) raf = requestAnimationFrame(tick);
-      else {
-        lastRef.current = value;
-        if (settle) setSettleKey((k) => k + 1);
-      }
+      else if (settle) setSettleKey((k) => k + 1);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [value, finite, reduced, inView, from, duration, settle]);
 
-  if (!finite) return <span ref={ref} className={className}>Chưa có</span>;
+  if (!finite) return <span ref={ref} className={className}>—</span>;
 
   const now = format(shown ?? value, decimals, signed);
   const end = format(value, decimals, signed);
