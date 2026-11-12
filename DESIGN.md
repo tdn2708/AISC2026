@@ -52,13 +52,13 @@ Chế độ: `document.documentElement` mang `data-theme="light|dark"` (`hooks/u
 | `--shadow-knob` | `shadow-(--shadow-knob)` | `0 1px 3px` navy 25% | nền đen 45% | núm công tắc |
 | `--shadow-overlay` | `shadow-(--shadow-overlay)` | `0 6px 16px -6px` navy 22% | nền đen 65% | lớp nổi không phải kính (hiện chưa ai dùng; giữ làm dự phòng) |
 | `--shadow-float` | `shadow-(--shadow-float)` | `0 10px 30px -14px` navy 28% | `0 12px 32px -14px` đen 60% | lớp kính nổi (đã nằm trong `glass-float`); có lệch xuống, không glow |
-| `--glass-tint` | (qua `glass-chrome`) | trắng 66% | `rgb(20 32 54)` 62% | nền thanh trên, thanh bên, thanh lọc dính |
+| `--glass-tint` | (qua `glass-chrome`) | trắng 78% (K1-08 chỉnh, đo lại sau khi tăng lớp không khí; 12.3 ghi 66%) | `rgb(20 32 54)` 62% | nền thanh trên, thanh bên, thanh lọc dính |
 | `--glass-tint-strong` | (qua `glass-float`) | trắng 82% | `rgb(20 32 54)` 80% | nền lớp nổi có chữ dày |
 | `--glass-panel` | (qua `glass`, `glass-strong`, `.glass-panel`, `GlassPanel`) | trắng 78% | `rgb(20 32 54)` 76% | nền panel số liệu, không backdrop-filter |
 | `--glass-line` | `border-(--glass-line)` | navy 10% | trắng 12% | viền 1px của mọi bề mặt kính |
 | `--glass-edge` | (trong `box-shadow` của lớp kính) | `inset 0 1px 0` trắng 70% | `inset 0 1px 0` trắng 8% | vệt sáng mép trên, như cạnh kính |
 | `--glass-blur` | (qua `glass-chrome`, `glass-float`) | 16px | 16px | điện thoại (dưới 768px) 8px; luôn kèm `saturate(140%)` |
-| `--atmos-a`, `-b`, `-c` | (qua `.atmos`) | polo 10%, navy 6%, polo-81 14% | polo 16%, polo-81 8%, navy-17 40% | ba vùng sáng của lớp không khí |
+| `--atmos-a`, `-b`, `-c` | (qua `.atmos`) | polo-52 30%, polo-81 40%, navy-26 10% | polo-52 38%, polo-81 14%, navy-17 50% (K1-08 chỉnh, mức tối đa được duyệt; 12.3 ghi 10, 6, 14 và 16, 8, 40) | ba vùng sáng của lớp không khí |
 
 ### 2.3 Luật san hô
 
@@ -151,7 +151,7 @@ Ba nhánh dự phòng cho mọi lớp kính: trình duyệt không có `backdrop
 
 Lớp không khí: `AppAtmosphere` (`components/shell/AppAtmosphere.jsx`), gắn trong `MainLayout` của `App.jsx` (vùng app, không ở `/`). Một `div.atmos` `position: fixed`, `z-index: -1`, `pointer-events: none`, ba vùng tròn 48 đến 60vw `radial-gradient` rất nhẹ. Bố cục `data-atmos="dashboard|data|work|quiet"` lấy theo route trong bảng `ATMOS_BY_ROUTE` của component (dashboard; insights, analytics, risk là data; feedbacks, live, data là work; trust, reports, settings, lab là quiet). Trôi chậm theo cuộn của `main.main-content` (tối đa 6vh) bằng timeline có tên `--app-scroll` (`html { timeline-scope }` và `main.main-content { scroll-timeline }`), không phải `scroll(nearest)`, vì phần tử `fixed` không coi `main` là tổ tiên cuộn. Trình duyệt không hỗ trợ hoặc giảm chuyển động thì đứng yên.
 
-Chữ trên kính đo ở `node .hallmark/contrast-K1.mjs`: chữ `--text-hi/mid/lo`, `--accent`, `--sev-*` trên `--glass-panel`, `--glass-tint`, `--glass-tint-strong` chồng lên điểm sáng nhất và tối nhất của lớp không khí và lên `--surface`, có và không có ô `bg-crit/12` bên dưới, cả sáng và tối: 208 cặp, 0 trượt 4,5:1 (thấp nhất 4,55:1, `--accent` trên `--glass-tint` sáng ở chỗ tối nhất có ô đỏ). Đổi một độ đặc kính thì chạy lại; trượt thì tăng độ đặc theo bước 0,04.
+Chữ trên kính đo ở `node .hallmark/contrast-K1.mjs`: chữ `--text-hi/mid/lo`, `--accent`, `--sev-*` trên `--glass-panel`, `--glass-tint`, `--glass-tint-strong` chồng lên điểm sáng nhất và tối nhất của lớp không khí và lên `--surface`, có và không có ô `bg-crit/12` bên dưới, cả sáng và tối: 208 cặp, 0 trượt 4,5:1 (thấp nhất 4,56:1, `--accent` trên `--glass-panel` và `--glass-tint` sáng ở chỗ tối nhất có ô đỏ). Đổi một độ đặc kính thì chạy lại; trượt thì tăng độ đặc theo bước 0,04.
 
 Lớp chồng (giá trị thật): thanh trên `z-[120]`, popover `z-[150]`, phủ thanh bên 990, thanh bên 1000, Modal và Drawer `z-[2000]`, Toast `z-[2100]`.
 
