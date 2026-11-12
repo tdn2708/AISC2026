@@ -127,12 +127,12 @@ const Report = ({ sessionId }) => {
       </GlassPanel>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <GlassPanel tone="strong" className="p-4 sm:p-5">
-          <PanelHeader title="Phễu phiên live" subtitle="Rơi rụng nhiều nhất ở bước nào" />
+        <GlassPanel tone="strong" className="reveal p-4 sm:p-5">
+          <PanelHeader title="Phễu phiên live"subtitle="Rơi rụng nhiều nhất ở bước nào" />
           <Funnel f={r.funnel} />
         </GlassPanel>
 
-        <GlassPanel tone="strong" className="p-4 sm:p-5">
+        <GlassPanel tone="strong" className="reveal p-4 sm:p-5">
           <PanelHeader
             title="Khiếu nại theo nhóm vấn đề"
             subtitle="Cùng cách phân loại với trang Phản hồi"
@@ -150,6 +150,7 @@ const Report = ({ sessionId }) => {
           )}
           {push?.error && <p role="alert" className="mb-3 text-sm text-crit">{push.error}</p>}
           {r.complaints.byCategory.length ? (
+            <div className="paper">
             <ul className="flex list-none flex-col gap-3">
               {r.complaints.byCategory.map((c) => (
                 <li key={c.category}>
@@ -158,6 +159,7 @@ const Report = ({ sessionId }) => {
                 </li>
               ))}
             </ul>
+            </div>
           ) : (
             <EmptyState compact title="Không có khiếu nại" />
           )}
@@ -168,10 +170,10 @@ const Report = ({ sessionId }) => {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <GlassPanel tone="strong" className="p-4 sm:p-5">
+        <GlassPanel tone="strong" className="reveal p-4 sm:p-5">
           <PanelHeader title="Câu hỏi bị bỏ sót" subtitle="Nhóm câu hỏi chưa được trả lời, đông người nhất trước" />
           {r.response.missed.length ? (
-            <ul className="flex list-none flex-col">
+            <div className="paper"><ul className="flex list-none flex-col">
               {r.response.missed.map((m, i) => (
                 <li key={i} className="flex items-baseline gap-3 border-b border-line-soft py-2 last:border-0">
                   <span className="w-10 shrink-0 tabular-nums text-sm text-ink-hi">{fmtInt(m.people)}</span>
@@ -181,14 +183,14 @@ const Report = ({ sessionId }) => {
                   </div>
                 </li>
               ))}
-            </ul>
+            </ul></div>
           ) : <EmptyState compact title="Không bỏ sót câu hỏi nào" />}
         </GlassPanel>
 
-        <GlassPanel tone="strong" className="p-4 sm:p-5">
+        <GlassPanel tone="strong" className="reveal p-4 sm:p-5">
           <PanelHeader title="Cầu bị lỡ vì hết hàng" subtitle="Lượt chốt đến sau khi biến thể đã hết, theo tồn kho khai báo" />
           {r.revenue.lost.length ? (
-            <table className="w-full text-left text-sm">
+            <div className="paper"><table className="w-full text-left text-sm">
               <thead><tr className="border-b border-line-soft text-xs text-ink-lo"><th className="py-2 font-medium">Biến thể</th><th className="py-2 text-right font-medium">Khách</th><th className="py-2 text-right font-medium">Sản phẩm</th><th className="py-2 text-right font-medium">Giá trị</th></tr></thead>
               <tbody>
                 {r.revenue.lost.map((l) => (
@@ -200,16 +202,16 @@ const Report = ({ sessionId }) => {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           ) : <EmptyState compact title="Không có biến thể nào hết hàng giữa phiên" />}
         </GlassPanel>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <GlassPanel tone="strong" className="p-4 sm:p-5">
+        <GlassPanel tone="strong" className="reveal p-4 sm:p-5">
           <PanelHeader title="Hành động trong phiên" subtitle="Việc trợ lý gợi ý và kết quả trước/sau 3 phút, chưa loại trừ yếu tố khác" />
           {r.actions.length ? (
-            <ul className="flex list-none flex-col">
+            <div className="paper"><ul className="flex list-none flex-col">
               {r.actions.slice().reverse().map((a) => (
                 <li key={`${a.id}-${a.at}`} className="border-b border-line-soft py-2 last:border-0">
                   <div className="flex flex-wrap items-baseline gap-x-2">
@@ -220,14 +222,14 @@ const Report = ({ sessionId }) => {
                   {a.effect && <p className="mt-0.5 text-xs"><EffectLine effect={a.effect} /></p>}
                 </li>
               ))}
-            </ul>
+            </ul></div>
           ) : <EmptyState compact title="Chưa có hành động nào được ghi nhận" />}
         </GlassPanel>
 
-        <GlassPanel tone="strong" className="p-4 sm:p-5">
+        <GlassPanel tone="strong" className="reveal p-4 sm:p-5">
           <PanelHeader title="So với phiên trước" subtitle={prev ? prev.title : 'Chưa có phiên trước để so'} />
           {prev ? (
-            <table className="w-full text-left text-sm">
+            <div className="paper"><table className="w-full text-left text-sm">
               <thead><tr className="border-b border-line-soft text-xs text-ink-lo"><th className="py-2 font-medium">Chỉ số</th><th className="py-2 text-right font-medium">Phiên này</th><th className="py-2 text-right font-medium">Phiên trước</th><th className="py-2 text-right font-medium">Chênh</th></tr></thead>
               <tbody>
                 {[
@@ -250,15 +252,15 @@ const Report = ({ sessionId }) => {
                   <td className="py-2 text-right tabular-nums"><Delta now={r.response.answeredShare} prev={prev.answeredShare} pctMode /></td>
                 </tr>
               </tbody>
-            </table>
+            </table></div>
           ) : <EmptyState compact title="Phiên đầu tiên" description="Từ phiên sau, báo cáo sẽ so sánh tự động." />}
         </GlassPanel>
       </div>
 
-      <GlassPanel tone="strong" className="p-4 sm:p-5">
+      <GlassPanel tone="strong" className="reveal p-4 sm:p-5">
         <PanelHeader title="Sản phẩm" subtitle="Hỏi nhiều mà chốt ít là dấu hiệu khách còn do dự về giá, size hoặc chất lượng" />
         {r.products.length ? (
-          <div className="-mx-1 overflow-x-auto">
+          <div className="paper"><div className="-mx-1 overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead><tr className="border-b border-line-soft text-xs text-ink-lo"><th className="px-1 py-2 font-medium">Sản phẩm</th><th className="px-1 py-2 text-right font-medium">Câu hỏi</th><th className="px-1 py-2 text-right font-medium">Lượt chốt</th><th className="px-1 py-2 text-right font-medium">Số lượng</th><th className="px-1 py-2 text-right font-medium">Chốt trên hỏi</th><th className="px-1 py-2 text-right font-medium">Khiếu nại</th></tr></thead>
               <tbody>
@@ -274,7 +276,7 @@ const Report = ({ sessionId }) => {
                 ))}
               </tbody>
             </table>
-          </div>
+          </div></div>
         ) : <EmptyState compact title="Chưa nhận ra sản phẩm nào" />}
       </GlassPanel>
     </div>

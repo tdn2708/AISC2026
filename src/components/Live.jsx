@@ -7,6 +7,7 @@ import { fmtInt, fmtDateTime, fmtPct } from '../lib/format';
 import StartSession from './live/StartSession';
 import LiveConsole from './live/LiveConsole';
 import { StatusPill, PLATFORM_LABEL, duration } from './live/shared';
+import { PageEnter } from './motion';
 
 /**
  * LIVESTREAM — trang theo dõi phiên live bán hàng
@@ -27,7 +28,7 @@ const SessionList = ({ sessions, onOpen, onDeleted, empty }) => {
         const sm = s.summary;
         return (
           <li key={s.id} className="flex items-center gap-3 border-b border-line-soft py-3 last:border-0">
-            <button type="button" onClick={() => onOpen(s.id)} className="flex min-w-0 flex-1 items-center gap-4 rounded-ctrl text-left hover:bg-raised/60">
+            <button type="button" onClick={() => onOpen(s.id)} className="lift flex min-w-0 flex-1 items-center gap-4 rounded-ctrl text-left hover:bg-raised/60">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="truncate text-sm font-semibold text-ink-hi">{s.title}</span>
@@ -106,13 +107,13 @@ const Live = () => {
   const open = (id) => setParams({ session: id });
 
   if (sessionId) {
-    return <div className="cx"><LiveConsole key={sessionId} sessionId={sessionId} onBack={() => setParams({})} /></div>;
+    return <PageEnter className="cx"><LiveConsole key={sessionId} sessionId={sessionId} onBack={() => setParams({})} /></PageEnter>;
   }
 
   const running = (sessions || []).filter((s) => ['live', 'connecting', 'reconnecting'].includes(s.status));
 
   return (
-    <div className="cx">
+    <PageEnter className="cx">
       <PageHeader
         title="Livestream"
         subtitle="Thu bình luận trực tiếp từ phiên live bán hàng. Câu hỏi được gom kèm gợi ý trả lời, khách chốt đơn được ghi lại, khiếu nại được đẩy lên đầu."
@@ -148,7 +149,7 @@ const Live = () => {
           />
         )}
       </GlassPanel>
-    </div>
+    </PageEnter>
   );
 };
 

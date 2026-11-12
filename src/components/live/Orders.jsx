@@ -72,7 +72,7 @@ const Orders = ({ stats, sessionId, onChanged }) => {
         )}
       />
       {items.length ? (
-        <div className="-mx-1 overflow-x-auto">
+        <div className="paper"><div className="-mx-1 overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr className="border-b border-line-soft text-xs text-ink-lo">
@@ -89,7 +89,7 @@ const Orders = ({ stats, sessionId, onChanged }) => {
               {items.slice(0, 100).map((o) => <OrderRow key={o.id} o={o} onStatus={setStatus} />)}
             </tbody>
           </table>
-        </div>
+        </div></div>
       ) : (
         <EmptyState compact title={filter === 'new' ? 'Không có đơn mới' : 'Chưa có đơn'} />
       )}
