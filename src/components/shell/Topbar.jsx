@@ -10,7 +10,7 @@ import { alertTitle } from '../../lib/format';
 import { useRefreshing } from '../../lib/dataVersion';
 
 /**
- * THANH TRÊN — dính theo cuộn, kính trong.
+ * THANH TRÊN — dính theo cuộn, trong suốt ở đỉnh trang, thành kính khi nội dung cuộn qua (M3).
  * Chứa đúng ba thứ dùng ở mọi trang: ô lệnh Ctrl+K, đổi giao diện sáng/tối
  * và thông báo. Tên trang không lặp ở đây vì mỗi trang đã có tiêu đề riêng;
  * kho dữ liệu nằm ở thanh bên.
@@ -144,27 +144,27 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
   const { pathname } = useLocation();
   const page = findPage(pathname);
   const { theme, setTheme } = useTheme();
-  const [scrolled, setScrolled] = useState(false);
   const barRef = useRef(null);
 
-  // Kính chỉ đặc lại khi nội dung đã cuộn qua — ở đầu trang thanh trên trong suốt
+  // Báo chiều cao thanh trên cho vùng cuộn (--topbar-h): thanh lọc dính và scroll-padding đọc số này
   useEffect(() => {
-    const scroller = barRef.current?.closest('.main-content');
-    if (!scroller) return undefined;
-    const onScroll = () => setScrolled(scroller.scrollTop > 8);
-    scroller.addEventListener('scroll', onScroll, { passive: true });
-    return () => scroller.removeEventListener('scroll', onScroll);
+    const bar = barRef.current;
+    const scroller = bar?.closest('.main-content');
+    if (!bar || !scroller) return undefined;
+    const sync = () => scroller.style.setProperty('--topbar-h', `${bar.offsetHeight}px`);
+    sync();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(sync);
+    ro.observe(bar);
+    return () => ro.disconnect();
   }, []);
 
   const isMac = typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform);
 
   return (
-    <div ref={barRef} className={`cx sticky top-0 z-[120] -mr-2 pt-[max(0.75rem,env(safe-area-inset-top))] pr-2 pb-3 ${scrolled ? 'bg-(--canvas)' : ''}`}>
-      <div
-        className={`flex items-center gap-2 rounded-ctrl px-1 py-2 sm:gap-3 sm:px-2 transition-colors duration-short ease-out ${
-          scrolled ? 'glass' : ''
-        }`}
-      >
+    // .topbar: dải kính trải hết bề ngang vùng main; nền kính là ::before, hiện dần theo cuộn (index.css)
+    <div ref={barRef} className="cx topbar sticky top-0 z-[120]">
+      <div className="flex items-center gap-2 py-2 sm:gap-3">
         <IconButton icon={Menu} label="Mở menu" onClick={onOpenMenu} className="md:hidden" />
 
         {/* Điện thoại: tên trang hiện tại, vì thanh bên đã ẩn sau nút menu */}

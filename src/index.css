@@ -743,22 +743,70 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
   flex-direction: column;
   z-index: 1000;
   /* Thanh bên áp sát mép, ngăn với nội dung bằng một đường kẻ — khung của
-     phần mềm doanh nghiệp đứng yên, không trôi nổi */
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--border);
+     phần mềm doanh nghiệp đứng yên, không trôi nổi. Nền là kính (glass-chrome, K2-02):
+     máy tính nhìn xuyên ra lớp không khí; chỉ giữ viền phải, bỏ ba viền còn lại. */
   transition: transform var(--motion-short) var(--ease-out);
 }
+.sidebar-container.glass-chrome { border-width: 0 1px 0 0; }
 
 .main-content {
+  /* Lề ngang của vùng nội dung; thanh trên lấy số này để trải hết bề ngang (dải kính) */
+  --main-pl: var(--space-lg);
+  --main-pr: var(--space-lg);
+  /* Cuộn tới anchor (scrollIntoView) chừa chỗ cho thanh trên và thanh lọc dính (K2-04) */
+  scroll-padding-top: calc(var(--topbar-h, 5rem) + var(--filter-h, 0px));
   flex: 1;
   min-width: 0;
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
   margin-left: calc(var(--sidebar-w) + var(--shell-gap));
-  padding: 0 var(--space-lg) var(--space-xl) var(--space-lg);
+  padding: 0 var(--main-pr) var(--space-xl) var(--main-pl);
 }
 .main-content.is-collapsed { margin-left: calc(var(--sidebar-w-collapsed) + var(--shell-gap)); }
+
+/* ---------- Thanh trên (K2-01, M3) ----------
+   Dải trải hết bề ngang vùng main (bù lại lề của .main-content), không bo góc, không khung nổi:
+   thanh trên là mép của cửa sổ chứ không phải một thẻ; thẻ bo góc có viền lơ lửng giữa trang làm
+   nội dung cuộn qua dưới nó trông bị cắt. Chiều cao không đổi. Nền kính là ::before; ở đỉnh
+   trang opacity 0 (trong suốt hẳn, không viền), cuộn 0 đến 48 px thì lên 1. */
+.topbar {
+  margin-inline: calc(-1 * var(--main-pl)) calc(-1 * var(--main-pr));
+  padding: max(var(--space-xs), env(safe-area-inset-top)) var(--main-pr) var(--space-xs) var(--main-pl);
+  isolation: isolate;
+}
+.topbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border-bottom: 1px solid var(--glass-line);
+  box-shadow: var(--glass-edge);
+}
+@supports (animation-timeline: scroll()) {
+  .topbar::before {
+    animation: topbar-glass linear both;
+    animation-timeline: scroll(nearest block);
+    animation-range: 0 48px;
+  }
+}
+@keyframes topbar-glass { from { opacity: 0; } to { opacity: 1; } }
+/* Giảm chuyển động: luôn là kính, không chạy theo cuộn */
+@media (prefers-reduced-motion: reduce) {
+  .topbar::before { animation: none; opacity: 1; }
+}
+/* Dự phòng: trình duyệt không có backdrop-filter, giảm trong suốt, tắt kính -> nền đặc */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topbar::before { background: var(--surface-solid); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .topbar::before { background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+[data-glass='off'] .topbar::before { background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
 
 .sidebar-overlay {
   display: none;
@@ -769,7 +817,7 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
 .sidebar-overlay.visible { display: block; }
 
 @media (max-width: 1024px) {
-  .main-content { padding: 0 var(--space-md) var(--space-xl) var(--space-md); }
+  .main-content { --main-pl: var(--space-md); --main-pr: var(--space-md); }
 }
 
 @media (max-width: 768px) {
@@ -777,8 +825,10 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
      ở màn hẹp (nguyên nhân B2: panel /trust rộng 94 px). Chỗ nào cần trọn hàng thì dùng col-span-full. */
 
   .main-content, .main-content.is-collapsed {
+    --main-pl: max(var(--space-md), env(safe-area-inset-left));
+    --main-pr: max(var(--space-md), env(safe-area-inset-right));
     margin-left: 0;
-    padding: 0 max(var(--space-md), env(safe-area-inset-right)) calc(var(--space-xl) + env(safe-area-inset-bottom)) max(var(--space-md), env(safe-area-inset-left));
+    padding: 0 var(--main-pr) calc(var(--space-xl) + env(safe-area-inset-bottom)) var(--main-pl);
   }
 
   .sidebar-container {
@@ -793,11 +843,19 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
   .sidebar-container:not(.open) { display: none; }
   .sidebar-container.open { transform: translateX(0); transition: transform var(--motion-short) var(--ease-out); }
   @starting-style { .sidebar-container.open { transform: translateX(-100%); } }
+  /* Điện thoại: thanh bên là lớp nổi (glass-float: tint đặc hơn, bóng nổi) trên lớp phủ. Chỉ khi kính còn bật
+     và trình duyệt có backdrop-filter; không thì giữ nền đặc của nhánh dự phòng. */
+  @media (prefers-reduced-transparency: no-preference) {
+    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+      html:not([data-glass='off']) .sidebar-container.glass-chrome {
+        background: var(--glass-tint-strong);
+        border-width: 0 1px 0 0;
+        box-shadow: var(--glass-edge), var(--shadow-float);
+      }
+    }
+  }
 
   .glass-panel { padding: var(--space-md); }
-
-  /* Panel không còn backdrop-filter (12.7); chỉ thanh bên giữ làm mờ nhẹ */
-  .sidebar-container { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 
   /* Thanh phân trang bảng: nút đủ lớn cho ngón tay */
   .fb-pager { padding: var(--space-sm) var(--space-md); }
