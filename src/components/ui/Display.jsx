@@ -135,7 +135,7 @@ export const Toast = ({ show, tone = 'ok', children }) => {
   // backdrop-filter, `position: fixed` sẽ bám theo tổ tiên đó thay vì màn hình
   return createPortal(
     <div role={tone === 'crit' ? 'alert' : 'status'} className="cx fixed right-4 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-[2100] max-w-[calc(100vw-2rem)] animate-pop-in sm:right-6">
-      <div className="glass-strong flex items-center gap-3 rounded-surf px-4 py-3 text-sm font-medium text-ink-hi shadow-(--shadow-overlay)">
+      <div className="glass-float flex items-center gap-3 rounded-surf px-4 py-3 text-sm font-medium text-ink-hi">
         <span className={`grid size-7 shrink-0 place-items-center rounded-ctrl ${tone === 'crit' ? 'bg-crit/12 text-crit' : 'bg-ok/12 text-ok'}`}>
           <Icon size={16} aria-hidden="true" />
         </span>

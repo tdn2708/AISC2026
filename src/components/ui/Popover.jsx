@@ -8,10 +8,11 @@ import { Check } from 'lucide-react';
  *               right...) và cách đóng (bấm ra ngoài, Esc) do nơi gọi giữ như cũ.
  *   MenuItem    một dòng trong Popover; `active` là dòng đang chọn (nền accent-dim, dấu tích).
  *   ChartTooltip  hộp chú giải khi rê lên biểu đồ (truyền vào `content` của Recharts Tooltip).
- * Cùng một bề mặt: nền bề mặt, viền 1px, bo --r-surf, một bóng --shadow-overlay.
+ * Cùng một bề mặt `glass-float` (K1): kính nổi làm mờ nền phía sau, viền 1px, bo --r-surf,
+ * bóng --shadow-float (có lệch, không glow).
  * Mở bằng pop-in (transform, opacity, --motion-short); giảm chuyển động thì hiện ngay.
  */
-export const OVERLAY_SURFACE = 'glass-strong rounded-surf shadow-(--shadow-overlay)';
+export const OVERLAY_SURFACE = 'glass-float rounded-surf';
 
 export const Popover = ({ as: Tag = 'div', className = '', children, ...rest }) => (
   <Tag className={`${OVERLAY_SURFACE} z-[150] p-1.5 animate-pop-in ${className}`} {...rest}>

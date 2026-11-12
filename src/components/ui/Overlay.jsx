@@ -8,7 +8,7 @@ import { useReducedMotion } from '../motion/useReducedMotion';
  * Hộp thoại (F1-05: Modal, Drawer, hộp riêng của CommandPalette, window.confirm, window.alert
  * gộp còn 2): Modal cho câu hỏi ngắn và xác nhận (tone="crit" cho thao tác không hoàn tác),
  * Drawer cho xem chi tiết bên phải. Lỗi không mở hộp thoại, mà hiện bằng Toast tone="crit".
- * Cả hai: một bề mặt bo --r-surf, nút đóng là IconButton trơn 32px (vùng bấm nới ra 44px),
+ * Cả hai: một bề mặt kính nổi `glass-float` bo --r-surf, nút đóng là IconButton trơn 32px (vùng bấm nới ra 44px),
  * mở bằng pop-in (transform, opacity), giảm chuyển động thì hiện ngay.
  *
  * Lớp phủ dùng chung: khoá cuộn nền, đóng bằng Esc,
@@ -62,7 +62,7 @@ export const Modal = ({ open, onClose, title, description, icon: Icon, tone = 'a
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`glass-strong relative max-h-[calc(100dvh-2rem)] w-full ${width} overflow-y-auto overscroll-contain rounded-surf p-5 shadow-(--shadow-overlay) outline-none animate-pop-in sm:p-6`}
+        className={`glass-float relative max-h-[calc(100dvh-2rem)] w-full ${width} overflow-y-auto overscroll-contain rounded-surf p-5 outline-none animate-pop-in sm:p-6`}
       >
         <IconButton icon={X} label="Đóng" variant="ghost" size="sm" data-close onClick={onClose} className="absolute! top-3 right-3 before:absolute before:-inset-1.5 before:content-[''] sm:top-4 sm:right-4" />
         {Icon && (
@@ -107,7 +107,7 @@ export const Drawer = ({ open, onClose, title, subtitle, children, footer, width
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`glass-strong absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col overflow-hidden rounded-surf shadow-(--shadow-overlay) outline-none ${leaving ? 'animate-drawer-out' : 'animate-drawer-in'}`}
+        className={`glass-float absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col overflow-hidden rounded-surf outline-none ${leaving ? 'animate-drawer-out' : 'animate-drawer-in'}`}
         style={{ width: `min(${width}px, calc(100vw - 24px))` }}
       >
         <header className="flex items-start justify-between gap-4 border-b border-line-soft px-6 py-5">

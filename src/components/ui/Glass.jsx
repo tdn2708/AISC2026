@@ -4,8 +4,10 @@ import { severityOf } from '../../lib/format';
 
 /**
  * Bề mặt kính dùng chung.
- *   tone="soft"   — kính trong, cho khung và thẻ thưa chữ
- *   tone="strong" — kính đặc, cho panel nhiều chữ nhỏ (bảng, danh sách)
+ * Panel số liệu (K1, 12.7): cả hai tone dùng `--glass-panel` (mờ một phần, viền 1px, mép sáng),
+ * KHÔNG backdrop-filter. Chữ nhỏ dày đặc (bảng, danh sách, sổ) đặt trong khối `paper` đặc.
+ *   tone="soft"   — khung và thẻ thưa chữ
+ *   tone="strong" — panel nhiều chữ nhỏ
  * `glow` chỉ nhận 'crit' | 'high' — ánh sáng là tín hiệu, không phải trang trí.
  */
 export const GlassPanel = ({ as: Tag = 'div', tone = 'soft', glow = null, className = '', children, ...rest }) => {
