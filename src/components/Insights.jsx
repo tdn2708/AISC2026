@@ -4,7 +4,7 @@ import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { X, RotateCcw, ArrowUp, ArrowDown } from 'lucide-react';
 import { PageHeader, GlassPanel, PanelHeader, Segmented, Button, EmptyState, ChartTooltip, SELECTED, AnimatedNumber, Skeleton } from './ui';
-import { BarGrow, ChartReveal } from './motion';
+import { BarGrow, ChartReveal, PageEnter, usePageEntered } from './motion';
 import { useDataVersion } from '../lib/dataVersion';
 import { fmtInt, fmtPct, SENTIMENT } from '../lib/format';
 import { COL, SENT, slice, kpis, groupBy, crossNeg, series, dataSpan } from '../lib/cube';
@@ -89,12 +89,17 @@ const Delta = ({ now, prev, unit, good, digits = 1 }) => {
   );
 };
 
-const KpiStrip = ({ cur, prev, line, hasPrev }) => {
+// M6 (K4-03): bốn số ở khối đầu chỉ đếm sau khi PageEnter vào xong. Chưa tới lúc thì giữ chỗ vô hình (cùng bề ngang đơn vị).
+const KpiNum = ({ go, unit = '', ...props }) => (
+  go ? <AnimatedNumber unitClassName="" unit={unit || undefined} {...props} /> : <span className="invisible" aria-hidden="true">0{unit}</span>
+);
+
+const KpiStrip = ({ cur, prev, line, hasPrev, go }) => {
   const cells = [
-    { label: 'Phản hồi được tính', value: <AnimatedNumber unitClassName="" value={cur.count} />, delta: <Delta now={cur.count} prev={hasPrev ? prev.count : null} unit="rel" good={null} />, spark: line.map((b) => b.n), color: 'var(--accent)' },
-    { label: 'Tỉ lệ tiêu cực', value: <AnimatedNumber unitClassName="" value={cur.negRate == null ? null : cur.negRate * 100} decimals={1} unit="%" />, delta: <Delta now={cur.negRate == null ? null : cur.negRate * 100} prev={hasPrev && prev.negRate != null ? prev.negRate * 100 : null} unit=" điểm %" good={false} />, spark: line.map((b) => (b.w > 0 ? b.wNeg / b.w : null)), color: 'var(--viz-neg)' },
-    { label: 'Số sao trung bình', value: <AnimatedNumber unitClassName="" value={cur.stars} decimals={2} unit=" sao" />, delta: <Delta now={cur.stars} prev={hasPrev ? prev.stars : null} unit=" sao" good digits={2} />, spark: line.map((b) => (b.starN ? b.starSum / b.starN : null)), color: 'var(--accent)' },
-    { label: 'Có chứng từ hoặc người duyệt', value: <AnimatedNumber unitClassName="" value={cur.proofShare == null ? null : cur.proofShare * 100} decimals={0} unit="%" />, delta: <Delta now={cur.proofShare == null ? null : cur.proofShare * 100} prev={hasPrev && prev.proofShare != null ? prev.proofShare * 100 : null} unit=" điểm %" good />, spark: line.map((b) => (b.n ? b.proof / b.n : null)), color: 'var(--accent)' }
+    { label: 'Phản hồi được tính', value: <KpiNum go={go} value={cur.count} />, delta: <Delta now={cur.count} prev={hasPrev ? prev.count : null} unit="rel" good={null} />, spark: line.map((b) => b.n), color: 'var(--accent)' },
+    { label: 'Tỉ lệ tiêu cực', value: <KpiNum go={go} value={cur.negRate == null ? null : cur.negRate * 100} decimals={1} unit="%" />, delta: <Delta now={cur.negRate == null ? null : cur.negRate * 100} prev={hasPrev && prev.negRate != null ? prev.negRate * 100 : null} unit=" điểm %" good={false} />, spark: line.map((b) => (b.w > 0 ? b.wNeg / b.w : null)), color: 'var(--viz-neg)' },
+    { label: 'Số sao trung bình', value: <KpiNum go={go} value={cur.stars} decimals={2} unit=" sao" />, delta: <Delta now={cur.stars} prev={hasPrev ? prev.stars : null} unit=" sao" good digits={2} />, spark: line.map((b) => (b.starN ? b.starSum / b.starN : null)), color: 'var(--accent)' },
+    { label: 'Có chứng từ hoặc người duyệt', value: <KpiNum go={go} value={cur.proofShare == null ? null : cur.proofShare * 100} decimals={0} unit="%" />, delta: <Delta now={cur.proofShare == null ? null : cur.proofShare * 100} prev={hasPrev && prev.proofShare != null ? prev.proofShare * 100 : null} unit=" điểm %" good />, spark: line.map((b) => (b.n ? b.proof / b.n : null)), color: 'var(--accent)' }
   ];
   return (
     <section aria-label="Chỉ số chính" className="mb-6 grid grid-cols-1 overflow-hidden glass-strong rounded-surf sm:grid-cols-2 xl:grid-cols-4">
@@ -147,7 +152,7 @@ const Heatmap = ({ rows: rowDims, cols: colDims, cells, sel, onPick }) => {
   const max = Math.max(1, ...cells.values());
   if (!rowDims.length || !colDims.length) return <p className="py-8 text-center text-sm text-ink-lo">Không có phản hồi tiêu cực trong phạm vi này</p>;
   return (
-    <div className="overflow-x-auto">
+    <div className="paper overflow-x-auto">
       <table className="w-full min-w-[520px] border-separate border-spacing-1 text-sm">
         <thead>
           <tr>
@@ -217,7 +222,7 @@ const ProductTable = ({ groups, names, selected, onPick }) => {
     </th>
   );
   return (
-    <div className="overflow-x-auto">
+    <div className="paper overflow-x-auto px-3">
       <table className="w-full min-w-[560px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-line">
@@ -359,6 +364,9 @@ const Insights = () => {
     };
   }, [cube, period, sentKey, pick.src, pick.cat, pick.prod]);
 
+  // M1 (K4-03): đổi bộ lọc nằm trong URL query, không đổi pathname nên PageEnter không chạy lại
+  const [entered, onEntered] = usePageEntered();
+
   const chips = [
     pick.src && { k: 'src', label: `Kênh: ${pick.src}` },
     pick.cat && view && { k: 'cat', label: `Nhóm: ${view.dicts.category.find((c) => c.key === pick.cat)?.label || pick.cat}` },
@@ -375,17 +383,17 @@ const Insights = () => {
 
   if (error && !cube) {
     return (
-      <div className="cx">
+      <PageEnter className="cx" onDone={onEntered}>
         {header}
         <GlassPanel tone="strong" className="p-6">
           <EmptyState title="Không tải được số liệu" description="Máy chủ phân tích chưa trả lời. Thử tải lại trang sau ít phút." />
         </GlassPanel>
-      </div>
+      </PageEnter>
     );
   }
 
   return (
-    <div className="cx">
+    <PageEnter className="cx" onDone={onEntered}>
       {header}
 
       {/* Thanh lọc: khoảng thời gian, cảm xúc, các lựa chọn đang áp dụng */}
@@ -435,7 +443,7 @@ const Insights = () => {
         </GlassPanel>
       ) : (
         <>
-          <KpiStrip cur={view.cur} prev={view.prev} line={view.line} hasPrev={view.hasPrev} />
+          <KpiStrip cur={view.cur} prev={view.prev} line={view.line} hasPrev={view.hasPrev} go={entered} />
 
           <div className="grid grid-cols-12 items-start gap-6">
             <GlassPanel tone="strong" className="col-span-12 p-6 xl:col-span-8">
@@ -495,7 +503,7 @@ const Insights = () => {
               {view.byCause.length > 0 && (
                 <div className="mt-5 border-t border-line-soft pt-4">
                   <h3 className="text-sm font-semibold text-ink-hi">Nguyên nhân gặp nhiều nhất</h3>
-                  <ol className="mt-2 flex list-none flex-col text-sm">
+                  <ol className="paper mt-2 flex list-none flex-col px-3 py-2 text-sm">
                     {view.byCause.map((c, i) => (
                       <li key={c.id} className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] gap-2 py-1">
                         <span className="tabular-nums text-ink-lo">{i + 1}</span>
@@ -516,7 +524,7 @@ const Insights = () => {
               />
               <Heatmap rows={view.heatCats} cols={view.heatSrcs} cells={view.cells} sel={pick} onPick={(p) => setParam(p)} />
             </GlassPanel>
-              <GlassPanel tone="strong" className="p-6">
+              <GlassPanel tone="strong" className="reveal p-6">
                 <PanelHeader title="Số sao" subtitle="Phản hồi có chấm sao trong phạm vi đang xem" />
                 {view.ratings.some((r) => r.n) ? (
                   <ul className="flex list-none flex-col gap-2">
@@ -539,7 +547,7 @@ const Insights = () => {
               </GlassPanel>
             </div>
 
-            <GlassPanel tone="strong" className="col-span-12 p-6">
+            <GlassPanel tone="strong" className="reveal col-span-12 p-6">
               <PanelHeader
                 title="Sản phẩm"
                 subtitle="12 sản phẩm theo cột đang sắp xếp. Bấm tên để lọc, bấm tiêu đề cột để đổi cách sắp."
@@ -555,7 +563,7 @@ const Insights = () => {
           </p>
         </>
       )}
-    </div>
+    </PageEnter>
   );
 };
 

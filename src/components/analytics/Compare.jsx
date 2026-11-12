@@ -48,7 +48,7 @@ const Side = ({ p, color, tag }) => (
     {p.topCauses.length > 0 && (
       <div className="mt-4 border-t border-line-soft pt-3">
         <p className="text-xs font-semibold text-ink-mid">Bị chê nhiều nhất</p>
-        <ul className="mt-1.5 flex list-none flex-col gap-1 text-sm">
+        <ul className="paper mt-1.5 flex list-none flex-col gap-1 px-3 py-2 text-sm">
           {p.topCauses.map((c) => (
             <li key={`${c.category}-${c.label}`} className="flex justify-between gap-3">
               <span className="truncate text-ink-hi">{c.label}</span>
@@ -140,7 +140,7 @@ const Compare = () => {
             <Side p={data.b} color={B_COLOR} tag="B" />
           </div>
 
-          <GlassPanel tone="strong" className="p-5">
+          <GlassPanel tone="strong" className="reveal p-5">
             <PanelHeader title="Bị chê về điều gì" subtitle="Tỉ lệ phản hồi chê từng nhóm vấn đề, trên tổng phản hồi của mỗi sản phẩm" />
             {data.categories.length === 0 ? (
               <p className="text-sm text-ink-lo">Hai sản phẩm chưa có lời chê nào được xếp nhóm.</p>

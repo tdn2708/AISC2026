@@ -85,12 +85,13 @@ const Segments = () => {
           const n = data[s.key].length;
           const active = s.key === segment;
           return (
+            // Lớp ngoài mang lift (M4): nút giữ transition màu riêng, không bị lift ghi đè
+            <div key={s.key} className="lift rounded-surf">
             <button
-              key={s.key}
               type="button"
               onClick={() => setSegment(s.key)}
               aria-pressed={active}
-              className={`rounded-surf border p-5 text-left transition-[background-color,border-color] duration-micro ease-out ${active ? 'border-accent bg-accent-dim' : 'border-line bg-surface hover:border-ink-lo'}`}
+              className={`h-full w-full rounded-surf border p-5 text-left transition-[background-color,border-color] duration-micro ease-out ${active ? 'border-accent bg-accent-dim' : 'border-line bg-surface hover:border-ink-lo'}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <span className={`grid size-10 place-items-center rounded-ctrl ${s.tone}`}>
@@ -102,6 +103,7 @@ const Segments = () => {
               <p className="tabular-nums text-metric font-semibold tracking-tight text-ink-hi">{loading ? '—' : fmtInt(n)}</p>
               <p className="mt-1.5 text-xs leading-relaxed text-ink-lo">{s.note}</p>
             </button>
+            </div>
           );
         })}
       </div>
@@ -126,7 +128,7 @@ const Segments = () => {
         ) : rows.length === 0 ? (
           <EmptyState compact title="Không có khách hàng khớp" description="Thử đổi khoảng thời gian hoặc từ khoá." />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="paper mx-3 mb-3 overflow-x-auto">
             <table className="data-table min-w-[720px]">
               <thead>
                 <tr>

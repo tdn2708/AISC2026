@@ -11,7 +11,7 @@ import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat, Ch
 import { buildQuery, fmtInt, fmtPct, fmtSignedPct, fmtDate } from '../lib/format';
 import { useDataVersion } from '../lib/dataVersion';
 import { AXIS_TICK } from '../lib/tokens';
-import { BarGrow, MOTION, EASE, STAGGER_STEP, useReducedMotion } from './motion';
+import { BarGrow, MOTION, EASE, STAGGER_STEP, useReducedMotion, PageEnter } from './motion';
 
 /**
  * PHÂN TÍCH NGUYÊN NHÂN
@@ -288,10 +288,10 @@ const RootCauses = () => {
             </GlassPanel>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <div className="reveal grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <GlassPanel tone="strong" className="p-5">
               <PanelHeader title="Sản phẩm bị chê nhiều nhất" />
-              <ol className="flex list-none flex-col gap-1">
+              <ol className="paper flex list-none flex-col gap-1 p-2">
                 {products.map((p, i) => (
                   <li key={p.key} className="flex items-center gap-3 rounded-ctrl px-1 py-2">
                     <span className="grid size-6 shrink-0 place-items-center rounded-ctrl bg-raised tabular-nums text-xs text-ink-mid">{i + 1}</span>
@@ -305,7 +305,7 @@ const RootCauses = () => {
 
             <GlassPanel tone="strong" className="p-5">
               <PanelHeader title="Phản hồi mới nhất" />
-              <ul className="flex list-none flex-col divide-y divide-line-soft">
+              <ul className="paper flex list-none flex-col divide-y divide-line-soft px-3 py-3">
                 {samples.map((f) => (
                   <li key={f._id} className="py-3 first:pt-0 last:pb-0">
                     <p className="line-clamp-2 text-sm leading-relaxed text-ink-hi">{f.originalText}</p>
@@ -360,7 +360,7 @@ const Analytics = () => {
   const tab = ['segments', 'compare'].includes(params.get('tab')) ? params.get('tab') : 'causes';
 
   return (
-    <div className="cx">
+    <PageEnter className="cx">
       <PageHeader
         title="Phân tích nguyên nhân"
         subtitle={{
@@ -382,7 +382,7 @@ const Analytics = () => {
       <TabPane tabKey={tab}>
         {tab === 'segments' ? <Segments /> : tab === 'compare' ? <Compare /> : <RootCauses />}
       </TabPane>
-    </div>
+    </PageEnter>
   );
 };
 
