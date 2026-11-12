@@ -78,7 +78,7 @@ const Login = ({ onLogin }) => {
           </p>
           {!ledgerFailed ? (
             <div className="mt-8 max-w-[400px]">
-              {ledger ? <LedgerRun ledger={ledger} mode="auto" showLink={false} /> : <LedgerSkeleton />}
+              {ledger ? <LedgerRun ledger={ledger} mode="auto" play={false} showLink={false} /> : <LedgerSkeleton />}
             </div>
           ) : (
           <ul className="mt-8 flex list-none flex-col gap-3 text-sm text-on-strip-mid">

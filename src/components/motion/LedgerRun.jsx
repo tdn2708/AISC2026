@@ -23,7 +23,7 @@ import { MOTION } from './tokens';
  * - mode="auto": chạy một lần trong --motion-story khi tờ sổ vào khung nhìn.
  * - mode="scroll": trang ngoài truyền progress 0..1 (thanh cuộn), sổ đứng
  *   đúng trạng thái của tiến độ đó; tới 1 thì chốt.
- * Giảm chuyển động: bảng tĩnh đủ số ngay, không chạy.
+ * Giảm chuyển động hoặc play={false}: bảng tĩnh đủ số ngay, không chạy.
  *
  * Kỹ thuật: mỗi khung hình chỉ đổi opacity và transform (dòng hiện vào, dải
  * chữ số trượt dọc), không đổi chữ, nên trình duyệt không phải dàn trang lại.
@@ -66,13 +66,16 @@ export const LedgerRun = ({
   title = 'Số liệu này đứng trên gì',
   showLink = true,
   bare = false,
+  play = true,
   onDone,
   className = ''
 }) => {
   // Tính theo giá trị chứ không theo đối tượng: tải lại dữ liệu cùng số thì sổ không chạy lại
   const sig = JSON.stringify(normalizeLedger(ledger));
   const run = useMemo(() => buildLedgerRun(JSON.parse(sig)), [sig]);
-  const reduced = useReducedMotion();
+  // play=false: hiện ngay số cuối như giảm chuyển động (trang chỉ cần bảng tĩnh)
+  const reducedPref = useReducedMotion();
+  const reduced = reducedPref || !play;
   const rootRef = useRef(null);
   const rowRefs = useRef({});
   const stripRefs = useRef([]);

@@ -137,7 +137,7 @@ const TrustOverview = () => {
         <GlassPanel tone="strong" className="flex min-w-0 flex-col p-6 lg:col-span-2">
           <PanelHeader title="Phễu dữ liệu" subtitle="Từ lúc thu thập tới lúc được tính vào chỉ số" />
           {/* Cùng phép trừ chạy với sổ đối chiếu ở Tổng quan; số cuối là countedForMetrics */}
-          <LedgerRun ledger={health} mode="auto" showLink={false} title={null} bare className="mb-6" />
+          <LedgerRun ledger={health} mode="auto" play={false} showLink={false} title={null} bare className="mb-6" />
           <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-line-soft pt-4 text-xs">
             <div className="flex gap-1.5"><dt className="text-ink-lo">Số kênh có dữ liệu</dt><dd className="tabular-nums font-semibold text-ink-hi">{health.channelCoverage.covered}/{health.channelCoverage.expected}</dd></div>
             <div className="flex gap-1.5"><dt className="text-ink-lo">Khớp với đơn hàng</dt><dd className="tabular-nums font-semibold text-ink-hi">{pct1(health.reconciliationRate)}</dd></div>

@@ -35,7 +35,7 @@ const todayLabel = () => {
 };
 
 /** todo: danh sách việc đã gộp và xếp (TodayInbox.buildTodo) */
-const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, lastUpdated, ledger, ledgerFailed, onRetryLedger, onLedgerDone, evidence }) => {
+const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, lastUpdated, ledger, ledgerFailed, onRetryLedger, onLedgerDone, playRun = true, evidence }) => {
   const navigate = useNavigate();
   const top = todo[0];
   const urgent = todo.filter((t) => t.severity === 'critical').length;
@@ -91,7 +91,7 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
           {!stats && error ? null : loading && !stats ? <Skeleton className="mt-5 h-3.5 w-64 max-w-full" /> : <p className="mt-5 max-w-[60ch] text-sm leading-relaxed text-ink-lo">{asOfLine}</p>}
         </div>
         {ledger ? (
-          <LedgerRun ledger={ledger} evidence={evidence} mode="auto" onDone={onLedgerDone} />
+          <LedgerRun ledger={ledger} evidence={evidence} mode="auto" play={playRun} onDone={onLedgerDone} />
         ) : ledgerFailed ? (
           <div className="rounded-lg border border-line bg-(--sheet)">
             <EmptyState

@@ -155,7 +155,7 @@ API (import từ `src/components/motion`, `AnimatedNumber` từ `src/components/
 
 | Thành phần | Prop | Ghi chú |
 |---|---|---|
-| `LedgerRun` | `ledger, evidence?, mode='auto'\|'scroll', progress=0..1, duration=1600, title, showLink=true, onDone, className` | chữ ký. `ledger` nhận nguyên `/trust/health` hoặc dạng phẳng `{raw, spam, inauthentic, pendingNotCounted, pendingCounted, aged, counted}`; số cuối luôn bằng `countedForMetrics`. Hàm thuần `src/lib/ledgerRun.js`. |
+| `LedgerRun` | `ledger, evidence?, mode='auto'\|'scroll', progress=0..1, duration=1600, title, showLink=true, play=true, onDone, className` | chữ ký. `ledger` nhận nguyên `/trust/health` hoặc dạng phẳng `{raw, spam, inauthentic, pendingNotCounted, pendingCounted, aged, counted}`; số cuối luôn bằng `countedForMetrics`. `play={false}` hiện ngay số cuối như giảm chuyển động. Chỉ `/dashboard` chạy, và chỉ lần đầu mỗi phiên trình duyệt (`sessionStorage` khóa `cr-ledger-run`); `/login` và `/trust` luôn `play={false}`. Hàm thuần `src/lib/ledgerRun.js`. |
 | `AnimatedNumber` | `value, from=0, decimals=0, signed, unit, unitClassName, className, duration=700, settle=true` | đếm khi vào khung nhìn, chốt nhẹ ở cuối |
 | `ChartReveal` | `as='div', threshold=0.3, className` | mở biểu đồ bằng `clip-path` từ trái, một lần, `--motion-long` |
 | `BarGrow` | `value 0..1, grow=true, start?, className` | chỉ phần tô, `scaleX`; rãnh do trang vẽ (`overflow-hidden`) |

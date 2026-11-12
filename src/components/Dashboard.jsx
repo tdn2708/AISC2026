@@ -88,7 +88,14 @@ const Dashboard = () => {
   // nào" mới đếm. Không đợi mãi: sổ lỗi, hoặc chưa xong sau một lúc (sổ nằm
   // ngoài khung nhìn), thì vẫn cho đếm. Giảm chuyển động: không có nhịp nào.
   const reduced = useReducedMotion();
-  const [ledgerDone, setLedgerDone] = useState(false);
+  // Phép trừ chạy MỘT lần mỗi phiên trình duyệt; vào lại thì hiện bảng tĩnh số cuối
+  const [playRun] = useState(() => {
+    try { return sessionStorage.getItem('cr-ledger-run') !== '1'; } catch { return true; }
+  });
+  useEffect(() => {
+    try { sessionStorage.setItem('cr-ledger-run', '1'); } catch { /* bỏ qua */ }
+  }, []);
+  const [ledgerDone, setLedgerDone] = useState(!playRun);
   const onLedgerDone = useCallback(() => setLedgerDone(true), []);
   const hasStats = Boolean(stats);
   useEffect(() => {
@@ -118,7 +125,7 @@ const Dashboard = () => {
     <div className="cx pt-2">
       <SummaryHeader
         stats={stats} todo={todo} todoReady={inboxReady} loading={loading} error={error} lastUpdated={lastUpdated}
-        ledger={ledger} ledgerFailed={ledgerFailed} onRetryLedger={retryLedger} onLedgerDone={onLedgerDone}
+        ledger={ledger} ledgerFailed={ledgerFailed} onRetryLedger={retryLedger} onLedgerDone={onLedgerDone} playRun={playRun}
         evidence={hasFilter ? null : stats?.evidence?.all}
       />
 
