@@ -35,7 +35,7 @@ const todayLabel = () => {
 };
 
 /** todo: danh sách việc đã gộp và xếp (TodayInbox.buildTodo) */
-const SummaryHeader = ({ stats, todo = [], loading, error, lastUpdated, ledger, ledgerFailed, onRetryLedger, onLedgerDone, evidence }) => {
+const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, lastUpdated, ledger, ledgerFailed, onRetryLedger, onLedgerDone, evidence }) => {
   const navigate = useNavigate();
   const top = todo[0];
   const urgent = todo.filter((t) => t.severity === 'critical').length;
@@ -46,8 +46,8 @@ const SummaryHeader = ({ stats, todo = [], loading, error, lastUpdated, ledger, 
     sentence = 'Không kết nối được máy chủ phân tích, nên chưa có số liệu để hiện.';
   } else if (error) {
     sentence = 'Không kết nối được máy chủ phân tích. Số liệu bên dưới có thể đã cũ.';
-  } else if (loading && !stats) {
-    sentence = null; // khung xương hai dòng, đúng cỡ câu tóm tắt
+  } else if ((loading && !stats) || !todoReady) {
+    sentence = null; // khung xương hai dòng, đúng cỡ câu tóm tắt; giữ tới khi đủ nguồn của danh sách việc
   } else if (top) {
     sentence = (
       <>
@@ -64,7 +64,7 @@ const SummaryHeader = ({ stats, todo = [], loading, error, lastUpdated, ledger, 
 
   return (
     <section aria-labelledby="summary-title" className="mb-8 border-b border-line pt-4 pb-8">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:items-center lg:gap-12">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:items-start lg:gap-12">
         <div className="min-w-0">
           <p className="text-sm text-ink-mid"><time>{todayLabel()}</time></p>
           <h1 id="summary-title" className="mt-3 max-w-[30ch] text-display font-semibold tracking-[-0.02em] text-ink-hi" aria-live="polite">

@@ -49,13 +49,15 @@ const Dashboard = () => {
   // Việc ngoài cảnh báo (livestream, đơn hàng, duyệt, dữ liệu); làm mới mỗi phút
   const [inbox, setInbox] = useState([]);
   const [inboxFailed, setInboxFailed] = useState(false);
+  // Câu tóm tắt đếm việc từ cả cảnh báo lẫn inbox: chưa có inbox thì chưa nói số (tránh chớp "1 việc" rồi "4 việc")
+  const [inboxReady, setInboxReady] = useState(false);
   const [inboxAttempt, setInboxAttempt] = useState(0);
   const dataVersion = useDataVersion();
   useEffect(() => {
     let alive = true;
     const load = () => axios.get('/inbox')
-      .then((r) => { if (alive) { setInbox(r.data.items || []); setInboxFailed(false); } })
-      .catch(() => alive && setInboxFailed(true));
+      .then((r) => { if (alive) { setInbox(r.data.items || []); setInboxFailed(false); setInboxReady(true); } })
+      .catch(() => { if (alive) { setInboxFailed(true); setInboxReady(true); } });
     load();
     const t = setInterval(load, 60000);
     return () => { alive = false; clearInterval(t); };
@@ -115,7 +117,7 @@ const Dashboard = () => {
   return (
     <div className="cx pt-2">
       <SummaryHeader
-        stats={stats} todo={todo} loading={loading} error={error} lastUpdated={lastUpdated}
+        stats={stats} todo={todo} todoReady={inboxReady} loading={loading} error={error} lastUpdated={lastUpdated}
         ledger={ledger} ledgerFailed={ledgerFailed} onRetryLedger={retryLedger} onLedgerDone={onLedgerDone}
         evidence={hasFilter ? null : stats?.evidence?.all}
       />
