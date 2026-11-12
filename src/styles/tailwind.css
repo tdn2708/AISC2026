@@ -218,6 +218,9 @@
 @utility paper {
   background: var(--surface-solid);
   border-radius: var(--r-ctrl);
+  /* Lề trong để chữ không chạm mép nền. Không dùng margin âm: panel không đệm (bảng sát mép) sẽ bị nền tràn ra ngoài.
+     Panel không đệm tự inset bằng mx-3 mb-3 (12 + 8 = 20 px, thẳng hàng với tiêu đề px-5). */
+  padding: var(--space-2xs) var(--space-xs);
 }
 
 /* Ánh sáng chỉ dành cho luồng khẩn cấp */
