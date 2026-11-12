@@ -100,9 +100,10 @@ export const EvidenceBar = ({ mix, height = 6, showCaption = true, className = '
 
 /** Nhãn bằng chứng của MỘT phản hồi trong bảng: mẫu tô + chữ ngắn */
 export const EvidenceTag = ({ evidence, className = '' }) => (
-  <span className={`inline-flex items-center gap-1.5 text-xs whitespace-nowrap text-ink-mid ${className}`} title={evidence.label}>
-    <EvidenceSwatch kind={evidence.kind} />
-    {evidence.label}
+  // Nhãn dài ("Tài khoản đã định danh") xuống dòng trong ô hẹp thay vì tràn sang cột bên
+  <span className={`inline-flex items-start gap-1.5 text-xs text-ink-mid ${className}`} title={evidence.label}>
+    <span className="mt-1 shrink-0 leading-none"><EvidenceSwatch kind={evidence.kind} /></span>
+    <span className="min-w-0">{evidence.label}</span>
   </span>
 );
 
