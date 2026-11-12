@@ -39,7 +39,7 @@ export const EffectLine = ({ effect }) => {
   return (
     <span className={`inline-flex items-center gap-1 ${effect.better ? 'text-ok' : 'text-ink-mid'}`}>
       <Icon size={13} aria-hidden="true" />
-      {effect.metric}: <span className="tabular-nums">{num(effect.before)} → {num(effect.after)}</span>
+      {effect.metric}: <span className="tabular-nums">từ {num(effect.before)} sang {num(effect.after)}</span>
     </span>
   );
 };

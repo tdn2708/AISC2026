@@ -88,7 +88,7 @@ const Report = ({ sessionId }) => {
   };
 
   if (error) return <EmptyState variant="error" title={error} />;
-  if (!r) return <GlassPanel className="h-72 animate-pulse" />;
+  if (!r) return <GlassPanel className="h-72 animate-skeleton" />;
 
   const t = r.totals;
   const prev = r.previous;

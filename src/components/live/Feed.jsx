@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { Phone, Pause } from 'lucide-react';
 import { GlassPanel, PanelHeader, Segmented, EmptyState } from '../ui';
+import { MOTION, EASE, useReducedMotion } from '../motion';
 import { INTENTS, INTENT_MAP, clock, variantText } from './shared';
 
 /**
@@ -58,8 +59,21 @@ const IntentSelect = ({ c, sessionId, onPatched }) => {
   );
 };
 
-const Row = ({ c, sessionId, onPatched }) => (
-  <li className="flex gap-2.5 border-b border-line-soft py-2 last:border-0">
+const Row = memo(({ c, sessionId, onPatched, fresh }) => {
+  const ref = useRef(null);
+  const reduced = useReducedMotion();
+  // Chỉ bình luận mới đến sau khi trang đã tải: trượt nhẹ từ trên xuống (transform + opacity)
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!fresh || reduced || !el || typeof el.animate !== 'function') return undefined;
+    const a = el.animate(
+      [{ opacity: 0, transform: 'translateY(-8px)' }, { opacity: 1, transform: 'none' }],
+      { duration: MOTION.short, easing: EASE.out }
+    );
+    return () => a.cancel();
+  }, [fresh, reduced]);
+  return (
+  <li ref={ref} className="flex gap-2.5 border-b border-line-soft py-2 last:border-0">
     <span className="w-[3.6rem] shrink-0 pt-0.5 tabular-nums text-xs text-ink-lo">{clock(c.ts)}</span>
     <div className="min-w-0 flex-1">
       <p className="text-sm leading-snug break-words text-ink-hi">
@@ -77,7 +91,8 @@ const Row = ({ c, sessionId, onPatched }) => (
       </div>
     </div>
   </li>
-);
+  );
+});
 
 const Feed = ({ feed, sessionId, onPatched, live }) => {
   const [filter, setFilter] = useState('all');
@@ -86,6 +101,25 @@ const Feed = ({ feed, sessionId, onPatched, live }) => {
   const source = frozen || feed;
   const items = useMemo(() => (filter === 'all' ? source : source.filter((c) => c.intent === filter)), [source, filter]);
   const waiting = frozen ? feed.length - frozen.length : 0;
+
+  // Bình luận "mới" = id chưa từng thấy, đến sau lần nạp đầu và theo lô nhỏ.
+  // Lô lớn (nạp lại, nối lại luồng, thả chuột sau khi tạm dừng) hiện luôn, không dàn.
+  const knownRef = useRef(null);
+  const freshIds = useMemo(() => {
+    if (!knownRef.current) return null;
+    const added = feed.filter((c) => !knownRef.current.has(c.id));
+    return added.length > 0 && added.length <= 6 ? new Set(added.map((c) => c.id)) : null;
+  }, [feed]);
+  useEffect(() => {
+    if (!feed.length) return;
+    if (!knownRef.current) knownRef.current = new Set();
+    feed.forEach((c) => knownRef.current.add(c.id));
+  }, [feed]);
+
+  // Giữ một hàm sửa nhãn ổn định để Row (memo) không vẽ lại cả 300 dòng mỗi bình luận
+  const patchRef = useRef(onPatched);
+  patchRef.current = onPatched;
+  const stablePatch = useCallback((c) => patchRef.current?.(c), []);
 
   return (
     <GlassPanel tone="strong" className="flex min-h-0 flex-col p-4 sm:p-5">
@@ -104,7 +138,7 @@ const Feed = ({ feed, sessionId, onPatched, live }) => {
           onMouseLeave={() => setFrozen(null)}
           aria-live="off"
         >
-          {items.map((c) => <Row key={c.id} c={c} sessionId={sessionId} onPatched={onPatched} />)}
+          {items.map((c) => <Row key={c.id} c={c} sessionId={sessionId} onPatched={stablePatch} fresh={Boolean(freshIds?.has(c.id))} />)}
         </ul>
       ) : (
         <EmptyState compact title={live ? 'Đang chờ bình luận' : 'Không có bình luận'} description={live ? 'Bình luận đầu tiên sẽ hiện ở đây.' : undefined} />

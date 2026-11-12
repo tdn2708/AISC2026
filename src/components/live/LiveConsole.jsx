@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { memo, useDeferredValue, useEffect, useState } from 'react';
 import axios from 'axios';
 import { ArrowLeft, Square, RotateCw, Package, MessageSquarePlus, Download, ChevronDown } from 'lucide-react';
 import { Button, Badge, Drawer, EmptyState, GlassPanel, Tabs, Modal, Popover, MenuItem, SELECTED } from '../ui';
 import { fmtInt, fmtPct } from '../../lib/format';
 import useLiveSession, { liveUrl } from '../../hooks/useLiveSession';
 import { StatusPill, PLATFORM_LABEL, duration } from './shared';
-import Queue from './Queue';
+import QueueRaw from './Queue';
 import Feed from './Feed';
-import Orders from './Orders';
-import { Rhythm, Topics, Products } from './Insights';
+import OrdersRaw from './Orders';
+import { Rhythm as RhythmRaw, Topics as TopicsRaw, Products as ProductsRaw } from './Insights';
 import CatalogEditor, { toRow, fromRow } from './CatalogEditor';
 import ManualInput from './ManualInput';
-import ActionCoach from './ActionCoach';
+import ActionCoachRaw from './ActionCoach';
 import Report from './Report';
 
 /**
@@ -22,6 +22,30 @@ import Report from './Report';
  *   Ba cột:        cần trả lời | bình luận trực tiếp | nhịp và chủ đề
  *   Dưới cùng:     khách chốt đơn
  */
+
+/**
+ * Bình luận về 2 cái mỗi giây làm LiveConsole vẽ lại liên tục. Các khối dưới đây
+ * chỉ phụ thuộc một lát của stats (gửi 1,5 giây một lần, object mới dù nội dung giống),
+ * nên so theo nội dung của đúng lát đó và bỏ qua hàm truyền vào.
+ */
+const slice = (...pick) => (a, b) =>
+  pick.every((f) => JSON.stringify(f(a.stats)) === JSON.stringify(f(b.stats))) && a.sessionId === b.sessionId && a.live === b.live;
+const Queue = memo(QueueRaw, slice((s) => s?.queue, (s) => s?.answered, (s) => s?.queueOpen));
+const Orders = memo(OrdersRaw, slice((s) => s?.orders, (s) => s?.totals?.orderQuantity));
+const Rhythm = memo(RhythmRaw, slice((s) => s?.series));
+const Topics = memo(TopicsRaw, slice((s) => s?.topics));
+const Products = memo(ProductsRaw, slice((s) => s?.products));
+const ActionCoach = memo(ActionCoachRaw, slice((s) => s?.actions, (s) => s?.totals, (s) => s?.products));
+
+/** Đồng hồ thời lượng phiên: tự đếm từng giây, không kéo cả bảng điều khiển vẽ lại */
+const Elapsed = ({ session }) => {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return session.startedAt ? `, đã live ${duration(session.startedAt, session.endedAt)}` : null;
+};
 
 const Kpi = ({ label, value, sub, tone }) => (
   <div className="glass-strong min-w-0 rounded-surf px-3.5 py-3">
@@ -60,7 +84,8 @@ const ExportMenu = ({ sessionId }) => {
 const LiveConsole = ({ sessionId, onBack }) => {
   const [epoch, setEpoch] = useState(0);
   const { session, stats, feed, error, refresh, patchComment, connection } = useLiveSession(sessionId, epoch);
-  const [tick, setTick] = useState(0);
+  // Biểu đồ, hàng đợi, đơn chốt vẽ ở mức ưu tiên thấp: React chia nhỏ việc vẽ nên dòng bình luận và cuộn không bị giật
+  const slow = useDeferredValue(stats);
   const [drawer, setDrawer] = useState(null);
   const [rows, setRows] = useState([]);
   const [policy, setPolicy] = useState({});
@@ -68,17 +93,11 @@ const LiveConsole = ({ sessionId, onBack }) => {
   const [view, setView] = useState(null);
   const [confirmStop, setConfirmStop] = useState(false);
 
-  // Đồng hồ thời lượng phiên
-  useEffect(() => {
-    const t = setInterval(() => setTick((x) => x + 1), 1000);
-    return () => clearInterval(t);
-  }, []);
-
   if (error && !session) {
     return <EmptyState variant="error" title="Không mở được phiên" description={error} action={<Button variant="secondary" icon={ArrowLeft} onClick={onBack}>Về danh sách phiên</Button>} />;
   }
   if (!session || !stats) {
-    return <GlassPanel className="h-64 animate-pulse" />;
+    return <GlassPanel className="h-64 animate-skeleton" />;
   }
 
   const live = ['live', 'connecting', 'reconnecting'].includes(session.status);
@@ -128,7 +147,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
   };
 
   return (
-    <div className="flex flex-col gap-4" data-tick={tick}>
+    <div className="flex flex-col gap-4">
       {/* Đầu trang phiên */}
       <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
@@ -142,7 +161,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
           </div>
           <p className="mt-1 text-sm text-ink-mid">
             {PLATFORM_LABEL[session.platform]}{session.target && session.platform !== 'simulator' ? `, @${String(session.target).replace(/^@/, '')}` : ''}
-            {session.startedAt && `, đã live ${duration(session.startedAt, session.endedAt)}`}
+            <Elapsed session={session} />
             {connection === 'reconnecting' && live && <span className="text-high">, đang nối lại luồng dữ liệu</span>}
           </p>
           {session.error && <p role="alert" className="mt-1.5 text-sm text-crit">{session.error}</p>}
@@ -199,20 +218,20 @@ const LiveConsole = ({ sessionId, onBack }) => {
         </div>
       )}
 
-      <ActionCoach stats={stats} sessionId={session.id} live={live} onOpenCatalog={openCatalog} />
+      <ActionCoach stats={slow} sessionId={session.id} live={live} onOpenCatalog={openCatalog} />
 
       {/* Ba cột */}
       <div className="grid gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-5"><Queue stats={stats} sessionId={session.id} onChanged={live ? undefined : refresh} /></div>
+        <div className="lg:col-span-5"><Queue stats={slow} sessionId={session.id} onChanged={live ? undefined : refresh} /></div>
         <div className="lg:col-span-4"><Feed feed={feed} sessionId={session.id} onPatched={(c) => { patchComment(c); if (!live) refresh(); }} live={live} /></div>
         <div className="flex flex-col gap-4 lg:col-span-3">
-          <Rhythm stats={stats} />
-          <Topics stats={stats} />
-          <Products stats={stats} />
+          <Rhythm stats={slow} />
+          <Topics stats={slow} />
+          <Products stats={slow} />
         </div>
       </div>
 
-      <Orders stats={stats} sessionId={session.id} onChanged={live ? undefined : refresh} />
+      <Orders stats={slow} sessionId={session.id} onChanged={live ? undefined : refresh} />
       </>)}
 
       <Drawer

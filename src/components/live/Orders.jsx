@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import axios from 'axios';
 import { Phone, Download } from 'lucide-react';
 import { GlassPanel, PanelHeader, Segmented, EmptyState, Button, fieldClass } from '../ui';
 import { fmtInt } from '../../lib/format';
 import { clock, variantText } from './shared';
 import { liveUrl } from '../../hooks/useLiveSession';
+import { sameContent } from './memo';
 
 /**
  * KHÁCH CHỐT ĐƠN TRONG PHIÊN
@@ -17,6 +18,30 @@ const STATUS_OPTS = [
   { value: 'confirmed', label: 'Đã lên đơn' },
   { value: 'cancelled', label: 'Hủy' }
 ];
+
+const OrderRow = memo(({ o, onStatus }) => (
+                <tr key={o.id} className={`border-b border-line-soft last:border-0 ${o.status === 'cancelled' ? 'opacity-50' : ''}`}>
+                  <td className="px-1 py-2 tabular-nums text-xs text-ink-lo">{clock(o.ts)}</td>
+                  <td className="px-1 py-2 text-ink-hi">
+                    <span className="block max-w-[10rem] truncate">@{o.handle || '—'}</span>
+                    {o.hasPhone && <span className="inline-flex items-center gap-0.5 text-xs text-ink-lo"><Phone size={10} aria-hidden="true" />Để lại SĐT</span>}
+                  </td>
+                  <td className="px-1 py-2 text-ink-hi"><span className="block max-w-[11rem] truncate">{o.productName || <span className="text-ink-lo">Chưa rõ</span>}</span></td>
+                  <td className="px-1 py-2 text-ink-mid">{variantText(o.variant) || '—'}</td>
+                  <td className="px-1 py-2 text-right tabular-nums text-ink-hi">{o.quantity}</td>
+                  <td className="px-1 py-2 text-ink-mid"><span className="block max-w-[14rem] truncate" title={o.text}>{o.text}</span></td>
+                  <td className="px-1 py-2">
+                    <select
+                      aria-label="Trạng thái đơn"
+                      value={o.status}
+                      onChange={(e) => onStatus(o, e.target.value)}
+                      className={`w-auto! px-2 text-xs! ${fieldClass({ size: 'sm' })}`}
+                    >
+                      {STATUS_OPTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                  </td>
+                </tr>
+), sameContent);
 
 const Orders = ({ stats, sessionId, onChanged }) => {
   const [filter, setFilter] = useState('new');
@@ -61,29 +86,7 @@ const Orders = ({ stats, sessionId, onChanged }) => {
               </tr>
             </thead>
             <tbody>
-              {items.slice(0, 100).map((o) => (
-                <tr key={o.id} className={`border-b border-line-soft last:border-0 ${o.status === 'cancelled' ? 'opacity-50' : ''}`}>
-                  <td className="px-1 py-2 tabular-nums text-xs text-ink-lo">{clock(o.ts)}</td>
-                  <td className="px-1 py-2 text-ink-hi">
-                    <span className="block max-w-[10rem] truncate">@{o.handle || '—'}</span>
-                    {o.hasPhone && <span className="inline-flex items-center gap-0.5 text-xs text-ink-lo"><Phone size={10} aria-hidden="true" />Để lại SĐT</span>}
-                  </td>
-                  <td className="px-1 py-2 text-ink-hi"><span className="block max-w-[11rem] truncate">{o.productName || <span className="text-ink-lo">Chưa rõ</span>}</span></td>
-                  <td className="px-1 py-2 text-ink-mid">{variantText(o.variant) || '—'}</td>
-                  <td className="px-1 py-2 text-right tabular-nums text-ink-hi">{o.quantity}</td>
-                  <td className="px-1 py-2 text-ink-mid"><span className="block max-w-[14rem] truncate" title={o.text}>{o.text}</span></td>
-                  <td className="px-1 py-2">
-                    <select
-                      aria-label="Trạng thái đơn"
-                      value={o.status}
-                      onChange={(e) => setStatus(o, e.target.value)}
-                      className={`w-auto! px-2 text-xs! ${fieldClass({ size: 'sm' })}`}
-                    >
-                      {STATUS_OPTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                    </select>
-                  </td>
-                </tr>
-              ))}
+              {items.slice(0, 100).map((o) => <OrderRow key={o.id} o={o} onStatus={setStatus} />)}
             </tbody>
           </table>
         </div>

@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Copy, Check, Sparkles, X, TriangleAlert, Undo2 } from 'lucide-react';
-import { GlassPanel, PanelHeader, Button, Badge, EmptyState, Segmented, fieldClass } from '../ui';
+import { GlassPanel, PanelHeader, Button, Badge, EmptyState, Segmented, AnimatedNumber, fieldClass } from '../ui';
+import { Pulse } from '../motion';
 import { fmtInt, fmtRelative } from '../../lib/format';
 import { clock } from './shared';
+import { sameContent } from './memo';
 
 /**
  * HÀNG ĐỢI CẦN TRẢ LỜI
@@ -26,7 +28,7 @@ const copy = async (text) => {
   }
 };
 
-const QueueCard = ({ g, sessionId, onResolved }) => {
+const QueueCard = memo(({ g, sessionId, onResolved }) => {
   const [text, setText] = useState(g.suggestion?.text || '');
   const [edited, setEdited] = useState(false);
   const [provider, setProvider] = useState('template');
@@ -62,7 +64,7 @@ const QueueCard = ({ g, sessionId, onResolved }) => {
   };
 
   return (
-    <li className={`rounded-ctrl p-3.5 ${complaint ? 'bg-crit/8' : 'bg-raised'}`}>
+    <Pulse as="li" trigger={g.count} className={`rounded-ctrl p-3.5 ${complaint ? 'bg-crit/8' : 'bg-raised'}`}>
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={complaint ? 'crit' : 'accent'}>{g.topicLabel}</Badge>
         {g.productName && <span className="truncate text-xs font-medium text-ink-mid">{g.productName}{g.size ? `, size ${g.size}` : ''}</span>}
@@ -71,7 +73,7 @@ const QueueCard = ({ g, sessionId, onResolved }) => {
 
       <div className="mt-2 flex items-baseline gap-2">
         {g.count > 1 && (
-          <span className="shrink-0 tabular-nums text-heading font-semibold text-ink-hi">{fmtInt(g.count)}<span className="ml-1 font-sans text-xs font-normal text-ink-lo">người hỏi</span></span>
+          <span className="shrink-0 tabular-nums text-heading font-semibold text-ink-hi"><AnimatedNumber value={g.count} from={g.count} duration={500} /><span className="ml-1 font-sans text-xs font-normal text-ink-lo">người hỏi</span></span>
         )}
         <p className="min-w-0 truncate text-sm text-ink-hi" title={g.samples?.[0]?.text}>
           {g.samples?.[0]?.handle && <span className="text-ink-lo">@{g.samples[0].handle}: </span>}
@@ -110,9 +112,9 @@ const QueueCard = ({ g, sessionId, onResolved }) => {
         )}
         <Button size="sm" variant="ghost" icon={X} loading={busy === 'dismissed'} onClick={() => resolve('dismissed')} className="ml-auto">Bỏ qua</Button>
       </div>
-    </li>
+    </Pulse>
   );
-};
+}, sameContent);
 
 const AnsweredRow = ({ g, sessionId, onResolved }) => (
   <li className="flex items-start gap-3 border-b border-line-soft py-2.5 last:border-0">
