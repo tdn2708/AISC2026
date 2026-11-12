@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useReducedMotion } from './useReducedMotion';
+import { routeGate } from './routeGate';
 
 /**
  * CHUYỂN TRANG (F2-06), hiệu ứng toàn cục duy nhất của khung ứng dụng.
@@ -29,6 +30,7 @@ let pending = null;
 const settlePending = () => {
   if (!pending) return;
   clearTimeout(pending.timer);
+  routeGate.mounting = false;
   pending.resolve();
   pending = null;
 };
@@ -49,7 +51,8 @@ const internalTarget = (e) => {
 const RoutePane = ({ reduced, children }) => {
   // Trang này đến bằng View Transition không? Có thì không chạy thêm fade CSS
   const [viaVT] = useState(() => pending != null);
-  return <div className={viaVT || reduced ? '' : 'animate-fade-in'}>{children}</div>;
+  // data-route-pane: PageEnter (M1) tìm vùng này để bỏ fade dự phòng khi nó tự dàn dựng
+  return <div data-route-pane="" className={viaVT || reduced ? '' : 'animate-fade-in motion-reduce:animate-none'}>{children}</div>;
 };
 
 export const RouteTransition = ({ children }) => {
@@ -74,12 +77,16 @@ export const RouteTransition = ({ children }) => {
         () =>
           new Promise((resolve) => {
             pending = { resolve, timer: setTimeout(settlePending, 600) };
+            routeGate.mounting = true;
             navigate(to);
           })
       );
       // Bị bỏ qua (bấm liên kết khác giữa chừng) thì ready bị từ chối: không phải lỗi
-      vt.ready.catch(() => {});
-      vt.finished.finally(() => root.classList.remove('vt-route'));
+      routeGate.promise = vt.ready.then(() => {}, () => {});
+      vt.finished.finally(() => {
+        root.classList.remove('vt-route');
+        routeGate.promise = null;
+      });
     };
     document.addEventListener('click', onClick, true);
     return () => document.removeEventListener('click', onClick, true);

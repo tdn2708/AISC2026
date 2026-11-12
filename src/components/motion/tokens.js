@@ -20,3 +20,13 @@ export const EASE = {
 
 /** Lệch nhịp giữa các dòng của một danh sách (Stagger) */
 export const STAGGER_STEP = 40;
+
+/**
+ * M1 vào trang (PageEnter): các khối đầu trang đi từ opacity 0, translateY
+ * ENTER_RISE px về 0, lệch ENTER_STEP ms, tối đa ENTER_MAX khối. Thời lượng
+ * dùng MOTION.medium và EASE.out. M2 (reveal) và M4 (lift) ở tailwind.css,
+ * khối K3: rise 16px, scale 0.985, nhấc 2px (cùng số trong CSS).
+ */
+export const ENTER_RISE = 12;
+export const ENTER_STEP = 60;
+export const ENTER_MAX = 4;
