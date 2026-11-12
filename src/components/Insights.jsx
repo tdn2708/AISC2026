@@ -94,6 +94,20 @@ const KpiNum = ({ go, unit = '', ...props }) => (
   go ? <AnimatedNumber unitClassName="" unit={unit || undefined} {...props} /> : <span className="invisible" aria-hidden="true">0{unit}</span>
 );
 
+// Số trong bảng và danh sách dày chữ hiện thẳng giá trị cuối, không đếm. Lý do (A3, K6): mỗi AnimatedNumber đang đếm
+// setState mỗi khung hình, và ở đây có hàng chục ô cùng vào khung nhìn khi cuộn nên React dựng lại cả bảng mỗi khung
+// (cuộn 15 đến 20 khung/giây ở CPU 4x). Bốn số KPI ở khối đầu vẫn đếm (KpiNum). Cùng cách định dạng và cùng lớp chữ với AnimatedNumber.
+const CELL_FMT = new Map();
+const cellFmt = (decimals) => {
+  if (!CELL_FMT.has(decimals)) CELL_FMT.set(decimals, new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }));
+  return CELL_FMT.get(decimals);
+};
+const CellNum = ({ value, decimals = 0, unit }) => (
+  value == null || !Number.isFinite(value)
+    ? <span>{'—'}</span>
+    : <span className="proportional-nums"><span className="inline-block">{cellFmt(decimals).format(Math.abs(value))}{unit}</span></span>
+);
+
 const KpiStrip = ({ cur, prev, line, hasPrev, go }) => {
   const cells = [
     { label: 'Phản hồi được tính', value: <KpiNum go={go} value={cur.count} />, delta: <Delta now={cur.count} prev={hasPrev ? prev.count : null} unit="rel" good={null} />, spark: line.map((b) => b.n), color: 'var(--accent)' },
@@ -135,7 +149,7 @@ const BarList = ({ items, selected, onPick, color = 'var(--accent)', metric = (i
               className={`group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-ctrl px-2 py-2 text-left transition-[background-color,opacity] duration-short ease-out hover:bg-raised ${dim ? 'opacity-45 hover:opacity-100' : ''} ${on ? 'bg-accent-dim' : ''}`}
             >
               <span className="min-w-0 truncate text-sm text-ink-hi">{it.label}</span>
-              <span className="tabular-nums text-sm text-ink-hi">{render ? render(it) : <AnimatedNumber unitClassName="" value={metric(it)} />}</span>
+              <span className="tabular-nums text-sm text-ink-hi">{render ? render(it) : <CellNum value={metric(it)} />}</span>
               <span className="col-span-2 block h-2 overflow-hidden rounded-ctrl bg-raised">
                 <BarGrow grow={false} value={metric(it) / max} className="rounded-ctrl" style={{ background: color }} />
               </span>
@@ -244,17 +258,17 @@ const ProductTable = ({ groups, names, selected, onPick }) => {
                     {key}
                   </button>
                 </td>
-                <td className="py-2.5 text-right tabular-nums"><AnimatedNumber unitClassName="" value={g.n} /></td>
+                <td className="py-2.5 text-right tabular-nums"><CellNum value={g.n} /></td>
                 <td className="py-2.5 text-right">
                   <span className="inline-flex items-center justify-end gap-2">
                     <span className="hidden h-1.5 w-14 overflow-hidden rounded-ctrl bg-raised sm:block" aria-hidden="true">
                       <BarGrow grow={false} value={g.negRate ?? 0} className="bg-neg" />
                     </span>
-                    <span className="tabular-nums"><AnimatedNumber unitClassName="" value={g.negRate == null ? null : g.negRate * 100} decimals={1} unit="%" /></span>
+                    <span className="tabular-nums"><CellNum value={g.negRate == null ? null : g.negRate * 100} decimals={1} unit="%" /></span>
                   </span>
                 </td>
-                <td className="py-2.5 text-right tabular-nums"><AnimatedNumber unitClassName="" value={g.stars} decimals={2} /></td>
-                <td className="py-2.5 text-right tabular-nums"><AnimatedNumber unitClassName="" value={g.proofShare == null ? null : g.proofShare * 100} unit="%" /></td>
+                <td className="py-2.5 text-right tabular-nums"><CellNum value={g.stars} decimals={2} /></td>
+                <td className="py-2.5 text-right tabular-nums"><CellNum value={g.proofShare == null ? null : g.proofShare * 100} unit="%" /></td>
               </tr>
             );
           })}
@@ -484,7 +498,7 @@ const Insights = () => {
                 onPick={(k) => setParam({ src: k })}
                 render={(it) => (
                   <>
-                    <AnimatedNumber unitClassName="" value={it.n} /> <span className="ml-1 text-ink-lo"><AnimatedNumber unitClassName="" value={it.negRate == null ? null : it.negRate * 100} unit="%" /></span>
+                    <CellNum value={it.n} /> <span className="ml-1 text-ink-lo"><CellNum value={it.negRate == null ? null : it.negRate * 100} unit="%" /></span>
                   </>
                 )}
               />
@@ -508,7 +522,7 @@ const Insights = () => {
                       <li key={c.id} className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] gap-2 py-1">
                         <span className="tabular-nums text-ink-lo">{i + 1}</span>
                         <span className="truncate text-ink-mid">{c.label}</span>
-                        <span className="tabular-nums text-ink-hi"><AnimatedNumber unitClassName="" value={c.neg} /></span>
+                        <span className="tabular-nums text-ink-hi"><CellNum value={c.neg} /></span>
                       </li>
                     ))}
                   </ol>
@@ -536,7 +550,7 @@ const Insights = () => {
                           <span className="block h-2.5 overflow-hidden rounded-ctrl bg-raised">
                             <BarGrow grow={false} value={r.n / max} style={{ background: Number(r.key) <= 2 ? 'var(--viz-neg)' : Number(r.key) === 3 ? 'var(--viz-neu)' : 'var(--viz-pos)' }} />
                           </span>
-                          <span className="text-right tabular-nums text-ink-hi"><AnimatedNumber unitClassName="" value={r.n} /></span>
+                          <span className="text-right tabular-nums text-ink-hi"><CellNum value={r.n} /></span>
                         </li>
                       );
                     })}
