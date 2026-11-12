@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Minus, TriangleAlert } from 'lucide-react';
 import { RotateCw } from 'lucide-react';
 import { AnimatedNumber, EvidenceBar, EmptyState, Button } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
+import { useInView, useReducedMotion } from '../motion';
 import { fmtInt, fmtPct, fmtSignedPct } from '../../lib/format';
 import EvidenceDrawer from './EvidenceDrawer';
 
@@ -14,7 +15,28 @@ import EvidenceDrawer from './EvidenceDrawer';
  *   Độ tin số liệu            có đáng tin để ra quyết định không
  * Một khối duy nhất (không phải bốn thẻ rời), một dòng bằng chứng chung cho
  * cả khối. Bấm vào con số nào thì mở phần giải thích cách tính của con số đó.
+ *
+ * F5-02: ba số (khiếu nại, không hài lòng, điểm độ tin) đếm lên NỐI TIẾP,
+ * mỗi số COUNT_MS, sau khi phép trừ ở đầu trang chạy xong (countStart) và
+ * khối đã vào khung nhìn; trước lượt của mình, chỗ của số được giữ nhưng
+ * ẩn. Dữ liệu tải lại sau thao tác thì số đếm từ giá trị cũ sang giá trị mới
+ * (AnimatedNumber giữ nguyên, không đếm lại từ 0). Giảm chuyển động: hiện
+ * ngay số cuối.
  */
+const COUNT_MS = 600;
+
+const fmtNum = (n, decimals) => new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(n);
+
+/** Một số chờ tới lượt: giữ đúng chỗ (ẩn), tới lượt thì AnimatedNumber đếm lên */
+const Counted = ({ on, value, decimals = 0, unit }) =>
+  on ? (
+    <AnimatedNumber value={value} decimals={decimals} unit={unit} duration={COUNT_MS} />
+  ) : (
+    <span>
+      <span className="invisible" aria-hidden="true">{fmtNum(value, decimals)}{unit}</span>
+      <span className="sr-only">{fmtNum(value, decimals)}{unit}</span>
+    </span>
+  );
 
 const judge = (rel, lowerIsBetter = true) => {
   if (rel == null || !Number.isFinite(rel)) return 'none';
@@ -104,7 +126,23 @@ const HealthSkeleton = () => (
   </SkeletonBlock>
 );
 
-const StoreHealth = ({ stats, trend = [], loading, failed, onRetry }) => {
+const StoreHealth = ({ stats, trend = [], loading, failed, onRetry, countStart = true }) => {
+  // Số ô đã tới lượt đếm (0 đến 3)
+  const sectionRef = useRef(null);
+  const reduced = useReducedMotion();
+  const inView = useInView(sectionRef, { threshold: 0.3, enabled: countStart && Boolean(stats) });
+  const [turn, setTurn] = useState(0);
+  useEffect(() => {
+    if (turn >= 3 || !stats || !countStart) return undefined;
+    if (reduced) {
+      setTurn(3);
+      return undefined;
+    }
+    if (!inView) return undefined;
+    const t = setTimeout(() => setTurn((n) => n + 1), turn === 0 ? 0 : COUNT_MS);
+    return () => clearTimeout(t);
+  }, [turn, stats, countStart, reduced, inView]);
+
   const spark = trend.slice(-14).map((t) => ({ name: t.name, v: t.complaints || 0 }));
   const [open, setOpen] = useState(null);
   const ev = stats?.evidence;
@@ -121,7 +159,7 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry }) => {
   const trust = health == null ? null : health >= 75 ? ['text-ok', 'Đáng tin'] : health >= 50 ? ['text-high', 'Cần chú ý'] : ['text-crit', 'Chưa đáng tin'];
 
   return (
-    <section aria-labelledby="health-title" className="mb-8 overflow-hidden glass-strong rounded-surf">
+    <section ref={sectionRef} aria-labelledby="health-title" className="mb-8 overflow-hidden glass-strong rounded-surf">
       <h2 id="health-title" className="px-5 pt-5 text-heading font-semibold tracking-[-0.01em] text-ink-hi sm:px-6">Cửa hàng đang thế nào</h2>
       {!stats && failed ? (
         <EmptyState variant="error" compact title="Không tải được chỉ số" description="Máy chủ phân tích chưa trả lời. Số liệu sẽ hiện khi kết nối lại." action={onRetry && <Button size="sm" variant="secondary" icon={RotateCw} onClick={onRetry}>Thử lại</Button>} />
@@ -136,7 +174,7 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry }) => {
           note={wcr?.available && (hasPrev ? `7 ngày qua ${fmtPct(cmp?.current?.wcr, 2)}, tuần trước ${fmtPct(cmp?.previous?.wcr, 2)}` : `Trên ${fmtInt(wcr.denominator)} đơn hàng`)}
           onOpen={() => setOpen('wcr')}
         >
-          {wcr?.available ? <AnimatedNumber value={wcr.value * 100} decimals={2} unit="%" /> : <span className="text-heading font-medium text-ink-mid">Chưa nối dữ liệu đơn hàng</span>}
+          {wcr?.available ? <Counted on={turn >= 1} value={wcr.value * 100} decimals={2} unit="%" /> : <span className="text-heading font-medium text-ink-mid">Chưa nối dữ liệu đơn hàng</span>}
         </Metric>
         <Metric
           label="Khách không hài lòng"
@@ -148,7 +186,7 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry }) => {
         >
           {son?.available ? (
             <>
-              <AnimatedNumber value={Math.round(son.value * 100)} />
+              <Counted on={turn >= 2} value={Math.round(son.value * 100)} />
               <span className="ml-1.5 text-base font-medium text-ink-mid">trên 100 phản hồi</span>
             </>
           ) : <span className="text-heading font-medium text-ink-mid">Chưa có dữ liệu</span>}
@@ -156,7 +194,7 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry }) => {
         <Metric
           label="Độ tin số liệu"
           bad={health != null && health < 50}
-          sub={health != null && <span className="text-sm text-ink-mid">Điểm <span className="font-semibold text-ink-hi">{health}</span>/100</span>}
+          sub={health != null && <span className="text-sm text-ink-mid">Điểm <span className="font-semibold text-ink-hi"><Counted on={turn >= 3} value={health} /></span>/100</span>}
           note={`${fmtInt(stats?.totalFeedbacks?.valid)} trên ${fmtInt(stats?.totalFeedbacks?.value)} phản hồi được tính, phần còn lại là rác hoặc nghi ảo`}
           onOpen={() => setOpen('health')}
         >

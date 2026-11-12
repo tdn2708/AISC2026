@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useDataVersion } from '../lib/dataVersion';
 import FilterBar from './FilterBar';
@@ -13,6 +13,7 @@ import SentimentDonut from './dashboard/SentimentDonut';
 import RisingIssues from './dashboard/RisingIssues';
 import LiveDigest from './dashboard/LiveDigest';
 import { Button } from './ui';
+import { useReducedMotion, MOTION } from './motion';
 
 /**
  * TỔNG QUAN — việc cần làm trước, số liệu sau
@@ -81,6 +82,23 @@ const Dashboard = () => {
     setLedgerAttempt((n) => n + 1);
   };
 
+  // Nhịp mở đầu (F5-02): phép trừ chạy xong thì ba số của "Cửa hàng đang thế
+  // nào" mới đếm. Không đợi mãi: sổ lỗi, hoặc chưa xong sau một lúc (sổ nằm
+  // ngoài khung nhìn), thì vẫn cho đếm. Giảm chuyển động: không có nhịp nào.
+  const reduced = useReducedMotion();
+  const [ledgerDone, setLedgerDone] = useState(false);
+  const onLedgerDone = useCallback(() => setLedgerDone(true), []);
+  const hasStats = Boolean(stats);
+  useEffect(() => {
+    if (ledgerDone || !hasStats) return undefined;
+    if (ledgerFailed) {
+      setLedgerDone(true);
+      return undefined;
+    }
+    const t = setTimeout(() => setLedgerDone(true), MOTION.story + 2500);
+    return () => clearTimeout(t);
+  }, [ledgerDone, hasStats, ledgerFailed]);
+
   const hasFilter = timeFilter !== 'All' || sourceFilter !== 'All' || productFilter !== 'All';
   const clearFilters = () => {
     setTimeFilter('All');
@@ -98,7 +116,7 @@ const Dashboard = () => {
     <div className="cx pt-2">
       <SummaryHeader
         stats={stats} todo={todo} loading={loading} error={error} lastUpdated={lastUpdated}
-        ledger={ledger} ledgerFailed={ledgerFailed} onRetryLedger={retryLedger}
+        ledger={ledger} ledgerFailed={ledgerFailed} onRetryLedger={retryLedger} onLedgerDone={onLedgerDone}
         evidence={hasFilter ? null : stats?.evidence?.all}
       />
 
@@ -128,7 +146,7 @@ const Dashboard = () => {
       <div className={`transition-opacity duration-short ease-out ${loading && stats ? 'opacity-60' : ''}`} aria-busy={loading}>
         <TodayInbox alerts={alerts} items={inbox} loading={loading} failed={failed || inboxFailed} onRetry={retryAll} />
 
-        <StoreHealth stats={stats} trend={trend} loading={loading} failed={failed} onRetry={reload} />
+        <StoreHealth stats={stats} trend={trend} loading={loading} failed={failed} onRetry={reload} countStart={reduced || ledgerDone} />
 
         <div className="mb-8 grid grid-cols-12 items-start gap-6">
           <section aria-label="Diễn biến cảm xúc" className="col-span-12 xl:col-span-8">
