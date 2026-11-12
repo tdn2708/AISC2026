@@ -309,7 +309,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
       <div className={`sidebar-overlay ${isOpen ? 'visible' : ''}`} onClick={onClose} />
 
       <aside
-        className={`sidebar-container cx ${isOpen ? 'open' : ''}`}
+        className={`sidebar-container glass-chrome cx ${isOpen ? 'open' : ''}`}
         style={{ width: collapsed ? 'var(--sidebar-w-collapsed)' : 'var(--sidebar-w)' }}
         aria-label="Điều hướng chính"
       >

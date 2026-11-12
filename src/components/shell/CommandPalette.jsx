@@ -150,7 +150,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
         role="dialog"
         aria-modal="true"
         aria-label="Bảng lệnh"
-        className="glass-strong relative w-full max-w-xl overflow-hidden rounded-surf shadow-(--shadow-overlay) animate-pop-in"
+        className="glass-float relative w-full max-w-xl overflow-hidden rounded-surf animate-pop-in"
         onKeyDown={onKeyDown}
       >
         <div className="flex items-center gap-3 border-b border-line-soft px-5">
