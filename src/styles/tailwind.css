@@ -262,3 +262,60 @@
 }
 :where(.cx) button:disabled { cursor: not-allowed; }
 :where(.cx) input, :where(.cx) select, :where(.cx) textarea { font: inherit; color: inherit; }
+
+/* K3: chuyển động trong app (M1 vào trang, M2 reveal, M4 lift). Số liệu gốc ở
+   kế hoạch 12.3; bản JS của các số này ở components/motion/tokens.js. */
+
+/* M1: PageEnter tự dàn dựng các khối đầu trang bằng Web Animations. Khi chuyển
+   trang bằng View Transitions, lớp mờ vào của vùng nội dung (index.css, vt-in)
+   nhường cho PageEnter, khỏi chồng hai hiệu ứng. Trang không có PageEnter thì
+   không có data-page-enter nên vẫn giữ mờ vào cũ. */
+html[data-page-enter].vt-route::view-transition-new(app-main) { animation: none; }
+
+/* M2: .reveal, hiện theo cuộn, MỘT kiểu duy nhất cho khối nằm dưới màn đầu.
+   Thuần CSS, view() lấy vùng cuộn tổ tiên gần nhất (main.main-content).
+   Mặc định là "đã hiện đủ": trình duyệt không có animation-timeline hoặc giảm
+   chuyển động thì không có quy tắc nào chạy. Khối đã nằm gọn trong màn lúc tải
+   thì đã qua đoạn entry nên hiện đủ ngay. */
+@keyframes k3-reveal {
+  from { opacity: 0; transform: translateY(16px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: k3-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
+/* M4: .lift, chỉ cho phần tử BẤM ĐƯỢC (có href hoặc mở chi tiết). Nhấc 2px và
+   bóng nổi, chỉ thiết bị có chuột. Bóng nằm ở ::after và chỉ đổi opacity (luật
+   chỉ animate transform, opacity, clip-path). Bàn phím (:focus-visible) không
+   nhấc, chỉ có vòng focus chung. Giảm chuyển động: có bóng, không dịch chuyển.
+   Lưu ý: dùng ::after của phần tử; phần tử đã dùng ::after cho việc khác thì
+   bọc thêm một lớp ngoài mang .lift. */
+:where(.lift) { position: relative; }
+.lift::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--shadow-float);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-short) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lift { transition: transform var(--motion-short) var(--ease-out); }
+  .lift:hover { transform: translateY(-2px); }
+  .lift:hover::after { opacity: 1; }
+  .lift:focus-visible { transform: none; }
+  .lift:focus-visible::after { opacity: 0; }
+  .lift:active { transform: none; }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) {
+  .lift:hover { transform: none; }
+}

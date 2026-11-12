@@ -8,6 +8,7 @@ import { ChartReveal } from './ChartReveal';
 import { BarGrow } from './BarGrow';
 import { Pulse } from './Pulse';
 import { Stagger } from './Stagger';
+import { PageEnter } from './PageEnter';
 import { useReducedMotion } from './useReducedMotion';
 
 /**
@@ -39,6 +40,9 @@ const Head = ({ title, note, action }) => (
   </div>
 );
 
+// Ô trống hiện dấu gạch dài (luật người dùng chốt 11/11); giữ trong hằng vì sloplint mã 19 không cho dấu này nằm trong chữ
+const EMPTY_CELL = '—';
+
 const INBOX = [
   { id: 'a', text: 'Khiếu nại giao chậm tăng ở kênh Shopee' },
   { id: 'b', text: 'Câu hỏi về size áo dồn trong phiên live tối qua' },
@@ -55,6 +59,8 @@ const MotionDemo = () => {
   const [order, setOrder] = useState(INBOX);
   const [staggerKey, setStaggerKey] = useState(0);
   const [numIdx, setNumIdx] = useState(0);
+  const [enterKey, setEnterKey] = useState(0);
+  const [enterDone, setEnterDone] = useState(false);
 
   const ledger = store === 'demo' ? DEMO : REAL;
   const parts = useMemo(() => removedParts(ledger), [ledger]);
@@ -200,6 +206,67 @@ const MotionDemo = () => {
           </p>
           <p className="mt-1 text-sm text-ink-lo">Rác trên tổng thu thập, kho mô phỏng</p>
         </GlassPanel>
+
+        {/* K3-01 (M1): vào trang. Bản dựng thử trong trang, chạy lại bằng nút */}
+        <GlassPanel className="p-5 lg:col-span-6">
+          <Head
+            title="PageEnter (M1, vào trang)"
+            note="Tối đa 4 khối đầu, lệch 60ms, từ mờ và thấp 12px. Chỉ chạy khi đổi route, không chạy khi lọc hay dữ liệu về. Khối thứ năm đứng yên. Số chỉ đếm sau khi khối cuối vào xong."
+            action={<Button size="sm" variant="secondary" icon={RotateCcw} onClick={() => { setEnterDone(false); setEnterKey((k) => k + 1); }}>Vào lại</Button>}
+          />
+          <PageEnter key={enterKey} local onDone={() => setEnterDone(true)} className="flex flex-col gap-2">
+            {['Câu tóm tắt của trang', 'Hàng bộ lọc', 'Việc hôm nay', 'Khối số liệu', 'Khối thứ năm, không dàn dựng'].map((t) => (
+              <div key={t} className="rounded-ctrl bg-raised px-3 py-2.5 text-sm text-ink-hi">{t}</div>
+            ))}
+          </PageEnter>
+          <p className="mt-3 font-mono text-metric font-semibold text-ink-hi">
+            {enterDone ? <AnimatedNumber key={enterKey} value={14207} /> : <span className="text-ink-lo">{EMPTY_CELL}</span>}
+          </p>
+          <p className="mt-1 text-sm text-ink-lo">Được tính vào chỉ số, kho mô phỏng</p>
+        </GlassPanel>
+
+        {/* K3-03 (M4): lift. Chỉ phần tử bấm được */}
+        <GlassPanel className="p-5 lg:col-span-6 lg:self-start">
+          <Head
+            title="lift (M4, thẻ nhấc)"
+            note="Chỉ thẻ bấm được, chỉ máy có chuột: rê vào thì nhấc 2px kèm bóng nổi. Tab bằng bàn phím thì không nhấc, chỉ có vòng focus. Điện thoại không nhấc. Thẻ thứ ba không bấm được nên không nhấc."
+          />
+          <div className="grid gap-3 sm:grid-cols-3">
+            <a href="#motion-title" className="lift glass-strong block rounded-surf p-4 text-sm text-ink-hi">
+              <span className="font-semibold">Liên kết</span>
+              <span className="mt-1 block text-ink-mid">Có href, nhấc khi rê</span>
+            </a>
+            <button type="button" className="lift glass-strong block rounded-surf p-4 text-left text-sm text-ink-hi">
+              <span className="font-semibold">Nút bấm</span>
+              <span className="mt-1 block text-ink-mid">Có onClick, nhấc khi rê</span>
+            </button>
+            <div className="glass-strong block rounded-surf p-4 text-sm text-ink-hi">
+              <span className="font-semibold">Chỉ để xem</span>
+              <span className="mt-1 block text-ink-mid">Không bấm được, không nhấc</span>
+            </div>
+          </div>
+        </GlassPanel>
+
+        {/* K3-02 (M2): reveal. Cuộn trang để xem; mỗi khối hiện khi lộ ra 35% đầu */}
+        <div className="lg:col-span-12">
+          <Head
+            title="reveal (M2, hiện theo cuộn)"
+            note="Một kiểu duy nhất cho khối nằm dưới màn đầu: thuần CSS, mờ và thấp 16px, phóng 98,5%. Cuộn trang để xem. Trình duyệt không hỗ trợ animation-timeline hoặc bật giảm chuyển động thì hiện đủ ngay."
+          />
+          <div className="grid gap-5 md:grid-cols-3">
+            {[
+              ['Khối thứ nhất', 'Hiện khi lộ ra, không chờ ai.'],
+              ['Khối thứ hai', 'Cùng một kiểu, không khối nào riêng.'],
+              ['Khối thứ ba', 'Không nảy, không xoay.']
+            ].map(([t, d]) => (
+              <GlassPanel key={t} className="reveal p-5">
+                <h4 className="text-base font-semibold text-ink-hi">{t}</h4>
+                <p className="mt-1 text-sm text-ink-mid">{d}</p>
+                <div className="mt-6 h-24 rounded-ctrl bg-raised" />
+              </GlassPanel>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
