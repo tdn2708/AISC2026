@@ -75,6 +75,7 @@ const Trigger = ({ icon: Icon, active, children, onClick, open }) => (
 );
 
 const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, productFilter, setProductFilter, hideExportButton = false }) => {
+  const barRef = useRef(null);
   const [open, setOpen] = useState(null);
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -92,6 +93,22 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
       .catch((e) => console.error('Không tải được danh sách sản phẩm:', e))
       .finally(() => setProductsLoaded(true));
   }, [setProductFilter]);
+
+  // Báo chiều cao thanh lọc cho vùng cuộn (--filter-h): scroll-padding-top của .main-content cộng số này,
+  // để cuộn tới anchor (#today...) không nằm dưới thanh trên và thanh lọc dính. Rời trang thì về 0.
+  useEffect(() => {
+    const bar = barRef.current;
+    const scroller = bar?.closest('.main-content');
+    if (!bar || !scroller) return undefined;
+    const sync = () => scroller.style.setProperty('--filter-h', `${bar.offsetHeight + 8}px`);
+    sync();
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(sync);
+    ro?.observe(bar);
+    return () => {
+      ro?.disconnect();
+      scroller.style.setProperty('--filter-h', '0px');
+    };
+  }, []);
 
   // Sản phẩm lưu từ phiên trước không còn trong dữ liệu → gỡ khỏi bộ lọc
   useEffect(() => {
@@ -132,7 +149,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
   const filteredProducts = productOptions.filter((p) => foldVi(p).includes(productNeedle));
 
   return (
-    <div className="cx glass relative z-[100] mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-surf px-4 py-3">
+    <div ref={barRef} className="cx glass-chrome filterbar sticky top-[calc(var(--topbar-h,5rem)+0.5rem)] z-[110] mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-surf px-4 py-3">
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Khoảng thời gian">
         <span className="eyebrow mr-1 hidden lg:inline">Thời gian</span>
         {TIME_PRESETS.map((t) => (
