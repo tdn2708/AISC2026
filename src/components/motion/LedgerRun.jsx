@@ -35,11 +35,13 @@ import { MOTION } from './tokens';
 
 const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
 
-const Row = React.forwardRef(({ label, value, sign }, ref) => (
+const Row = React.forwardRef(({ label, value, sign, note }, ref) => (
   <div ref={ref} className="grid grid-cols-[minmax(0,1fr)_1rem_auto] items-baseline gap-x-2 border-b border-(--sheet-rule) py-2">
     <dt className="min-w-0 text-ink-mid">{label}</dt>
     <dd className="text-right font-mono text-ink-lo" aria-hidden={!sign}>{sign || ''}</dd>
     <dd className="text-right font-mono tabular-nums text-ink-hi">{fmtInt(value)}</dd>
+    {/* Ví dụ đi kèm dòng (trang giới thiệu): nằm dưới dòng, cùng hiện và cùng ẩn với dòng */}
+    {note ? <dd className="col-span-full mt-1 min-w-0">{note}</dd> : null}
   </div>
 ));
 Row.displayName = 'LedgerRunRow';
@@ -68,6 +70,12 @@ export const LedgerRun = ({
   bare = false,
   play = true,
   onDone,
+  // Thêm cho trang giới thiệu (K5), mặc định giữ nguyên hành vi cũ:
+  // rowNotes: { [khóa dòng trừ]: node } hiện dưới từng dòng; numberClass: cỡ chữ số cuối;
+  // settleDot: chấm san hô (chỉ đồ họa) hiện cạnh số khi đã chốt
+  rowNotes,
+  numberClass = 'text-metric',
+  settleDot = false,
   className = ''
 }) => {
   // Tính theo giá trị chứ không theo đối tượng: tải lại dữ liệu cùng số thì sổ không chạy lại
@@ -83,6 +91,7 @@ export const LedgerRun = ({
   const sepRefs = useRef([]);
   const numberRef = useRef(null);
   const checkRef = useRef(null);
+  const dotRef = useRef(null);
   const playedRef = useRef(false);
   const settledRef = useRef(true);
   const [settled, setSettled] = useState(true);
@@ -120,6 +129,7 @@ export const LedgerRun = ({
         if (sep) sep.style.opacity = visible[item.after] ? '' : '0';
       });
       if (checkRef.current) checkRef.current.style.opacity = st.settle >= 1 ? '' : String(st.settle);
+      if (dotRef.current) dotRef.current.style.opacity = st.settle >= 1 ? '' : '0';
       if (st.done !== settledRef.current) {
         settledRef.current = st.done;
         setSettled(st.done);
@@ -191,7 +201,7 @@ export const LedgerRun = ({
       <dl className={`text-sm ${title || showLink ? 'mt-2' : ''}`}>
         <Row ref={(el) => { rowRefs.current.raw = el; }} label={run.steps[0].label} value={run.raw} />
         {subs.map((s) => (
-          <Row key={s.key} ref={(el) => { rowRefs.current[s.key] = el; }} label={s.label} value={s.value} sign={s.sign} />
+          <Row key={s.key} ref={(el) => { rowRefs.current[s.key] = el; }} label={s.label} value={s.value} sign={s.sign} note={rowNotes?.[s.key]} />
         ))}
         {/* Gạch đôi trên dòng tổng, như sổ kế toán */}
         <div
@@ -199,7 +209,7 @@ export const LedgerRun = ({
           className="mt-px grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2 border-0 border-t-[3px] border-double border-ink-lo pt-2.5"
         >
           <dt className="font-semibold text-ink-hi">{run.steps.at(-1).label}</dt>
-          <dd className="text-right font-mono text-metric font-semibold tabular-nums text-ink-hi">
+          <dd className={`text-right font-mono ${numberClass} font-semibold tabular-nums text-ink-hi`}>
             <span
               ref={numberRef}
               className={`ledger-roll ${settled && live ? 'motion-settle' : ''}`}
@@ -219,6 +229,9 @@ export const LedgerRun = ({
                 )
               )}
             </span>
+            {settleDot && (
+              <span ref={dotRef} className="ledger-dot" aria-hidden="true" />
+            )}
             <span className="sr-only">{fmtInt(run.counted)}</span>
           </dd>
         </div>

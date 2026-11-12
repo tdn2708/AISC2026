@@ -6,7 +6,7 @@ import { LedgerRun, useReducedMotion } from '../motion';
 import { useTheme } from '../../hooks/useTheme';
 import { fmtInt } from '../../lib/format';
 import { normalizeLedger } from '../../lib/ledgerRun';
-import { useLandingHealth, verifiedCount, SNAPSHOT_DATE } from './data';
+import { useLandingHealth, verifiedCount, SNAPSHOT_DATE, SAMPLE_NOTE, LEDGER_SAMPLES, SCAN_SAMPLES, SCAN_LABELS } from './data';
 // Engine scroll-craft chép nguyên văn (không sửa). CSS của engine có luật toàn cục
 // (body, :focus-visible, img), nên KHÔNG import thường: nạp dạng chuỗi và chỉ gắn
 // vào <head> trong lúc trang giới thiệu đang mở, rời trang là gỡ.
@@ -120,7 +120,133 @@ function PeakLedger({ actRef, health, reduced }) {
 
   return (
     <div className="lp-peak__sheet" data-sc-verify-state={reduced ? 'tĩnh' : t.toFixed(3)}>
-      <LedgerRun ledger={health} mode="scroll" progress={reduced ? 1 : t} showLink={false} title="Sổ đối chiếu" />
+      {/* Sổ là SỐ LIỆU: giấy đặc, không kính. data-theme="light" làm riêng tờ giấy sáng khi trang đang tối */}
+      <div className="lp-paper" data-theme="light">
+        <LedgerRun
+          ledger={health}
+          mode="scroll"
+          progress={reduced ? 1 : t}
+          showLink={false}
+          title="Sổ đối chiếu"
+          bare
+          rowNotes={ROW_NOTES}
+          numberClass="lp-bignum"
+          settleDot
+        />
+        <p className="lp-paper__cap">{SAMPLE_NOTE}: mỗi khoản bị trừ kèm một bình luận thật.</p>
+      </div>
+    </div>
+  );
+}
+
+/** Bình luận mẫu bị gạch ngang dưới từng dòng trừ (chép tĩnh từ kho Mô phỏng, data.js) */
+const sampleMeta = (x) => `${x.source}${x.rating ? `, ${x.rating} sao` : ''}, ${x.date}`;
+const ROW_NOTES = Object.fromEntries(
+  Object.entries(LEDGER_SAMPLES).map(([key, x]) => [
+    key,
+    <p key={key} className="lp-ex">
+      <s>{x.text}</s>
+      <span className="lp-ex__meta">{sampleMeta(x)}</span>
+    </p>
+  ])
+);
+
+// Khung ngắm quét từ p = SCAN_FROM tới SCAN_TO của nhịp "Cái giá" (--sc-p do engine đặt)
+const SCAN_FROM = 0.3;
+const SCAN_TO = 0.72;
+
+/** Hai góc chữ L của logo A2 (đường nét gốc trong Logo.jsx), cắt từng góc, nét giữ 3 px khi phóng to */
+const Corner = ({ at }) => (
+  <svg
+    className={`lp-scan__corner lp-scan__corner--${at}`}
+    viewBox={at === 'bl' ? '1 5 7 10' : '8 1 7 10'}
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      d={at === 'bl' ? 'M2.5 6.5V13.5H6.5' : 'M13.5 9.5V2.5H9.5'}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="miter"
+      vectorEffect="non-scaling-stroke"
+    />
+  </svg>
+);
+
+/**
+ * KHUNG NGẮM (K5-05): hai góc chữ L của logo trôi xuống danh sách bình luận mẫu theo --sc-p.
+ * Bình luận lọt trong khung được gắn nhãn đúng theo Trust Layer, rác và ảo mờ đi;
+ * ngoài khung để nguyên. Chỉ transform (khung) và opacity (hàng, nhãn). Không JS hoặc giảm
+ * chuyển động: không có khung, mọi hàng hiện nhãn đủ (bảng tĩnh có nhãn).
+ */
+function ScanList({ actRef, reduced }) {
+  const listRef = useRef(null);
+  const frameRef = useRef(null);
+
+  useEffect(() => {
+    const list = listRef.current;
+    const frame = frameRef.current;
+    const act = actRef.current;
+    if (reduced || !list || !frame || !act) return undefined;
+    list.classList.add('is-scan');
+    const rows = Array.from(list.querySelectorAll('[data-scan-row]'));
+    const geo = { listH: 0, frameH: 0, mids: [] };
+    const measure = () => {
+      geo.listH = list.offsetHeight;
+      geo.frameH = frame.offsetHeight;
+      geo.mids = rows.map((r) => r.offsetTop + r.offsetHeight / 2);
+    };
+    let raf = 0;
+    const paint = () => {
+      raf = 0;
+      const p = parseFloat(act.style.getPropertyValue('--sc-p')) || 0;
+      const t = clamp01((p - SCAN_FROM) / (SCAN_TO - SCAN_FROM));
+      const y = t * Math.max(0, geo.listH - geo.frameH);
+      frame.style.transform = `translate3d(0, ${y.toFixed(1)}px, 0)`;
+      rows.forEach((r, i) => {
+        const v = geo.mids[i] >= y && geo.mids[i] <= y + geo.frameH ? '1' : '0';
+        if (r.dataset.in !== v) r.dataset.in = v;
+      });
+    };
+    const queue = () => {
+      if (!raf) raf = requestAnimationFrame(paint);
+    };
+    const remeasure = () => {
+      measure();
+      queue();
+    };
+    remeasure();
+    window.addEventListener('scroll', queue, { passive: true });
+    window.addEventListener('resize', remeasure);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', queue);
+      window.removeEventListener('resize', remeasure);
+      list.classList.remove('is-scan');
+      frame.style.transform = '';
+    };
+  }, [actRef, reduced]);
+
+  return (
+    <div className="lp-scan" ref={listRef}>
+      <ul className="lp-scan__list">
+        {SCAN_SAMPLES.map((x) => (
+          <li key={x.id} className={`lp-scan__row lp-scan__row--${x.kind}`} data-scan-row="" data-in="0">
+            <p className="lp-scan__text">{x.text}</p>
+            <p className="lp-scan__meta">
+              <span>{sampleMeta(x)}</span>
+              <span className={`lp-scan__tag lp-scan__tag--${x.kind}`}>{SCAN_LABELS[x.kind]}</span>
+            </p>
+          </li>
+        ))}
+      </ul>
+      <div className="lp-scan__frame" ref={frameRef} aria-hidden="true">
+        <Corner at="tr" />
+        <Corner at="bl" />
+      </div>
+      <p className="lp-scan__note">{SAMPLE_NOTE}. Nhãn là kết luận của Trust Layer.</p>
     </div>
   );
 }
@@ -130,6 +256,7 @@ const cue = (on, value) => (on ? { 'data-sc-cue': value } : {});
 const Landing = ({ isAuthenticated = false }) => {
   const rootRef = useRef(null);
   const peakRef = useRef(null);
+  const costRef = useRef(null);
   const reduced = useReducedMotion();
   const { theme } = useTheme();
   const { health, source } = useLandingHealth();
@@ -211,32 +338,37 @@ const Landing = ({ isAuthenticated = false }) => {
               data-sc-parallax="1.6"
               onLoad={remeasure}
             />
-            <img
-              className="lp-plane lp-plane--front"
-              src={shot('sheet', theme)}
-              width={SHOTS.sheet.w}
-              height={SHOTS.sheet.h}
-              alt=""
-              data-sc-parallax="-1.3"
-              onLoad={remeasure}
-            />
+            {/* Tấm kính: ảnh Bảng số liệu lùi xa nằm SAU nên mờ qua kính; Tổng quan và tờ sổ nằm TRƯỚC */}
+            <div className="lp-glass glass-float" aria-hidden="true" data-sc-parallax="0.8" />
+            <div className="lp-tilt" data-sc-tilt="3">
+              <img
+                className="lp-plane lp-plane--front"
+                src={shot('sheet', theme)}
+                width={SHOTS.sheet.w}
+                height={SHOTS.sheet.h}
+                alt=""
+                data-sc-parallax="-1.3"
+                onLoad={remeasure}
+              />
+            </div>
             <figcaption className="lp-hero__cap">Ảnh chụp ứng dụng, kho mô phỏng, {SNAPSHOT_DATE}.</figcaption>
           </figure>
         </div>
       </section>
 
-      {/* 2. CÁI GIÁ: im lặng trước đỉnh, chỉ chữ trên nền trơn */}
-      <section className="lp-cost" aria-labelledby="lp-cost-h">
+      {/* 2. CÁI GIÁ: khung ngắm quét danh sách bình luận thật, gọi tên rác, ảo, khách thật */}
+      <section ref={costRef} className="lp-cost" data-sc-act="flow" aria-labelledby="lp-cost-h">
         <div className="lp-wrap lp-cost__inner">
-          <h2 id="lp-cost-h" className="lp-h2">Nhưng không phải bình luận nào cũng của khách thật.</h2>
-          <ul className="lp-cost__list" data-sc-in="" data-sc-stagger="80">
-            <li>Quảng cáo kèm số điện thoại chen giữa đánh giá.</li>
-            <li>Một nhóm tài khoản khen cùng một câu trong một giờ.</li>
-            <li>Năm sao, nhưng lời thì chê.</li>
-          </ul>
-          <p className="lp-cost__turn" data-sc-in="">
-            Đếm hết thì con số sai. Bỏ bừa thì mất lời khách thật.
-          </p>
+          <div className="lp-cost__copy">
+            <h2 id="lp-cost-h" className="lp-h2">Nhưng không phải bình luận nào cũng của khách thật.</h2>
+            <p className="lp-cost__lede" data-sc-in="">
+              Đây là tám bình luận nằm lẫn trong kho. Khung ngắm đi qua từng cái và gọi tên.
+            </p>
+            <p className="lp-cost__turn" data-sc-in="">
+              Đếm hết thì con số sai. Bỏ bừa thì mất lời khách thật.
+            </p>
+          </div>
+          <ScanList actRef={costRef} reduced={reduced} />
         </div>
       </section>
 

@@ -91,6 +91,8 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
 
 /* ---------- 1. hero ---------- */
 .lp-hero {
+  position: relative;
+  isolation: isolate;
   background: var(--canvas);
   min-height: 100svh;
   display: flex;
@@ -144,6 +146,25 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
 }
 .lp-hero__copy { position: relative; z-index: 2; }
 
+/* Lớp không khí phía sau kính (12.3): ba vùng sáng rất nhẹ, navy và xanh polo, tĩnh; không san hô, không tím */
+.lp-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(52vw 52vw at 78% 28%, color-mix(in oklab, var(--polo-52) 10%, transparent), transparent 70%),
+    radial-gradient(44vw 44vw at 100% 92%, color-mix(in oklab, var(--navy-26) 6%, transparent), transparent 70%),
+    radial-gradient(56vw 56vw at 58% 0%, color-mix(in oklab, var(--polo-81) 14%, transparent), transparent 70%);
+}
+[data-theme='dark'] .lp-hero::before {
+  background:
+    radial-gradient(52vw 52vw at 78% 28%, color-mix(in oklab, var(--polo-52) 16%, transparent), transparent 70%),
+    radial-gradient(44vw 44vw at 100% 92%, color-mix(in oklab, var(--polo-81) 8%, transparent), transparent 70%),
+    radial-gradient(56vw 56vw at 58% 0%, color-mix(in oklab, var(--navy-20) 40%, transparent), transparent 70%);
+}
+
 /* Ba lớp: Bảng số liệu lùi xa (nhạt, chỉ ló mép), Tổng quan ở giữa, và tờ sổ
    cắt ra khỏi chính màn Tổng quan, nhấc lên phía trước đúng chỗ của nó.
    Mỗi lớp engine dịch dọc một nhịp riêng (data-sc-parallax). Khung ảnh tràn
@@ -166,22 +187,38 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
   z-index: 0;
   top: 0;
   right: 0;
-  width: 70%;
-  opacity: 0.62;
-  filter: saturate(0.7);
+  width: 64%;
+  opacity: 0.9;
 }
 .lp-plane--main {
-  z-index: 1;
-  top: 13%;
-  left: 0;
-  width: 84%;
+  z-index: 2;
+  top: 14%;
+  left: 2%;
+  width: 82%;
   box-shadow: var(--lp-shadow);
 }
-.lp-plane--front {
-  z-index: 2;
+/* Tấm kính nằm giữa ảnh lùi xa và màn chính: phần ảnh lùi xa lọt sau kính thì mờ.
+   Màu, blur, viền, bóng lấy từ glass-float (tailwind.css, K1). */
+.lp-glass {
+  position: absolute;
+  z-index: 1;
+  top: 8%;
+  left: -2%;
+  width: 92%;
+  height: 91%;
+  border-radius: var(--r-surf);
+}
+/* Vỏ để nghiêng theo chuột (engine data-sc-tilt, tối đa 3 độ, chỉ chuột); lớp parallax nằm trên ảnh bên trong */
+.lp-tilt {
+  position: absolute;
+  z-index: 3;
   top: 21%;
   left: 52%;
   width: 31%;
+}
+.lp-plane--front {
+  position: relative;
+  width: 100%;
   border: 0;
   background: transparent;
   box-shadow: var(--lp-shadow);
@@ -194,46 +231,80 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
   color: var(--text-lo);
 }
 
-/* ---------- 2. cái giá: im lặng trước đỉnh ---------- */
+/* ---------- 2. cái giá: khung ngắm quét danh sách bình luận thật ---------- */
 .lp-cost {
   background: var(--surface);
   border-block: 1px solid var(--border-soft);
   padding-block: var(--lp-section);
 }
-.lp-cost__inner { max-width: 56rem; margin-inline: 0 auto; }
-.lp-cost__inner .lp-h2 { max-width: 20ch; }
-.lp-cost__list {
-  list-style: none;
-  margin-top: clamp(2rem, 4vw, 3rem);
+.lp-cost__inner {
   display: grid;
-  gap: 1rem;
-  font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.75rem);
-  line-height: 1.35;
-  letter-spacing: -0.012em;
-  color: var(--text-mid);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
 }
-.lp-cost__list li { padding-top: 1rem; border-top: 1px solid var(--border-soft); max-width: 34ch; }
+/* Chữ dính trên đầu màn trong lúc khung ngắm đi qua danh sách */
+.lp-cost__copy { position: sticky; top: 20vh; }
+.lp-cost__copy .lp-h2 { max-width: 15ch; }
+.lp-cost__lede {
+  margin-top: 1.5rem;
+  font-size: clamp(1.125rem, 1rem + 0.45vw, 1.375rem);
+  line-height: 1.5;
+  color: var(--text-mid);
+  max-width: 30ch;
+}
 .lp-cost__turn {
-  margin-top: clamp(2.5rem, 5vw, 3.5rem);
+  margin-top: 1.5rem;
   font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.75rem);
   line-height: 1.35;
   font-weight: 600;
   color: var(--text-hi);
-  max-width: 30ch;
+  max-width: 24ch;
 }
+
+.lp-scan { position: relative; }
+.lp-scan__list { list-style: none; display: grid; }
+.lp-scan__row { padding-block: 1rem; border-top: 1px solid var(--border); }
+.lp-scan__row:last-child { border-bottom: 1px solid var(--border); }
+.lp-scan__text { font-size: 1.0625rem; line-height: 1.45; color: var(--text-hi); transition: opacity var(--motion-short) var(--ease-out); }
+.lp-scan__meta { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-top: 0.4rem; font-size: 0.875rem; color: var(--text-lo); }
+.lp-scan__tag { flex: none; padding: 0.1rem 0.55rem; border-radius: var(--r-mark); font-weight: 600; color: var(--text-hi); transition: opacity var(--motion-short) var(--ease-out); }
+.lp-scan__tag--spam { background: var(--sev-crit-dim); color: var(--sev-crit); }
+.lp-scan__tag--fake { background: var(--sev-high-dim); color: var(--sev-high); }
+.lp-scan__tag--real { background: var(--sev-ok-dim); color: var(--sev-ok); }
+/* Không có khung (giảm chuyển động, chưa có JS): bảng tĩnh, mọi hàng có nhãn, rác và ảo mờ chữ */
+.lp-scan__row--spam .lp-scan__text,
+.lp-scan__row--fake .lp-scan__text { opacity: 0.55; }
+/* Có khung: nhãn và độ mờ chỉ áp cho hàng lọt trong khung */
+.lp-scan.is-scan .lp-scan__tag { opacity: 0; }
+.lp-scan.is-scan .lp-scan__row[data-in='1'] .lp-scan__tag { opacity: 1; }
+.lp-scan.is-scan .lp-scan__row--spam .lp-scan__text,
+.lp-scan.is-scan .lp-scan__row--fake .lp-scan__text { opacity: 1; }
+.lp-scan.is-scan .lp-scan__row--spam[data-in='1'] .lp-scan__text,
+.lp-scan.is-scan .lp-scan__row--fake[data-in='1'] .lp-scan__text { opacity: 0.4; }
+.lp-scan__note { margin-top: 1rem; font-size: 0.8125rem; color: var(--text-lo); }
+
+/* Khung ngắm: chỉ transform (JS đặt translate3d theo --sc-p). Hai góc là hai nét chữ L của logo A2 */
+.lp-scan__frame {
+  display: none;
+  position: absolute;
+  left: -1rem;
+  right: -1rem;
+  top: 0;
+  height: 14rem;
+  pointer-events: none;
+  color: var(--text-hi);
+  background: color-mix(in oklab, var(--accent) 5%, transparent);
+  will-change: transform;
+}
+.lp-scan.is-scan .lp-scan__frame { display: block; }
+.lp-scan__corner { position: absolute; width: 2.75rem; height: 3.9rem; overflow: visible; }
+.lp-scan__corner--tr { top: -0.1rem; right: -0.1rem; }
+.lp-scan__corner--bl { bottom: -0.1rem; left: -0.1rem; }
 
 /* ---------- 3. đỉnh: nền mực, cắt cứng ---------- */
 .lp-peak { background: var(--strip-bg); color: var(--on-strip); }
-/* Chế độ tối: trang đã gần đen (navy-20) nên khối mực navy-30 chỉ hơn nền 1,35 lần, cú cắt vào đỉnh yếu.
-   Đảo ngược đúng cách chế độ sáng làm (khối mực trên nền giấy): ở tối, đỉnh là khối giấy navy-94 trên nền mực,
-   hơn nền 15,1 lần. Chữ mực navy-26 trên giấy: 12,99 : 1; câu phụ navy-39 7,92 : 1; chú thích navy-50 4,97 : 1.
-   Chỉ dùng token có sẵn, không gradient, không phát sáng; tờ sổ bên trong vẫn là tờ tối (navy-27, hơn giấy 12,56 : 1). */
-[data-theme='dark'] .lp-peak {
-  --strip-bg: var(--navy-94);
-  --on-strip: var(--navy-26);
-  --on-strip-mid: var(--navy-39);
-  --on-strip-lo: var(--navy-50);
-}
+/* Chế độ tối (4B): nền tối suốt trang, đỉnh cũng tối; chỉ tờ sổ là giấy sáng (data-theme="light" ở .lp-paper) */
 .lp-peak__stage {
   display: grid;
   align-items: center;
@@ -242,10 +313,12 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
 }
 .lp-peak__grid {
   display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
   align-items: center;
   gap: clamp(2rem, 5vw, 5rem);
 }
+/* Sổ chiếm khoảng 57% bề ngang màn 1440 (1A): vùng này rộng hơn khung chữ thường */
+.lp-peak__grid.lp-wrap { max-width: 96rem; }
 .lp-peak .lp-h2 { color: var(--on-strip); max-width: 16ch; }
 .lp-peak__lines {
   display: grid;
@@ -259,8 +332,31 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
 .lp-peak__lines > p { grid-area: 1 / 1; }
 .lp-peak__lines b { color: var(--on-strip); font-weight: 600; font-variant-numeric: tabular-nums; }
 .lp-source { margin-top: 1.5rem; font-size: 0.875rem; color: var(--on-strip-lo); max-width: 44ch; }
-.lp-peak__sheet { width: 100%; max-width: 27rem; justify-self: end; }
-.lp-peak__sheet figure { box-shadow: 0 24px 60px -24px var(--scrim); }
+.lp-peak__sheet { width: 100%; justify-self: end; }
+/* Giấy đặc (không kính, không blur): số liệu phải đọc rõ và trung thực */
+.lp-paper {
+  background: var(--sheet);
+  color: var(--text-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--r-surf);
+  padding: 1.25rem clamp(1rem, 2vw, 1.75rem) 1.25rem;
+}
+.lp-paper__cap { margin-top: 0.9rem; font-size: 0.8125rem; color: var(--text-lo); }
+/* Số cuối 72 đến 96 px ở máy tính */
+.lp .lp-bignum { font-size: clamp(3rem, 2rem + 4vw, 6rem); line-height: 1.1; letter-spacing: -0.02em; }
+.lp .ledger-dot {
+  display: inline-block;
+  width: 0.14em;
+  height: 0.14em;
+  margin-left: 0.1em;
+  border-radius: 50%;
+  background: var(--coral);
+  transition: opacity var(--motion-short) var(--ease-out);
+}
+/* Bình luận mẫu bị gạch ngang dưới từng dòng trừ */
+.lp-ex { font-size: 0.9375rem; line-height: 1.4; color: var(--text-lo); }
+.lp-ex s { text-decoration-line: line-through; text-decoration-thickness: 1px; }
+.lp-ex__meta { display: block; margin-top: 0.1rem; font-size: 0.8125rem; }
 
 /* ---------- 4. bằng chứng ---------- */
 .lp-proof { background: var(--canvas); padding-block: var(--lp-section); }
@@ -375,8 +471,12 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
   .lp-hero__grid { grid-template-columns: minmax(0, 1fr); align-content: start; gap: 2.5rem; padding-top: 1.5rem; }
   .lp-hero__art { width: 100%; aspect-ratio: 16 / 12.5; }
   .lp-plane--back { width: 74%; }
-  .lp-plane--main { width: 90%; left: 0; top: 12%; }
-  .lp-plane--front { width: 38%; left: auto; right: 0; top: 24%; }
+  .lp-plane--main { width: 88%; left: 3%; top: 14%; }
+  .lp-tilt { width: 38%; left: auto; right: 0; top: 24%; }
+  .lp-glass { left: -3%; width: 96%; height: 92%; top: 9%; }
+  .lp-cost__inner { grid-template-columns: minmax(0, 1fr); }
+  .lp-cost__copy { position: static; }
+  .lp-scan__frame { height: 10.5rem; }
   .lp-hero__art { margin-bottom: 2rem; }
   .lp-peak__grid,
   .lp-proof__grid,
@@ -384,7 +484,8 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
   .lp-peak__stage { padding-block: 1.25rem; align-items: start; }
   .lp-peak__grid { gap: 1.25rem; }
   .lp-peak .lp-h2 { font-size: 1.5rem; }
-  .lp-peak__lines { margin-top: 0.75rem; font-size: 1rem; }
+  /* Ba câu kèm lặp lại điều tờ sổ đã nói; bỏ trên điện thoại để cả tờ sổ và dòng chú thích nằm gọn trong khung ghim */
+  .lp-peak__lines { display: none; }
   .lp-source { margin-top: 0.75rem; font-size: 0.8125rem; }
   .lp-peak__sheet { justify-self: stretch; max-width: none; }
   /* Ảnh màn hình ngang trên điện thoại: cắt khung đứng, giữ góc trên trái cho chữ đủ to */
