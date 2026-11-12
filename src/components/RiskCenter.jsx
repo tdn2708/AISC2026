@@ -203,7 +203,7 @@ const SourceDrawer = ({ alert, onClose }) => {
         <EmptyState variant="error" compact title="Không tải được" description={error} />
       ) : !data ? (
         <div className="flex flex-col gap-3">
-          {[0, 1, 2].map((i) => <div key={i} className="h-24 animate-skeleton rounded-ctrl bg-raised" />)}
+          {[0, 1, 2].map((i) => <div key={i} className="h-24 animate-skeleton motion-reduce:animate-none rounded-ctrl bg-raised" />)}
         </div>
       ) : data.evidence?.length === 0 ? (
         <EmptyState compact title="Không có phản hồi đính kèm" description="Cảnh báo tăng chậm được phát hiện trên chuỗi thời gian, không gắn với từng phản hồi riêng." />
@@ -275,7 +275,7 @@ const DecisionLog = () => {
   }, []);
 
   if (error) return <GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel>;
-  if (!rows) return <div className="h-64 animate-skeleton rounded-surf bg-raised" />;
+  if (!rows) return <div className="h-64 animate-skeleton motion-reduce:animate-none rounded-surf bg-raised" />;
   if (!rows.length) {
     return (
       <GlassPanel>
@@ -471,8 +471,8 @@ const RiskCenter = () => {
             <GlassPanel><EmptyState variant="error" title="Không tải được cảnh báo" description={error} action={<Button onClick={load}>Thử lại</Button>} /></GlassPanel>
           ) : loading && alerts.length === 0 ? (
             <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-              <div className="flex flex-col gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-skeleton rounded-ctrl bg-raised" />)}</div>
-              <div className="h-[520px] animate-skeleton rounded-surf bg-raised" />
+              <div className="flex flex-col gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-skeleton motion-reduce:animate-none rounded-ctrl bg-raised" />)}</div>
+              <div className="h-[520px] animate-skeleton motion-reduce:animate-none rounded-surf bg-raised" />
             </div>
           ) : visible.length === 0 ? (
             <GlassPanel>

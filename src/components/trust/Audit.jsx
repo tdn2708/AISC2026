@@ -211,7 +211,7 @@ const Audit = () => {
         <p className="mb-4 text-xs leading-relaxed text-ink-lo">{MODE_HINT[mode]}</p>
 
         {loading ? (
-          <div className="h-[360px] animate-pulse rounded-ctrl bg-raised" />
+          <div className="h-[360px] animate-skeleton motion-reduce:animate-none rounded-ctrl bg-raised" />
         ) : error && !item ? (
           <EmptyState variant="error" title="Không tải được" description={error} />
         ) : !item ? (

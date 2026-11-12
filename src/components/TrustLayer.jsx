@@ -119,8 +119,8 @@ const TrustOverview = () => {
       <div>
         {header}
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="h-[260px] animate-skeleton rounded-surf bg-raised lg:col-span-2" />
-          <div className="h-[260px] animate-skeleton rounded-surf bg-raised" />
+          <div className="h-[260px] animate-skeleton motion-reduce:animate-none rounded-surf bg-raised lg:col-span-2" />
+          <div className="h-[260px] animate-skeleton motion-reduce:animate-none rounded-surf bg-raised" />
         </div>
       </div>
     );

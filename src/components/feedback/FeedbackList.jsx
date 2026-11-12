@@ -11,12 +11,12 @@ import { fmtDateTime, initials, SENTIMENT_MAP, evidenceOf, exclusionLabel, sarca
  */
 
 const WIDTHS = {
-  withProduct: ['18%', '29%', '13%', '11%', '10%', '11%', '8%'],
+  withProduct: ['18%', '26%', '13%', '11%', '10%', '11%', '11%'],
   plain: ['18%', '36%', '13%', '11%', '12%', '10%']
 };
 
 const FeedbackList = ({ items, showProduct = false, onSelect, dimmed = false }) => (
-  <div className={`overflow-x-auto transition-opacity duration-150 ${dimmed ? 'opacity-60' : ''}`}>
+  <div className={`overflow-x-auto transition-opacity duration-short ${dimmed ? 'opacity-60' : ''}`}>
     <table className="fb-table">
       <colgroup>
         {(showProduct ? WIDTHS.withProduct : WIDTHS.plain).map((w, i) => <col key={i} style={{ width: w }} />)}
@@ -45,7 +45,7 @@ const FeedbackList = ({ items, showProduct = false, onSelect, dimmed = false }) 
               tabIndex={onSelect ? 0 : undefined}
               onClick={onSelect ? open : undefined}
               onKeyDown={onSelect ? (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), open()) : undefined}
-              className={onSelect ? 'cursor-pointer focus-visible:bg-raised focus-visible:outline-none' : undefined}
+              className={onSelect ? 'cursor-pointer focus-visible:bg-raised focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent' : undefined}
             >
               <td className="fb-c-user">
                 <div className="fb-user">
@@ -94,11 +94,11 @@ export const FeedbackListSkeleton = ({ rows = 8 }) => (
   <div className="flex flex-col" aria-hidden="true">
     {Array.from({ length: rows }, (_, i) => (
       <div key={i} className="flex items-center gap-4 border-b border-line-soft px-6 py-4 last:border-b-0">
-        <span className="size-8 shrink-0 animate-pulse rounded-full bg-raised" />
-        <span className="h-3 w-28 animate-pulse rounded-ctrl bg-raised" />
-        <span className="h-3 flex-1 animate-pulse rounded-ctrl bg-raised" />
-        <span className="hidden h-3 w-20 animate-pulse rounded-ctrl bg-raised sm:block" />
-        <span className="hidden h-3 w-16 animate-pulse rounded-ctrl bg-raised sm:block" />
+        <span className="size-8 shrink-0 animate-skeleton motion-reduce:animate-none rounded-full bg-raised" />
+        <span className="h-3 w-28 animate-skeleton rounded-ctrl bg-raised" />
+        <span className="h-3 flex-1 animate-skeleton rounded-ctrl bg-raised" />
+        <span className="hidden h-3 w-20 animate-skeleton rounded-ctrl bg-raised sm:block" />
+        <span className="hidden h-3 w-16 animate-skeleton rounded-ctrl bg-raised sm:block" />
       </div>
     ))}
   </div>

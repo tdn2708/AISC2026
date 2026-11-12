@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -9,6 +9,7 @@ import { fmtInt } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
 import { reportRefreshing } from '../lib/dataVersion';
 import AutoCollect from './datasources/AutoCollect';
+import { MOTION, EASE, useReducedMotion } from './motion';
 
 /**
  * NGUỒN DỮ LIỆU
@@ -64,7 +65,7 @@ const ScrapeResult = ({ result }) => {
   const rows = result.data || [];
   const complaints = rows.filter((r) => r.categoryLabel).length;
   return (
-    <div className="mt-6 animate-fade-up">
+    <div className="mt-6">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div className="min-w-0">
           <p className="font-semibold text-ink-hi">
@@ -104,6 +105,43 @@ const ScrapeResult = ({ result }) => {
           Xem trong trang Phản hồi
         </Button>
       </div>
+    </div>
+  );
+};
+
+/**
+ * Tiến độ thu thập. Máy chủ trả kết quả một lần khi xong, không báo phần trăm,
+ * nên không vẽ phần trăm giả: một vệt chạy (transform) cho biết đang làm việc
+ * và số giây đã trôi qua.
+ */
+const SyncProgress = () => {
+  const reduced = useReducedMotion();
+  const barRef = useRef(null);
+  const [secs, setSecs] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setSecs((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    const el = barRef.current;
+    if (reduced || !el || typeof el.animate !== 'function') return undefined;
+    const a = el.animate(
+      [{ transform: 'translateX(-100%)' }, { transform: 'translateX(250%)' }],
+      { duration: MOTION.story, iterations: Infinity, easing: EASE.inOut }
+    );
+    return () => a.cancel();
+  }, [reduced]);
+
+  return (
+    <div className="mt-4" role="status">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-raised" aria-hidden="true">
+        {!reduced && <div ref={barRef} className="h-full w-2/5 rounded-full bg-accent" />}
+      </div>
+      <p className="mt-2 text-xs text-ink-lo">
+        Đang lấy đánh giá và phân loại, đã chạy <span className="tabular-nums">{secs}</span> giây. Thường mất 20 đến 30 giây.
+      </p>
     </div>
   );
 };
@@ -217,7 +255,7 @@ const DataSources = () => {
         value={tab}
         onChange={setTab}
         tabs={[
-          { value: 'url', label: 'Thu thập theo liên kết', icon: Link2 },
+          { value: 'url', label: 'Liên kết', icon: Link2 },
           { value: 'shops', label: 'Gian hàng', icon: Store, count: shops.length || undefined },
           { value: 'history', label: 'Lịch sử', icon: History, count: history.length || undefined }
         ]}
@@ -237,7 +275,7 @@ const DataSources = () => {
             {shops.map((s) => {
               const p = PLATFORM[s.platform] || PLATFORM.Web;
               return (
-                <GlassPanel key={s.id} tone="strong" className="flex flex-col p-5 animate-fade-up">
+                <GlassPanel key={s.id} tone="strong" className="flex flex-col p-5">
                   <div className="flex items-start gap-3.5">
                     <span className={`grid size-12 shrink-0 place-items-center rounded-ctrl ${p.tile}`}>
                       <p.icon size={22} aria-hidden="true" />
@@ -285,6 +323,7 @@ const DataSources = () => {
               {isSyncing ? 'Đang thu thập…' : 'Thu thập và phân loại'}
             </Button>
           </form>
+          {isSyncing && <SyncProgress />}
           <p className="mt-4 flex gap-2 text-xs leading-relaxed text-ink-lo">
             <Clock size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
             Hỗ trợ Tiki: tối đa 100 đánh giá mới nhất mỗi lần, khoảng 20 đến 30 giây. Shopee và Lazada chặn truy cập tự động.

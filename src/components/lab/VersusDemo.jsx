@@ -341,7 +341,7 @@ const VersusDemo = () => {
           <p className="mt-4 text-xs leading-relaxed text-ink-lo">
             Về cảm xúc, hai cách gần ngang nhau. Đó chính là điểm đáng nói: biết khách “không vui” thì công cụ nào cũng làm được.
             Thứ doanh nghiệp cần là biết khách không vui <b className="text-ink-mid">vì cái gì</b> và <b className="text-ink-mid">ai phải xử lý</b>.
-            Số liệu đầy đủ, kể cả các chỉ số chưa đạt mục tiêu, ở tab Kết quả thực nghiệm.
+            Số liệu đầy đủ, kể cả các chỉ số chưa đạt mục tiêu, ở tab Kết quả.
           </p>
         </GlassPanel>
       )}

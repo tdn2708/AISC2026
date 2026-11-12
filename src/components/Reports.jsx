@@ -8,11 +8,13 @@ import ReportDocument from './report/ReportDocument';
 import { buildReportModel } from '../lib/reportModel';
 import { WORKSPACES, getWorkspace } from '../lib/workspace';
 import FilterBar from './FilterBar';
-import { PageHeader, GlassPanel, Button, IconButton, Segmented, Badge, EmptyState, Modal, TextField, Toast } from './ui';
+import { PageHeader, GlassPanel, Button, IconButton, Segmented, Badge, EmptyState, Modal, TextField, Toast, ProgressBar } from './ui';
 
 const Reports = () => {
   const [downloadingCsv, setDownloadingCsv] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  // Tiến độ thật theo số tờ A4 đã chụp: { done, total }; total = 0 khi còn dựng bản in
+  const [pdfProgress, setPdfProgress] = useState({ done: 0, total: 0 });
   const [showToast, setShowToast] = useState('');
   // Lỗi xuất tệp hiện bằng Toast đỏ (không dùng window.alert), tự ẩn sau 6 giây
   const [errorToast, setErrorToast] = useState('');
@@ -194,6 +196,7 @@ const Reports = () => {
 
     try {
       setGeneratingPdf(true);
+      setPdfProgress({ done: 0, total: 0 });
       await loadReportData();
 
       // Chờ React dựng xong bốn tờ và font Be Vietnam Pro tải xong, nếu
@@ -209,6 +212,7 @@ const Reports = () => {
       const pages = root ? Array.from(root.querySelectorAll('[data-page]')) : [];
       if (!pages.length) throw new Error('Chưa dựng được bản báo cáo');
 
+      setPdfProgress({ done: 0, total: pages.length });
       const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
       pdf.setProperties({
         title: 'Báo cáo phản hồi khách hàng',
@@ -228,6 +232,7 @@ const Reports = () => {
         });
         if (i > 0) pdf.addPage();
         pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, W, H, undefined, 'FAST');
+        setPdfProgress({ done: i + 1, total: pages.length });
       }
 
       const bytes = pdf.output('blob').size;
@@ -268,6 +273,16 @@ const Reports = () => {
           subtitle="Tệp xuất ra theo đúng bộ lọc bên dưới và chỉ gồm phản hồi được tính vào chỉ số."
           actions={<Button variant="secondary" icon={Eye} onClick={() => window.location.assign('/reports?preview=1')}>Xem trước bản in</Button>}
         />
+      )}
+
+      {generatingPdf && (
+        <GlassPanel tone="strong" className="mb-5 p-4" role="status">
+          <ProgressBar
+            value={pdfProgress.total ? pdfProgress.done / pdfProgress.total : 0}
+            label={pdfProgress.total ? `Đang chụp tờ ${Math.min(pdfProgress.done + 1, pdfProgress.total)} trên ${pdfProgress.total}` : 'Đang dựng và dàn trang bản in'}
+            showValue={pdfProgress.total > 0}
+          />
+        </GlassPanel>
       )}
 
       <FilterBar

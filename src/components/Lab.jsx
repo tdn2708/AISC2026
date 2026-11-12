@@ -19,9 +19,9 @@ import { PageHeader, GlassPanel, PanelHeader, Tabs, Badge, EmptyState } from './
 
 const TABS = [
   { value: 'versus', label: 'Đối đầu' },
-  { value: 'live', label: 'Trình diễn xử lý ngôn ngữ' },
-  { value: 'batch', label: 'Xử lý hàng loạt' },
-  { value: 'eval', label: 'Kết quả thực nghiệm' }
+  { value: 'live', label: 'Thử một câu' },
+  { value: 'batch', label: 'Hàng loạt' },
+  { value: 'eval', label: 'Kết quả' }
 ];
 
 const f4 = (v) => (v == null ? 'Chưa có' : v.toFixed(4).replace('.', ','));
@@ -51,7 +51,7 @@ const Experiments = () => {
   useEffect(() => { load(); }, [load]);
 
   if (loading) {
-    return <div className="flex flex-col gap-4" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="h-40 animate-pulse rounded-surf bg-raised" />)}</div>;
+    return <div className="flex flex-col gap-4" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="h-40 animate-skeleton motion-reduce:animate-none rounded-surf bg-raised" />)}</div>;
   }
   if (error) {
     return <EmptyState variant="error" title="Chưa có kết quả thực nghiệm" description={error} />;
