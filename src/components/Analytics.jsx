@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { readStorage, writeStorage } from '../lib/storage';
@@ -11,6 +11,7 @@ import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat, Ch
 import { buildQuery, fmtInt, fmtPct, fmtSignedPct, fmtDate } from '../lib/format';
 import { useDataVersion } from '../lib/dataVersion';
 import { AXIS_TICK } from '../lib/tokens';
+import { BarGrow, MOTION, EASE, STAGGER_STEP, useReducedMotion } from './motion';
 
 /**
  * PHÂN TÍCH NGUYÊN NHÂN
@@ -86,7 +87,8 @@ const groupCount = (items, keyFn, labelFn) => {
 };
 
 /** Hàng xếp hạng — chỉ là nút khi có hành động; không thì là khối thường */
-const RankBar = ({ label, count, max, total, active, onClick, tone = 'bg-neg' }) => {
+const RankBar = ({ label, count, max, total, active, onClick, tone = 'bg-neg', index = 0 }) => {
+  const reduced = useReducedMotion();
   const Tag = onClick ? 'button' : 'div';
   return (
   <Tag
@@ -102,7 +104,8 @@ const RankBar = ({ label, count, max, total, active, onClick, tone = 'bg-neg' })
       </span>
     </div>
     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-raised">
-      <div className={`h-full rounded-full ${tone}`} style={{ width: `${max ? Math.max(3, (count / max) * 100) : 0}%` }} />
+      {/* Thanh mọc theo thứ tự xếp hạng: lệch nhịp nhỏ, chỉ lần đầu thấy và sau thao tác (đổi nhóm, đổi lọc) */}
+      <BarGrow value={max ? Math.max(0.03, count / max) : 0} className={`rounded-full ${tone}`} style={reduced ? undefined : { transitionDelay: `${Math.min(index, 12) * STAGGER_STEP}ms` }} />
     </div>
   </Tag>
   );
@@ -187,8 +190,8 @@ const RootCauses = () => {
       <>
         {filters}
         <div className="grid gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
-          <div className="h-[520px] animate-pulse rounded-surf bg-surface/50" />
-          <div className="h-[520px] animate-pulse rounded-surf bg-surface/50" />
+          <div className="h-[520px] animate-pulse motion-reduce:animate-none rounded-surf bg-surface/50" />
+          <div className="h-[520px] animate-pulse motion-reduce:animate-none rounded-surf bg-surface/50" />
         </div>
       </>
     );
@@ -207,9 +210,10 @@ const RootCauses = () => {
         <GlassPanel tone="strong" className="p-5 lg:sticky lg:top-20">
           <PanelHeader title="Nhóm vấn đề" subtitle={`${fmtInt(complaints.length)} khiếu nại đã phân loại`} />
           <div className="flex flex-col gap-1">
-            {categories.map((c) => (
+            {categories.map((c, i) => (
               <RankBar
                 key={c.key}
+                index={i}
                 label={c.label}
                 count={c.count}
                 max={categories[0].count}
@@ -255,8 +259,8 @@ const RootCauses = () => {
                 <p className="text-sm text-ink-lo">Nhóm này chưa có nguyên nhân cấp 2 nào được gán.</p>
               ) : (
                 <div className="flex flex-col gap-1">
-                  {causes.slice(0, 7).map((c) => (
-                    <RankBar key={c.key} label={c.label} count={c.count} max={causes[0].count} total={current.count} tone="bg-accent" />
+                  {causes.slice(0, 7).map((c, i) => (
+                    <RankBar index={i} key={c.key} label={c.label} count={c.count} max={causes[0].count} total={current.count} tone="bg-accent" />
                   ))}
                 </div>
               )}
@@ -329,6 +333,28 @@ const RootCauses = () => {
   );
 };
 
+/**
+ * Đổi tab: nội dung mới hiện bằng opacity và transform trong --motion-medium.
+ * Lần mở trang không chạy (màn mở đầu của trang là các thanh nguyên nhân).
+ */
+const TabPane = ({ tabKey, children }) => {
+  const ref = useRef(null);
+  const reduced = useReducedMotion();
+  const prev = useRef(tabKey);
+  useLayoutEffect(() => {
+    if (prev.current === tabKey) return undefined;
+    prev.current = tabKey;
+    const el = ref.current;
+    if (reduced || !el || typeof el.animate !== 'function') return undefined;
+    const a = el.animate(
+      [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+      { duration: MOTION.medium, easing: EASE.out }
+    );
+    return () => a.cancel();
+  }, [tabKey, reduced]);
+  return <div ref={ref}>{children}</div>;
+};
+
 const Analytics = () => {
   const [params, setParams] = useSearchParams();
   const tab = ['segments', 'compare'].includes(params.get('tab')) ? params.get('tab') : 'causes';
@@ -353,7 +379,9 @@ const Analytics = () => {
           { value: 'segments', label: 'Phân khúc khách hàng', icon: Users }
         ]}
       />
-      {tab === 'segments' ? <Segments /> : tab === 'compare' ? <Compare /> : <RootCauses />}
+      <TabPane tabKey={tab}>
+        {tab === 'segments' ? <Segments /> : tab === 'compare' ? <Compare /> : <RootCauses />}
+      </TabPane>
     </div>
   );
 };

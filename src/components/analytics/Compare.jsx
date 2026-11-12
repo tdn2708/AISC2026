@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { GlassPanel, PanelHeader, Select, EmptyState, EvidenceBar } from '../ui';
 import { fmtInt, fmtPct } from '../../lib/format';
+import { BarGrow } from '../motion';
 
 /**
  * SO SÁNH HAI SẢN PHẨM
@@ -97,7 +98,7 @@ const Compare = () => {
   }, [a, b]);
 
   if (error && !products) return <GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel>;
-  if (!products) return <div className="h-[420px] animate-pulse rounded-surf bg-raised" />;
+  if (!products) return <div className="h-[420px] animate-pulse motion-reduce:animate-none rounded-surf bg-raised" />;
   if (products.length < 2) {
     return (
       <GlassPanel>
@@ -152,7 +153,7 @@ const Compare = () => {
                       <div key={tag} className="mt-1.5 flex items-center gap-3">
                         <span className="w-4 text-xs text-ink-lo">{tag}</span>
                         <span className="h-2 flex-1 overflow-hidden rounded-full bg-raised">
-                          <span className="block h-full rounded-full" style={{ width: `${(v / maxShare) * 100}%`, background: color }} />
+                          <BarGrow grow={false} value={maxShare ? v / maxShare : 0} className="rounded-full" style={{ background: color }} />
                         </span>
                         <span className="w-14 text-right tabular-nums text-xs text-ink-mid">{pct(v)}</span>
                       </div>
