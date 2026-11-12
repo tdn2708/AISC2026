@@ -4,7 +4,7 @@ import {
   Copy, Zap, UserX, Star, Receipt, HelpCircle, CheckCircle2, XCircle, Ban, ChevronDown, ShieldCheck, ShieldOff
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { PageHeader, GlassPanel, PanelHeader, Switch, Badge, ProgressBar, EmptyState, Button, Tabs } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Switch, Badge, ProgressBar, EmptyState, Button, Tabs, Skeleton } from './ui';
 import Audit from './trust/Audit';
 import { LedgerRun, Pulse, prefersReducedMotion } from './motion';
 import { fmtInt, fmtDateTime } from '../lib/format';
@@ -119,8 +119,8 @@ const TrustOverview = () => {
       <div>
         {header}
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="h-[260px] animate-skeleton motion-reduce:animate-none rounded-surf bg-raised lg:col-span-2" />
-          <div className="h-[260px] animate-skeleton motion-reduce:animate-none rounded-surf bg-raised" />
+          <Skeleton as="div" className="h-[260px] rounded-surf bg-raised lg:col-span-2" />
+          <Skeleton as="div" className="h-[260px] rounded-surf bg-raised" />
         </div>
       </div>
     );
@@ -133,11 +133,11 @@ const TrustOverview = () => {
     <div>
       {header}
 
-      <div className="mb-6 grid items-start gap-6 lg:grid-cols-3">
-        <GlassPanel tone="strong" className="flex flex-col p-6 lg:col-span-2">
+      <div className="mb-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
+        <GlassPanel tone="strong" className="flex min-w-0 flex-col p-6 lg:col-span-2">
           <PanelHeader title="Phễu dữ liệu" subtitle="Từ lúc thu thập tới lúc được tính vào chỉ số" />
           {/* Cùng phép trừ chạy với sổ đối chiếu ở Tổng quan; số cuối là countedForMetrics */}
-          <LedgerRun ledger={health} mode="auto" showLink={false} title="Từ lúc thu thập tới lúc được tính" className="mb-6" />
+          <LedgerRun ledger={health} mode="auto" showLink={false} title={null} bare className="mb-6" />
           <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-line-soft pt-4 text-xs">
             <div className="flex gap-1.5"><dt className="text-ink-lo">Số kênh có dữ liệu</dt><dd className="tabular-nums font-semibold text-ink-hi">{health.channelCoverage.covered}/{health.channelCoverage.expected}</dd></div>
             <div className="flex gap-1.5"><dt className="text-ink-lo">Khớp với đơn hàng</dt><dd className="tabular-nums font-semibold text-ink-hi">{pct1(health.reconciliationRate)}</dd></div>
@@ -154,7 +154,7 @@ const TrustOverview = () => {
           </dl>
         </GlassPanel>
 
-        <GlassPanel tone="strong" className="flex flex-col p-6">
+        <GlassPanel tone="strong" className="flex min-w-0 flex-col p-6">
           <PanelHeader title="Độ tin số liệu" />
           <HealthDial score={health.dataHealthScore} />
           <div className="mt-6 flex w-full flex-col gap-3 border-t border-line-soft pt-5">

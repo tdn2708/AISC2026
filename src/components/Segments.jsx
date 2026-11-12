@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Search, HeartHandshake, TriangleAlert, Users } from 'lucide-react';
-import { GlassPanel, ChipGroup, EmptyState, SentimentFace, Pager, fieldClass } from './ui';
+import { GlassPanel, ChipGroup, EmptyState, SentimentFace, Pager, fieldClass, Skeleton } from './ui';
 import { fmtInt, fmtDate, initials } from '../lib/format';
 
 /**
@@ -122,7 +122,7 @@ const Segments = () => {
         </div>
 
         {loading ? (
-          <div className="flex flex-col gap-2 p-5">{Array.from({ length: 6 }, (_, i) => <div key={i} className="h-14 animate-pulse rounded-ctrl bg-raised" />)}</div>
+          <div className="flex flex-col gap-2 p-5">{Array.from({ length: 6 }, (_, i) => <Skeleton as="div" key={i} className="h-14 rounded-ctrl bg-raised" />)}</div>
         ) : rows.length === 0 ? (
           <EmptyState compact title="Không có khách hàng khớp" description="Thử đổi khoảng thời gian hoặc từ khoá." />
         ) : (

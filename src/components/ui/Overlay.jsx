@@ -1,7 +1,8 @@
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { IconButton } from './Button';
+import { useReducedMotion } from '../motion/useReducedMotion';
 
 /**
  * Hộp thoại (F1-05: Modal, Drawer, hộp riêng của CommandPalette, window.confirm, window.alert
@@ -13,6 +14,7 @@ import { IconButton } from './Button';
  * Lớp phủ dùng chung: khoá cuộn nền, đóng bằng Esc,
  * đưa tiêu điểm vào hộp thoại khi mở và trả về chỗ cũ khi đóng.
  */
+const DRAWER_MS = 420; // = --motion-medium
 const useOverlay = (open, onClose, panelRef) => {
   // onClose thường là hàm tạo mới mỗi lần render. Nếu đưa thẳng vào mảng
   // phụ thuộc, effect chạy lại sau MỖI phím gõ và kéo tiêu điểm về ô đầu
@@ -37,8 +39,8 @@ const useOverlay = (open, onClose, panelRef) => {
   }, [open, panelRef]);
 };
 
-export const Backdrop = ({ onClose }) => (
-  <div className="absolute inset-0 bg-(--scrim) backdrop-blur-[3px] animate-fade-up" onClick={onClose} aria-hidden="true" />
+export const Backdrop = ({ onClose, leaving = false }) => (
+  <div className={`absolute inset-0 bg-(--scrim) backdrop-blur-[3px] ${leaving ? 'animate-fade-out pointer-events-none' : 'animate-fade-up'}`} onClick={onClose} aria-hidden="true" />
 );
 
 /** Hộp thoại: ô biểu tượng, tiêu đề, mô tả, hai nút */
@@ -82,19 +84,30 @@ export const Modal = ({ open, onClose, title, description, icon: Icon, tone = 'a
 export const Drawer = ({ open, onClose, title, subtitle, children, footer, width = 520 }) => {
   const panelRef = useRef(null);
   const titleId = useId();
+  const reduced = useReducedMotion();
+  // Mở: trượt vào từ phải. Đóng: trượt ra rồi mới gỡ khỏi DOM. Chỉ transform và opacity;
+  // giảm chuyển động thì hiện và tắt ngay.
+  const [mounted, setMounted] = useState(open);
+  useEffect(() => {
+    if (open) { setMounted(true); return undefined; }
+    if (reduced) { setMounted(false); return undefined; }
+    const t = setTimeout(() => setMounted(false), Math.round(DRAWER_MS * 0.7));
+    return () => clearTimeout(t);
+  }, [open, reduced]);
   useOverlay(open, onClose, panelRef);
-  if (!open) return null;
+  if (!open && !mounted) return null;
+  const leaving = !open;
 
   return createPortal(
     <div className="cx fixed inset-0 z-[2000]">
-      <Backdrop onClose={onClose} />
+      <Backdrop onClose={onClose} leaving={leaving} />
       <aside
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="glass-strong absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col overflow-hidden rounded-surf shadow-(--shadow-overlay) outline-none animate-pop-in"
+        className={`glass-strong absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col overflow-hidden rounded-surf shadow-(--shadow-overlay) outline-none ${leaving ? 'animate-drawer-out' : 'animate-drawer-in'}`}
         style={{ width: `min(${width}px, calc(100vw - 24px))` }}
       >
         <header className="flex items-start justify-between gap-4 border-b border-line-soft px-6 py-5">

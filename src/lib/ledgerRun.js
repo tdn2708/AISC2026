@@ -21,7 +21,7 @@ const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
  * Đưa hai dạng đầu vào về một dạng phẳng.
  * - Dạng API /trust/health: { rawCollected, spamRemoved: {count}, inauthenticFlagged: {count},
  *   pendingReview: {count}, validForAnalysis, countedForMetrics, ledger: { pendingNotCounted,
- *   pendingCounted, aged, ... } } — đọc y như Ledger trong dashboard/SummaryHeader.jsx.
+ *   pendingCounted, aged, ... } } — đọc như sổ đối chiếu ở Tổng quan (SummaryHeader dùng chính LedgerRun).
  * - Dạng phẳng (trang giới thiệu, ảnh chụp số tĩnh, test): { raw, spam, inauthentic,
  *   pendingNotCounted, pendingCounted, aged, counted }.
  * Trả null khi không có số thu thập.

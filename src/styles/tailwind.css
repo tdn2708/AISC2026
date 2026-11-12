@@ -135,6 +135,10 @@
 @theme {
   --animate-fade-up: fade-up var(--motion-short) var(--ease-out) both;
   --animate-pop-in: pop-in var(--motion-short) var(--ease-out) both;
+  /* Ngăn kéo chung (ui/Overlay.jsx): trượt từ phải bằng transform; lớp phủ mờ đi cùng lúc */
+  --animate-drawer-in: drawer-in var(--motion-medium) var(--ease-out) both;
+  --animate-drawer-out: drawer-out calc(var(--motion-medium) * 0.7) var(--ease-in) both;
+  --animate-fade-out: fade-out calc(var(--motion-medium) * 0.7) var(--ease-in) both;
   /* Cũ: thành phần mới dùng BarGrow (components/motion) */
   --animate-grow-x: grow-x var(--motion-long) var(--ease-out) both;
   --animate-settle: motion-settle var(--motion-medium) var(--ease-spring) both;
@@ -147,6 +151,18 @@
   @keyframes grow-x {
     from { transform: scaleX(0); }
     to { transform: none; }
+  }
+  @keyframes drawer-in {
+    from { transform: translateX(calc(100% + 12px)); }
+    to { transform: none; }
+  }
+  @keyframes drawer-out {
+    from { transform: none; }
+    to { transform: translateX(calc(100% + 12px)); }
+  }
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
   }
   @keyframes pop-in {
     from { opacity: 0; transform: translateY(4px) scale(.98); }
@@ -162,7 +178,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-skeleton { animation: none; }
+  .animate-skeleton, .animate-drawer-in, .animate-drawer-out, .animate-fade-out { animation: none; }
 }
 
 /* Bề mặt: nền đặc + viền 1px. Tên "glass" giữ lại cho các trang cũ;

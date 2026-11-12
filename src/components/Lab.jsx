@@ -5,7 +5,7 @@ import PipelineDemo from './lab/PipelineDemo';
 import BatchDemo from './lab/BatchDemo';
 import VersusDemo from './lab/VersusDemo';
 import { preloadBrowserModel } from '../lib/analyze';
-import { PageHeader, GlassPanel, PanelHeader, Tabs, Badge, EmptyState } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Tabs, Badge, EmptyState, Skeleton } from './ui';
 
 /**
  * PHÒNG THÍ NGHIỆM
@@ -51,7 +51,7 @@ const Experiments = () => {
   useEffect(() => { load(); }, [load]);
 
   if (loading) {
-    return <div className="flex flex-col gap-4" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="h-40 animate-skeleton motion-reduce:animate-none rounded-surf bg-raised" />)}</div>;
+    return <div className="flex flex-col gap-4" aria-busy="true">{[0, 1, 2].map((i) => <Skeleton as="div" key={i} className="h-40 rounded-surf bg-raised" />)}</div>;
   }
   if (error) {
     return <EmptyState variant="error" title="Chưa có kết quả thực nghiệm" description={error} />;

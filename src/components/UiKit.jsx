@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import {
   PageHeader, GlassPanel, Button, IconButton, TextField, TextArea, Select, Switch, Checkbox, ChipGroup, Chip, Segmented, Tabs,
-  Modal, Drawer, Badge, ProgressBar, Stepper, SentimentFace, SeverityBadge, EmptyState, Popover, MenuItem, ChartTooltip, Pager, Toast
+  Modal, Drawer, Badge, ProgressBar, Stepper, SentimentFace, SeverityBadge, EmptyState, Popover, MenuItem, ChartTooltip, Pager, Toast, Skeleton, SkeletonLines, SkeletonBlock
 } from './ui';
 import { LogoMark } from './Logo';
 import MotionDemo from './motion/MotionDemo';
@@ -362,6 +362,14 @@ const UiKit = () => {
               <span key={i} className="grid aspect-square place-items-center rounded-ctrl bg-raised text-ink-mid"><I size={20} strokeWidth={1.6} aria-hidden="true" /></span>
             ))}
           </div>
+        </Cell>
+
+        <Cell title="Khung xương" note="Chỗ giữ đúng hình của nội dung sắp về, thay chữ Đang tải. Thở nhẹ bằng độ mờ; giảm chuyển động thì đứng yên." className="lg:col-span-12">
+          <SkeletonBlock label="Ví dụ khung xương" className="grid gap-6 md:grid-cols-3">
+            <Skeleton className="h-4 w-2/3" />
+            <SkeletonLines lines={3} />
+            <Skeleton as="div" className="h-20 rounded-surf" />
+          </SkeletonBlock>
         </Cell>
 
         <Cell title="Trạng thái rỗng" className="lg:col-span-12">

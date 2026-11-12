@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useSearchParams } from 'react-router-dom';
 import { Radio, Trash2, ChevronRight } from 'lucide-react';
-import { PageHeader, GlassPanel, PanelHeader, Button, IconButton, Badge, EmptyState, Modal } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Button, IconButton, Badge, EmptyState, Modal, Skeleton } from './ui';
 import { fmtInt, fmtDateTime, fmtPct } from '../lib/format';
 import StartSession from './live/StartSession';
 import LiveConsole from './live/LiveConsole';
@@ -137,7 +137,7 @@ const Live = () => {
         {error ? (
           <EmptyState variant="error" compact title={error} />
         ) : sessions === null ? (
-          <div className="h-24 animate-pulse rounded-ctrl bg-raised" />
+          <Skeleton as="div" className="h-24 rounded-ctrl bg-raised" />
         ) : (
           <SessionList
             sessions={sessions.filter((s) => !running.includes(s))}

@@ -7,7 +7,7 @@ import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, GitCompareArrows } fro
 import FilterBar from './FilterBar';
 import Segments from './Segments';
 import Compare from './analytics/Compare';
-import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat, ChartTooltip } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat, ChartTooltip, Skeleton } from './ui';
 import { buildQuery, fmtInt, fmtPct, fmtSignedPct, fmtDate } from '../lib/format';
 import { useDataVersion } from '../lib/dataVersion';
 import { AXIS_TICK } from '../lib/tokens';
@@ -190,8 +190,8 @@ const RootCauses = () => {
       <>
         {filters}
         <div className="grid gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
-          <div className="h-[520px] animate-pulse motion-reduce:animate-none rounded-surf bg-surface/50" />
-          <div className="h-[520px] animate-pulse motion-reduce:animate-none rounded-surf bg-surface/50" />
+          <Skeleton as="div" className="h-[520px] rounded-surf bg-surface/50" />
+          <Skeleton as="div" className="h-[520px] rounded-surf bg-surface/50" />
         </div>
       </>
     );

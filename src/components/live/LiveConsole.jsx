@@ -1,7 +1,7 @@
 import React, { memo, useDeferredValue, useEffect, useState } from 'react';
 import axios from 'axios';
 import { ArrowLeft, Square, RotateCw, Package, MessageSquarePlus, Download, ChevronDown } from 'lucide-react';
-import { Button, Badge, Drawer, EmptyState, GlassPanel, Tabs, Modal, Popover, MenuItem, SELECTED } from '../ui';
+import { Button, Badge, Drawer, EmptyState, GlassPanel, Tabs, Modal, Popover, MenuItem, SELECTED, Skeleton } from '../ui';
 import { fmtInt, fmtPct } from '../../lib/format';
 import useLiveSession, { liveUrl } from '../../hooks/useLiveSession';
 import { StatusPill, PLATFORM_LABEL, duration } from './shared';
@@ -97,7 +97,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
     return <EmptyState variant="error" title="Không mở được phiên" description={error} action={<Button variant="secondary" icon={ArrowLeft} onClick={onBack}>Về danh sách phiên</Button>} />;
   }
   if (!session || !stats) {
-    return <GlassPanel className="h-64 animate-skeleton" />;
+    return <Skeleton as="div" className="h-64 rounded-surf" />;
   }
 
   const live = ['live', 'connecting', 'reconnecting'].includes(session.status);

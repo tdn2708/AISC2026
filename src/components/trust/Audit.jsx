@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Check, X, SkipForward } from 'lucide-react';
-import { GlassPanel, PanelHeader, Button, ProgressBar, EmptyState, Chip, Select, Toast, Segmented } from '../ui';
+import { GlassPanel, PanelHeader, Button, ProgressBar, EmptyState, Chip, Select, Toast, Segmented, Skeleton } from '../ui';
 import { fmtInt, fmtDate, fmtPct, SENTIMENT_MAP, LABELLER_LABEL } from '../../lib/format';
 import { reportRefreshing } from '../../lib/dataVersion';
 
@@ -211,7 +211,7 @@ const Audit = () => {
         <p className="mb-4 text-xs leading-relaxed text-ink-lo">{MODE_HINT[mode]}</p>
 
         {loading ? (
-          <div className="h-[360px] animate-skeleton motion-reduce:animate-none rounded-ctrl bg-raised" />
+          <Skeleton as="div" className="h-[360px] rounded-ctrl bg-raised" />
         ) : error && !item ? (
           <EmptyState variant="error" title="Không tải được" description={error} />
         ) : !item ? (

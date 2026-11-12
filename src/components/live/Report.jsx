@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { Send, CircleCheck } from 'lucide-react';
-import { GlassPanel, PanelHeader, Button, Badge, EmptyState } from '../ui';
+import { GlassPanel, PanelHeader, Button, Badge, EmptyState, Skeleton } from '../ui';
 import { fmtInt, fmtPct } from '../../lib/format';
 import { EffectLine } from './ActionCoach';
 import { reportRefreshing } from '../../lib/dataVersion';
@@ -88,7 +88,7 @@ const Report = ({ sessionId }) => {
   };
 
   if (error) return <EmptyState variant="error" title={error} />;
-  if (!r) return <GlassPanel className="h-72 animate-skeleton" />;
+  if (!r) return <Skeleton as="div" className="h-72 rounded-surf" />;
 
   const t = r.totals;
   const prev = r.previous;

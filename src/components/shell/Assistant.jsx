@@ -6,7 +6,7 @@ import { Drawer, EvidenceSwatch, Button, IconButton, fieldClass } from '../ui';
 import { fmtInt, fmtDate } from '../../lib/format';
 import { readStorage } from '../../lib/storage';
 import { ASK_EVENT } from '../../lib/assistant';
-import { Stagger, useReducedMotion, prefersReducedMotion, MOTION, EASE } from '../motion';
+import { Stagger, prefersReducedMotion } from '../motion';
 import { SkeletonBlock, SkeletonLines } from '../ui/Skeleton';
 
 /**
@@ -199,9 +199,6 @@ const Assistant = () => {
   const [busy, setBusy] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const endRef = useRef(null);
-  const bodyRef = useRef(null);
-  const closingRef = useRef(false);
-  const reduced = useReducedMotion();
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
 
@@ -253,37 +250,8 @@ const Assistant = () => {
     axios.get('/chat/suggestions').then((r) => setSuggestions(r.data?.suggestions || [])).catch(() => {});
   }, [open, suggestions.length]);
 
-  // Ngăn kéo trượt vào khi mở. Drawer dùng chung mở bằng pop-in; hiệu ứng
-  // Web Animations ở đây đè lên transform của nó (thứ tự hợp thành cao hơn).
-  const panelOf = () => bodyRef.current?.closest('[role="dialog"]');
-  useLayoutEffect(() => {
-    if (!open || reduced) return undefined;
-    const panel = panelOf();
-    if (!panel || typeof panel.animate !== 'function') return undefined;
-    const a = panel.animate(
-      [{ transform: 'translateX(calc(100% + 12px))' }, { transform: 'none' }],
-      { duration: MOTION.medium, easing: EASE.out }
-    );
-    return () => a.cancel();
-  }, [open, reduced]);
-
-  // Đóng: trượt ra rồi mới gỡ khỏi DOM; lớp phủ mờ đi cùng lúc
-  const close = useCallback(() => {
-    const panel = panelOf();
-    if (reduced || !panel || typeof panel.animate !== 'function') {
-      setOpen(false);
-      return;
-    }
-    if (closingRef.current) return;
-    closingRef.current = true;
-    const opts = { duration: Math.round(MOTION.medium * 0.7), easing: EASE.in, fill: 'forwards' };
-    const out = panel.animate([{ transform: 'none' }, { transform: 'translateX(calc(100% + 12px))' }], opts);
-    panel.previousElementSibling?.animate([{ opacity: 1 }, { opacity: 0 }], opts);
-    out.finished.catch(() => {}).finally(() => {
-      closingRef.current = false;
-      setOpen(false);
-    });
-  }, [reduced]);
+  // Trượt vào và ra do Drawer dùng chung lo (ui/Overlay.jsx)
+  const close = useCallback(() => setOpen(false), []);
 
   const openFeedback = (text) => {
     close();
@@ -328,7 +296,7 @@ const Assistant = () => {
         </div>
       }
     >
-      <div ref={bodyRef}>
+      <div>
       {messages.length === 0 ? (
         <div>
           <p className="text-sm leading-relaxed text-ink-mid">

@@ -7,6 +7,7 @@ export { Modal, Drawer, Backdrop } from './Overlay';
 export { Popover, MenuItem, ChartTooltip, OVERLAY_SURFACE } from './Popover';
 export { PageHeader, SectionLabel, Badge, ProgressBar, Stepper, SentimentFace, Toast, Stat } from './Display';
 export { EmptyState } from './EmptyState';
+export { Skeleton, SkeletonLines, SkeletonBlock } from './Skeleton';
 export { Pager } from './Pager';
 export { AnimatedNumber } from './AnimatedNumber';
 export { EvidenceBar, EvidenceLegend, EvidenceSwatch, EvidenceTag, EVIDENCE_KINDS, evidenceSentence } from './EvidenceBar';

@@ -18,9 +18,12 @@ import React from 'react';
  * Kích thước do nơi gọi đặt (cùng cỡ với nội dung thật) để khi số về,
  * bố cục không nhảy.
  */
-export const Skeleton = ({ as: Tag = 'span', className = '', style }) => (
-  <Tag aria-hidden="true" className={`block animate-skeleton rounded-ctrl bg-raised ${className}`} style={style} />
-);
+export const Skeleton = ({ as: Tag = 'span', className = '', style }) => {
+  // Nơi gọi tự đặt bo hoặc nền thì bỏ mặc định, tránh hai lớp cùng loại tranh nhau
+  const round = /(^|\s)rounded/.test(className) ? '' : 'rounded-ctrl';
+  const bg = /(^|\s)bg-/.test(className) ? '' : 'bg-raised';
+  return <Tag aria-hidden="true" className={`block animate-skeleton ${round} ${bg} ${className}`} style={style} />;
+};
 
 export const SkeletonLines = ({ lines = 3, className = '', lineClassName = 'h-3.5' }) => (
   <span aria-hidden="true" className={`flex flex-col gap-2.5 ${className}`}>

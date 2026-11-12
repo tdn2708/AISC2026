@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { GlassPanel, PanelHeader, Select, EmptyState, EvidenceBar } from '../ui';
+import { GlassPanel, PanelHeader, Select, EmptyState, EvidenceBar, Skeleton } from '../ui';
 import { fmtInt, fmtPct } from '../../lib/format';
 import { BarGrow } from '../motion';
 
@@ -98,7 +98,7 @@ const Compare = () => {
   }, [a, b]);
 
   if (error && !products) return <GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel>;
-  if (!products) return <div className="h-[420px] animate-pulse motion-reduce:animate-none rounded-surf bg-raised" />;
+  if (!products) return <Skeleton as="div" className="h-[420px] rounded-surf bg-raised" />;
   if (products.length < 2) {
     return (
       <GlassPanel>

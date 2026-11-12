@@ -1,5 +1,5 @@
 import React from 'react';
-import { SentimentFace, Badge, EvidenceTag } from '../ui';
+import { SentimentFace, Badge, EvidenceTag, Skeleton } from '../ui';
 import { fmtDateTime, initials, SENTIMENT_MAP, evidenceOf, exclusionLabel, sarcasmTag } from '../../lib/format';
 
 /**
@@ -94,11 +94,11 @@ export const FeedbackListSkeleton = ({ rows = 8 }) => (
   <div className="flex flex-col" aria-hidden="true">
     {Array.from({ length: rows }, (_, i) => (
       <div key={i} className="flex items-center gap-4 border-b border-line-soft px-6 py-4 last:border-b-0">
-        <span className="size-8 shrink-0 animate-skeleton motion-reduce:animate-none rounded-full bg-raised" />
-        <span className="h-3 w-28 animate-skeleton rounded-ctrl bg-raised" />
-        <span className="h-3 flex-1 animate-skeleton rounded-ctrl bg-raised" />
-        <span className="hidden h-3 w-20 animate-skeleton rounded-ctrl bg-raised sm:block" />
-        <span className="hidden h-3 w-16 animate-skeleton rounded-ctrl bg-raised sm:block" />
+        <Skeleton as="span" className="size-8 shrink-0 rounded-full bg-raised" />
+        <Skeleton as="span" className="h-3 w-28 rounded-ctrl bg-raised" />
+        <Skeleton as="span" className="h-3 flex-1 rounded-ctrl bg-raised" />
+        <Skeleton as="span" className="hidden h-3 w-20 rounded-ctrl bg-raised sm:block" />
+        <Skeleton as="span" className="hidden h-3 w-16 rounded-ctrl bg-raised sm:block" />
       </div>
     ))}
   </div>

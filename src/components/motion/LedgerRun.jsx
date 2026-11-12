@@ -6,6 +6,7 @@ import { normalizeLedger, buildLedgerRun, ledgerStateAt, rollerPositions, digitC
 import { useReducedMotion } from './useReducedMotion';
 import { useInView } from './useInView';
 import { BarGrow } from './BarGrow';
+import { Skeleton } from '../ui/Skeleton';
 import { MOTION } from './tokens';
 
 /**
@@ -15,7 +16,7 @@ import { MOTION } from './tokens';
  * rác, nghi ảo, chờ duyệt, quá cũ lần lượt hiện vào, số còn lại đếm lùi như
  * công tơ và dừng ĐÚNG ở số được tính (countedForMetrics), rồi "chốt".
  *
- * Cùng ngôn ngữ với sổ tĩnh (Ledger trong dashboard/SummaryHeader.jsx): tờ
+ * Cùng ngôn ngữ với sổ tĩnh (sổ đối chiếu ở Tổng quan, nay cũng là LedgerRun): tờ
  * sổ, kẻ dòng, gạch đôi trên dòng tổng, chữ số đều cột, số kiểu Việt.
  *
  * Hai chế độ:
@@ -64,6 +65,7 @@ export const LedgerRun = ({
   duration = MOTION.story,
   title = 'Số liệu này đứng trên gì',
   showLink = true,
+  bare = false,
   onDone,
   className = ''
 }) => {
@@ -159,7 +161,7 @@ export const LedgerRun = ({
   }, [mode, reduced, inView, run, duration, apply]);
 
   if (!run) {
-    return <div className={`h-64 animate-pulse rounded-lg border border-line bg-(--sheet) ${className}`} aria-hidden="true" />;
+    return <Skeleton as="div" className={`h-64 rounded-lg border border-line bg-(--sheet) ${className}`} />;
   }
 
   const subs = run.steps.slice(1, -1);
@@ -171,17 +173,19 @@ export const LedgerRun = ({
       data-ledger-run={mode}
       data-state={settled ? 'done' : 'run'}
       data-live={live ? '1' : '0'}
-      className={`rounded-lg border border-line bg-(--sheet) px-5 pt-4 pb-5 ${className}`}
+      className={bare ? className : `rounded-lg border border-line bg-(--sheet) px-5 pt-4 pb-5 ${className}`}
     >
+      {(title || showLink) && (
       <figcaption className="flex items-baseline justify-between gap-3">
         <span className="text-base font-semibold text-ink-hi">{title}</span>
         {showLink && (
-          <Link to="/trust" className="shrink-0 rounded-ctrl text-sm font-medium text-accent-hi underline-offset-4 hover:underline focus-visible:underline">
+          <Link to="/trust" className="-my-1.5 inline-flex min-h-8 shrink-0 items-center rounded-ctrl text-sm font-medium text-accent-hi underline-offset-4 hover:underline focus-visible:underline">
             Xem phễu
           </Link>
         )}
       </figcaption>
-      <dl className="mt-2 text-sm">
+      )}
+      <dl className={`text-sm ${title || showLink ? 'mt-2' : ''}`}>
         <Row ref={(el) => { rowRefs.current.raw = el; }} label={run.steps[0].label} value={run.raw} />
         {subs.map((s) => (
           <Row key={s.key} ref={(el) => { rowRefs.current[s.key] = el; }} label={s.label} value={s.value} sign={s.sign} />
