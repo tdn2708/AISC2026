@@ -81,7 +81,7 @@ const Compare = () => {
         setA(first?.name || '');
         setB((peer || list[1])?.name || '');
       })
-      .catch(() => setError('Không tải được danh sách sản phẩm.'));
+      .catch(() => setError('Không tải được danh sách sản phẩm. Tải lại trang, hoặc kiểm tra mạng.'));
   }, []);
 
   useEffect(() => {
@@ -118,7 +118,7 @@ const Compare = () => {
     verdict = !d.valid
       ? `Chưa đủ dữ liệu để kết luận (${d.reason ? d.reason.toLowerCase() : 'mẫu quá nhỏ'}).`
       : d.significant
-        ? `Sản phẩm ${higher} bị chê nhiều hơn rõ rệt: chênh ${gap} điểm phần trăm, đủ lớn để không phải do ngẫu nhiên (p ${d.p < 0.001 ? '< 0,001' : `= ${d.p.toFixed(3).replace('.', ',')}`}).`
+        ? `Sản phẩm ${higher} bị chê nhiều hơn rõ rệt: chênh ${gap} điểm phần trăm, đủ lớn để không phải do ngẫu nhiên.`
         : `Chênh ${gap} điểm phần trăm, nhưng chưa đủ chắc để nói sản phẩm nào bị chê nhiều hơn.`;
   }
 

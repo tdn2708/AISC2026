@@ -157,8 +157,8 @@ const EvidenceDrawer = ({ metric, stats, onClose }) => {
             {audit?.n ? (
               <p className="text-sm leading-relaxed text-ink-mid">
                 Người đã đọc <b className="text-ink-hi">{fmtInt(audit.n)}</b> phản hồi lấy ngẫu nhiên: AI xếp đúng nhóm vấn đề{' '}
-                <b className="text-ink-hi">{fmtPct(audit.category.p, 0)}</b> (khoảng tin cậy 95%: {fmtPct(audit.category.low, 0)} – {fmtPct(audit.category.high, 0)}),
-                đoán đúng cảm xúc <b className="text-ink-hi">{fmtPct(audit.sentiment.p, 0)}</b> ({fmtPct(audit.sentiment.low, 0)} – {fmtPct(audit.sentiment.high, 0)}).
+                <b className="text-ink-hi">{fmtPct(audit.category.p, 0)}</b> (khoảng tin cậy 95%: từ {fmtPct(audit.category.low, 0)} đến {fmtPct(audit.category.high, 0)}),
+                đoán đúng cảm xúc <b className="text-ink-hi">{fmtPct(audit.sentiment.p, 0)}</b> (từ {fmtPct(audit.sentiment.low, 0)} đến {fmtPct(audit.sentiment.high, 0)}).
               </p>
             ) : (
               <p className="text-sm leading-relaxed text-ink-mid">Chưa có đợt kiểm tra nào. Người kiểm tra phản hồi ngẫu nhiên ở trang Tin cậy dữ liệu, tab Kiểm tra ngẫu nhiên.</p>

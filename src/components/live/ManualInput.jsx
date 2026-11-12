@@ -34,7 +34,7 @@ const ManualInput = ({ session, onDone }) => {
       setText('');
       onDone?.();
     } catch (e) {
-      setResult({ ok: false, msg: e.response?.data?.error || 'Không gửi được' });
+      setResult({ ok: false, msg: e.response?.data?.error || 'Không gửi được bình luận. Kiểm tra mạng rồi gửi lại.' });
     } finally {
       setBusy(false);
     }

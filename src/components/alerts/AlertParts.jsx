@@ -62,7 +62,7 @@ export const DismissModal = ({ alert, open, onClose, onConfirm }) => {
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const reason = [preset, note.trim()].filter(Boolean).join(' — ');
+  const reason = [preset, note.trim()].filter(Boolean).join('. ');
 
   const close = () => {
     setPreset(null);
@@ -84,7 +84,7 @@ export const DismissModal = ({ alert, open, onClose, onConfirm }) => {
       icon={CircleSlash}
       tone="crit"
       title="Bỏ qua khuyến nghị này?"
-      description={alert ? `${alertTitle(alert)} — cần nêu lý do để hệ thống học và điều chỉnh các đề xuất sau.` : undefined}
+      description={alert ? `${alertTitle(alert)}. Bạn cần nêu lý do để hệ thống học và điều chỉnh các đề xuất sau.` : undefined}
       footer={
         <>
           <Button variant="ghost" onClick={close}>Huỷ</Button>

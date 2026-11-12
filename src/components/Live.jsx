@@ -96,7 +96,7 @@ const Live = () => {
     axios.get('/live/sessions').then((r) => {
       setSessions(r.data.sessions);
       setError(null);
-    }).catch((e) => setError(e.response?.data?.error || 'Không tải được danh sách phiên'));
+    }).catch((e) => setError(e.response?.data?.error || 'Không tải được danh sách phiên. Tải lại trang, hoặc kiểm tra mạng.'));
   }, []);
 
   useEffect(() => {

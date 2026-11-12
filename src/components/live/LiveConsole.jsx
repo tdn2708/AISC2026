@@ -240,7 +240,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
         title="Sản phẩm và chính sách"
         subtitle="Gợi ý trả lời chỉ dùng thông tin ở đây"
         width={720}
-        footer={<><Button variant="ghost" onClick={() => setDrawer(null)}>Hủy</Button><Button loading={busy === 'catalog'} onClick={saveCatalog}>Lưu</Button></>}
+        footer={<><Button variant="ghost" onClick={() => setDrawer(null)}>Hủy</Button><Button loading={busy === 'catalog'} onClick={saveCatalog}>Lưu danh mục</Button></>}
       >
         <CatalogEditor rows={rows} onRows={setRows} policy={policy} onPolicy={setPolicy} />
       </Drawer>
@@ -254,7 +254,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
         tone="crit"
         size="sm"
         title="Kết thúc phiên và ngừng thu bình luận?"
-        footer={<><Button variant="ghost" onClick={() => setConfirmStop(false)}>Hủy</Button><Button variant="danger" icon={Square} onClick={stop}>Kết thúc</Button></>}
+        footer={<><Button variant="ghost" onClick={() => setConfirmStop(false)}>Hủy</Button><Button variant="danger" icon={Square} onClick={stop}>Kết thúc phiên</Button></>}
       />
     </div>
   );

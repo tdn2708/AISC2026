@@ -37,7 +37,7 @@ const StartSession = ({ onStarted, onCancel }) => {
       setMeta(r.data);
       setRows(r.data.sample.products.map(toRow));
       setPolicy(r.data.sample.policy);
-    }).catch(() => setError('Không tải được cấu hình livestream từ máy chủ'));
+    }).catch(() => setError('Không tải được cấu hình livestream. Tải lại trang, hoặc kiểm tra mạng.'));
   }, []);
 
   const options = (meta?.platforms || []).map((p) => ({

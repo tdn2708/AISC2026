@@ -83,7 +83,7 @@ const TrustOverview = () => {
       setError(null);
     } catch (e) {
       console.error('Lỗi tải Trust Layer:', e);
-      setError('Không tải được dữ liệu. Kiểm tra máy chủ đã chạy chưa.');
+      setError('Không tải được dữ liệu. Bấm Thử lại, hoặc kiểm tra mạng.');
     } finally {
       setLoading(false);
     }

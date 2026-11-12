@@ -121,7 +121,7 @@ const Reports = () => {
       setShowToast('CSV');
       setTimeout(() => setShowToast(''), 3000);
     } catch (error) {
-      showError('Lỗi khi tải CSV: ' + error.message);
+      showError('Không tải được CSV (' + error.message + '). Bấm tải lại, hoặc đổi bộ lọc rồi thử.');
     } finally {
       setDownloadingCsv(false);
     }
@@ -244,7 +244,7 @@ const Reports = () => {
       setShowToast('PDF');
       setTimeout(() => setShowToast(''), 3000);
     } catch (error) {
-      showError('Lỗi khi tạo PDF: ' + error.message);
+      showError('Không tạo được PDF (' + error.message + '). Bấm tạo lại, hoặc thu hẹp khoảng thời gian rồi thử.');
       console.error(error);
     } finally {
       setGeneratingPdf(false);
@@ -386,7 +386,7 @@ const Reports = () => {
         onClose={() => setExportDialog(null)}
         icon={exportDialog?.type === 'CSV' ? FileSpreadsheet : FileText}
         title={exportDialog?.type === 'CSV' ? 'Xuất dữ liệu thô' : 'Tạo báo cáo điều hành'}
-        description="Đặt tên tệp — phần mở rộng được thêm tự động."
+        description="Đặt tên tệp, phần mở rộng được thêm tự động."
         footer={
           <>
             <Button variant="ghost" onClick={() => setExportDialog(null)}>Huỷ</Button>
@@ -410,7 +410,7 @@ const Reports = () => {
         tone="crit"
         size="sm"
         title="Xoá toàn bộ lịch sử báo cáo?"
-        description="Chỉ xoá danh sách trên máy này — các tệp đã tải về không bị ảnh hưởng."
+        description="Chỉ xoá danh sách trên máy này, các tệp đã tải về không bị ảnh hưởng."
         footer={
           <>
             <Button variant="ghost" onClick={() => setConfirmClear(false)}>Huỷ</Button>

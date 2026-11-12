@@ -56,7 +56,7 @@ const Segments = () => {
     axios
       .get('/segments')
       .then((r) => setData(r.data))
-      .catch(() => setError('Không tải được dữ liệu phân khúc.'))
+      .catch(() => setError('Không tải được dữ liệu phân khúc. Tải lại trang, hoặc kiểm tra mạng.'))
       .finally(() => setLoading(false));
   }, []);
 

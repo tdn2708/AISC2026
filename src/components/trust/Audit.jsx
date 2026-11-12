@@ -116,7 +116,7 @@ const Audit = () => {
     setAns(EMPTY);
     loadSample(mode)
       .then(() => setError(null))
-      .catch(() => setError('Không tải được dữ liệu kiểm tra. Kiểm tra máy chủ đã chạy chưa.'))
+      .catch(() => setError('Không tải được dữ liệu kiểm tra. Tải lại trang, hoặc kiểm tra mạng.'))
       .finally(() => setLoading(false));
   }, [mode, loadSample]);
 

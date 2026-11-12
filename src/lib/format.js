@@ -84,7 +84,7 @@ export const SENTIMENT = [
 export const SENTIMENT_MAP = Object.fromEntries(SENTIMENT.map((s) => [s.key, s]));
 
 export const alertTitle = (a) =>
-  a.causeLabel ? `${a.categoryLabel} — ${a.causeLabel}` : a.categoryLabel;
+  a.causeLabel ? `${a.categoryLabel}: ${a.causeLabel}` : a.categoryLabel;
 
 /**
  * Mức tăng tương đối của tỉ trọng khiếu nại so với nền.

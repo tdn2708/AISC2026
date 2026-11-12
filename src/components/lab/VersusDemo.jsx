@@ -263,7 +263,7 @@ const VersusDemo = () => {
                     <span className="text-ink-lo">Đã hiểu: </span>
                     {replacements.slice(0, 5).map((r, i) => (
                       <span key={i} className="mr-1.5 inline-block tabular-nums text-xs">
-                        {r.from}<span className="text-ink-lo"> → </span><span className="text-accent-hi">{r.to}</span>{i < Math.min(replacements.length, 5) - 1 ? ',' : ''}
+                        {r.from}<span className="text-ink-lo"> thành </span><span className="text-accent-hi">{r.to}</span>{i < Math.min(replacements.length, 5) - 1 ? ',' : ''}
                       </span>
                     ))}
                   </p>

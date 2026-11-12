@@ -194,7 +194,7 @@ const SourceDrawer = ({ alert, onClose }) => {
     axios
       .get(`/alerts/${encodeURIComponent(alert.id)}/evidence`)
       .then((r) => setData(r.data))
-      .catch(() => setError('Không tải được phản hồi gốc của cảnh báo này.'));
+      .catch(() => setError('Không tải được phản hồi gốc của cảnh báo này. Đóng rồi mở lại, hoặc kiểm tra mạng.'));
   }, [alert]);
 
   return (
@@ -271,7 +271,7 @@ const DecisionLog = () => {
     axios
       .get('/decisions')
       .then((r) => setRows(r.data?.decisions || []))
-      .catch(() => setError('Không tải được nhật ký quyết định.'));
+      .catch(() => setError('Không tải được nhật ký quyết định. Tải lại trang, hoặc kiểm tra mạng.'));
   }, []);
 
   if (error) return <GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel>;
@@ -368,7 +368,7 @@ const RiskCenter = () => {
         setStates(Object.fromEntries(Object.values(byAlert).filter((x) => x.status !== 'PROPOSED').map((x) => [x.alertId, x.status])));
         setError(null);
       })
-      .catch(() => setError('Không tải được danh sách cảnh báo. Kiểm tra máy chủ đã chạy chưa.'))
+      .catch(() => setError('Không tải được danh sách cảnh báo. Bấm Thử lại, hoặc kiểm tra mạng.'))
       .finally(() => setLoading(false));
   };
 

@@ -228,7 +228,7 @@ const DataSources = () => {
       const reason = status === 422
         ? err.response?.data?.hint || 'Trang không có bình luận công khai nào'
         // 400 = đường dẫn không hợp lệ: nêu đúng lý do máy chủ trả về
-        : err.response?.data?.error || 'Không kết nối được máy chủ hoặc quá thời gian chờ';
+        : err.response?.data?.error || 'Không kết nối được máy chủ hoặc quá thời gian chờ. Kiểm tra mạng rồi thử lại.';
       setHistory((prev) => prev.map((r) => (r.id === id ? { ...r, status: status === 422 ? 'Empty' : 'Failed', items: 0, error: reason } : r)));
     } finally {
       setIsSyncing(false);

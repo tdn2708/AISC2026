@@ -104,7 +104,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
   const customLabel = (() => {
     if (!isCustom) return 'Tuỳ chọn';
     const [, s, e] = timeFilter.split(':');
-    return `${new Date(s).toLocaleDateString('vi-VN')} – ${new Date(e).toLocaleDateString('vi-VN')}`;
+    return `${new Date(s).toLocaleDateString('vi-VN')} đến ${new Date(e).toLocaleDateString('vi-VN')}`;
   })();
 
   const activeCount =

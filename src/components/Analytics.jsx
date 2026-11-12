@@ -155,7 +155,7 @@ const RootCauses = () => {
         setAnchorAt(r.data?.anchor ? new Date(r.data.anchor).getTime() : null);
         setError(null);
       })
-      .catch(() => setError('Không tải được dữ liệu phân tích.'))
+      .catch(() => setError('Không tải được dữ liệu phân tích. Tải lại trang, hoặc kiểm tra mạng.'))
       .finally(() => setLoading(false));
   }, [timeFilter, sourceFilter, productFilter, dataVersion]);
 

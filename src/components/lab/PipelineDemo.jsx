@@ -74,7 +74,7 @@ const SCENARIOS = [
 
 const STEPS = [
   { key: 'input', title: 'Tiếp nhận phản hồi', icon: MessageSquare, why: 'Văn bản thô như khách hàng gõ: sai chính tả, viết tắt, emoji, số điện thoại.' },
-  { key: 'pii', title: 'Che thông tin cá nhân', icon: EyeOff, why: 'Nghị định 13/2023: số điện thoại, email, mã đơn bị che TRƯỚC khi chạm tới mô hình hay nhật ký hệ thống.' },
+  { key: 'pii', title: 'Che thông tin cá nhân', icon: EyeOff, why: 'Nghị định 13/2023: số điện thoại, email, mã đơn bị che trước khi chạm tới mô hình hay nhật ký hệ thống.' },
   { key: 'normalize', title: 'Chuẩn hóa teencode', icon: Languages, why: 'Từ điển tiếng lóng thương mại điện tử dịch cách viết tắt về tiếng Việt chuẩn cho nhánh luật từ khóa.' },
   { key: 'spam', title: 'Lọc rác và quảng cáo', icon: ShieldCheck, why: 'Tầng T1 của Trust Layer. Ưu tiên độ chính xác: loại nhầm một khiếu nại thật là mất đúng thứ cần nghe.' },
   { key: 'tokens', title: 'ViSoBERT tách token', icon: Puzzle, why: 'Mô hình không đọc chữ, nó đọc token. Bộ tách SentencePiece học trên văn bản mạng xã hội tiếng Việt.' },
@@ -319,10 +319,10 @@ function StepInference({ t }) {
       <Note>
         Nguyên nhân chỉ được chọn trong danh mục đã chọn, nên không có tổ hợp vô nghĩa như “Giao hàng: Trừ tiền hai lần”.
         {m.multiLabel
-          ? ` Danh mục dùng xác suất ĐỘC LẬP (sigmoid) nên các cột không cộng lại thành 100%: mọi danh mục vượt ngưỡng ${m.thresholds?.category ?? 0.5} đều được ghi nhận, nhờ vậy một câu nêu được nhiều vấn đề.`
+          ? ` Danh mục dùng xác suất độc lập (sigmoid) nên các cột không cộng lại thành 100%: mọi danh mục vượt ngưỡng ${m.thresholds?.category ?? 0.5} đều được ghi nhận, nhờ vậy một câu nêu được nhiều vấn đề.`
           : ' Danh mục dùng softmax nên tổng bằng 100% và chỉ chọn được một danh mục.'}
         {m.calibrated
-          ? ` Xác suất cảm xúc đã được HIỆU CHỈNH bằng temperature scaling học trên tập dev (T = ${m.calibration?.sentimentTemperature ?? '—'}), nên con số đọc được sát với tần suất đúng thật hơn.`
+          ? ` Xác suất cảm xúc đã được hiệu chỉnh bằng temperature scaling học trên tập dev (T = ${m.calibration?.sentimentTemperature ?? '—'}), nên con số đọc được sát với tần suất đúng thật hơn.`
           : ' Mô hình hiện tự tin quá mức: đọc thứ hạng, đừng đọc như xác suất đã hiệu chỉnh.'}
       </Note>
     </>
@@ -415,7 +415,7 @@ function StepExplain({ t }) {
         <Note>Không từ đơn lẻ nào đủ sức làm đổi kết luận: mô hình dựa vào nhiều từ cùng lúc, bỏ một từ thì các từ còn lại vẫn đủ.</Note>
       )}
       <Note>
-        Cách đọc trung thực: nếu từ quyết định KHÔNG mang nghĩa của nhãn (ví dụ "tuần", "mua" cho nhãn lỗi kỹ thuật), mô hình đang dựa
+        Cách đọc trung thực: nếu từ quyết định không mang nghĩa của nhãn (ví dụ "tuần", "mua" cho nhãn lỗi kỹ thuật), mô hình đang dựa
         vào lối tắt học từ dữ liệu huấn luyện sinh theo khung câu, chứ chưa hiểu đúng lý do. Đây là phát hiện cần báo cáo, và là lý do
         cần tập gán nhãn thật.
       </Note>
@@ -496,7 +496,7 @@ function StepFinal({ t, scenario }) {
                 ? `Hệ thống kết luận khớp kỳ vọng${expect.coverage ? ` (bắt được ${expect.coverage} vấn đề)` : ''}.`
                 : expect.partial
                   ? `Hệ thống mới bắt được ${expect.coverage} vấn đề, thiếu phần còn lại. Không che đi.`
-                  : 'Hệ thống kết luận KHÔNG khớp kỳ vọng. Đây là giới hạn thật của mô hình hiện tại, không che đi.'}
+                  : 'Hệ thống kết luận không khớp kỳ vọng. Đây là giới hạn thật của mô hình hiện tại, không che đi.'}
             </p>
           </div>
         </div>
