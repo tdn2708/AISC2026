@@ -1,16 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { X, RotateCcw, ArrowUp, ArrowDown } from 'lucide-react';
-import { PageHeader, GlassPanel, PanelHeader, Segmented, Button, EmptyState, ChartTooltip, SELECTED } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Segmented, Button, EmptyState, ChartTooltip, SELECTED, AnimatedNumber } from './ui';
+import { BarGrow, ChartReveal, useInView } from './motion';
 import { useDataVersion } from '../lib/dataVersion';
 import { fmtInt, fmtPct, SENTIMENT } from '../lib/format';
 import { COL, SENT, slice, kpis, groupBy, crossNeg, series, dataSpan } from '../lib/cube';
 import { AXIS_TICK } from '../lib/tokens';
 
 /**
- * BẢNG SỐ LIỆU — xem số liệu theo kiểu công cụ BI
+ * BẢNG SỐ LIỆU - xem số liệu theo kiểu công cụ BI
  * ------------------------------------------------------------------
  *   [ Khoảng thời gian | Cảm xúc | các lựa chọn đang lọc | Bỏ lọc       ]
  *   [ Bốn chỉ số chính, mỗi số có đường xu hướng và so với kỳ trước      ]
@@ -39,6 +40,27 @@ const SENT_OPTIONS = [
   { value: 'pos', label: 'Tích cực' }
 ];
 const DAY = 86400000;
+
+/**
+ * Số đếm từ giá trị đang hiện sang giá trị mới khi lọc. Lần đầu hiện thẳng số
+ * thật (màn mở đầu duy nhất của trang là biểu đồ chính, không phải số đếm).
+ * Không có giá trị thì hiện "—".
+ */
+const EMPTY = '—'; // ô trống theo luật số liệu
+const Num = ({ value, decimals = 0, unit, className = '' }) => {
+  const ref = useRef(null);
+  const first = useRef(value);
+  // Số nằm dưới màn hình chưa ai thấy: hiện số thật, chưa dựng bộ đếm. AnimatedNumber chờ
+  // vào khung nhìn mới chốt giá trị nên sẽ giữ số cũ nếu dữ liệu đổi lúc nó còn chờ.
+  const seen = useInView(ref, { threshold: 0.1 });
+  if ((!seen || first.current == null) && value != null) first.current = value; // điểm xuất phát = số đang hiện lúc bộ đếm dựng
+  if (value == null || !Number.isFinite(value)) return <span className={className}>{EMPTY}</span>;
+  if (!seen) {
+    const txt = new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
+    return <span ref={ref} className={`proportional-nums ${className}`}>{txt}{unit}</span>;
+  }
+  return <AnimatedNumber value={value} from={first.current} decimals={decimals} unit={unit} unitClassName="" className={className} />;
+};
 
 const dec = (v, d = 1) => (v == null || !Number.isFinite(v) ? 'Chưa có' : v.toFixed(d).replace('.', ','));
 const dayLabel = (asOf, back) => {
@@ -90,10 +112,10 @@ const Delta = ({ now, prev, unit, good, digits = 1 }) => {
 
 const KpiStrip = ({ cur, prev, line, hasPrev }) => {
   const cells = [
-    { label: 'Phản hồi được tính', value: fmtInt(cur.count), delta: <Delta now={cur.count} prev={hasPrev ? prev.count : null} unit="rel" good={null} />, spark: line.map((b) => b.n), color: 'var(--accent)' },
-    { label: 'Tỉ lệ tiêu cực', value: fmtPct(cur.negRate, 1), delta: <Delta now={cur.negRate == null ? null : cur.negRate * 100} prev={hasPrev && prev.negRate != null ? prev.negRate * 100 : null} unit=" điểm %" good={false} />, spark: line.map((b) => (b.w > 0 ? b.wNeg / b.w : null)), color: 'var(--viz-neg)' },
-    { label: 'Số sao trung bình', value: cur.stars == null ? 'Chưa có' : `${dec(cur.stars, 2)} sao`, delta: <Delta now={cur.stars} prev={hasPrev ? prev.stars : null} unit=" sao" good digits={2} />, spark: line.map((b) => (b.starN ? b.starSum / b.starN : null)), color: 'var(--accent)' },
-    { label: 'Có chứng từ hoặc người duyệt', value: fmtPct(cur.proofShare, 0), delta: <Delta now={cur.proofShare == null ? null : cur.proofShare * 100} prev={hasPrev && prev.proofShare != null ? prev.proofShare * 100 : null} unit=" điểm %" good />, spark: line.map((b) => (b.n ? b.proof / b.n : null)), color: 'var(--accent)' }
+    { label: 'Phản hồi được tính', value: <Num value={cur.count} />, delta: <Delta now={cur.count} prev={hasPrev ? prev.count : null} unit="rel" good={null} />, spark: line.map((b) => b.n), color: 'var(--accent)' },
+    { label: 'Tỉ lệ tiêu cực', value: <Num value={cur.negRate == null ? null : cur.negRate * 100} decimals={1} unit="%" />, delta: <Delta now={cur.negRate == null ? null : cur.negRate * 100} prev={hasPrev && prev.negRate != null ? prev.negRate * 100 : null} unit=" điểm %" good={false} />, spark: line.map((b) => (b.w > 0 ? b.wNeg / b.w : null)), color: 'var(--viz-neg)' },
+    { label: 'Số sao trung bình', value: <Num value={cur.stars} decimals={2} unit=" sao" />, delta: <Delta now={cur.stars} prev={hasPrev ? prev.stars : null} unit=" sao" good digits={2} />, spark: line.map((b) => (b.starN ? b.starSum / b.starN : null)), color: 'var(--accent)' },
+    { label: 'Có chứng từ hoặc người duyệt', value: <Num value={cur.proofShare == null ? null : cur.proofShare * 100} decimals={0} unit="%" />, delta: <Delta now={cur.proofShare == null ? null : cur.proofShare * 100} prev={hasPrev && prev.proofShare != null ? prev.proofShare * 100 : null} unit=" điểm %" good />, spark: line.map((b) => (b.n ? b.proof / b.n : null)), color: 'var(--accent)' }
   ];
   return (
     <section aria-label="Chỉ số chính" className="mb-6 grid grid-cols-1 overflow-hidden glass-strong rounded-surf sm:grid-cols-2 xl:grid-cols-4">
@@ -126,12 +148,12 @@ const BarList = ({ items, selected, onPick, color = 'var(--accent)', metric = (i
               type="button"
               aria-pressed={on}
               onClick={() => onPick(on ? null : it.key)}
-              className={`group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-ctrl px-2 py-2 text-left transition-[background-color,opacity] duration-150 hover:bg-raised ${dim ? 'opacity-45 hover:opacity-100' : ''} ${on ? 'bg-accent-dim' : ''}`}
+              className={`group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-ctrl px-2 py-2 text-left transition-[background-color,opacity] duration-short ease-out hover:bg-raised ${dim ? 'opacity-45 hover:opacity-100' : ''} ${on ? 'bg-accent-dim' : ''}`}
             >
               <span className="min-w-0 truncate text-sm text-ink-hi">{it.label}</span>
-              <span className="tabular-nums text-sm text-ink-hi">{render ? render(it) : fmtInt(metric(it))}</span>
+              <span className="tabular-nums text-sm text-ink-hi">{render ? render(it) : <Num value={metric(it)} />}</span>
               <span className="col-span-2 block h-2 overflow-hidden rounded-ctrl bg-raised">
-                <span className="block h-full w-full origin-left rounded-ctrl transition-transform duration-300" style={{ background: color, transform: `scaleX(${metric(it) / max})` }} />
+                <BarGrow grow={false} value={metric(it) / max} className="rounded-ctrl" style={{ background: color }} />
               </span>
             </button>
           </li>
@@ -174,7 +196,7 @@ const Heatmap = ({ rows: rowDims, cols: colDims, cells, sel, onPick }) => {
                       aria-label={`${r.label}, ${c.label}: ${fmtInt(v)} phản hồi tiêu cực`}
                       disabled={!v}
                       onClick={() => onPick(on ? { cat: null, src: null } : { cat: r.key, src: c.key })}
-                      className={`grid h-10 w-full place-items-center rounded-ctrl tabular-nums text-sm transition-[box-shadow] duration-150 enabled:hover:ring-2 enabled:hover:ring-ink-lo disabled:cursor-default ${on ? 'ring-2 ring-accent' : ''}`}
+                      className={`grid h-10 w-full place-items-center rounded-ctrl tabular-nums text-sm transition-[box-shadow] duration-micro enabled:hover:ring-2 enabled:hover:ring-ink-lo disabled:cursor-default ${on ? 'ring-2 ring-accent' : ''}`}
                       style={{
                         // Nền đậm tối đa 60% để chữ đậm trên ô luôn đọc được (từ 4,5:1 trở lên)
                         background: v ? `color-mix(in oklab, var(--sev-crit) ${Math.round(8 + t * 52)}%, var(--surface))` : 'var(--raised)',
@@ -238,17 +260,17 @@ const ProductTable = ({ groups, names, selected, onPick }) => {
                     {key}
                   </button>
                 </td>
-                <td className="py-2.5 text-right tabular-nums">{fmtInt(g.n)}</td>
+                <td className="py-2.5 text-right tabular-nums"><Num value={g.n} /></td>
                 <td className="py-2.5 text-right">
                   <span className="inline-flex items-center justify-end gap-2">
                     <span className="hidden h-1.5 w-14 overflow-hidden rounded-ctrl bg-raised sm:block" aria-hidden="true">
-                      <span className="block h-full w-full origin-left bg-neg" style={{ transform: `scaleX(${g.negRate ?? 0})` }} />
+                      <BarGrow grow={false} value={g.negRate ?? 0} className="bg-neg" />
                     </span>
-                    <span className="tabular-nums">{fmtPct(g.negRate, 1)}</span>
+                    <span className="tabular-nums"><Num value={g.negRate == null ? null : g.negRate * 100} decimals={1} unit="%" /></span>
                   </span>
                 </td>
-                <td className="py-2.5 text-right tabular-nums">{dec(g.stars, 2)}</td>
-                <td className="py-2.5 text-right tabular-nums">{fmtPct(g.proofShare, 0)}</td>
+                <td className="py-2.5 text-right tabular-nums"><Num value={g.stars} decimals={2} /></td>
+                <td className="py-2.5 text-right tabular-nums"><Num value={g.proofShare == null ? null : g.proofShare * 100} unit="%" /></td>
               </tr>
             );
           })}
@@ -419,10 +441,10 @@ const Insights = () => {
 
       {!view ? (
         <div className="grid gap-6" aria-busy="true">
-          <div className="h-40 animate-pulse rounded-surf bg-raised" />
+          <div className="h-40 animate-pulse motion-reduce:animate-none rounded-surf bg-raised" />
           <div className="grid gap-6 xl:grid-cols-3">
-            <div className="h-80 animate-pulse rounded-surf bg-raised xl:col-span-2" />
-            <div className="h-80 animate-pulse rounded-surf bg-raised" />
+            <div className="h-80 animate-pulse motion-reduce:animate-none rounded-surf bg-raised xl:col-span-2" />
+            <div className="h-80 animate-pulse motion-reduce:animate-none rounded-surf bg-raised" />
           </div>
         </div>
       ) : view.empty ? (
@@ -452,7 +474,7 @@ const Insights = () => {
                   </ul>
                 }
               />
-              <div className="h-[280px]">
+              <ChartReveal className="h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={view.timeData} margin={{ top: 8, right: 4, bottom: 0, left: -12 }} barCategoryGap="18%">
                     <CartesianGrid vertical={false} stroke="var(--viz-grid)" />
@@ -464,7 +486,7 @@ const Insights = () => {
                     ))}
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              </ChartReveal>
             </GlassPanel>
 
             <GlassPanel tone="strong" className="col-span-12 p-6 md:col-span-6 xl:col-span-4">
@@ -475,7 +497,7 @@ const Insights = () => {
                 onPick={(k) => setParam({ src: k })}
                 render={(it) => (
                   <>
-                    {fmtInt(it.n)} <span className="ml-1 text-ink-lo">{fmtPct(it.negRate, 0)}</span>
+                    <Num value={it.n} /> <span className="ml-1 text-ink-lo"><Num value={it.negRate == null ? null : it.negRate * 100} unit="%" /></span>
                   </>
                 )}
               />
@@ -499,7 +521,7 @@ const Insights = () => {
                       <li key={c.id} className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] gap-2 py-1">
                         <span className="tabular-nums text-ink-lo">{i + 1}</span>
                         <span className="truncate text-ink-mid">{c.label}</span>
-                        <span className="tabular-nums text-ink-hi">{fmtInt(c.neg)}</span>
+                        <span className="tabular-nums text-ink-hi"><Num value={c.neg} /></span>
                       </li>
                     ))}
                   </ol>
@@ -525,9 +547,9 @@ const Insights = () => {
                         <li key={r.key} className="grid grid-cols-[3.5rem_minmax(0,1fr)_4rem] items-center gap-3 text-sm">
                           <span className="text-ink-mid">{r.label}</span>
                           <span className="block h-2.5 overflow-hidden rounded-ctrl bg-raised">
-                            <span className="block h-full w-full origin-left" style={{ background: Number(r.key) <= 2 ? 'var(--viz-neg)' : Number(r.key) === 3 ? 'var(--viz-neu)' : 'var(--viz-pos)', transform: `scaleX(${r.n / max})` }} />
+                            <BarGrow grow={false} value={r.n / max} style={{ background: Number(r.key) <= 2 ? 'var(--viz-neg)' : Number(r.key) === 3 ? 'var(--viz-neu)' : 'var(--viz-pos)' }} />
                           </span>
-                          <span className="text-right tabular-nums text-ink-hi">{fmtInt(r.n)}</span>
+                          <span className="text-right tabular-nums text-ink-hi"><Num value={r.n} /></span>
                         </li>
                       );
                     })}
