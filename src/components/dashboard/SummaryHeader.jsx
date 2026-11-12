@@ -75,7 +75,7 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
     <GlassPanel as="section" tone="strong" aria-labelledby="summary-title" className="mt-2 mb-8 overflow-hidden">
       {/* Một khối kính: bên trái câu tóm tắt, nút và "Việc gấp nhất" (hàng kẻ, không thẻ); bên phải sổ đối chiếu
           là giấy đặc không viền. Điện thoại xếp một cột: câu, việc gấp, rồi sổ. */}
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:items-start">
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)]">
         <div className="min-w-0">
           <div className="px-5 pt-6 pb-6 sm:px-8 sm:pt-8">
             <p className="text-sm text-ink-mid"><time>{todayLabel()}</time></p>
@@ -104,7 +104,7 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
           </div>
           {urgent && <div className="border-t border-line-soft">{urgent}</div>}
         </div>
-        <div className="min-w-0 px-5 pt-0 pb-6 sm:px-8 lg:py-8 lg:pr-8 lg:pl-0">
+        <div className="flex min-w-0 flex-col px-5 pt-0 pb-6 sm:px-8 lg:py-8 lg:pr-8 lg:pl-0">
           {ledger ? (
             <LedgerRun ledger={ledger} evidence={evidence} mode="auto" play={playRun} onDone={onLedgerDone} bare className={SHEET} />
           ) : ledgerFailed ? (
@@ -120,7 +120,8 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
           ) : (
             <LedgerSkeleton flat />
           )}
-          {asOfRight && <div className="lg:px-5">{asOf}</div>}
+          {/* Cột trái cao hơn sổ (2 việc gấp): dòng cập nhật xuống đáy cột, thẳng hàng với hàng nút cuối bên trái */}
+          {asOfRight && <div className="mt-auto lg:px-5">{asOf}</div>}
         </div>
       </div>
     </GlassPanel>
