@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, EyeOff, Eye } from 'lucide-react';
 import Logo from './Logo';
 import { Button, IconButton, TextField, EvidenceSwatch } from './ui';
-import { Ledger } from './dashboard/SummaryHeader';
+import { LedgerRun } from './motion';
+import LedgerSkeleton from './dashboard/LedgerSkeleton';
 
 /**
  * ĐĂNG NHẬP
@@ -13,6 +14,11 @@ import { Ledger } from './dashboard/SummaryHeader';
  * chứng sẽ gặp trong ứng dụng. Phải: biểu mẫu, đã điền sẵn tài khoản dùng
  * thử — người mở link lần đầu (giám khảo, khách tham quan) gặp ô trống
  * không gợi ý thì phần lớn sẽ đóng tab.
+ *
+ * F4-04: khối mực chạy "phép trừ" (LedgerRun mode="auto") MỘT lần khi tải,
+ * với số thật của /trust/health; đây là chuyển động dàn dựng duy nhất của
+ * trang. Giảm chuyển động: tờ sổ tĩnh, đủ số ngay. Chờ số thì khung xương
+ * cùng hình tờ sổ; không tải được thì hiện ba loại bằng chứng.
  */
 const DEMO = { email: 'admin@company.com', password: 'password123' };
 
@@ -72,7 +78,7 @@ const Login = ({ onLogin }) => {
           </p>
           {!ledgerFailed ? (
             <div className="mt-8 max-w-[400px]">
-              <Ledger ledger={ledger} showLink={false} />
+              {ledger ? <LedgerRun ledger={ledger} mode="auto" showLink={false} /> : <LedgerSkeleton />}
             </div>
           ) : (
           <ul className="mt-8 flex list-none flex-col gap-3 text-sm text-on-strip-mid">
@@ -114,6 +120,12 @@ const Login = ({ onLogin }) => {
               Đăng nhập
             </Button>
           </form>
+          <p className="mt-8 border-t border-line-soft pt-5 text-sm text-ink-mid">
+            Chưa biết Customer Radar làm gì?{' '}
+            <Link to="/" className="rounded-ctrl font-medium text-accent-hi underline underline-offset-4 hover:text-accent">
+              Xem trang giới thiệu
+            </Link>
+          </p>
         </div>
       </section>
     </div>
