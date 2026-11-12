@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from './components/Sidebar';
@@ -24,6 +24,9 @@ import { applyWorkspaceHeader } from './lib/workspace';
 import ErrorBoundary from './components/ErrorBoundary';
 import { RouteTransition } from './components/motion/RouteTransition';
 import './hooks/useTheme';
+
+// Trang giới thiệu công khai (F3): chunk riêng, chỉ tải khi mở `/`
+const Landing = lazy(() => import('./components/landing/Landing'));
 
 axios.defaults.baseURL = API_URL;
 applyWorkspaceHeader();
@@ -107,7 +110,14 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLogin} />} />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
+              <Landing isAuthenticated={isAuthenticated} />
+            </Suspense>
+          }
+        />
         <Route path="/dashboard" element={page(<Dashboard />)} />
         <Route path="/insights" element={page(<Insights />)} />
         <Route path="/risk" element={page(<RiskCenter />)} />

@@ -1,0 +1,398 @@
+/* Hallmark · shape: scroll story (scroll-craft, grammar "Sổ đối chiếu") · genre: modern-minimal · theme: brand (locked system "Sổ kiểm chứng", palette B) · deal: none, the app's tokens are locked
+ * hero: split (copy left, three planes of app captures right) · paper: var(--canvas) · accent: var(--accent) · display: Be Vietnam Pro · body: Be Vietnam Pro · nav: minimal, not fixed (logo, one link) · footer: one line inside the close
+ * signature: the reconciliation ledger subtracting under the reader's scroll, real figures from /trust/health, landing on the counted figure the app uses · imagery: real app captures in three planes, the team photo · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 · weakest: P, the hero planes are app captures rather than a photographed scene, by the user's rule (no generated or stock imagery) */
+/* Hallmark · waive 26b · mọi phần tử bấm trên trang là liên kết (Đăng nhập, Xem bản dùng thử, Vào ứng dụng), không có trạng thái tắt; :active có ở hai liên kết trơn, Button tự có · trang Customer Radar không có nút nào chờ điều kiện, thêm trạng thái tắt là thêm một nút không làm gì */
+/* Hallmark · waive 77 · "Nhưng không phải bình luận nào cũng của khách thật" hẹp có chủ đích: khoảng lặng trước phép trừ (BRIEF.md); "Mỗi con số nói rõ nó đứng trên gì" có thanh khớp với đơn hàng và ba dòng bằng chứng · khoảng lặng của Customer Radar phải hẹp hơn đỉnh, nới rộng thì nó ồn như đỉnh */
+/* Hallmark · waive 44c · đo bằng rects.mjs ở 1440: khối chữ 293 đến 637 (giữa 465), màn Tổng quan 285 đến 672 (giữa 478), cả khung ảnh 221 đến 709 (giữa 465) · số 84 px tính cả dòng chú thích ảnh Customer Radar đặt dưới khung; ba lớp ảnh thì canh giữa với chữ */
+/* Hallmark · waive 59 · measured content gaps between sections are 284 to 445 px at 1440 with motion and 288 to 445 px reduced (gaps.mjs in .hallmark/shots/F3/scripts) · the 53 px reading lands inside the sticky stage of the pinned peak, not between two sections */
+
+/* ==================================================================
+   TRANG GIỚI THIỆU (F3). Mọi màu, chữ, chuyển động đọc token sẵn có của
+   app (src/index.css); file này không khai báo màu mới.
+   Phạm vi: mọi luật nằm dưới .lp hoặc html.lp-on (lớp gắn khi trang mở,
+   gỡ khi rời trang), vì CSS của chunk lười tải vẫn ở lại khi sang app.
+   ================================================================== */
+
+/* Token của engine scroll-craft trỏ về token của app */
+html.lp-on {
+  --sc-canvas: var(--canvas);
+  --sc-surface: var(--surface);
+  --sc-ink: var(--text-hi);
+  --sc-ink-soft: var(--text-mid);
+  --sc-accent: var(--accent);
+  --sc-accent-ink: var(--on-accent);
+  --sc-font-display: var(--font-sans);
+  --sc-font-text: var(--font-sans);
+  --sc-font-mono: var(--font-sans);
+  --sc-t-base: 1rem;
+  --sc-track-normal: 0;
+  --sc-ease-out: var(--ease-out);
+
+  /* Engine bật cuộn mượt cho cả trang; Tab từ nút cuối về đầu thì phải nhảy ngay */
+  scroll-behavior: auto;
+
+  --lp-gutter: clamp(1rem, 4vw, 3rem);
+  --lp-maxw: 80rem;
+  --lp-section: clamp(4.5rem, 10vw, 9rem);
+  /* Bóng lệch xuống, màu lấy từ lớp phủ của app (navy ở sáng, gần đen ở tối) */
+  --lp-shadow: 0 1px 2px color-mix(in oklab, var(--scrim) 40%, transparent),
+    0 18px 40px -14px var(--scrim);
+}
+
+/* Engine chưa chạy (lỗi, hoặc trước lần đo đầu): không giấu chữ nào */
+html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) {
+  opacity: 1;
+  transform: none;
+}
+
+.lp {
+  background: var(--canvas);
+  color: var(--text-hi);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+.lp img { max-width: 100%; height: auto; }
+
+.lp-wrap {
+  width: 100%;
+  max-width: var(--lp-maxw);
+  margin-inline: auto;
+  padding-inline: var(--lp-gutter);
+}
+
+/* ---------- chữ ---------- */
+.lp-h1 {
+  font-size: clamp(2.25rem, 1.4rem + 2.4vw, 3.375rem);
+  line-height: 1.1;
+  letter-spacing: -0.028em;
+  font-weight: 700;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+.lp-h2 {
+  font-size: clamp(1.75rem, 1.3rem + 1.9vw, 2.875rem);
+  line-height: 1.14;
+  letter-spacing: -0.022em;
+  font-weight: 600;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+.lp-lede {
+  margin-top: 1.25rem;
+  font-size: clamp(1.125rem, 1rem + 0.45vw, 1.375rem);
+  line-height: 1.5;
+  color: var(--text-mid);
+  max-width: 30ch;
+}
+.lp-actions { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+/* ---------- 1. hero ---------- */
+.lp-hero {
+  background: var(--canvas);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: clip;
+}
+.lp-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 1.25rem;
+}
+.lp-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  font-size: 1.0625rem;
+  letter-spacing: -0.015em;
+  color: var(--text-hi);
+  text-decoration: none;
+  border-radius: var(--r-ctrl);
+}
+.lp-navlink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding-inline: 0.75rem;
+  border-radius: var(--r-ctrl);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  color: var(--accent-hi);
+  text-decoration: none;
+  transition: background-color var(--motion-micro) var(--ease-out), color var(--motion-micro) var(--ease-out);
+}
+.lp-navlink:hover { background: var(--accent-dim); }
+.lp-navlink:active,
+.lp-brand:active { transform: translateY(1px); }
+.lp-brand:focus-visible,
+.lp-navlink:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.lp-hero__grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  align-items: center;
+  gap: clamp(2rem, 4vw, 4rem);
+  padding-bottom: clamp(2.5rem, 6vh, 4.5rem);
+}
+.lp-hero__copy { position: relative; z-index: 2; }
+
+/* Ba lớp: Bảng số liệu lùi xa (nhạt, chỉ ló mép), Tổng quan ở giữa, và tờ sổ
+   cắt ra khỏi chính màn Tổng quan, nhấc lên phía trước đúng chỗ của nó.
+   Mỗi lớp engine dịch dọc một nhịp riêng (data-sc-parallax). Khung ảnh tràn
+   qua mép phải của khung chứa; .lp-hero cắt phần thừa (overflow-x: clip). */
+.lp-hero__art {
+  position: relative;
+  width: 112%;
+  aspect-ratio: 16 / 10.6;
+  margin: 0;
+}
+.lp-plane {
+  position: absolute;
+  display: block;
+  max-width: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-surf);
+  background: var(--surface);
+}
+.lp-plane--back {
+  z-index: 0;
+  top: 0;
+  right: 0;
+  width: 70%;
+  opacity: 0.62;
+  filter: saturate(0.7);
+}
+.lp-plane--main {
+  z-index: 1;
+  top: 13%;
+  left: 0;
+  width: 84%;
+  box-shadow: var(--lp-shadow);
+}
+.lp-plane--front {
+  z-index: 2;
+  top: 21%;
+  left: 52%;
+  width: 31%;
+  border: 0;
+  background: transparent;
+  box-shadow: var(--lp-shadow);
+}
+.lp-hero__cap {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.5rem);
+  font-size: 0.8125rem;
+  color: var(--text-lo);
+}
+
+/* ---------- 2. cái giá: im lặng trước đỉnh ---------- */
+.lp-cost {
+  background: var(--surface);
+  border-block: 1px solid var(--border-soft);
+  padding-block: var(--lp-section);
+}
+.lp-cost__inner { max-width: 56rem; margin-inline: 0 auto; }
+.lp-cost__inner .lp-h2 { max-width: 20ch; }
+.lp-cost__list {
+  list-style: none;
+  margin-top: clamp(2rem, 4vw, 3rem);
+  display: grid;
+  gap: 1rem;
+  font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.75rem);
+  line-height: 1.35;
+  letter-spacing: -0.012em;
+  color: var(--text-mid);
+}
+.lp-cost__list li { padding-top: 1rem; border-top: 1px solid var(--border-soft); max-width: 34ch; }
+.lp-cost__turn {
+  margin-top: clamp(2.5rem, 5vw, 3.5rem);
+  font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.75rem);
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--text-hi);
+  max-width: 30ch;
+}
+
+/* ---------- 3. đỉnh: nền mực, cắt cứng ---------- */
+.lp-peak { background: var(--strip-bg); color: var(--on-strip); }
+.lp-peak__stage {
+  display: grid;
+  align-items: center;
+  min-height: 100svh;
+  padding-block: 4rem;
+}
+.lp-peak__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+}
+.lp-peak .lp-h2 { color: var(--on-strip); max-width: 16ch; }
+.lp-peak__lines {
+  display: grid;
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+  line-height: 1.45;
+  color: var(--on-strip-mid);
+  max-width: 34ch;
+}
+/* Ba câu chồng cùng một chỗ, đổi theo tiến độ cuộn */
+.lp-peak__lines > p { grid-area: 1 / 1; }
+.lp-peak__lines b { color: var(--on-strip); font-weight: 600; font-variant-numeric: tabular-nums; }
+.lp-source { margin-top: 1.5rem; font-size: 0.875rem; color: var(--on-strip-lo); max-width: 44ch; }
+.lp-peak__sheet { width: 100%; max-width: 27rem; justify-self: end; }
+.lp-peak__sheet figure { box-shadow: 0 24px 60px -24px var(--scrim); }
+
+/* ---------- 4. bằng chứng ---------- */
+.lp-proof { background: var(--canvas); padding-block: var(--lp-section); }
+.lp-proof__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(2.5rem, 6vw, 6rem);
+  align-items: start;
+}
+.lp-proof .lp-h2 { max-width: 16ch; }
+.lp-meter { margin: clamp(2rem, 4vw, 3rem) 0 0; }
+/* Nhát cắt nằm trên vỏ bọc, không trên thanh: clip-path tính theo hộp viền */
+.lp-meter__wipe { padding-block: 0.25rem; }
+.lp-meter__track {
+  height: 1.25rem;
+  border-radius: var(--r-mark);
+  overflow: hidden;
+  background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--accent) 45%, transparent) 0 1.5px, transparent 1.5px 5px);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent);
+}
+.lp-meter__fill { height: 100%; background: var(--accent); }
+.lp-meter__cap { margin-top: 1rem; font-size: 1.0625rem; color: var(--text-mid); max-width: 44ch; }
+.lp-meter__cap b { color: var(--text-hi); font-weight: 600; font-variant-numeric: tabular-nums; }
+.lp-kinds { display: grid; }
+.lp-kind { padding-block: 1.25rem; border-top: 1px solid var(--border); }
+.lp-kind:last-child { border-bottom: 1px solid var(--border); }
+.lp-kind dt { display: flex; align-items: center; gap: 0.6rem; font-weight: 600; font-size: 1.0625rem; }
+.lp-kind dd { margin-top: 0.35rem; color: var(--text-mid); font-size: 1rem; }
+
+/* ---------- 5. việc hôm nay: rãnh ngang ---------- */
+.lp-work { background: var(--surface); border-block: 1px solid var(--border-soft); }
+.lp-work__stage { display: flex; align-items: center; }
+.lp-rail {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.5rem, 3vw, 3rem);
+  padding-inline: max(var(--lp-gutter), calc((100vw - var(--lp-maxw)) / 2 + var(--lp-gutter)));
+}
+.lp-rail > * { flex: none; }
+.lp-rail__head { width: min(26rem, 80vw); }
+.lp-rail__head p { margin-top: 1rem; color: var(--text-mid); font-size: 1.0625rem; }
+.lp-shot { margin: 0; width: min(52rem, 60vw, calc((100svh - 12rem) * 1.43)); }
+.lp-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-surf);
+  box-shadow: var(--lp-shadow);
+}
+.lp-shot figcaption { margin-top: 0.85rem; font-weight: 600; font-size: 1rem; }
+.lp-rail__note { width: min(16rem, 70vw); font-size: 0.875rem; color: var(--text-lo); }
+/* Giảm chuyển động: không trượt, xếp dọc thành lưới */
+.lp-work.is-static { padding-block: var(--lp-section); }
+.lp-work.is-static .lp-rail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  max-width: var(--lp-maxw);
+  margin-inline: auto;
+  padding-inline: var(--lp-gutter);
+}
+.lp-work.is-static .lp-rail__head { grid-column: 1 / -1; }
+.lp-work.is-static .lp-shot,
+.lp-work.is-static .lp-rail__head,
+.lp-work.is-static .lp-rail__note { width: auto; }
+
+/* ---------- 6. người làm ra ---------- */
+.lp-team { background: var(--canvas); padding-block: var(--lp-section); }
+.lp-team__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: center;
+}
+.lp-team__photo {
+  width: 100%;
+  max-width: 30rem;
+  border-radius: var(--r-surf);
+  border: 1px solid var(--border);
+}
+.lp-team .lp-h2 { max-width: 16ch; }
+.lp-team__school { margin-top: 1rem; color: var(--text-mid); font-size: 1.0625rem; }
+.lp-team__rows { margin-top: 2rem; display: grid; gap: 1.25rem; }
+.lp-team__rows dt { font-size: 0.875rem; color: var(--text-lo); }
+.lp-team__rows dd { margin-top: 0.2rem; font-size: clamp(1.125rem, 1rem + 0.4vw, 1.3125rem); font-weight: 600; line-height: 1.4; }
+
+/* ---------- 7. chốt: dòng tổng, đứng yên ---------- */
+.lp-close { background: var(--surface); border-top: 1px solid var(--border-soft); padding-block: var(--lp-section) 2.5rem; }
+.lp-close__inner { max-width: 50rem; margin-inline: 0 auto; }
+.lp-close__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 3px double var(--text-lo);
+  font-weight: 600;
+  font-size: 1.0625rem;
+}
+.lp-close__num {
+  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.lp-close .lp-h2 { margin-top: clamp(2.5rem, 5vw, 4rem); max-width: 18ch; }
+.lp-foot { margin-top: clamp(4rem, 8vw, 6rem); font-size: 0.8125rem; color: var(--text-lo); max-width: 60ch; }
+
+/* ---------- điện thoại: dựng lại bố cục, không thu nhỏ bản máy tính ---------- */
+@media (max-width: 860px) {
+  .lp-hero__grid { grid-template-columns: minmax(0, 1fr); align-content: start; gap: 2.5rem; padding-top: 1.5rem; }
+  .lp-hero__art { width: 100%; aspect-ratio: 16 / 12.5; }
+  .lp-plane--back { width: 74%; }
+  .lp-plane--main { width: 90%; left: 0; top: 12%; }
+  .lp-plane--front { width: 38%; left: auto; right: 0; top: 24%; }
+  .lp-hero__art { margin-bottom: 2rem; }
+  .lp-peak__grid,
+  .lp-proof__grid,
+  .lp-team__grid { grid-template-columns: minmax(0, 1fr); }
+  .lp-peak__stage { padding-block: 1.25rem; align-items: start; }
+  .lp-peak__grid { gap: 1.25rem; }
+  .lp-peak .lp-h2 { font-size: 1.5rem; }
+  .lp-peak__lines { margin-top: 0.75rem; font-size: 1rem; }
+  .lp-source { margin-top: 0.75rem; font-size: 0.8125rem; }
+  .lp-peak__sheet { justify-self: stretch; max-width: none; }
+  /* Ảnh màn hình ngang trên điện thoại: cắt khung đứng, giữ góc trên trái cho chữ đủ to */
+  .lp-shot { width: 84vw; }
+  .lp-work:not(.is-static) .lp-shot img { aspect-ratio: 4 / 5; object-fit: cover; object-position: left top; }
+  .lp-work.is-static .lp-rail { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Giảm chuyển động: lớp hero đứng yên, cảnh đỉnh là cảnh thường (React bỏ ghim) */
+@media (prefers-reduced-motion: reduce) {
+  .lp-plane { transform: none !important; }
+  .lp-navlink { transition: none; }
+  .lp-peak__stage { min-height: 0; padding-block: var(--lp-section); }
+}
+.lp.is-reduced .lp-peak__stage { min-height: 0; padding-block: var(--lp-section); }
+/* Giảm chuyển động: ba câu của đỉnh không đổi theo cuộn nữa, xếp lần lượt */
+.lp.is-reduced .lp-peak__lines { gap: 0.75rem; }
+.lp.is-reduced .lp-peak__lines > p { grid-area: auto; }
+/* Cảnh ghim trượt đi chiếm gần một màn: cảnh kế bớt khoảng đầu để không có màn trống (kiểm cảm xúc F3-07) */
+.lp:not(.is-reduced) .lp-peak + .lp-proof,
+.lp:not(.is-reduced) .lp-work + .lp-team { padding-top: clamp(2rem, 4vw, 3.5rem); }
