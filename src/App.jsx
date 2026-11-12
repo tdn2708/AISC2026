@@ -114,7 +114,10 @@ function App() {
           path="/"
           element={
             <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
-              <Landing isAuthenticated={isAuthenticated} />
+              {/* Chỉ người đã bấm đăng nhập thật (lưu 'true') mới thấy "Vào ứng dụng";
+                  người mở lần đầu (chưa lưu gì) thấy "Xem bản dùng thử", bấm vào vẫn
+                  thẳng tới Tổng quan vì /login tự chuyển khi chưa đăng xuất. */}
+              <Landing isAuthenticated={readStorage('isAuthenticated') === 'true'} />
             </Suspense>
           }
         />
