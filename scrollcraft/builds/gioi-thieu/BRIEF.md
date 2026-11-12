@@ -37,14 +37,14 @@ Người dùng chọn 1A (phóng to phép trừ), 4B (tối suốt, chỉ sổ l
 | Nhịp | Thiết bị | Khoảng cuộn | Họ | Vì sao |
 |---|---|---|---|---|
 | 1 Nhận ra mình | `parallax` ba lớp ảnh + tấm kính `glass-float`, tilt tờ sổ bằng chuột | khoảng 1 vh | parallax | chiều sâu thật: ảnh lùi xa mờ sau kính, ảnh chính nét |
-| 2 Cái giá | khung ngắm (viết riêng, đọc `--sc-p`, flow) | khoảng 1,3 vh | quét | chuyển cảnh "xem lướt" thành "soi từng cái"; không ghim vì ngay sau là cảnh ghim |
+| 2 Cái giá | khung ngắm (viết riêng, đọc `--sc-p`, flow) | khoảng 1,2 vh | quét | chuyển cảnh "xem lướt" thành "soi từng cái"; không ghim vì ngay sau là cảnh ghim |
 | 3 Đỉnh | `pin` + LedgerRun theo cuộn + cue | 3,8 vh (lớn nhất) | ghim | phép trừ cần thời gian dưới tay người xem |
 | 4 Bằng chứng | `reveal` clip-path từ trái | khoảng 1 vh | cắt | một nhát cắt là đổi trạng thái |
 | 5 Việc hôm nay | `pan` rãnh ngang ba ảnh | 2,4 vh | trượt ngang | đi ngang đọc như "những thứ dùng được" |
 | 6 Người làm ra | `in` (flow) | khoảng 1 vh | hiện | gần gũi cần yên |
 | 7 Chốt | tĩnh, không thiết bị | khoảng 0,8 vh | không | nút đứng yên, không mờ dần |
 
-Hai nhịp liền nhau không bao giờ cùng họ (parallax, quét, ghim, cắt, trượt ngang, hiện, tĩnh). Giảm chuyển động: khung ngắm thành bảng tĩnh có nhãn, tilt tắt, không ghim, sổ hiện đủ số.
+Đo thật ở 1440x900: trang cao 10,6 vh, năm cảnh engine (flow, flow, pin, flow, pan). Hai nhịp liền nhau không bao giờ cùng họ (parallax, quét, ghim, cắt, trượt ngang, hiện, tĩnh). Giảm chuyển động: khung ngắm thành bảng tĩnh có nhãn, tilt tắt, không ghim, sổ hiện đủ số.
 
 **Cổng vân tay:** khác hàng "gioi-thieu" đầu tiên ở hero (có tấm kính và tilt), nhịp 2 (khung ngắm thay chữ trơn), chữ ký (thêm bình luận gạch và chấm san hô). Vẫn cùng ngữ pháp và cách chốt, nên đây là bản nâng cấp của cùng một trang, không phải build mới; ghi thêm một hàng vào sổ cho rõ.
 

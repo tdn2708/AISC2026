@@ -274,14 +274,14 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
 .lp-scan__tag--real { background: var(--sev-ok-dim); color: var(--sev-ok); }
 /* Không có khung (giảm chuyển động, chưa có JS): bảng tĩnh, mọi hàng có nhãn, rác và ảo mờ chữ */
 .lp-scan__row--spam .lp-scan__text,
-.lp-scan__row--fake .lp-scan__text { opacity: 0.55; }
+.lp-scan__row--fake .lp-scan__text { opacity: 0.7; }
 /* Có khung: nhãn và độ mờ chỉ áp cho hàng lọt trong khung */
 .lp-scan.is-scan .lp-scan__tag { opacity: 0; }
 .lp-scan.is-scan .lp-scan__row[data-in='1'] .lp-scan__tag { opacity: 1; }
 .lp-scan.is-scan .lp-scan__row--spam .lp-scan__text,
 .lp-scan.is-scan .lp-scan__row--fake .lp-scan__text { opacity: 1; }
 .lp-scan.is-scan .lp-scan__row--spam[data-in='1'] .lp-scan__text,
-.lp-scan.is-scan .lp-scan__row--fake[data-in='1'] .lp-scan__text { opacity: 0.4; }
+.lp-scan.is-scan .lp-scan__row--fake[data-in='1'] .lp-scan__text { opacity: 0.7; }
 .lp-scan__note { margin-top: 1rem; font-size: 0.8125rem; color: var(--text-lo); }
 
 /* Khung ngắm: chỉ transform (JS đặt translate3d theo --sc-p). Hai góc là hai nét chữ L của logo A2 */

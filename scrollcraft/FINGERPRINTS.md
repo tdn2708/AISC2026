@@ -29,6 +29,7 @@ changes only grammar and world will fail it.
 | Build | Grammar | Nav treatment | Hero device | Act-sequence shape | Close pattern | Signature move | World | Port |
 |---|---|---|---|---|---|---|---|---|
 | gioi-thieu (Customer Radar, `/`, 2026-11-12) | Sổ đối chiếu (mới: một phép trừ là xương sống, cảnh cắt cứng theo nền, một cảnh ghim dài + tối đa một rãnh, cấm video/drift/pointer devices/bộ đếm đếm lên) | tối giản, không cố định: logo + một liên kết "Đăng nhập" (đã đăng nhập: "Vào ứng dụng"), cuộn đi cùng trang | split: chữ trái, ba lớp ảnh chụp app thật bên phải (Bảng số liệu lùi xa, Tổng quan giữa, tờ sổ cắt ra nhấc lên trước), parallax lệch nhịp | parallax(flow) > in(flow, im lặng) > pin 3,8 vh (đỉnh) > reveal(flow) > pan 2,4 vh > in(flow) > tĩnh; 7 nhịp, khoảng 10,3 vh | chốt sổ: gạch đôi, dòng tổng "Được tính vào chỉ số" bằng đúng số đỉnh dừng, một câu, một nút; đứng yên | phép trừ chạy theo thanh cuộn bằng số thật từ API: sổ đối chiếu ghim, mỗi nấc cuộn trừ một dòng, cột chữ số trượt như công tơ, dừng đúng số được tính, kéo ngược thì cộng lại | ảnh chụp app thật + ảnh nhóm, hệ token "Sổ kiểm chứng" màu B, sáng và tối | Vite :5299 (route `/` của app React) |
+| gioi-thieu v2 (Customer Radar, `/`, đợt 2 K5, 2026-11-13) | Sổ đối chiếu (giữ; cùng ngữ pháp với hàng trên, là bản nâng cấp của cùng một trang) | tối giản, không cố định (giữ) | split: chữ trái, ba lớp ảnh app đặt quanh một tấm kính `glass-float` (ảnh lùi xa lọt sau kính nên mờ), lớp không khí tĩnh phía sau, tờ sổ lớp trước nghiêng tối đa 3 độ theo chuột | parallax(flow) > quét(flow, khung ngắm) > pin 3,8 vh (đỉnh) > reveal(flow) > pan 2,4 vh > in(flow) > tĩnh; 7 nhịp, khoảng 10,6 vh | chốt sổ (giữ) | khung ngắm: hai góc chữ L của logo A2 trôi theo `--sc-p` qua danh sách bình luận thật, gắn nhãn Rác, Nghi ảo, Khách thật; rồi phép trừ chạy theo cuộn trên tờ giấy sáng to, mỗi dòng trừ một bình luận thật bị gạch, chốt bằng chấm san hô | ảnh chụp app thật + ảnh nhóm + bình luận thật chép tĩnh từ kho Mô phỏng; tối suốt, chỉ sổ là giấy sáng | Vite :5199 (route `/`) |
 
 
 ---
@@ -45,6 +46,7 @@ as a constraint, so writing them down is the whole point.
 - Chữ ký: sổ trừ theo thanh cuộn bằng số thật (`LedgerRun mode="scroll"`).
 - Hero split với ba lớp ảnh chụp app, lớp trước là một phần tử cắt ra từ chính màn giữa.
 - Dải 7 nhịp, khoảng 10,3 vh.
+- Đợt 2 (K5): khung ngắm (hai góc chữ L của logo quét danh sách bình luận thật, gắn nhãn theo Trust Layer), sổ giấy sáng to trên nền tối có bình luận thật bị gạch ở từng dòng trừ, hero có tấm kính giữa các lớp ảnh.
 
 ---
 
