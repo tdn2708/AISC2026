@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { RotateCw } from 'lucide-react';
 import { GlassPanel, PanelHeader, Segmented, ChartTooltip, EmptyState, Button } from '../ui';
 import { Skeleton } from '../ui/Skeleton';
+import { ChartReveal } from '../motion';
 import { fmtInt } from '../../lib/format';
 import { AXIS_TICK, CHART_FONT } from '../../lib/tokens';
 
@@ -11,6 +12,10 @@ import { AXIS_TICK, CHART_FONT } from '../../lib/tokens';
  * Hai chuỗi chung MỘT trục (cùng đơn vị: số phản hồi), không bao giờ
  * hai trục y. Lưới ngang mảnh, nét liền; đường 2px; không chấm trên
  * từng điểm — con trỏ dọc và tooltip đảm nhận việc đọc giá trị.
+ *
+ * F5-04: biểu đồ mở từ trái sang bằng clip-path (ChartReveal) một lần khi
+ * vào khung nhìn; Recharts tắt hiệu ứng riêng (isAnimationActive={false}).
+ * Giảm chuyển động: hiện đủ ngay.
  */
 
 const SERIES = [
@@ -91,13 +96,13 @@ const SentimentTrendChart = ({ data = [], loading, failed, onRetry }) => {
       ) : data.length === 0 ? (
         <EmptyState compact className="h-[280px]" title="Chưa có phản hồi trong khoảng này" description="Đổi bộ lọc thời gian hoặc thu thập thêm dữ liệu." />
       ) : view === 'chart' ? (
-        <div className="h-[280px] w-full">
+        <ChartReveal className="h-[280px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 26, right: 12, left: -4, bottom: 0 }}>
               <CartesianGrid stroke="var(--viz-grid)" vertical={false} />
               <XAxis dataKey="name" tick={AXIS_TICK} axisLine={{ stroke: 'var(--border)' }} tickLine={false} dy={6} minTickGap={16} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={44} allowDecimals={false} tickFormatter={fmtInt} />
-              <Tooltip content={<TrendTooltip />} cursor={{ stroke: 'var(--text-lo)', strokeWidth: 1 }} />
+              <Tooltip content={<TrendTooltip />} cursor={{ stroke: 'var(--text-lo)', strokeWidth: 1 }} isAnimationActive={false} />
               {SERIES.map((s) => (
                 <Line
                   key={s.key}
@@ -125,7 +130,7 @@ const SentimentTrendChart = ({ data = [], loading, failed, onRetry }) => {
               )}
             </LineChart>
           </ResponsiveContainer>
-        </div>
+        </ChartReveal>
       ) : (
         <div className="h-[280px] overflow-auto">
           <table className="w-full text-left text-xs">

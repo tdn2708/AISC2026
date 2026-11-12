@@ -5,13 +5,14 @@ import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { fmtInt, fmtPct, SENTIMENT } from '../../lib/format';
 
 /**
- * PHÂN BỔ CẢM XÚC — một thanh ngang chia ba phần.
+ * PHÂN BỔ CẢM XÚC — một thanh xếp chồng nằm ngang chia ba phần (F5-04: tên
+ * file đổi tên cho đúng hình vẽ; app không dùng biểu đồ tròn).
  * Mắt so độ dài chính xác hơn so góc, nên phần của tổng thể vẽ thành thanh
  * chứ không phải vòng tròn. Con số cần quyết định (phần trăm tiêu cực) đặt
  * to ở trên; bảng bên dưới ghi đủ số lượng, không giá trị nào phải rê chuột.
  */
 
-const SentimentDonut = ({ data = [], loading, failed, onRetry }) => {
+const SentimentShare = ({ data = [], loading, failed, onRetry }) => {
   const rows = SENTIMENT.map((s) => ({ ...s, value: data.find((d) => d.key === s.key)?.value ?? 0 }));
   const total = rows.reduce((sum, r) => sum + r.value, 0);
   const negShare = total ? rows[0].value / total : null;
@@ -71,4 +72,4 @@ const SentimentDonut = ({ data = [], loading, failed, onRetry }) => {
   );
 };
 
-export default SentimentDonut;
+export default SentimentShare;

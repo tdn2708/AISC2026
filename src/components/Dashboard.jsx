@@ -9,7 +9,7 @@ import SummaryHeader from './dashboard/SummaryHeader';
 import StoreHealth from './dashboard/StoreHealth';
 import TodayInbox, { buildTodo } from './dashboard/TodayInbox';
 import SentimentTrendChart from './dashboard/SentimentTrendChart';
-import SentimentDonut from './dashboard/SentimentDonut';
+import SentimentShare from './dashboard/SentimentShare';
 import RisingIssues from './dashboard/RisingIssues';
 import LiveDigest from './dashboard/LiveDigest';
 import { Button } from './ui';
@@ -153,7 +153,7 @@ const Dashboard = () => {
             <SentimentTrendChart data={trend} loading={loading && !stats} failed={failed} onRetry={reload} />
           </section>
           <section aria-label="Phân bổ cảm xúc" className="col-span-12 md:col-span-6 xl:col-span-4">
-            <SentimentDonut data={sentiments} loading={loading && !stats} failed={failed} onRetry={reload} />
+            <SentimentShare data={sentiments} loading={loading && !stats} failed={failed} onRetry={reload} />
           </section>
           <section aria-label="Vấn đề đang tăng nhanh" className="col-span-12 md:col-span-6 xl:col-span-6 xl:[&:has(+section:empty)]:col-span-12">
             <RisingIssues alerts={alerts} loading={loading && !stats} failed={failed} onRetry={reload} />
