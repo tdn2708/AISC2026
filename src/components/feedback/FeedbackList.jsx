@@ -1,6 +1,6 @@
 import React from 'react';
 import { SentimentFace, Badge, EvidenceTag, Skeleton } from '../ui';
-import { fmtDateTime, initials, SENTIMENT_MAP, evidenceOf, exclusionLabel, sarcasmTag } from '../../lib/format';
+import { fmtDateTime, SENTIMENT_MAP, evidenceOf, exclusionLabel, sarcasmTag } from '../../lib/format';
 
 /**
  * BẢNG PHẢN HỒI dùng chung cho trang Phản hồi và "Phản hồi gần đây" trên Tổng
@@ -49,7 +49,6 @@ const FeedbackList = ({ items, showProduct = false, onSelect, dimmed = false }) 
             >
               <td className="fb-c-user">
                 <div className="fb-user">
-                  <span className="fb-avatar" aria-hidden="true">{initials(author)}</span>
                   <div className="fb-user-text">
                     <div className="fb-user-name" title={author}>{author}</div>
                     <div className="fb-meta">{fmtDateTime(f.timestamp)}</div>

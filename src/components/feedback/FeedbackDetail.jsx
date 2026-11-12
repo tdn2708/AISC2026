@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Copy, Zap, UserX, Star, Receipt, HelpCircle } from 'lucide-react';
 import ReplyDraft from './ReplyDraft';
 import { Drawer, SentimentFace, Badge, ProgressBar, EvidenceSwatch } from '../ui';
-import { fmtDateTime, initials, SENTIMENT_MAP, evidenceOf, exclusionLabel, LABELLER_LABEL } from '../../lib/format';
+import { fmtDateTime, SENTIMENT_MAP, evidenceOf, exclusionLabel, LABELLER_LABEL } from '../../lib/format';
 
 /**
  * CHI TIẾT MỘT PHẢN HỒI — ngăn kéo dùng chung cho trang Phản hồi và bảng
@@ -29,9 +29,6 @@ const FeedbackDetail = ({ item, onClose }) => {
       {item && (
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-3">
-            <span className="grid size-11 place-items-center rounded-full bg-accent-dim text-sm font-semibold text-accent-hi">
-              {initials(item.author || 'Ẩn danh')}
-            </span>
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold text-ink-hi">{item.author || 'Ẩn danh'}</p>
               <p className="truncate text-xs text-ink-lo">{item.productName || 'Không gắn sản phẩm'}{item.region ? `, ${item.region}` : ''}</p>

@@ -4,6 +4,7 @@ import { Check, X, SkipForward } from 'lucide-react';
 import { GlassPanel, PanelHeader, Button, ProgressBar, EmptyState, Chip, Select, Toast, Segmented, Skeleton } from '../ui';
 import { fmtInt, fmtDate, fmtPct, SENTIMENT_MAP, LABELLER_LABEL } from '../../lib/format';
 import { reportRefreshing } from '../../lib/dataVersion';
+import { currentUser } from '../../hooks/useDecisions';
 
 /**
  * DUYỆT NHÃN DO NGƯỜI LÀM — ba hàng đợi
@@ -30,13 +31,6 @@ const MODE_HINT = {
   review: 'Hai mô hình bất đồng và số sao không phân xử được. Nhãn của bạn là nhãn cuối.'
 };
 
-const currentUser = () => {
-  try {
-    return JSON.parse(localStorage.getItem('crSettings') || '{}').name || 'Admin User';
-  } catch {
-    return 'Admin User';
-  }
-};
 
 const Result = ({ label, r }) => (
   <div className="min-w-0 border-t border-line pt-3">

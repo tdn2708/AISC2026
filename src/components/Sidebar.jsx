@@ -6,7 +6,7 @@ import { Popover, MenuItem } from './ui';
 import Logo, { LogoMark } from './Logo';
 import { NAV } from '../lib/nav';
 import { WORKSPACES, getWorkspace, switchWorkspace } from '../lib/workspace';
-import { initials } from '../lib/format';
+import { DEFAULT_USER, currentUser } from '../hooks/useDecisions';
 import { useBrowserModelStatus } from '../lib/analyze';
 import { useRefreshing, useDataVersion, reportRefreshing } from '../lib/dataVersion';
 import { useReducedMotion } from './motion';
@@ -238,9 +238,9 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
   const readProfile = () => {
     try {
       const s = JSON.parse(localStorage.getItem('crSettings') || '{}');
-      return { name: s.name || 'Admin User', email: s.email || 'admin@company.com' };
+      return { name: currentUser(), email: s.email || 'admin@company.com' };
     } catch {
-      return { name: 'Admin User', email: 'admin@company.com' };
+      return { name: DEFAULT_USER, email: 'admin@company.com' };
     }
   };
   const [profile, setProfile] = useState(readProfile);
@@ -411,9 +411,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
             title={collapsed ? profile.name : undefined}
             className={`flex w-full items-center rounded-ctrl p-1.5 transition-colors hover:bg-raised ${collapsed ? 'justify-center' : 'gap-2.5'}`}
           >
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-dim text-xs font-semibold text-accent-hi">
-              {initials(profile.name)}
-            </span>
+            <LogoMark size={collapsed ? 28 : 24} />
             {!collapsed && (
               <>
                 <span className="min-w-0 flex-1 text-left">

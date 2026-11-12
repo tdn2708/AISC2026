@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Search, HeartHandshake, TriangleAlert, Users } from 'lucide-react';
 import { GlassPanel, ChipGroup, EmptyState, SentimentFace, Pager, fieldClass, Skeleton } from './ui';
-import { fmtInt, fmtDate, initials } from '../lib/format';
+import { fmtInt, fmtDate } from '../lib/format';
 
 /**
  * PHÂN KHÚC KHÁCH HÀNG — nay là một tab của Phân tích nguyên nhân.
@@ -146,12 +146,7 @@ const Segments = () => {
                   return (
                     <tr key={u.author}>
                       <td className="pl-6">
-                        <div className="flex items-center gap-3">
-                          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-dim text-xs font-semibold text-accent-hi">
-                            {initials(u.author)}
-                          </span>
-                          <span className="font-medium">{u.author}</span>
-                        </div>
+                        <span className="font-medium">{u.author}</span>
                       </td>
                       <td className="tabular-nums">{fmtInt(u.total)}</td>
                       <td>

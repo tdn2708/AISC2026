@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserRound, Palette, Database, ShieldCheck, Save, Mail, KeyRound, FlaskConical, FileText } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { PageHeader, GlassPanel, PanelHeader, Button, TextField, Select, RadioCards, Toast } from './ui';
-import { initials } from '../lib/format';
+import { DEFAULT_USER, currentUser } from '../hooks/useDecisions';
 
 /**
  * CÀI ĐẶT
@@ -15,14 +15,14 @@ import { initials } from '../lib/format';
 
 const KEY = 'crSettings';
 const DEFAULTS = {
-  name: 'Admin User',
+  name: DEFAULT_USER,
   email: 'admin@company.com',
   timezone: 'Asia/Ho_Chi_Minh'
 };
 
 const load = () => {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}'), name: currentUser() };
   } catch {
     return DEFAULTS;
   }
@@ -109,13 +109,6 @@ const Settings = () => {
           {tab === 'general' && (
             <>
               <PanelHeader title="Hồ sơ" subtitle="Tên của bạn được ghi vào nhật ký quyết định." />
-              <div className="mb-6 flex items-center gap-4">
-                <span className="grid size-14 place-items-center rounded-full bg-accent-dim text-heading font-semibold text-accent-hi">{initials(form.name)}</span>
-                <div>
-                  <p className="font-semibold text-ink-hi">{form.name}</p>
-                  <p className="text-sm text-ink-lo">Quản lý trải nghiệm khách hàng</p>
-                </div>
-              </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <TextField label="Họ và tên" value={form.name} onChange={set('name')} />
                 <TextField label="Email" type="email" icon={Mail} value={form.email} onChange={set('email')} />

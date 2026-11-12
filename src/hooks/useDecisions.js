@@ -2,12 +2,17 @@ import { useState, useCallback } from 'react';
 import axios from 'axios';
 import { alertTitle } from '../lib/format';
 
-/** Tên người đang dùng (Cài đặt → Hồ sơ) — để nhật ký quyết định ghi đúng người */
-const currentUser = () => {
+/** Tên mặc định khi chưa đặt tên ở Cài đặt. Nhật ký cũ đã ghi "Admin User" thì vẫn hiện nguyên chuỗi đó. */
+export const DEFAULT_USER = 'Chủ shop';
+const LEGACY_USER = 'Admin User';
+
+/** Tên người đang dùng (Cài đặt, Hồ sơ) để nhật ký quyết định ghi đúng người */
+export const currentUser = () => {
   try {
-    return JSON.parse(localStorage.getItem('crSettings') || '{}').name || 'Admin User';
+    const name = JSON.parse(localStorage.getItem('crSettings') || '{}').name;
+    return !name || name === LEGACY_USER ? DEFAULT_USER : name;
   } catch {
-    return 'Admin User';
+    return DEFAULT_USER;
   }
 };
 
