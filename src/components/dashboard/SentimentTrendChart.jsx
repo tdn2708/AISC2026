@@ -49,7 +49,7 @@ const SentimentTrendChart = ({ data = [], loading, failed, onRetry }) => {
   const peakPos = peakAt <= 1 ? 'right' : peakAt >= data.length - 2 ? 'left' : 'top';
 
   const toggle = (
-    <div className="flex items-center gap-4">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
       <ul className="flex list-none gap-4 text-xs text-ink-mid">
         {SERIES.map((s) => (
           <li key={s.key} className="inline-flex items-center gap-1.5">
