@@ -47,7 +47,7 @@
      2. Ngữ nghĩa: vai của màu (chữ, nền, nhấn, mức độ, biểu đồ), mỗi chế
         độ sáng/tối một khối. Component và Tailwind đọc tầng này.
      3. Component và bí danh: token riêng của một thành phần (logo, thanh
-        bên) và tên cũ (glass-*, hero-*, bg-card…) trỏ về tầng 2, giữ để
+        bên) và tên cũ glass-* trỏ về tầng 2, giữ để
         các trang chưa chuyển đổi vẫn tự đổi diện mạo theo token mới.
    ================================================================== */
 
@@ -137,7 +137,7 @@
 
   /* Khoảng cách */
   --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px;
-  --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
+  --space-lg: 24px; --space-xl: 40px;
 
   /* Chuyển động (F2-01, KE-HOACH-GIAO-DIEN.md mục 4.3). Thời lượng theo việc:
        instant 0      giảm chuyển động
@@ -161,15 +161,7 @@
   /* Lò xo nhẹ (vượt khoảng 4% rồi về) cho số "chốt" vào vị trí; trình duyệt
      chưa có linear() dùng đường cong vượt nhẹ tương đương bên dưới */
   --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
-
-  /* Tên cũ, giữ làm bí danh để style nội tuyến và CSS cũ không phải đổi */
-  --ease: var(--ease-out);
-  --dur-fast: var(--motion-micro);
-  --dur-base: var(--motion-short);
-  --dur-micro: var(--motion-micro);
-  --dur-short: var(--motion-short);
-  --dur-long: var(--motion-medium);
-  --z-dropdown: 100; --z-sticky: 200; --z-modal: 400; --z-toast: 500;
+  /* Bí danh cũ --ease, --dur-* và thang --z-* bỏ ở F1-06 (không còn ai đọc); dùng --motion-*, --ease-* */
 }
 
 @supports (transition-timing-function: linear(0, 1)) {
@@ -336,43 +328,14 @@
   --glass-bg:      var(--surface);
   --glass-strong:  var(--surface);
   --glass-line:    var(--border);
-  --glass-hi:      transparent;
   --glass-shade:   var(--hairline-shade);
-  --backdrop-img:  none;
-  --backdrop-veil: none;
-  --grid-line:     transparent;
+  /* F1-06 bỏ các bí danh không còn ai đọc: hero-*, bg-card, text-primary, risk-*,
+     accent-blue/cyan/purple/indigo, glass-hi, glass-border, backdrop-*, grid-line
+     (danh sách ở .hallmark/F1-06-token-xoa.md) */
 
-  /* "Hero" cũ — không còn trang nào dùng, giữ tên làm bí danh */
-  --hero-bg:     var(--surface);
-  --hero-fg:     var(--text-hi);
-  --hero-mid:    var(--text-mid);
-  --hero-lo:     var(--text-lo);
-  --hero-line:   var(--border);
-  --hero-grid:   transparent;
-  --hero-stroke: var(--accent);
-  --hero-fill:   var(--accent-dim);
-  --hero-ring:   var(--accent-dim);
-  --hero-shadow: none;
-
-  /* Bí danh tương thích ngược (Lab và style nội tuyến cũ) */
-  --bg-dark:        var(--canvas);
-  --bg-card:        var(--surface-solid);
-  --bg-card-hover:  var(--raised);
-  --text-primary:   var(--text-hi);
-  --text-secondary: var(--text-mid);
-  --text-muted:     var(--text-lo);
-  --accent-blue:    var(--accent);
-  --accent-cyan:    var(--accent-hi);
-  --accent-purple:  var(--accent);
-  --accent-indigo:  var(--accent);
-  --risk-critical:  var(--sev-crit);
-  --risk-high:      var(--sev-high);
-  --risk-medium:    var(--sev-med);
-  --risk-low:       var(--sev-ok);
-  --glass-border:   1px solid var(--border);
-  --glass-shadow:   var(--glass-shade);
-
-  /* Thang chung tên theo Hallmark, trỏ về tầng 2 */
+  /* Vai trò theo Hallmark, trỏ về tầng 2. App không đọc các tên này; công cụ
+     hallmark (sloplint, theme.mjs) đọc chúng để đo tương phản giấy, mực, nhấn,
+     viền ô nhập và để biết họ chữ. Giữ nguyên tên. */
   --color-paper:      var(--canvas);
   --color-paper-2:    var(--surface);
   --color-paper-3:    var(--sheet);
@@ -662,7 +625,7 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
   vertical-align: middle;
 }
 .fb-table tbody tr:last-child td { border-bottom: none; }
-.fb-table tbody tr { transition: background-color var(--dur-micro) var(--ease-out); }
+.fb-table tbody tr { transition: background-color var(--motion-micro) var(--ease-out); }
 .fb-table tbody tr:hover { background: var(--raised); }
 
 .fb-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 1.5; }
@@ -734,7 +697,7 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
      phần mềm doanh nghiệp đứng yên, không trôi nổi */
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
-  transition: transform var(--dur-short) var(--ease-out);
+  transition: transform var(--motion-short) var(--ease-out);
 }
 
 .main-content {
@@ -780,7 +743,7 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
   }
   /* Đóng thì ẩn hẳn: thanh bên nằm ngoài màn không còn kéo trang rộng ra */
   .sidebar-container:not(.open) { display: none; }
-  .sidebar-container.open { transform: translateX(0); transition: transform var(--dur-short) var(--ease-out); }
+  .sidebar-container.open { transform: translateX(0); transition: transform var(--motion-short) var(--ease-out); }
   @starting-style { .sidebar-container.open { transform: translateX(-100%); } }
 
   .glass-panel { padding: var(--space-md); }
