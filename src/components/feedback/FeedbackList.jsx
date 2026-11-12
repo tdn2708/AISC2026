@@ -16,7 +16,7 @@ const WIDTHS = {
 };
 
 const FeedbackList = ({ items, showProduct = false, onSelect, dimmed = false }) => (
-  <div className="paper">
+  <div className="paper mx-3 mb-3">
   <div className={`overflow-x-auto transition-opacity duration-short ${dimmed ? 'opacity-60' : ''}`}>
     <table className="fb-table">
       <colgroup>
