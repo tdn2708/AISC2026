@@ -181,8 +181,8 @@
   .animate-skeleton, .animate-drawer-in, .animate-drawer-out, .animate-fade-out { animation: none; }
 }
 
-/* Bề mặt: nền đặc + viền 1px. Tên "glass" giữ lại cho các trang cũ;
-   không còn làm mờ nền vì không còn ảnh nền nào phía sau. */
+/* Bề mặt panel số liệu (12.7). Tên "glass" giữ lại cho các trang cũ: nền --glass-panel
+   (mờ một phần), viền 1px, vệt sáng mép trên. KHÔNG backdrop-filter. */
 @utility glass {
   background: var(--glass-bg);
   border: 1px solid var(--glass-line);
@@ -193,6 +193,31 @@
   background: var(--glass-strong);
   border: 1px solid var(--glass-line);
   box-shadow: var(--glass-shade);
+}
+
+/* Kính ống ngắm (12.3): thanh trên, thanh bên, thanh lọc dính. Có backdrop-filter. */
+@utility glass-chrome {
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--glass-edge);
+}
+
+/* Kính nổi: popover, Ctrl+K, hộp thoại, ngăn kéo, trợ lý, toast. Bóng có lệch, không glow. */
+@utility glass-float {
+  background: var(--glass-tint-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--glass-edge), var(--shadow-float);
+}
+
+/* Giấy: nền đặc 100% cho vùng chữ dày (bảng, danh sách, sổ, bảng nhiệt) nằm trong panel kính.
+   Chỉ là nền, không viền, không bóng: không thành thẻ lồng thẻ. */
+@utility paper {
+  background: var(--surface-solid);
+  border-radius: var(--r-ctrl);
 }
 
 /* Ánh sáng chỉ dành cho luồng khẩn cấp */
@@ -212,8 +237,18 @@
   color: var(--text-mid);
 }
 
+/* Giảm trong suốt: mọi bề mặt kính về nền đặc (đặt sau khối utility để thắng thứ tự) */
 @media (prefers-reduced-transparency: reduce) {
-  .glass, .glass-strong { background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .glass, .glass-strong, .glass-chrome, .glass-float {
+    background: var(--surface-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Dự phòng cho kính ống ngắm: trình duyệt không có backdrop-filter thì nền đặc */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-chrome, .glass-float { background: var(--surface-solid); }
 }
 
 /* Nút trong vùng giao diện mới bỏ kiểu mặc định của trình duyệt.

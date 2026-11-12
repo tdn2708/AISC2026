@@ -18,8 +18,9 @@
 /* ==================================================================
    HỆ THIẾT KẾ "SỔ KIỂM CHỨNG", BẢNG MÀU B (màu nhóm Customer Radar)
    ------------------------------------------------------------------
-   Phần mềm cho doanh nghiệp đọc mỗi sáng: nền đặc, viền 1px, không ảnh
-   nền, không kính mờ, không bóng đổ mềm. Sự chú ý dành cho đúng một thứ:
+   Phần mềm cho doanh nghiệp đọc mỗi sáng: số liệu nằm trên giấy đặc, kính
+   chỉ là ống ngắm (thanh trên, thanh bên, lớp nổi), viền 1px, không bóng
+   phát sáng (bóng luôn có lệch). Sự chú ý dành cho đúng một thứ:
    thanh bằng chứng dưới mỗi con số (xem components/ui/EvidenceBar.jsx).
 
    Màu lấy từ ảnh nhóm: navy của dây đeo thẻ (mực, khối đậm), xanh áo
@@ -62,6 +63,7 @@
 /* ---------- TẦNG 1: THAM CHIẾU (không đổi theo chế độ) ---------- */
 :root {
   /* Navy và xám lam (mực, nền tối, chữ phụ, viền) */
+  --navy-17: #0A1222;   /* navy sâu: chỉ cho lớp không khí chế độ tối */
   --navy-20: #0D1524;
   --navy-23: #111C30;
   --navy-25: #142036;
@@ -203,6 +205,20 @@
   --shadow-knob:   0 1px 3px rgb(19 35 63 / 0.25);
   /* Lớp nổi (popover, tooltip, hộp thoại, ngăn kéo, toast): bóng thứ hai và cuối cùng của hệ */
   --shadow-overlay: 0 6px 16px -6px rgb(19 35 63 / 0.22);
+  /* Lớp kính nổi (K1, 12.3): bóng thứ ba, có lệch, không glow */
+  --shadow-float:  0 10px 30px -14px rgb(19 35 63 / 0.28);
+
+  /* Kính (K1). tint: thanh trên, thanh bên, thanh lọc; tint-strong: lớp nổi có chữ dày;
+     panel: panel số liệu (không backdrop-filter, xem 12.7). Độ đặc đã đo ở .hallmark/contrast-K1.mjs */
+  --glass-tint:        rgb(255 255 255 / 0.66);
+  --glass-tint-strong: rgb(255 255 255 / 0.82);
+  --glass-panel:       rgb(255 255 255 / 0.78);
+  --glass-line:        rgb(19 35 63 / 0.10);
+  --glass-edge:        inset 0 1px 0 rgb(255 255 255 / 0.7);
+  /* Lớp không khí (AppAtmosphere): ba vùng sáng rất nhẹ, không san hô, không tím */
+  --atmos-a: color-mix(in srgb, var(--polo-52) 10%, transparent);
+  --atmos-b: color-mix(in srgb, var(--navy-26) 6%, transparent);
+  --atmos-c: color-mix(in srgb, var(--polo-81) 14%, transparent);
 
   /* Chữ */
   --text-hi:  var(--navy-26);
@@ -276,6 +292,15 @@
   --hairline-shade: none;
   --shadow-knob:   0 1px 3px rgb(4 8 16 / 0.45);
   --shadow-overlay: 0 6px 16px -6px rgb(4 8 16 / 0.65);
+  --shadow-float:  0 12px 32px -14px rgb(0 0 0 / 0.6);
+  --glass-tint:        rgb(20 32 54 / 0.62);
+  --glass-tint-strong: rgb(20 32 54 / 0.80);
+  --glass-panel:       rgb(20 32 54 / 0.76);
+  --glass-line:        rgb(255 255 255 / 0.12);
+  --glass-edge:        inset 0 1px 0 rgb(255 255 255 / 0.08);
+  --atmos-a: color-mix(in srgb, var(--polo-52) 16%, transparent);
+  --atmos-b: color-mix(in srgb, var(--polo-81) 8%, transparent);
+  --atmos-c: color-mix(in srgb, var(--navy-17) 40%, transparent);
 
   --text-hi:  var(--navy-95);
   --text-mid: var(--navy-82);
@@ -334,11 +359,12 @@
   /* Thanh bên áp sát mép */
   --sidebar-bg: var(--surface-side);
 
-  /* "Kính" cũ nay là bề mặt đặc — giữ tên để không phải sửa từng trang */
-  --glass-bg:      var(--surface);
-  --glass-strong:  var(--surface);
-  --glass-line:    var(--border);
-  --glass-shade:   var(--hairline-shade);
+  /* Tên cũ glass-* (K1): .glass và .glass-strong là panel số liệu nên trỏ --glass-panel (12.7);
+     --glass-line, --glass-edge khai báo ở tầng 2 vì khác nhau theo chế độ */
+  --glass-bg:      var(--glass-panel);
+  --glass-strong:  var(--glass-panel);
+  --glass-shade:   var(--glass-edge);
+  --glass-blur:    16px;
   /* F1-06 bỏ các bí danh không còn ai đọc: hero-*, bg-card, text-primary, risk-*,
      accent-blue/cyan/purple/indigo, glass-hi, glass-border, backdrop-*, grid-line
      (danh sách ở .hallmark/F1-06-token-xoa.md) */
@@ -427,27 +453,77 @@ kbd { font-family: inherit; }
   letter-spacing: 0;
 }
 
-/* Panel kính dùng chung — tên lớp cũ được giữ để các trang chưa chuyển đổi
-   (Lab) tự nhận diện mạo mới. */
+/* Panel số liệu (12.7): nền --glass-panel mờ một phần, KHÔNG backdrop-filter.
+   Chữ dày đặc bên trong đặt trên lớp `paper` (tailwind.css). Tên lớp cũ giữ cho Lab. */
 .glass-panel {
-  background: var(--glass-strong);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  background: var(--glass-panel);
   border: 1px solid var(--glass-line);
   box-shadow: var(--glass-shade);
   border-radius: var(--r-surf);
   padding: var(--space-lg);
 }
 
+/* Giảm trong suốt: lớp không khí ẩn; các bề mặt kính về nền đặc ở tailwind.css (sau khối utility,
+   vì utilities được import không qua @layer nên thứ tự mới quyết định). Tắt "Hiệu ứng kính" thì tương tự. */
 @media (prefers-reduced-transparency: reduce) {
-  .glass-panel { background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .glass-panel { background: var(--surface-solid); }
+  .atmos { display: none; }
 }
-
-/* Người dùng tắt hiệu ứng kính trong Cài đặt → mọi bề mặt về nền đặc */
-[data-glass='off'] :is(.glass, .glass-strong, .glass-panel, .sidebar-container) {
+[data-glass='off'] :is(.glass, .glass-strong, .glass-panel, .glass-chrome, .glass-float, .sidebar-container) {
   background: var(--surface-solid) !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
+}
+[data-glass='off'] .atmos { display: none; }
+
+/* Điện thoại: làm mờ nhẹ hơn cho đỡ nặng GPU */
+@media (max-width: 767px) {
+  :root { --glass-blur: 8px; }
+}
+
+/* Lớp không khí (K1-03): ba vùng sáng phía sau app; kính có thứ để làm mờ.
+   Vị trí ba vùng theo data-atmos (4 bố cục). Trôi theo cuộn của main.main-content
+   bằng timeline có tên (phần tử fixed không thấy main là tổ tiên cuộn của nó);
+   trình duyệt không hỗ trợ thì đứng yên. */
+.atmos {
+  position: fixed;
+  inset: -6vh 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  --ax: 55%; --ay: -4%; --bx: -8%; --by: 38%; --cx: 70%; --cy: 58%;
+}
+.atmos[data-atmos='data']  { --ax: -4%; --ay: -6%; --bx: 62%; --by: 6%;  --cx: 30%; --cy: 62%; }
+.atmos[data-atmos='work']  { --ax: 68%; --ay: -2%; --bx: 18%; --by: 34%; --cx: 78%; --cy: 70%; }
+.atmos[data-atmos='quiet'] { --ax: 38%; --ay: -14%; --bx: 84%; --by: 30%; --cx: 0%; --cy: 64%; }
+.atmos > i {
+  position: absolute;
+  width: 55vw;
+  height: 55vw;
+  border-radius: 50%;
+  will-change: transform;
+}
+.atmos > i:nth-child(1) { left: var(--ax); top: var(--ay); background: radial-gradient(closest-side, var(--atmos-a), transparent); }
+.atmos > i:nth-child(2) { left: var(--bx); top: var(--by); width: 48vw; height: 48vw; background: radial-gradient(closest-side, var(--atmos-b), transparent); }
+.atmos > i:nth-child(3) { left: var(--cx); top: var(--cy); width: 60vw; height: 60vw; background: radial-gradient(closest-side, var(--atmos-c), transparent); }
+
+@supports (animation-timeline: scroll()) {
+  html { timeline-scope: --app-scroll; }
+  main.main-content { scroll-timeline: --app-scroll block; }
+  .atmos > i {
+    animation: atmos-drift linear both;
+    animation-timeline: --app-scroll;
+  }
+  .atmos > i:nth-child(1) { --drift: -6vh; }
+  .atmos > i:nth-child(2) { --drift: -3.5vh; }
+  .atmos > i:nth-child(3) { --drift: -5vh; }
+}
+@keyframes atmos-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(0, var(--drift, -6vh), 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atmos > i { animation: none; }
 }
 
 /* ==================================================================
@@ -726,9 +802,8 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
 
   .glass-panel { padding: var(--space-md); }
 
-  /* Kính mờ trên hàng chục panel là việc nặng với GPU điện thoại: giảm bán
-     kính làm mờ, nền panel vốn đã gần đặc nên khác biệt khó nhận ra */
-  .glass-panel, .sidebar-container { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  /* Panel không còn backdrop-filter (12.7); chỉ thanh bên giữ làm mờ nhẹ */
+  .sidebar-container { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 
   /* Thanh phân trang bảng: nút đủ lớn cho ngón tay */
   .fb-pager { padding: var(--space-sm) var(--space-md); }
