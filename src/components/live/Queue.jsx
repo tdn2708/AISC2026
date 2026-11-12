@@ -66,12 +66,12 @@ const QueueCard = ({ g, sessionId, onResolved }) => {
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={complaint ? 'crit' : 'accent'}>{g.topicLabel}</Badge>
         {g.productName && <span className="truncate text-xs font-medium text-ink-mid">{g.productName}{g.size ? `, size ${g.size}` : ''}</span>}
-        <span className="ml-auto font-mono text-xs text-ink-lo" title={`Lần cuối ${clock(g.lastAt)}`}>{fmtRelative(g.lastAt)}</span>
+        <span className="ml-auto tabular-nums text-xs text-ink-lo" title={`Lần cuối ${clock(g.lastAt)}`}>{fmtRelative(g.lastAt)}</span>
       </div>
 
       <div className="mt-2 flex items-baseline gap-2">
         {g.count > 1 && (
-          <span className="shrink-0 font-mono text-lg font-semibold text-ink-hi">{fmtInt(g.count)}<span className="ml-1 font-sans text-xs font-normal text-ink-lo">người hỏi</span></span>
+          <span className="shrink-0 tabular-nums text-heading font-semibold text-ink-hi">{fmtInt(g.count)}<span className="ml-1 font-sans text-xs font-normal text-ink-lo">người hỏi</span></span>
         )}
         <p className="min-w-0 truncate text-sm text-ink-hi" title={g.samples?.[0]?.text}>
           {g.samples?.[0]?.handle && <span className="text-ink-lo">@{g.samples[0].handle}: </span>}

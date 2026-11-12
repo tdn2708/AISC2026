@@ -3,7 +3,6 @@
  * nav: kept (sidebar, 7 destinations, menu under 48rem) · signature: the reconciliation ledger, a ruled sheet whose subtraction adds up to the counted figure · states: loading, empty, error, full
  * axes: light/grotesk-sans/chromatic-blue · posture: restrained · contrast: pass (134 pairs, light and dark) · palette: B, team navy + polo blue + one coral mark · v2.0.0 */
 /* Hallmark · reworded "Tổng quan" to the summary sentence as the page head · 54 names the small label over it; the page name stays in the sidebar and the phone top bar */
-/* Hallmark · waive 64 · font-mono maps to Be Vietnam Pro with tabular-nums in this file, so no monospace face is drawn · the spans hold figures like 14 ngày and 120 ms whose digits must line up in table columns */
 /* Hallmark · dismissed kept-figures · 11:20, 3% and the phone number are live data that changed between the two captures, not removed content */
 /* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V3 · weakest: V, an app shell has few axes to move; spent the change on the ledger sheet and on dropping the ink block, the dots and the gauge */
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
@@ -130,6 +129,11 @@
      font đơn cách thật chỉ còn cho chuỗi thống kê trong ngăn kéo bằng chứng */
   --font-mono: var(--font-sans);
   --font-code: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  /* Thang cỡ chữ cho CSS thuần (Tailwind dùng text-xs, sm, base, heading, display, metric ở
+     styles/tailwind.css; hai nơi phải khớp). Không cỡ nào dưới 13px. */
+  --fs-xs: 0.8125rem;   /* 13px */
+  --fs-sm: 0.875rem;    /* 14px */
+  --fs-base: 1rem;      /* 16px */
 
   /* Khoảng cách */
   --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px;
@@ -195,7 +199,7 @@
   /* Giấy sổ: một bậc lệch khỏi bề mặt, cho tờ sổ đối chiếu */
   --sheet:         var(--navy-98);
   --sheet-rule:    var(--navy-90);
-  --hairline-shade: 0 1px 0 rgb(19 35 63 / 0.03);
+  --hairline-shade: none;   /* bề mặt phẳng: chỉ viền 1px, không bóng (F1-05) */
   --shadow-knob:   0 1px 3px rgb(19 35 63 / 0.25);
   /* Lớp nổi (popover, tooltip, hộp thoại, ngăn kéo, toast): bóng thứ hai và cuối cùng của hệ */
   --shadow-overlay: 0 6px 16px -6px rgb(19 35 63 / 0.22);
@@ -417,17 +421,24 @@ p { text-wrap: pretty; }
 
 /* Nhấn nút: lún xuống 1px, mọi nút, tức thì */
 :where(button, [role='button'], a[class*='rounded']):active:not(:disabled) { transform: translateY(1px); }
+/* Bảng tám trạng thái ở /ui-kit: ép "nhấn" và "focus" cho control nằm trong khung kit-active, kit-focus */
+.kit-active :where(button, [role='button']):not(:disabled) { transform: translateY(1px); }
+.kit-focus :where(button, [role='button'], [role='tab'], a) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kit-focus :where(input, select, textarea) { outline: 2px solid var(--accent); outline-offset: -1px; }
 
 :focus-visible {
+  /* Một kiểu focus cho mọi thứ bấm được (F1-05): viền ngoài 2px màu nhấn, hiện ngay, không
+     chuyển động. Không đặt border-radius ở đây: viền ngoài tự theo bo góc của phần tử. */
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 ::selection { background: var(--accent-dim); color: var(--text-hi); }
 
 /* Không nạp preflight nên phải tự bỏ gạch chân mặc định của liên kết */
 a { color: inherit; text-decoration: none; }
+/* Phím tắt (kbd) dùng chữ chính, không rơi về font đơn cách mặc định của trình duyệt */
+kbd { font-family: inherit; }
 
 /* Số liệu: chữ chính, chữ số đều cột để các hàng số thẳng cột với nhau */
 .data-num, .font-mono {
@@ -576,7 +587,7 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
 .badge {
   padding: var(--space-2xs) var(--space-xs);
   border-radius: var(--r-ctrl);
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -591,7 +602,7 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
 .cat-badge {
   padding: var(--space-2xs) var(--space-xs);
   border-radius: var(--r-ctrl);
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   font-weight: 500;
   background: var(--raised);
   color: var(--text-mid);
@@ -606,13 +617,13 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
   padding: var(--space-sm) var(--space-md);
   color: var(--text-lo);
   font-weight: 600;
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   border-bottom: 1px solid var(--border-soft);
   white-space: nowrap;
 }
 :where(.data-table) td {
   padding: var(--space-sm) var(--space-md);
-  font-size: 0.86rem;
+  font-size: var(--fs-sm);
   border-bottom: 1px solid var(--border-soft);
   color: var(--text-hi);
   vertical-align: middle;
@@ -628,15 +639,15 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
   gap: var(--space-md); padding: var(--space-md) var(--space-lg);
   border-bottom: 1px solid var(--border-soft);
 }
-.fb-panel-head h3 { margin: 0; font-size: 0.98rem; font-weight: 600; color: var(--text-hi); }
-.fb-panel-head p  { margin: var(--space-3xs) 0 0; font-size: 0.86rem; color: var(--text-lo); }
-.fb-count { font-size: 0.86rem; color: var(--text-lo); white-space: nowrap; }
-.fb-count b { color: var(--text-hi); font-weight: 600; font-family: var(--font-mono); }
+.fb-panel-head h3 { margin: 0; font-size: var(--fs-base); font-weight: 600; color: var(--text-hi); }
+.fb-panel-head p  { margin: var(--space-3xs) 0 0; font-size: var(--fs-sm); color: var(--text-lo); }
+.fb-count { font-size: var(--fs-sm); color: var(--text-lo); white-space: nowrap; }
+.fb-count b { color: var(--text-hi); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 .fb-table { width: 100%; min-width: 980px; border-collapse: collapse; table-layout: fixed; }
 :where(.fb-table) th {
   padding: var(--space-sm) var(--space-md);
-  font-size: 0.82rem; font-weight: 600; text-align: left;
+  font-size: var(--fs-xs); font-weight: 600; text-align: left;
   color: var(--text-mid);
   border-bottom: 1px solid var(--border-soft);
   white-space: nowrap;
@@ -645,7 +656,7 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
 :where(.fb-table) :is(th, td):last-child { padding-right: var(--space-lg); }
 :where(.fb-table) td {
   padding: var(--space-sm) var(--space-md);
-  font-size: 0.9rem;
+  font-size: var(--fs-sm);
   color: var(--text-hi);
   border-bottom: 1px solid var(--border-soft);
   vertical-align: middle;
@@ -659,29 +670,29 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
 .fb-avatar {
   flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
   display: grid; place-items: center;
-  font-size: 0.7rem; font-weight: 600;
+  font-size: var(--fs-xs); font-weight: 600;
   color: var(--accent-hi); background: var(--accent-dim);
 }
 .fb-user-text { min-width: 0; }
 .fb-user-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fb-meta { margin-top: var(--space-3xs); font-family: var(--font-mono); font-size: 0.8125rem; color: var(--text-lo); }
-.fb-product { color: var(--text-mid); font-size: 0.86rem; }
+.fb-meta { margin-top: var(--space-3xs); font-variant-numeric: tabular-nums; font-size: var(--fs-xs); color: var(--text-lo); }
+.fb-product { color: var(--text-mid); font-size: var(--fs-sm); }
 .fb-chip {
   display: inline-block; max-width: 100%;
   padding: var(--space-2xs) var(--space-xs); border-radius: var(--r-ctrl);
-  font-size: 0.8125rem; font-weight: 500;
+  font-size: var(--fs-xs); font-weight: 500;
   color: var(--text-mid); background: var(--raised);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;
 }
-.fb-status { display: inline-flex; align-items: center; gap: var(--space-xs); font-size: 0.86rem; font-weight: 500; white-space: nowrap; }
+.fb-status { display: inline-flex; align-items: center; gap: var(--space-xs); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
 .fb-pos { color: var(--viz-pos); }
 .fb-neg { color: var(--sev-crit); }
 .fb-neu { color: var(--text-mid); }
 .fb-trust { display: flex; align-items: center; gap: var(--space-xs); }
-.fb-trust-tier { font-family: var(--font-mono); font-size: 0.74rem; font-weight: 600; min-width: 1.6rem; }
+.fb-trust-tier { font-variant-numeric: tabular-nums; font-size: var(--fs-xs); font-weight: 600; min-width: 1.6rem; }
 .fb-trust-bar { width: 44px; height: 4px; border-radius: var(--r-mark); background: var(--raised); overflow: hidden; }
 .fb-trust-bar > span { display: block; height: 100%; border-radius: var(--r-mark); background: currentColor; }
-.fb-source { color: var(--text-mid); font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fb-source { color: var(--text-mid); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fb-empty { text-align: center; padding: var(--space-xl) var(--space-md) !important; color: var(--text-lo) !important; }
 /* .fb-pager, .fb-page-btn: bỏ ở F1-05, mọi bảng dùng ui/Pager */
 
@@ -857,7 +868,7 @@ html {
   .fb-c-text { grid-area: text; }
   .fb-c-text .fb-clamp { -webkit-line-clamp: 3; }
   .fb-c-product { grid-area: prod; }
-  .fb-c-product .fb-product { -webkit-line-clamp: 1; font-size: 0.8125rem; color: var(--text-lo); }
+  .fb-c-product .fb-product { -webkit-line-clamp: 1; font-size: var(--fs-xs); color: var(--text-lo); }
   .fb-c-cat { grid-area: cat; }
   .fb-c-trust { grid-area: trust; }
   .fb-c-src { grid-area: src; justify-self: end; }

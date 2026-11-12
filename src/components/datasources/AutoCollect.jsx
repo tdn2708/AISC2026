@@ -89,7 +89,7 @@ const AutoCollect = () => {
   return (
     <GlassPanel tone="strong" className="mb-6 p-5" aria-live="polite">
       <div className="flex flex-wrap items-start gap-4">
-        <span className={`grid size-11 shrink-0 place-items-center rounded-lg ${iconCls}`}>
+        <span className={`grid size-11 shrink-0 place-items-center rounded-ctrl ${iconCls}`}>
           <Icon size={20} className={s.running ? 'animate-spin' : ''} aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">

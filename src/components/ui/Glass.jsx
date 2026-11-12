@@ -11,7 +11,7 @@ import { severityOf } from '../../lib/format';
 export const GlassPanel = ({ as: Tag = 'div', tone = 'soft', glow = null, className = '', children, ...rest }) => {
   const glowClass = glow === 'crit' ? 'glow-crit' : glow === 'high' ? 'glow-high' : '';
   return (
-    <Tag className={`${tone === 'strong' ? 'glass-strong' : 'glass'} relative rounded-xl ${glowClass} ${className}`} {...rest}>
+    <Tag className={`${tone === 'strong' ? 'glass-strong' : 'glass'} relative rounded-surf ${glowClass} ${className}`} {...rest}>
       {children}
     </Tag>
   );
@@ -35,7 +35,7 @@ export const SeverityBadge = ({ level, className = '' }) => {
   const Icon = SEVERITY_ICON[level] || Info;
   return (
     <span
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded bg-(--sev)/12 px-1.5 py-0.5 font-mono text-xs font-medium text-(--sev) ${className}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-ctrl bg-(--sev)/12 px-1.5 py-0.5 tabular-nums text-xs font-medium text-(--sev) ${className}`}
       style={{ '--sev': meta.color }}
     >
       <Icon size={12} aria-hidden="true" />
@@ -51,7 +51,7 @@ export const MethodHint = ({ text }) => (
     role="img"
     aria-label={text}
     title={text}
-    className="grid size-5 shrink-0 cursor-help place-items-center rounded border border-line text-ink-lo transition-colors hover:border-ink-lo hover:text-ink-mid"
+    className="grid size-5 shrink-0 cursor-help place-items-center rounded-ctrl border border-line text-ink-lo transition-colors hover:border-ink-lo hover:text-ink-mid"
   >
     <Info size={11} aria-hidden="true" />
   </span>

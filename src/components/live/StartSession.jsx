@@ -133,7 +133,7 @@ const StartSession = ({ onStarted, onCancel }) => {
         </div>
       )}
 
-      {error && <p role="alert" className="mt-4 rounded-md bg-crit/10 px-3 py-2 text-sm text-crit">{error}</p>}
+      {error && <p role="alert" className="mt-4 rounded-ctrl bg-crit/10 px-3 py-2 text-sm text-crit">{error}</p>}
 
       <div className="mt-6 flex flex-wrap justify-end gap-2">
         {onCancel && <Button variant="ghost" onClick={onCancel}>Hủy</Button>}

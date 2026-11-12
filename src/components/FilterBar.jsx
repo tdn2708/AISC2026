@@ -132,7 +132,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
   const filteredProducts = productOptions.filter((p) => foldVi(p).includes(productNeedle));
 
   return (
-    <div className="cx glass relative z-[100] mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl px-4 py-3">
+    <div className="cx glass relative z-[100] mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-surf px-4 py-3">
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Khoảng thời gian">
         <span className="eyebrow mr-1 hidden lg:inline">Thời gian</span>
         {TIME_PRESETS.map((t) => (
@@ -217,7 +217,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs text-ink-mid transition-colors hover:bg-crit/10 hover:text-crit"
+            className="inline-flex h-8 items-center gap-1 rounded-ctrl px-2.5 text-xs text-ink-mid transition-colors hover:bg-crit/10 hover:text-crit"
           >
             <X size={13} aria-hidden="true" />
             Xoá {activeCount} bộ lọc

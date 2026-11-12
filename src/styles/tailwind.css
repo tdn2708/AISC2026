@@ -17,6 +17,20 @@
 @import "tailwindcss/utilities.css";
 @source "../";
 
+/* Trạng thái ép cho /ui-kit (F1-05): lớp kit-hover trên khung bọc làm control bên trong hiện
+   như đang rê chuột, để bảng tám trạng thái xem được không cần chuột. Trong app không ai dùng
+   lớp này, nên hover chỉ chạy khi rê thật (và chỉ trên thiết bị có chuột). */
+@custom-variant hover {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+  &:where(.kit-hover, .kit-hover *) {
+    @slot;
+  }
+}
+
 @theme inline {
   --color-canvas: var(--canvas);
   --color-surface: var(--surface-solid);
@@ -94,6 +108,10 @@
   --text-display--line-height: 1.25;
   --text-metric: 2rem;
   --text-metric--line-height: 1;
+  /* Ngoại lệ có chủ đích, ngoài thang trong app: tiêu đề khối mực ở đăng nhập và trang
+     giới thiệu công khai. Không dùng trong các trang của app. */
+  --text-hero: 2.6rem;
+  --text-hero--line-height: 1.12;
 }
 
 /* Chuyển động: giá trị ở index.css (--motion-*, --ease-*). Ở đây chỉ đặt
@@ -153,17 +171,17 @@
 
 /* Ánh sáng chỉ dành cho luồng khẩn cấp */
 @utility glow-crit {
-  /* Viền 1px rõ ràng thay cho quầng sáng — tín hiệu, không phải trang trí */
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--sev-crit) 60%, transparent), var(--glass-shade);
+  /* Đổi màu viền 1px có sẵn của bề mặt (một mức trạng thái /35), không dùng bóng (F1-05) */
+  border-color: color-mix(in oklab, var(--sev-crit) 35%, transparent);
 }
 @utility glow-high {
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--sev-high) 50%, transparent), var(--glass-shade);
+  border-color: color-mix(in oklab, var(--sev-high) 35%, transparent);
 }
 
 /* Nhãn nhỏ phía trên một con số hoặc khối — viết thường, chỉ hoa chữ đầu */
 @utility eyebrow {
   font-family: var(--font-sans);
-  font-size: 0.8rem;
+  font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--text-mid);
 }

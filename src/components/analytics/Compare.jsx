@@ -31,16 +31,16 @@ const Side = ({ p, color, tag }) => (
     <dl className="mt-4 grid grid-cols-3 gap-3">
       <div>
         <dt className="text-xs text-ink-lo">Phản hồi</dt>
-        <dd className="mt-0.5 font-mono text-lg font-semibold text-ink-hi">{fmtInt(p.n)}</dd>
+        <dd className="mt-0.5 tabular-nums text-heading font-semibold text-ink-hi">{fmtInt(p.n)}</dd>
       </div>
       <div>
         <dt className="text-xs text-ink-lo">Tiêu cực</dt>
-        <dd className="mt-0.5 font-mono text-lg font-semibold text-ink-hi">{pct(p.negativeShare.p)}</dd>
+        <dd className="mt-0.5 tabular-nums text-heading font-semibold text-ink-hi">{pct(p.negativeShare.p)}</dd>
         <dd className="text-xs text-ink-lo">từ {pct(p.negativeShare.low)} đến {pct(p.negativeShare.high)}</dd>
       </div>
       <div>
         <dt className="text-xs text-ink-lo">Điểm sao</dt>
-        <dd className="mt-0.5 font-mono text-lg font-semibold text-ink-hi">{p.avgRating != null ? p.avgRating.toFixed(1).replace('.', ',') : '—'}</dd>
+        <dd className="mt-0.5 tabular-nums text-heading font-semibold text-ink-hi">{p.avgRating != null ? p.avgRating.toFixed(1).replace('.', ',') : '—'}</dd>
       </div>
     </dl>
     <EvidenceBar mix={p.evidence} className="mt-4" />
@@ -51,7 +51,7 @@ const Side = ({ p, color, tag }) => (
           {p.topCauses.map((c) => (
             <li key={`${c.category}-${c.label}`} className="flex justify-between gap-3">
               <span className="truncate text-ink-hi">{c.label}</span>
-              <span className="font-mono text-ink-mid">{fmtInt(c.count)}</span>
+              <span className="tabular-nums text-ink-mid">{fmtInt(c.count)}</span>
             </li>
           ))}
         </ul>
@@ -97,7 +97,7 @@ const Compare = () => {
   }, [a, b]);
 
   if (error && !products) return <GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel>;
-  if (!products) return <div className="h-[420px] animate-pulse rounded-xl bg-raised" />;
+  if (!products) return <div className="h-[420px] animate-pulse rounded-surf bg-raised" />;
   if (products.length < 2) {
     return (
       <GlassPanel>
@@ -129,7 +129,7 @@ const Compare = () => {
           <Select label="Sản phẩm B (ví dụ: của đối thủ)" value={b} onChange={(e) => setB(e.target.value)} options={options} />
         </div>
         {a === b && <p className="mt-3 text-sm text-high">Chọn hai sản phẩm khác nhau.</p>}
-        {verdict && a !== b && <p className="mt-4 rounded-lg bg-accent-dim px-4 py-3 text-sm leading-relaxed text-ink-hi">{verdict}</p>}
+        {verdict && a !== b && <p className="mt-4 rounded-ctrl bg-accent-dim px-4 py-3 text-sm leading-relaxed text-ink-hi">{verdict}</p>}
       </GlassPanel>
 
       {data && a !== b && (
@@ -154,7 +154,7 @@ const Compare = () => {
                         <span className="h-2 flex-1 overflow-hidden rounded-full bg-raised">
                           <span className="block h-full rounded-full" style={{ width: `${(v / maxShare) * 100}%`, background: color }} />
                         </span>
-                        <span className="w-14 text-right font-mono text-xs text-ink-mid">{pct(v)}</span>
+                        <span className="w-14 text-right tabular-nums text-xs text-ink-mid">{pct(v)}</span>
                       </div>
                     ))}
                   </li>

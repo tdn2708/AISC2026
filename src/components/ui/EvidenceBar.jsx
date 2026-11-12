@@ -86,8 +86,8 @@ export const EvidenceBar = ({ mix, height = 6, showCaption = true, className = '
         <p className="mt-1.5 text-xs leading-snug text-ink-lo">
           {total ? (
             <>
-              <span className="font-mono font-medium text-ink-mid">{100 - pct(mix.inferred, total)}%</span> có chứng từ hoặc đã duyệt,{' '}
-              <span className="font-mono">{pct(mix.inferred, total)}%</span> do AI đoán
+              <span className="tabular-nums font-medium text-ink-mid">{100 - pct(mix.inferred, total)}%</span> có chứng từ hoặc đã duyệt,{' '}
+              <span className="tabular-nums">{pct(mix.inferred, total)}%</span> do AI đoán
             </>
           ) : (
             'Chưa có phản hồi nào được tính'
@@ -115,7 +115,7 @@ export const EvidenceLegend = ({ mix }) => (
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-sm font-medium text-ink-hi">{k.label}</span>
-            <span className="font-mono text-sm text-ink-hi">
+            <span className="tabular-nums text-sm text-ink-hi">
               {fmtInt(mix?.[k.key])} <span className="text-ink-lo">({pct(mix?.[k.key] || 0, mix?.total)}%)</span>
             </span>
           </div>

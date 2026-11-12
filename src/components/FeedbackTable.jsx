@@ -31,7 +31,7 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
   const allHref = `/feedbacks${all.toString() ? `?${all}` : ''}`;
 
   return (
-    <div className="overflow-hidden glass-strong rounded-xl">
+    <div className="overflow-hidden glass-strong rounded-surf">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-line-soft px-5 py-4 sm:px-6">
         <div>
           <h2 className="text-heading font-semibold text-ink-hi">Phản hồi gần đây</h2>

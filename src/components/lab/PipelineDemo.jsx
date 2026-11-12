@@ -100,7 +100,7 @@ const CHIP_TONE = {
 };
 
 const Chip = ({ children, tone = 'neutral', mono, title }) => (
-  <span title={title} className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${CHIP_TONE[tone]} ${mono ? 'font-mono' : ''}`}>
+  <span title={title} className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${CHIP_TONE[tone]} ${mono ? 'tabular-nums' : ''}`}>
     {children}
   </span>
 );
@@ -137,7 +137,7 @@ const ProbBar = ({ label, p, winner, tone = 'accent' }) => (
         <div className={`h-full rounded-full ${winner ? BAR_TONE[tone] : 'bg-line'}`} style={{ width: `${Math.max(0.5, p * 100)}%` }} />
       </div>
     </div>
-    <span className={`text-right font-mono text-xs ${winner ? 'text-ink-hi' : 'text-ink-mid'}`}>{(p * 100).toFixed(1).replace('.', ',')}%</span>
+    <span className={`text-right tabular-nums text-xs ${winner ? 'text-ink-hi' : 'text-ink-mid'}`}>{(p * 100).toFixed(1).replace('.', ',')}%</span>
   </div>
 );
 
@@ -270,7 +270,7 @@ function StepTokens({ t }) {
             <span
               key={i}
               title={special ? 'token đặc biệt' : wordStart ? 'bắt đầu một từ' : 'mảnh ghép tiếp theo của từ'}
-              className={`rounded border px-1.5 py-0.5 font-mono text-xs ${cls} ${wordStart && i > 1 ? 'ml-1.5' : ''}`}
+              className={`rounded-ctrl border px-1.5 py-0.5 tabular-nums text-xs ${cls} ${wordStart && i > 1 ? 'ml-1.5' : ''}`}
             >
               {wordStart ? tok.slice(1) || '␣' : tok}
             </span>
@@ -378,7 +378,7 @@ function StepExplain({ t }) {
             <span
               key={i}
               title={after != null ? `Bỏ từ này: xác suất còn ${(after * 100).toFixed(2).replace('.', ',')}%` : ''}
-              className={`rounded px-1.5 text-base text-ink-hi ${v > 0 && a > 0.5 ? 'font-semibold' : ''}`}
+              className={`rounded-ctrl px-1.5 text-base text-ink-hi ${v > 0 && a > 0.5 ? 'font-semibold' : ''}`}
               style={{ background: Math.abs(v) < 0.05 ? 'transparent' : bg }}
             >
               {w}
@@ -388,8 +388,8 @@ function StepExplain({ t }) {
       </div>
 
       <div className="mt-2 flex flex-wrap gap-4 text-xs text-ink-mid">
-        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[rgb(var(--viz-support)/0.7)]" aria-hidden="true" />ủng hộ kết luận</span>
-        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-[rgb(var(--viz-oppose)/0.55)]" aria-hidden="true" />kéo ngược kết luận</span>
+        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-ctrl bg-[rgb(var(--viz-support)/0.7)]" aria-hidden="true" />ủng hộ kết luận</span>
+        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-ctrl bg-[rgb(var(--viz-oppose)/0.55)]" aria-hidden="true" />kéo ngược kết luận</span>
         <span>rê chuột lên từng từ để xem xác suất khi bỏ từ đó</span>
       </div>
 
@@ -403,7 +403,7 @@ function StepExplain({ t }) {
                 <div className="h-1.5 overflow-hidden rounded-full bg-raised">
                   <div className="h-full rounded-full bg-high" style={{ width: `${(x.v / maxPos) * 100}%` }} />
                 </div>
-                <span className="font-mono text-xs whitespace-nowrap text-ink-mid">
+                <span className="tabular-nums text-xs whitespace-nowrap text-ink-mid">
                   bỏ đi còn {x.after != null ? (x.after * 100).toFixed(1).replace('.', ',') : '—'}%
                 </span>
               </div>
@@ -530,7 +530,7 @@ function StepFinal({ t, scenario }) {
                     {a.causeUncertain && <span className="text-high">, nguyên nhân chưa chắc</span>}
                     {i === 0 && <span className="font-semibold text-accent-hi">, chính</span>}
                   </span>
-                  <span className="font-mono text-xs text-ink-mid">{a.owner}{a.confidence != null ? `, ${a.confidence}` : ''}</span>
+                  <span className="tabular-nums text-xs text-ink-mid">{a.owner}{a.confidence != null ? `, ${a.confidence}` : ''}</span>
                 </li>
               ))}
             </ul>
@@ -553,7 +553,7 @@ function StepFinal({ t, scenario }) {
           ) : (
             <ul className="flex list-none flex-col gap-2">
               {r.slice(0, 4).map((x, i) => (
-                <li key={i} className="rounded-lg bg-raised px-3.5 py-2.5">
+                <li key={i} className="rounded-ctrl bg-raised px-3.5 py-2.5">
                   <p className="text-sm font-semibold text-ink-hi">{x.categoryLabel}: {x.causeLabel}</p>
                   <Row className="mt-1.5">{x.keywords.map((k) => <Chip key={k} mono>khớp "{k}"</Chip>)}</Row>
                 </li>
@@ -738,7 +738,7 @@ export default function PipelineDemo() {
               <Button variant="ghost" onClick={() => { setPlaying(false); setRevealed(STEPS.length); }}>Hiện tất cả</Button>
             </>
           )}
-          {trace && <span className="font-mono text-xs text-ink-mid">toàn bộ quy trình: {trace.totalMs} ms</span>}
+          {trace && <span className="tabular-nums text-xs text-ink-mid">toàn bộ quy trình: {trace.totalMs} ms</span>}
         </div>
 
         {error && (
@@ -762,9 +762,9 @@ export default function PipelineDemo() {
                   onClick={() => stepRefs.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                   className={`flex h-8 items-center gap-2 rounded-ctrl border px-3 text-xs transition-[background-color,border-color,color] duration-micro ease-out disabled:cursor-not-allowed ${on ? `${SELECTED} hover:bg-accent/20` : 'border-line bg-surface text-ink-lo'}`}
                 >
-                  <span className="font-mono font-semibold">{i + 1}</span>
+                  <span className="tabular-nums font-semibold">{i + 1}</span>
                   <span className="whitespace-nowrap">{s.title}</span>
-                  {on && ms != null && <span className="font-mono opacity-75">{ms} ms</span>}
+                  {on && ms != null && <span className="tabular-nums opacity-75">{ms} ms</span>}
                 </button>
               </li>
             );
@@ -802,9 +802,9 @@ export default function PipelineDemo() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <h4 id={`step-${s.key}`} className="text-base font-semibold text-ink-hi">
-                        <span className="mr-1.5 font-mono text-ink-lo">Bước {i + 1}</span>{s.title}
+                        <span className="mr-1.5 tabular-nums text-ink-lo">Bước {i + 1}</span>{s.title}
                       </h4>
-                      {visible && ms != null && <span className="font-mono text-xs text-ink-mid">{ms} ms</span>}
+                      {visible && ms != null && <span className="tabular-nums text-xs text-ink-mid">{ms} ms</span>}
                     </div>
                     <p className="mt-0.5 text-sm leading-relaxed text-ink-mid">{s.why}</p>
                     {visible && (

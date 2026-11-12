@@ -193,7 +193,7 @@ const VersusDemo = () => {
             <div className="flex items-center gap-3">
               <SentimentFace sentiment={generic?.sentiment} size={44} />
               <div>
-                <p className="text-xl font-semibold text-ink-hi">{sentimentLabel(generic?.sentiment)}</p>
+                <p className="text-heading font-semibold text-ink-hi">{sentimentLabel(generic?.sentiment)}</p>
                 <p className="text-sm text-ink-lo">cho cả câu</p>
               </div>
             </div>
@@ -227,7 +227,7 @@ const VersusDemo = () => {
                 <div className="flex items-center gap-3">
                   <SentimentFace sentiment={final?.sentiment} size={44} />
                   <div>
-                    <p className="text-xl font-semibold text-ink-hi">{sentimentLabel(final?.sentiment)}</p>
+                    <p className="text-heading font-semibold text-ink-hi">{sentimentLabel(final?.sentiment)}</p>
                     <p className="text-sm text-ink-lo">
                       {aspects.length ? `${aspects.length} vấn đề được bóc tách` : 'Không có vấn đề cần xử lý'}
                     </p>
@@ -237,7 +237,7 @@ const VersusDemo = () => {
                 {aspects.length > 0 && (
                   <ul className="mt-4 flex list-none flex-col gap-2">
                     {aspects.map((a, i) => (
-                      <li key={`${a.category}-${a.cause}-${i}`} className="rounded-lg bg-raised px-3.5 py-2.5">
+                      <li key={`${a.category}-${a.cause}-${i}`} className="rounded-ctrl bg-raised px-3.5 py-2.5">
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-sm font-semibold text-ink-hi">
                             {a.categoryLabel}{a.causeLabel ? <span className="font-normal text-ink-mid">: {a.causeLabel}</span> : null}
@@ -262,7 +262,7 @@ const VersusDemo = () => {
                   <p>
                     <span className="text-ink-lo">Đã hiểu: </span>
                     {replacements.slice(0, 5).map((r, i) => (
-                      <span key={i} className="mr-1.5 inline-block font-mono text-xs">
+                      <span key={i} className="mr-1.5 inline-block tabular-nums text-xs">
                         {r.from}<span className="text-ink-lo"> → </span><span className="text-accent-hi">{r.to}</span>{i < Math.min(replacements.length, 5) - 1 ? ',' : ''}
                       </span>
                     ))}

@@ -176,7 +176,7 @@ const EvidenceDrawer = ({ metric, stats, onClose }) => {
               {labels.map(([by, n]) => (
                 <li key={by} className="flex items-baseline justify-between gap-3 text-sm">
                   <span className="text-ink-mid">{LABELLER_LABEL[by] || by}</span>
-                  <span className="font-mono text-ink-hi">
+                  <span className="tabular-nums text-ink-hi">
                     {fmtInt(n)} <span className="text-ink-lo">({mix.total ? Math.round((n / mix.total) * 100) : 0}%)</span>
                   </span>
                 </li>
@@ -192,13 +192,13 @@ const EvidenceDrawer = ({ metric, stats, onClose }) => {
                 {ev.samples.map((s) => {
                   const b = sampleBadge(s);
                   return (
-                    <li key={String(s._id)} className="rounded-lg border border-line-soft p-3">
+                    <li key={String(s._id)} className="rounded-ctrl border border-line-soft p-3">
                       <p className="text-sm leading-relaxed text-ink-hi">“{s.text}”</p>
                       <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-lo">
-                        <span className={`rounded px-1.5 py-0.5 font-medium ${b.strong ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-mid'}`}>{b.text}</span>
+                        <span className={`rounded-ctrl px-1.5 py-0.5 font-medium ${b.strong ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-mid'}`}>{b.text}</span>
                         <span>{s.source}</span>
-                        <span className="font-mono">{fmtDate(s.timestamp)}</span>
-                        {s.rating != null && <span className="font-mono">{s.rating}★</span>}
+                        <span className="tabular-nums">{fmtDate(s.timestamp)}</span>
+                        {s.rating != null && <span className="tabular-nums">{s.rating}★</span>}
                       </p>
                     </li>
                   );

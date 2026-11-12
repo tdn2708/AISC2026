@@ -71,7 +71,7 @@ const Metric = ({ label, children, sub, note, extra, bad, onOpen }) => (
     aria-haspopup="dialog"
     className="group relative flex min-w-0 flex-col px-5 py-5 text-left transition-colors hover:bg-raised focus-visible:bg-raised sm:px-6"
   >
-    {bad && <span aria-hidden="true" className="absolute top-5 bottom-5 left-0 w-[3px] rounded-r bg-crit" />}
+    {bad && <span aria-hidden="true" className="absolute top-5 bottom-5 left-0 w-[3px] rounded-r-ctrl bg-crit" />}
     <span className="text-base font-medium text-ink-mid">{label}</span>
     <span className="mt-2 text-metric leading-none font-semibold tracking-[-0.02em] text-ink-hi">{children}</span>
     {sub && <span className="mt-2.5">{sub}</span>}
@@ -100,7 +100,7 @@ const StoreHealth = ({ stats, trend = [] }) => {
   const trust = health == null ? null : health >= 75 ? ['text-ok', 'Đáng tin'] : health >= 50 ? ['text-high', 'Cần chú ý'] : ['text-crit', 'Chưa đáng tin'];
 
   return (
-    <section aria-labelledby="health-title" className="mb-8 overflow-hidden glass-strong rounded-xl">
+    <section aria-labelledby="health-title" className="mb-8 overflow-hidden glass-strong rounded-surf">
       <h2 id="health-title" className="px-5 pt-5 text-heading font-semibold tracking-[-0.01em] text-ink-hi sm:px-6">Cửa hàng đang thế nào</h2>
       <div className="mt-1 grid grid-cols-1 divide-y divide-line-soft md:grid-cols-3 md:divide-x md:divide-y-0">
         <Metric
@@ -110,7 +110,7 @@ const StoreHealth = ({ stats, trend = [] }) => {
           note={wcr?.available && (hasPrev ? `7 ngày qua ${fmtPct(cmp?.current?.wcr, 2)}, tuần trước ${fmtPct(cmp?.previous?.wcr, 2)}` : `Trên ${fmtInt(wcr.denominator)} đơn hàng`)}
           onOpen={() => setOpen('wcr')}
         >
-          {wcr?.available ? <AnimatedNumber value={wcr.value * 100} decimals={2} unit="%" /> : <span className="text-lg font-medium text-ink-mid">Chưa nối dữ liệu đơn hàng</span>}
+          {wcr?.available ? <AnimatedNumber value={wcr.value * 100} decimals={2} unit="%" /> : <span className="text-heading font-medium text-ink-mid">Chưa nối dữ liệu đơn hàng</span>}
         </Metric>
         <Metric
           label="Khách không hài lòng"
@@ -125,7 +125,7 @@ const StoreHealth = ({ stats, trend = [] }) => {
               <AnimatedNumber value={Math.round(son.value * 100)} />
               <span className="ml-1.5 text-base font-medium text-ink-mid">trên 100 phản hồi</span>
             </>
-          ) : <span className="text-lg font-medium text-ink-mid">Chưa có dữ liệu</span>}
+          ) : <span className="text-heading font-medium text-ink-mid">Chưa có dữ liệu</span>}
         </Metric>
         <Metric
           label="Độ tin số liệu"
@@ -134,7 +134,7 @@ const StoreHealth = ({ stats, trend = [] }) => {
           note={`${fmtInt(stats?.totalFeedbacks?.valid)} trên ${fmtInt(stats?.totalFeedbacks?.value)} phản hồi được tính, phần còn lại là rác hoặc nghi ảo`}
           onOpen={() => setOpen('health')}
         >
-          {trust ? <span className={trust[0]}>{trust[1]}</span> : <span className="text-lg font-medium text-ink-mid">Chưa có dữ liệu</span>}
+          {trust ? <span className={trust[0]}>{trust[1]}</span> : <span className="text-heading font-medium text-ink-mid">Chưa có dữ liệu</span>}
         </Metric>
       </div>
       {ev?.all && (

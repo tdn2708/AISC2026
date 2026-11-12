@@ -42,14 +42,14 @@ const FeedbackDetail = ({ item, onClose }) => {
             </span>
           </div>
 
-          <blockquote className="rounded-lg border border-line-soft p-4 text-base leading-relaxed text-ink-hi">
+          <blockquote className="rounded-ctrl border border-line-soft p-4 text-base leading-relaxed text-ink-hi">
             {item.originalText}
             {item.rating != null && (
               <span className="mt-2 flex items-center gap-1 text-xs text-ink-lo">
                 {Array.from({ length: 5 }, (_, i) => (
                   <Star key={i} size={12} className={i < item.rating ? 'fill-high text-high' : 'text-line'} aria-hidden="true" />
                 ))}
-                <span className="ml-1 font-mono">{item.rating}/5</span>
+                <span className="ml-1 tabular-nums">{item.rating}/5</span>
               </span>
             )}
           </blockquote>

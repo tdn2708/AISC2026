@@ -95,10 +95,10 @@ export const FeedbackListSkeleton = ({ rows = 8 }) => (
     {Array.from({ length: rows }, (_, i) => (
       <div key={i} className="flex items-center gap-4 border-b border-line-soft px-6 py-4 last:border-b-0">
         <span className="size-8 shrink-0 animate-pulse rounded-full bg-raised" />
-        <span className="h-3 w-28 animate-pulse rounded bg-raised" />
-        <span className="h-3 flex-1 animate-pulse rounded bg-raised" />
-        <span className="hidden h-3 w-20 animate-pulse rounded bg-raised sm:block" />
-        <span className="hidden h-3 w-16 animate-pulse rounded bg-raised sm:block" />
+        <span className="h-3 w-28 animate-pulse rounded-ctrl bg-raised" />
+        <span className="h-3 flex-1 animate-pulse rounded-ctrl bg-raised" />
+        <span className="hidden h-3 w-20 animate-pulse rounded-ctrl bg-raised sm:block" />
+        <span className="hidden h-3 w-16 animate-pulse rounded-ctrl bg-raised sm:block" />
       </div>
     ))}
   </div>

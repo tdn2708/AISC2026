@@ -45,7 +45,7 @@ const BADGE = {
 
 /** Badge — nhãn chữ nhỏ, góc vuông nhẹ, nền nhạt cùng tông chữ */
 export const Badge = ({ tone = 'neutral', icon: Icon, children, mono, className = '' }) => (
-  <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium whitespace-nowrap ${BADGE[tone]} ${mono ? 'font-mono' : ''} ${className}`}>
+  <span className={`inline-flex items-center gap-1 rounded-ctrl px-1.5 py-0.5 text-xs font-medium whitespace-nowrap ${BADGE[tone]} ${mono ? 'tabular-nums' : ''} ${className}`}>
     {Icon && <Icon size={12} aria-hidden="true" />}
     {children}
   </span>
@@ -63,11 +63,11 @@ export const ProgressBar = ({ value = 0, tone = 'accent', label, showValue, heig
       {(label || showValue) && (
         <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
           {label && <span className="text-ink-mid">{label}</span>}
-          {showValue && <span className="font-mono text-ink-hi">{pct}%</span>}
+          {showValue && <span className="tabular-nums text-ink-hi">{pct}%</span>}
         </div>
       )}
       <div
-        className="w-full overflow-hidden rounded-sm bg-raised"
+        className="w-full overflow-hidden rounded-ctrl bg-raised"
         style={{ height }}
         role="progressbar"
         aria-valuemin={0}
@@ -95,7 +95,7 @@ export const Stepper = ({ steps, className = '' }) => (
       return (
         <li key={s.label} className={`min-w-0 sm:px-4 sm:first:pl-0 ${last ? 'sm:border-l sm:border-line' : ''}`}>
           <p className="text-sm leading-snug text-ink-mid">{s.label}</p>
-          <p className={`mt-1.5 font-mono text-xl tracking-tight ${last ? 'font-bold text-accent-hi' : 'font-semibold text-ink-hi'}`}>{s.value}</p>
+          <p className={`mt-1.5 tabular-nums text-heading tracking-tight ${last ? 'font-bold text-accent-hi' : 'font-semibold text-ink-hi'}`}>{s.value}</p>
           {s.sub && <p className="mt-0.5 text-xs leading-snug text-ink-lo">{s.sub}</p>}
         </li>
       );
@@ -152,7 +152,7 @@ const STAT_TONE = { crit: 'text-crit', high: 'text-high', ok: 'text-ok', accent:
 export const Stat = ({ label, value, sub, tone, className = '' }) => (
   <div className={`min-w-0 border-t border-line pt-3 ${className}`}>
     <p className="text-sm text-ink-mid">{label}</p>
-    <p className={`mt-1 font-mono text-2xl font-semibold tracking-tight ${STAT_TONE[tone] || 'text-ink-hi'}`}>{value}</p>
+    <p className={`mt-1 tabular-nums text-display font-semibold tracking-tight ${STAT_TONE[tone] || 'text-ink-hi'}`}>{value}</p>
     {sub && <p className="mt-0.5 text-xs text-ink-lo">{sub}</p>}
   </div>
 );

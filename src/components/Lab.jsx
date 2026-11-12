@@ -51,7 +51,7 @@ const Experiments = () => {
   useEffect(() => { load(); }, [load]);
 
   if (loading) {
-    return <div className="flex flex-col gap-4" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="h-40 animate-pulse rounded-xl bg-raised" />)}</div>;
+    return <div className="flex flex-col gap-4" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="h-40 animate-pulse rounded-surf bg-raised" />)}</div>;
   }
   if (error) {
     return <EmptyState variant="error" title="Chưa có kết quả thực nghiệm" description={error} />;
@@ -110,15 +110,15 @@ const Experiments = () => {
             <tbody>
               {data.models.map((m) => (
                 <tr key={m.id} className={`border-b border-line-soft last:border-0 ${m.id === 'M' ? 'bg-accent-dim/40' : ''}`}>
-                  <td className="px-5 py-3 font-mono font-semibold text-ink-hi">{m.id}</td>
+                  <td className="px-5 py-3 tabular-nums font-semibold text-ink-hi">{m.id}</td>
                   <td className="px-3 py-3 text-ink-hi">{m.name}</td>
                   <td className="px-3 py-3 text-ink-mid">{m.role || '—'}</td>
-                  <td className="px-3 py-3 text-right font-mono font-semibold text-ink-hi">
+                  <td className="px-3 py-3 text-right tabular-nums font-semibold text-ink-hi">
                     {!m.available ? <span className="font-sans font-normal text-ink-lo">chưa có số</span>
                       : m.canDetectAspect ? f4(m.categoryMacroF1)
                         : <span className="font-sans font-normal text-ink-lo">không bóc tách được</span>}
                   </td>
-                  <td className="px-5 py-3 text-right font-mono text-ink-mid">{f4(m.devCategoryMacroF1)}</td>
+                  <td className="px-5 py-3 text-right tabular-nums text-ink-mid">{f4(m.devCategoryMacroF1)}</td>
                 </tr>
               ))}
             </tbody>
@@ -143,7 +143,7 @@ const Experiments = () => {
           />
           {[['Chỉ ViSoBERT đúng', h2h.onlyModelCorrect], ['Chỉ luật từ khóa đúng', h2h.onlyRulesCorrect]].map(([title, rows]) => (
             <div key={title} className="border-b border-line-soft px-5 py-4 last:border-0">
-              <h4 className="text-sm font-semibold text-ink-hi">{title} <span className="font-mono font-normal text-ink-mid">({rows.length})</span></h4>
+              <h4 className="text-sm font-semibold text-ink-hi">{title} <span className="tabular-nums font-normal text-ink-mid">({rows.length})</span></h4>
               {rows.length === 0 ? (
                 <p className="mt-1 text-sm text-ink-lo">Không có câu nào.</p>
               ) : (
@@ -190,8 +190,8 @@ const Experiments = () => {
             Phát hiện chính: bộ phân loại luật không khái quát hóa được
           </h3>
           <p className="mt-2 max-w-[78ch] text-sm leading-relaxed text-ink-mid">
-            Cùng một bộ phân loại luật đạt Macro-F1 <strong className="font-mono text-ok">{b1.devCategoryMacroF1.toFixed(2).replace('.', ',')}</strong> trên tập đã dùng
-            để tinh chỉnh từ khóa, nhưng chỉ còn <strong className="font-mono text-crit">{b1.categoryMacroF1.toFixed(2).replace('.', ',')}</strong> trên tập kiểm tra giữ
+            Cùng một bộ phân loại luật đạt Macro-F1 <strong className="tabular-nums text-ok">{b1.devCategoryMacroF1.toFixed(2).replace('.', ',')}</strong> trên tập đã dùng
+            để tinh chỉnh từ khóa, nhưng chỉ còn <strong className="tabular-nums text-crit">{b1.categoryMacroF1.toFixed(2).replace('.', ',')}</strong> trên tập kiểm tra giữ
             riêng, chênh {gap.toFixed(2).replace('.', ',')}. Thêm từ khóa chỉ giúp khớp đúng những câu đã thấy, không giúp hiểu câu mới. Đây là lập luận định lượng cho
             việc dùng một mô hình ngôn ngữ được tinh chỉnh, thay vì tiếp tục mở rộng danh sách từ khóa.
           </p>
@@ -212,7 +212,7 @@ const Experiments = () => {
               return (
                 <div key={label} className="rounded-ctrl bg-raised px-4 py-3.5">
                   <p className="text-xs leading-snug text-ink-mid">{label}</p>
-                  <p className={`mt-1.5 font-mono text-display font-semibold ${pass ? 'text-ok' : 'text-crit'}`}>
+                  <p className={`mt-1.5 tabular-nums text-display font-semibold ${pass ? 'text-ok' : 'text-crit'}`}>
                     {lowerIsBetter ? `${(value * 100).toFixed(1).replace('.', ',')}%` : value.toFixed(3).replace('.', ',')}
                   </p>
                   <p className="mt-1.5 flex items-center gap-2 text-xs text-ink-mid">
@@ -235,15 +235,15 @@ const Experiments = () => {
             <div className="rounded-ctrl bg-raised px-4 py-3.5">
               <dt className="text-sm font-semibold text-ink-hi">Chuẩn hóa teencode</dt>
               <dd className="mt-1 text-sm text-ink-mid">
-                Macro-F1 <span className="font-mono">{f4(data.ablations.slangNormalization.categoryMacroF1_off)}</span> khi tắt,{' '}
-                <span className="font-mono font-semibold text-ink-hi">{f4(data.ablations.slangNormalization.categoryMacroF1_on)}</span> khi bật
+                Macro-F1 <span className="tabular-nums">{f4(data.ablations.slangNormalization.categoryMacroF1_off)}</span> khi tắt,{' '}
+                <span className="tabular-nums font-semibold text-ink-hi">{f4(data.ablations.slangNormalization.categoryMacroF1_on)}</span> khi bật
               </dd>
             </div>
             <div className="rounded-ctrl bg-raised px-4 py-3.5">
               <dt className="text-sm font-semibold text-ink-hi">Trust Layer</dt>
               <dd className="mt-1 text-sm text-ink-mid">
-                Tỉ lệ khiếu nại có trọng số <span className="font-mono">{data.ablations.trustLayer.wcrWithoutTrustLayer}</span> khi tắt,{' '}
-                <span className="font-mono font-semibold text-ink-hi">{data.ablations.trustLayer.wcrWithTrustLayer}</span> khi bật; loại{' '}
+                Tỉ lệ khiếu nại có trọng số <span className="tabular-nums">{data.ablations.trustLayer.wcrWithoutTrustLayer}</span> khi tắt,{' '}
+                <span className="tabular-nums font-semibold text-ink-hi">{data.ablations.trustLayer.wcrWithTrustLayer}</span> khi bật; loại{' '}
                 {data.ablations.trustLayer.excludedFeedbacks} trên {data.ablations.trustLayer.datasetSize} phản hồi
               </dd>
             </div>

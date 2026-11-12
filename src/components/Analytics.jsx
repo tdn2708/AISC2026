@@ -10,6 +10,7 @@ import Compare from './analytics/Compare';
 import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat, ChartTooltip } from './ui';
 import { buildQuery, fmtInt, fmtPct, fmtSignedPct, fmtDate } from '../lib/format';
 import { useDataVersion } from '../lib/dataVersion';
+import { AXIS_TICK } from '../lib/tokens';
 
 /**
  * PHÂN TÍCH NGUYÊN NHÂN
@@ -22,7 +23,7 @@ import { useDataVersion } from '../lib/dataVersion';
  */
 
 const DAYS = 28;
-const AXIS = { fontSize: 11, fill: 'var(--text-lo)' };
+const AXIS = AXIS_TICK;
 
 const dayKey = (d) => d.toISOString().slice(0, 10);
 
@@ -90,13 +91,13 @@ const RankBar = ({ label, count, max, total, active, onClick, tone = 'bg-neg' })
   return (
   <Tag
     {...(onClick ? { type: 'button', onClick, 'aria-pressed': active } : {})}
-    className={`block w-full rounded-lg px-3 py-2.5 text-left transition-[background-color,box-shadow] ${
-      active ? 'bg-surface shadow-[0_0_0_2px_var(--accent)]' : onClick ? 'hover:bg-surface/70' : ''
+    className={`block w-full rounded-ctrl border px-3 py-2.5 text-left transition-[background-color,border-color] duration-micro ease-out ${
+      active ? 'border-accent bg-accent-dim' : onClick ? 'border-transparent hover:bg-raised' : 'border-transparent'
     }`}
   >
     <div className="flex items-baseline justify-between gap-3">
       <span className={`min-w-0 truncate text-sm ${active ? 'font-semibold text-ink-hi' : 'text-ink-hi'}`}>{label}</span>
-      <span className="shrink-0 font-mono text-xs text-ink-mid">
+      <span className="shrink-0 tabular-nums text-xs text-ink-mid">
         {fmtInt(count)} <span className="text-ink-lo">({fmtPct(total ? count / total : null, 0)})</span>
       </span>
     </div>
@@ -186,8 +187,8 @@ const RootCauses = () => {
       <>
         {filters}
         <div className="grid gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
-          <div className="h-[520px] animate-pulse rounded-xl bg-surface/50" />
-          <div className="h-[520px] animate-pulse rounded-xl bg-surface/50" />
+          <div className="h-[520px] animate-pulse rounded-surf bg-surface/50" />
+          <div className="h-[520px] animate-pulse rounded-surf bg-surface/50" />
         </div>
       </>
     );
@@ -220,7 +221,7 @@ const RootCauses = () => {
           </div>
           {unclassified > 0 && (
             <p className="mt-4 border-t border-line-soft pt-3 text-xs leading-relaxed text-ink-lo">
-              <span className="font-mono text-ink-mid">{fmtInt(unclassified)}</span> phản hồi tiêu cực khác chưa xếp được vào nhóm nào.
+              <span className="tabular-nums text-ink-mid">{fmtInt(unclassified)}</span> phản hồi tiêu cực khác chưa xếp được vào nhóm nào.
             </p>
           )}
         </GlassPanel>
@@ -228,7 +229,7 @@ const RootCauses = () => {
         {/* Cột phải — bóc tách nhóm đang chọn */}
         <div ref={drillRef} className="flex scroll-mt-20 flex-col gap-6" key={current.key}>
           <GlassPanel className="p-6">
-            <h2 className="text-2xl font-semibold text-ink-hi">{current.label}</h2>
+            <h2 className="text-display font-semibold text-ink-hi">{current.label}</h2>
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Stat label="Khiếu nại" value={fmtInt(current.count)} />
               <Stat label="Tỉ trọng trong mọi khiếu nại" value={fmtPct(current.count / complaints.length, 1)} />
@@ -288,10 +289,10 @@ const RootCauses = () => {
               <PanelHeader title="Sản phẩm bị chê nhiều nhất" />
               <ol className="flex list-none flex-col gap-1">
                 {products.map((p, i) => (
-                  <li key={p.key} className="flex items-center gap-3 rounded-lg px-1 py-2">
-                    <span className="grid size-6 shrink-0 place-items-center rounded bg-raised font-mono text-xs text-ink-mid">{i + 1}</span>
+                  <li key={p.key} className="flex items-center gap-3 rounded-ctrl px-1 py-2">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-ctrl bg-raised tabular-nums text-xs text-ink-mid">{i + 1}</span>
                     <span className="min-w-0 flex-1 truncate text-sm text-ink-hi" title={p.label}>{p.label}</span>
-                    <span className="font-mono text-xs text-ink-mid">{fmtInt(p.count)}</span>
+                    <span className="tabular-nums text-xs text-ink-mid">{fmtInt(p.count)}</span>
                   </li>
                 ))}
                 {products.length === 0 && <p className="text-sm text-ink-lo">Không có phản hồi gắn sản phẩm.</p>}
@@ -306,7 +307,7 @@ const RootCauses = () => {
                     <p className="line-clamp-2 text-sm leading-relaxed text-ink-hi">{f.originalText}</p>
                     <p className="mt-1.5 flex flex-wrap gap-x-3 text-xs text-ink-lo">
                       {f.causeLabel && <span>{f.causeLabel}</span>}
-                      <span className="font-mono">{fmtDate(f.timestamp)}</span>
+                      <span className="tabular-nums">{fmtDate(f.timestamp)}</span>
                       <span>{f.source}</span>
                     </p>
                   </li>

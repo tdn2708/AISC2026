@@ -19,7 +19,7 @@ export const EmptyState = ({ variant = 'empty', title, description, action, comp
   const v = VARIANT[variant] || VARIANT.empty;
   return (
     <div className={`flex flex-col items-center justify-center text-center ${compact ? 'py-8' : 'py-14'} ${className}`}>
-      <span className={`grid size-10 place-items-center rounded-lg ${v.cls}`}>
+      <span className={`grid size-10 place-items-center rounded-ctrl ${v.cls}`}>
         <v.Icon size={20} aria-hidden="true" />
       </span>
       <h3 className="mt-3 text-base font-semibold text-ink-hi">{title}</h3>

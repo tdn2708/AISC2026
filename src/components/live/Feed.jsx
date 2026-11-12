@@ -50,7 +50,7 @@ const IntentSelect = ({ c, sessionId, onPatched }) => {
         onChange={change}
         disabled={busy}
         title="Bấm để sửa nếu phân loại sai"
-        className={`cursor-pointer appearance-none rounded border-0 px-1.5 py-0.5 font-sans text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-accent ${TONE_CLS[m.tone]} ${c.labelledBy === 'human' ? 'ring-1 ring-ink-lo/40' : ''}`}
+        className={`cursor-pointer appearance-none rounded-ctrl border-0 px-1.5 py-0.5 font-sans text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-accent ${TONE_CLS[m.tone]} ${c.labelledBy === 'human' ? 'ring-1 ring-ink-lo/40' : ''}`}
       >
         {INTENTS.map((i) => <option key={i.key} value={i.key}>{i.label}</option>)}
       </select>
@@ -60,7 +60,7 @@ const IntentSelect = ({ c, sessionId, onPatched }) => {
 
 const Row = ({ c, sessionId, onPatched }) => (
   <li className="flex gap-2.5 border-b border-line-soft py-2 last:border-0">
-    <span className="w-[3.6rem] shrink-0 pt-0.5 font-mono text-xs text-ink-lo">{clock(c.ts)}</span>
+    <span className="w-[3.6rem] shrink-0 pt-0.5 tabular-nums text-xs text-ink-lo">{clock(c.ts)}</span>
     <div className="min-w-0 flex-1">
       <p className="text-sm leading-snug break-words text-ink-hi">
         {c.author?.handle && <span className="mr-1 text-ink-lo">@{c.author.handle}</span>}

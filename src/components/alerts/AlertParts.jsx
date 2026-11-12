@@ -3,28 +3,28 @@ import { Activity, CircleSlash } from 'lucide-react';
 import { Modal, Button, TextArea, Chip } from '../ui';
 import { fmtInt, fmtPct, fmtSignedPct, growthOf, alertTitle } from '../../lib/format';
 
-/** Dải bằng chứng thống kê — chữ đơn cách, đọc như một dòng log đo lường */
+/** Dải bằng chứng thống kê: chữ nhãn ở chữ chính, chỉ con số và chuỗi z, p, n dùng font đơn cách (font-code) */
 export const Evidence = ({ alert, className = '' }) => {
   const st = alert.statistics || {};
   if (alert.type === 'SUSTAINED_DRIFT') {
     return (
-      <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 font-code text-xs text-ink-lo ${className}`}>
+      <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-lo ${className}`}>
         <span className="inline-flex items-center gap-1 text-ink-mid">
-          <Activity size={11} aria-hidden="true" /> EWMA {st.ewmaCurrent}{st.unit || ''}
+          <Activity size={14} aria-hidden="true" /> EWMA <span className="font-code">{st.ewmaCurrent}{st.unit || ''}</span>
         </span>
-        <span>giới hạn {st.controlLimit}{st.unit || ''}</span>
-        {st.consecutiveBreaches != null && <span>{st.consecutiveBreaches} chu kỳ liên tiếp</span>}
+        <span>giới hạn <span className="font-code">{st.controlLimit}{st.unit || ''}</span></span>
+        {st.consecutiveBreaches != null && <span><span className="tabular-nums">{st.consecutiveBreaches}</span> chu kỳ liên tiếp</span>}
       </p>
     );
   }
   const g = growthOf(alert);
   return (
-    <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 font-code text-xs text-ink-lo ${className}`}>
+    <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-lo ${className}`}>
       <span className="font-semibold text-ink-hi">{g == null ? alert.typeVi : Number.isFinite(g) ? fmtSignedPct(g) : 'mới'}</span>
-      <span>{fmtPct(st.baselineRate)} → {fmtPct(st.currentRate)}</span>
-      {st.z != null && <span>z={st.z}</span>}
-      {st.pValueDisplay && <span>{st.pValueDisplay.replace(/\s/g, '')}</span>}
-      {st.sampleCurrent != null && <span>n={fmtInt(st.sampleCurrent)}</span>}
+      <span className="tabular-nums">{fmtPct(st.baselineRate)} → {fmtPct(st.currentRate)}</span>
+      {st.z != null && <span className="font-code">z={st.z}</span>}
+      {st.pValueDisplay && <span className="font-code">{st.pValueDisplay.replace(/\s/g, '')}</span>}
+      {st.sampleCurrent != null && <span className="font-code">n={fmtInt(st.sampleCurrent)}</span>}
     </p>
   );
 };
@@ -39,7 +39,7 @@ export const ConfidenceMeter = ({ value, className = '' }) => {
       <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-raised">
         <span className="block h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
       </span>
-      <span className="w-9 shrink-0 text-right font-mono text-ink-mid">{pct}%</span>
+      <span className="w-9 shrink-0 text-right tabular-nums text-ink-mid">{pct}%</span>
     </div>
   );
 };

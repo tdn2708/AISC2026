@@ -58,7 +58,7 @@ const RisingIssues = ({ alerts = [] }) => {
                 key={alert.id}
                 tabIndex={0}
                 title={`${title}: ${isNew ? 'mới xuất hiện' : fmtSignedPct(growth)} (${fmtPct(st.baselineRate)} → ${fmtPct(st.currentRate)})`}
-                className="group rounded-lg outline-offset-4"
+                className="group rounded-ctrl outline-offset-4"
               >
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="min-w-0 truncate text-sm text-ink-hi">
@@ -71,9 +71,9 @@ const RisingIssues = ({ alerts = [] }) => {
                   </span>
                 </div>
 
-                <div className="mt-1.5 h-2 w-full overflow-hidden rounded-sm bg-raised">
+                <div className="mt-1.5 h-2 w-full overflow-hidden rounded-ctrl bg-raised">
                   <div
-                    className="h-full w-full origin-left rounded-sm bg-neg transition-[transform,filter] duration-500 group-hover:brightness-125 group-focus-visible:brightness-125"
+                    className="h-full w-full origin-left rounded-ctrl bg-neg transition-[transform,filter] duration-500 group-hover:brightness-125 group-focus-visible:brightness-125"
                     style={{ transform: `scaleX(${width / 100})` }}
                   />
                 </div>

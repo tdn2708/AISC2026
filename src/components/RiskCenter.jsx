@@ -27,7 +27,7 @@ const AlertRow = ({ alert, status, active, onClick }) => {
         type="button"
         onClick={onClick}
         aria-current={active || undefined}
-        className={`relative w-full rounded-md p-4 text-left transition-colors ${
+        className={`relative w-full rounded-ctrl p-4 text-left transition-colors ${
           active ? 'bg-accent-dim' : 'hover:bg-raised'
         }`}
       >
@@ -75,7 +75,7 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
         {alert.typeVi && <Badge tone="neutral">{alert.typeVi}</Badge>}
         {alert.sla && <Badge tone="neutral" icon={Clock}>Xử lý trong {alert.sla}</Badge>}
       </div>
-      <h2 className="mt-3 text-xl leading-snug font-semibold text-ink-hi">{alertTitle(alert)}</h2>
+      <h2 className="mt-3 text-heading leading-snug font-semibold text-ink-hi">{alertTitle(alert)}</h2>
       {alert.productName && <p className="mt-1 text-sm text-ink-mid">{alert.productName}</p>}
 
       {alert.summary && <p className="mt-4 text-sm leading-relaxed text-ink-hi">{alert.summary}</p>}
@@ -179,27 +179,27 @@ const SourceDrawer = ({ alert, onClose }) => {
         <EmptyState variant="error" compact title="Không tải được" description={error} />
       ) : !data ? (
         <div className="flex flex-col gap-3">
-          {[0, 1, 2].map((i) => <div key={i} className="h-24 animate-pulse rounded-lg bg-raised" />)}
+          {[0, 1, 2].map((i) => <div key={i} className="h-24 animate-pulse rounded-ctrl bg-raised" />)}
         </div>
       ) : data.evidence?.length === 0 ? (
         <EmptyState compact title="Không có phản hồi đính kèm" description="Cảnh báo tăng chậm được phát hiện trên chuỗi thời gian, không gắn với từng phản hồi riêng." />
       ) : (
         <>
           {data.excludedByTrust > 0 && (
-            <p className="mb-4 rounded-lg bg-accent-dim px-3 py-2 text-xs text-accent-hi">
+            <p className="mb-4 rounded-ctrl bg-accent-dim px-3 py-2 text-xs text-accent-hi">
               Đã loại {fmtInt(data.excludedByTrust)} phản hồi không đáng tin khỏi bằng chứng của cảnh báo này.
             </p>
           )}
           <ul className="flex list-none flex-col gap-3">
             {data.evidence.map((f) => (
-              <li key={f._id} className="rounded-lg border border-line-soft p-4">
+              <li key={f._id} className="rounded-ctrl border border-line-soft p-4">
                 <div className="flex items-center gap-2.5">
                   <SentimentFace sentiment={f.sentiment} size={26} />
                   <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink-hi">{f.author || 'Ẩn danh'}</p>
                   <p className="shrink-0 text-xs text-ink-lo">{f.source}, hạng {f.trust?.tier}</p>
                 </div>
                 <p className="mt-2.5 text-sm leading-relaxed text-ink-hi">{f.originalText}</p>
-                <p className="mt-2 font-mono text-xs text-ink-lo">{fmtDateTime(f.timestamp)}</p>
+                <p className="mt-2 tabular-nums text-xs text-ink-lo">{fmtDateTime(f.timestamp)}</p>
               </li>
             ))}
           </ul>
@@ -251,7 +251,7 @@ const DecisionLog = () => {
   }, []);
 
   if (error) return <GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel>;
-  if (!rows) return <div className="h-64 animate-pulse rounded-xl bg-raised" />;
+  if (!rows) return <div className="h-64 animate-pulse rounded-surf bg-raised" />;
   if (!rows.length) {
     return (
       <GlassPanel>
@@ -281,7 +281,7 @@ const DecisionLog = () => {
           <tbody>
             {rows.map((d) => (
               <tr key={`${d.alertId}-${d.at}`}>
-                <td className="font-mono whitespace-nowrap text-ink-mid">{fmtDateTime(d.at)}</td>
+                <td className="tabular-nums whitespace-nowrap text-ink-mid">{fmtDateTime(d.at)}</td>
                 <td>
                   <p className="font-medium">{d.title || 'Cảnh báo không còn trong dữ liệu hiện tại'}</p>
                   {d.productName && <p className="text-xs text-ink-lo">{d.productName}</p>}
@@ -432,8 +432,8 @@ const RiskCenter = () => {
             <GlassPanel><EmptyState variant="error" title="Không tải được cảnh báo" description={error} action={<Button onClick={load}>Thử lại</Button>} /></GlassPanel>
           ) : loading && alerts.length === 0 ? (
             <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-              <div className="flex flex-col gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-pulse rounded-lg bg-raised" />)}</div>
-              <div className="h-[520px] animate-pulse rounded-xl bg-raised" />
+              <div className="flex flex-col gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-pulse rounded-ctrl bg-raised" />)}</div>
+              <div className="h-[520px] animate-pulse rounded-surf bg-raised" />
             </div>
           ) : visible.length === 0 ? (
             <GlassPanel>
@@ -446,7 +446,7 @@ const RiskCenter = () => {
           ) : (
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
               {/* Cuộn riêng chỉ trên màn rộng; trên điện thoại cuộn lồng trong trang cuộn rất khó dùng */}
-              <ul className="flex list-none flex-col gap-1 rounded-xl border border-line bg-surface p-2 lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto" aria-label="Danh sách cảnh báo">
+              <ul className="flex list-none flex-col gap-1 rounded-surf border border-line bg-surface p-2 lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto" aria-label="Danh sách cảnh báo">
                 {visible.map((a) => (
                   <AlertRow key={a.id} alert={a} status={statusOf(a)} active={selected?.id === a.id} onClick={() => select(a.id)} />
                 ))}

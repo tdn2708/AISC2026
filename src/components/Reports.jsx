@@ -351,8 +351,8 @@ const Reports = () => {
                       </span>
                     </td>
                     <td><Badge tone={r.type === 'PDF' ? 'accent' : 'sky'} mono>{r.type}</Badge></td>
-                    <td className="font-mono text-xs text-ink-mid"><span className="inline-flex items-center gap-1.5"><Calendar size={13} />{r.date}</span></td>
-                    <td className="font-mono text-xs text-ink-mid">{r.size}</td>
+                    <td className="tabular-nums text-xs text-ink-mid"><span className="inline-flex items-center gap-1.5"><Calendar size={13} />{r.date}</span></td>
+                    <td className="tabular-nums text-xs text-ink-mid">{r.size}</td>
                     <td className="pr-5 text-right">
                       <IconButton icon={Trash2} variant="danger" size="sm" label="Xoá khỏi lịch sử" onClick={() => deleteFromHistory(r.id)} className="ml-auto" />
                     </td>
@@ -384,7 +384,7 @@ const Reports = () => {
           value={exportDialog?.name || ''}
           onChange={(e) => setExportDialog((d) => ({ ...d, name: e.target.value }))}
           onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && exportDialog?.name?.trim() && runExport()}
-          trailing={<span className="pr-2 font-mono text-xs text-ink-lo">.{exportDialog?.type?.toLowerCase()}</span>}
+          trailing={<span className="pr-2 tabular-nums text-xs text-ink-lo">.{exportDialog?.type?.toLowerCase()}</span>}
         />
       </Modal>
 

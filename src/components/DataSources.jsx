@@ -81,7 +81,7 @@ const ScrapeResult = ({ result }) => {
           {rows.map((r, i) => (
             <li key={i} className="py-3">
               <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-lo">
-                {r.rating != null && <span className="font-mono text-high">{'★'.repeat(r.rating)}<span className="text-ink-lo/50">{'★'.repeat(5 - r.rating)}</span></span>}
+                {r.rating != null && <span className="tabular-nums text-high">{'★'.repeat(r.rating)}<span className="text-ink-lo/50">{'★'.repeat(5 - r.rating)}</span></span>}
                 <span>{r.author}</span>
                 <Badge tone={SENT_TONE[r.sentiment] || 'neutral'}>{SENT_LABEL[r.sentiment] || r.sentiment}</Badge>
               </div>
@@ -239,12 +239,12 @@ const DataSources = () => {
               return (
                 <GlassPanel key={s.id} tone="strong" className="flex flex-col p-5 animate-fade-up">
                   <div className="flex items-start gap-3.5">
-                    <span className={`grid size-12 shrink-0 place-items-center rounded-lg ${p.tile}`}>
+                    <span className={`grid size-12 shrink-0 place-items-center rounded-ctrl ${p.tile}`}>
                       <p.icon size={22} aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold text-ink-hi">{s.name}</p>
-                      <p className="font-mono text-xs text-ink-lo">{s.shopId}</p>
+                      <p className="tabular-nums text-xs text-ink-lo">{s.shopId}</p>
                     </div>
                     {isLink(s.shopId) ? <Badge tone="ok">Thu thập được</Badge> : <Badge>Chờ kết nối API</Badge>}
                   </div>
@@ -316,7 +316,7 @@ const DataSources = () => {
                       <tr key={r.id}>
                         <td className="pl-5">
                           <p className="font-medium text-ink-hi">{r.source}</p>
-                          <p className="max-w-[360px] truncate font-mono text-xs text-ink-lo" title={r.url}>{r.url}</p>
+                          <p className="max-w-[360px] truncate tabular-nums text-xs text-ink-lo" title={r.url}>{r.url}</p>
                         </td>
                         <td>
                           <Badge tone={st.tone} icon={st.icon}>{st.label}</Badge>
@@ -328,8 +328,8 @@ const DataSources = () => {
                             </Button>
                           )}
                         </td>
-                        <td className="text-right font-mono">{fmtInt(r.items || 0)}</td>
-                        <td className="font-mono text-xs text-ink-mid">{fmtTime(r.time)}</td>
+                        <td className="text-right tabular-nums">{fmtInt(r.items || 0)}</td>
+                        <td className="tabular-nums text-xs text-ink-mid">{fmtTime(r.time)}</td>
                         <td className="pr-5 text-right">
                           <IconButton icon={Trash2} variant="danger" size="sm" label="Xoá khỏi nhật ký" onClick={() => setHistory((prev) => prev.filter((x) => x.id !== r.id))} className="ml-auto" />
                         </td>
@@ -360,12 +360,12 @@ const DataSources = () => {
           <TextField label="Tên gian hàng" icon={Store} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ví dụ: Cửa hàng chính hãng" required />
           <TextField label="Mã gian hàng hoặc URL" icon={Activity} value={form.shopId} onChange={(e) => setForm({ ...form, shopId: e.target.value })} placeholder="SHP-12345 hoặc https://…" required />
           {isLink(form.shopId) ? (
-            <p className="flex gap-2 rounded-lg bg-accent-dim p-3 text-xs text-ink-mid">
+            <p className="flex gap-2 rounded-ctrl bg-accent-dim p-3 text-xs text-ink-mid">
               <Info size={14} className="mt-0.5 shrink-0 text-accent" />
               Đây là đường dẫn: hệ thống sẽ thu thập đánh giá công khai của sản phẩm này ngay (hỗ trợ Tiki; Shopee và Lazada chặn truy cập tự động).
             </p>
           ) : (
-            <p className="flex gap-2 rounded-lg bg-raised p-3 text-xs text-ink-mid">
+            <p className="flex gap-2 rounded-ctrl bg-raised p-3 text-xs text-ink-mid">
               <Info size={14} className="mt-0.5 shrink-0 text-ink-lo" />
               Với mã gian hàng, hệ thống chỉ lưu lại; chưa thu thập được cho tới khi có kết nối API của sàn.
             </p>

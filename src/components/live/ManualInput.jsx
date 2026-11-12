@@ -63,7 +63,7 @@ const ManualInput = ({ session, onDone }) => {
         />
         <div className="mt-2 flex flex-wrap gap-2">
           <Button size="sm" icon={Send} loading={busy} disabled={!text.trim()} onClick={() => send({ comments: parseLines(text) })}>Gửi vào phiên</Button>
-          <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-line bg-surface px-3 text-xs font-semibold text-ink-hi hover:bg-raised">
+          <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-ctrl border border-line bg-surface px-3 text-xs font-semibold text-ink-hi hover:bg-raised">
             <Upload size={14} aria-hidden="true" />
             Nhập tệp CSV
             <input type="file" accept=".csv,text/csv,text/plain" className="sr-only" onChange={onFile} />
@@ -76,7 +76,7 @@ const ManualInput = ({ session, onDone }) => {
       <section className="border-t border-line-soft pt-5">
         <h3 className="text-sm font-semibold text-ink-hi">Gửi tự động qua webhook</h3>
         <p className="mt-1 text-xs leading-relaxed text-ink-lo">Công cụ khác gửi bình luận vào phiên này bằng lệnh dưới đây. Giữ kín khóa nhập: ai có khóa đều gửi được bình luận vào phiên.</p>
-        <pre className="mt-2 overflow-x-auto rounded-md bg-raised p-3 font-code text-xs leading-relaxed whitespace-pre-wrap break-all text-ink-mid">{curl}</pre>
+        <pre className="mt-2 overflow-x-auto rounded-ctrl bg-raised p-3 font-code text-xs leading-relaxed whitespace-pre-wrap break-all text-ink-mid">{curl}</pre>
         <Button
           size="sm"
           variant="secondary"

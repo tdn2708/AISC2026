@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { GlassPanel, PanelHeader, EmptyState, ChartTooltip } from '../ui';
 import { fmtInt } from '../../lib/format';
 import { INTENT_MAP } from './shared';
+import { AXIS_TICK } from '../../lib/tokens';
 
 /**
  * NHỊP PHIÊN LIVE
@@ -39,7 +40,7 @@ const Bars = ({ items, max, render, stacked = false }) => (
       <li key={it.key || it.id}>
         <div className={stacked ? 'text-sm' : 'flex items-baseline justify-between gap-3 text-sm'}>
           <span className={stacked ? 'block truncate text-ink-hi' : 'min-w-0 truncate text-ink-hi'} title={it.label || it.name}>{it.label || it.name}</span>
-          <span className={stacked ? 'block text-xs text-ink-mid' : 'shrink-0 font-mono text-xs text-ink-mid'}>{render(it)}</span>
+          <span className={stacked ? 'block text-xs text-ink-mid' : 'shrink-0 tabular-nums text-xs text-ink-mid'}>{render(it)}</span>
         </div>
         <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-raised">
           <div className="h-full rounded-full bg-accent" style={{ width: `${max ? Math.max(3, ((it.count ?? it.score) / max) * 100) : 0}%` }} />
@@ -57,7 +58,7 @@ export const Rhythm = ({ stats }) => {
       <div className="mb-2 flex flex-wrap gap-3 text-xs text-ink-mid">
             {SERIES.map((k) => (
               <span key={k} className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-sm" style={{ background: INTENT_MAP[k].color }} aria-hidden="true" />
+                <span className="size-2 rounded-ctrl" style={{ background: INTENT_MAP[k].color }} aria-hidden="true" />
                 {INTENT_MAP[k].label}
               </span>
             ))}
@@ -67,8 +68,8 @@ export const Rhythm = ({ stats }) => {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={series} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
               <CartesianGrid vertical={false} stroke="var(--border-soft)" />
-              <XAxis dataKey="t" tickFormatter={hhmm} tick={{ fontSize: 10, fill: 'var(--text-lo)' }} tickLine={false} axisLine={false} minTickGap={24} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: 'var(--text-lo)' }} tickLine={false} axisLine={false} />
+              <XAxis dataKey="t" tickFormatter={hhmm} tick={AXIS_TICK} tickLine={false} axisLine={false} minTickGap={24} />
+              <YAxis allowDecimals={false} tick={AXIS_TICK} tickLine={false} axisLine={false} />
               <Tooltip content={<ChartTip />} cursor={{ fill: 'var(--raised)' }} />
               {SERIES.map((k, i) => (
                 <Bar key={k} dataKey={k} stackId="a" fill={INTENT_MAP[k].color} radius={i === SERIES.length - 1 ? [2, 2, 0, 0] : 0} isAnimationActive={false} />

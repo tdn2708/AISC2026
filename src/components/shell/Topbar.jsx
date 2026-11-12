@@ -92,7 +92,7 @@ const Notifications = () => {
         onClick={() => setOpen((v) => !v)}
         badge={
           unread > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 grid min-w-[18px] place-items-center rounded-full bg-crit px-1 font-mono text-xs leading-[18px] font-semibold text-on-crit ring-2 ring-canvas">
+            <span className="absolute -top-0.5 -right-0.5 grid min-w-[18px] place-items-center rounded-full bg-crit px-1 tabular-nums text-xs leading-[18px] font-semibold text-on-crit ring-2 ring-canvas">
               {unread > 9 ? '9+' : unread}
             </span>
           )
@@ -161,7 +161,7 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
   return (
     <div ref={barRef} className={`cx sticky top-0 z-[120] -mr-2 pt-[max(0.75rem,env(safe-area-inset-top))] pr-2 pb-3 ${scrolled ? 'bg-(--canvas)' : ''}`}>
       <div
-        className={`flex items-center gap-2 rounded-lg px-1 py-2 sm:gap-3 sm:px-2 transition-[background-color,box-shadow,backdrop-filter] duration-200 ${
+        className={`flex items-center gap-2 rounded-ctrl px-1 py-2 sm:gap-3 sm:px-2 transition-[background-color,box-shadow,backdrop-filter] duration-200 ${
           scrolled ? 'glass' : ''
         }`}
       >
@@ -174,12 +174,12 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
           type="button"
           onClick={onOpenCommand}
           aria-label="Tìm nhanh"
-          className="flex h-10 w-10 shrink-0 items-center justify-center gap-2.5 rounded-lg border border-line bg-surface text-sm text-ink-mid transition-colors hover:border-ink-lo hover:text-ink-hi md:w-full md:max-w-[300px] md:justify-start md:pr-2 md:pl-3"
+          className="flex h-10 w-10 shrink-0 items-center justify-center gap-2.5 rounded-ctrl border border-line bg-surface text-sm text-ink-mid transition-colors hover:border-ink-lo hover:text-ink-hi md:w-full md:max-w-[300px] md:justify-start md:pr-2 md:pl-3"
         >
           <Search size={16} aria-hidden="true" />
           {/* Màn hẹp chỉ còn biểu tượng: ô tìm kiếm từng đẩy thanh trên tràn ngang */}
           <span className="hidden flex-1 truncate text-left md:inline">Tìm nhanh…</span>
-          <kbd className="hidden rounded-md border border-line bg-surface/70 px-1.5 py-0.5 font-mono text-xs text-ink-mid md:inline">
+          <kbd className="hidden rounded-ctrl border border-line bg-surface/70 px-1.5 py-0.5 font-sans text-xs text-ink-mid md:inline">
             {isMac ? '⌘' : 'Ctrl'} K
           </kbd>
         </button>

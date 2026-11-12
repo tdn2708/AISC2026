@@ -97,14 +97,14 @@ const CatalogEditor = ({ rows, onRows, policy, onPolicy }) => {
                 <IconButton icon={Trash2} variant="danger" size="sm" label={`Xóa ${r.name || 'sản phẩm'}`} onClick={() => remove(i)} className="mt-6" />
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <Field label="Giá gốc"><input className={`${inputCls} font-mono`} inputMode="numeric" value={r.price ?? ''} onChange={(e) => set(i, 'price', e.target.value.replace(/\D/g, ''))} /></Field>
-                <Field label="Giá live"><input className={`${inputCls} font-mono`} inputMode="numeric" value={r.salePrice ?? ''} onChange={(e) => set(i, 'salePrice', e.target.value.replace(/\D/g, ''))} /></Field>
+                <Field label="Giá gốc"><input className={`${inputCls} tabular-nums`} inputMode="numeric" value={r.price ?? ''} onChange={(e) => set(i, 'price', e.target.value.replace(/\D/g, ''))} /></Field>
+                <Field label="Giá live"><input className={`${inputCls} tabular-nums`} inputMode="numeric" value={r.salePrice ?? ''} onChange={(e) => set(i, 'salePrice', e.target.value.replace(/\D/g, ''))} /></Field>
                 <Field label="Size"><input className={inputCls} value={r.sizesText} onChange={(e) => set(i, 'sizesText', e.target.value)} placeholder="S, M, L" /></Field>
                 <Field label="Màu"><input className={inputCls} value={r.colorsText} onChange={(e) => set(i, 'colorsText', e.target.value)} placeholder="đen, trắng" /></Field>
-                <Field label="Tồn kho"><input className={`${inputCls} font-mono`} value={r.stockText} onChange={(e) => set(i, 'stockText', e.target.value)} placeholder="S:40, M:85" /></Field>
+                <Field label="Tồn kho"><input className={`${inputCls} tabular-nums`} value={r.stockText} onChange={(e) => set(i, 'stockText', e.target.value)} placeholder="S:40, M:85" /></Field>
                 <Field label="Từ khóa khách hay gọi" className="sm:col-span-3"><input className={inputCls} value={r.keywordsText} onChange={(e) => set(i, 'keywordsText', e.target.value)} placeholder="áo thun, áo phông" /></Field>
                 <Field label="Chất liệu" className="col-span-2"><input className={inputCls} value={r.material || ''} onChange={(e) => set(i, 'material', e.target.value)} /></Field>
-                <Field label="Bảng size (cân nặng, chiều cao tối đa)" className="col-span-2"><input className={`${inputCls} font-mono`} value={r.guideText} onChange={(e) => set(i, 'guideText', e.target.value)} placeholder="S:50kg/160cm, M:60kg/168cm" /></Field>
+                <Field label="Bảng size (cân nặng, chiều cao tối đa)" className="col-span-2"><input className={`${inputCls} tabular-nums`} value={r.guideText} onChange={(e) => set(i, 'guideText', e.target.value)} placeholder="S:50kg/160cm, M:60kg/168cm" /></Field>
               </div>
             </li>
           ))}

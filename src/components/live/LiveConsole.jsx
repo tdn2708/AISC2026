@@ -26,7 +26,7 @@ import Report from './Report';
 const Kpi = ({ label, value, sub, tone }) => (
   <div className="glass-strong min-w-0 rounded-surf px-3.5 py-3">
     <p className="truncate text-xs text-ink-lo">{label}</p>
-    <p className={`mt-1 font-mono text-display leading-none font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
+    <p className={`mt-1 tabular-nums text-display leading-none font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
     {sub && <p className="mt-1 truncate text-xs text-ink-lo">{sub}</p>}
   </div>
 );

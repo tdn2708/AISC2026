@@ -27,7 +27,7 @@ const SessionList = ({ sessions, onOpen, onDeleted, empty }) => {
         const sm = s.summary;
         return (
           <li key={s.id} className="flex items-center gap-3 border-b border-line-soft py-3 last:border-0">
-            <button type="button" onClick={() => onOpen(s.id)} className="flex min-w-0 flex-1 items-center gap-4 rounded-md text-left hover:bg-raised/60">
+            <button type="button" onClick={() => onOpen(s.id)} className="flex min-w-0 flex-1 items-center gap-4 rounded-ctrl text-left hover:bg-raised/60">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="truncate text-sm font-semibold text-ink-hi">{s.title}</span>
@@ -41,10 +41,10 @@ const SessionList = ({ sessions, onOpen, onDeleted, empty }) => {
               </div>
               {sm && (
                 <dl className="hidden shrink-0 grid-cols-4 gap-5 text-right sm:grid">
-                  <div><dt className="text-xs text-ink-lo">Bình luận</dt><dd className="font-mono text-sm text-ink-hi">{fmtInt(sm.comments)}</dd></div>
-                  <div><dt className="text-xs text-ink-lo">Chốt đơn</dt><dd className="font-mono text-sm text-ink-hi">{fmtInt(sm.byIntent?.order)}</dd></div>
-                  <div><dt className="text-xs text-ink-lo">Khiếu nại</dt><dd className={`font-mono text-sm ${sm.byIntent?.complaint ? 'text-crit' : 'text-ink-hi'}`}>{fmtInt(sm.byIntent?.complaint)}</dd></div>
-                  <div><dt className="text-xs text-ink-lo">Đã trả lời</dt><dd className="font-mono text-sm text-ink-hi">{sm.answeredShare != null ? fmtPct(sm.answeredShare, 0) : '—'}</dd></div>
+                  <div><dt className="text-xs text-ink-lo">Bình luận</dt><dd className="tabular-nums text-sm text-ink-hi">{fmtInt(sm.comments)}</dd></div>
+                  <div><dt className="text-xs text-ink-lo">Chốt đơn</dt><dd className="tabular-nums text-sm text-ink-hi">{fmtInt(sm.byIntent?.order)}</dd></div>
+                  <div><dt className="text-xs text-ink-lo">Khiếu nại</dt><dd className={`tabular-nums text-sm ${sm.byIntent?.complaint ? 'text-crit' : 'text-ink-hi'}`}>{fmtInt(sm.byIntent?.complaint)}</dd></div>
+                  <div><dt className="text-xs text-ink-lo">Đã trả lời</dt><dd className="tabular-nums text-sm text-ink-hi">{sm.answeredShare != null ? fmtPct(sm.answeredShare, 0) : '—'}</dd></div>
                 </dl>
               )}
               <ChevronRight size={16} className="shrink-0 text-ink-lo" aria-hidden="true" />
@@ -137,7 +137,7 @@ const Live = () => {
         {error ? (
           <EmptyState variant="error" compact title={error} />
         ) : sessions === null ? (
-          <div className="h-24 animate-pulse rounded-lg bg-raised" />
+          <div className="h-24 animate-pulse rounded-ctrl bg-raised" />
         ) : (
           <SessionList
             sessions={sessions.filter((s) => !running.includes(s))}

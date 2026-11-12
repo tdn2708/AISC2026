@@ -63,7 +63,7 @@ const Login = ({ onLogin }) => {
           <Logo size="md" showTagline={false} />
         </div>
         <div className="max-w-[34rem]">
-          <h1 className="text-[2.6rem] leading-[1.12] font-semibold tracking-[-0.02em] text-balance">
+          <h1 className="text-hero leading-[1.12] font-semibold tracking-[-0.02em] text-balance">
             Phản hồi khách hàng, kèm bằng chứng cho từng con số.
           </h1>
           <p className="mt-5 text-base leading-relaxed text-on-strip-mid">
@@ -92,7 +92,7 @@ const Login = ({ onLogin }) => {
       <section className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-[380px]">
           <div className="mb-10 lg:hidden"><Logo size="md" showTagline={false} /></div>
-          <h2 className="text-2xl font-semibold tracking-[-0.01em] text-ink-hi">Đăng nhập</h2>
+          <h2 className="text-display font-semibold tracking-[-0.01em] text-ink-hi">Đăng nhập</h2>
           <p className="mt-1.5 text-sm text-ink-mid">Tài khoản dùng thử đã được điền sẵn.</p>
 
           <form onSubmit={submit} className="mt-8 flex flex-col gap-4">

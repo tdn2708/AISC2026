@@ -22,8 +22,8 @@ const lower1 = (s) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
 const LedgerRow = ({ label, value, sign }) => (
   <div className="grid grid-cols-[minmax(0,1fr)_1rem_auto] items-baseline gap-x-2 border-b border-(--sheet-rule) py-2">
     <dt className="min-w-0 text-ink-mid">{label}</dt>
-    <dd className="text-right font-mono text-ink-lo" aria-hidden={!sign}>{sign || ''}</dd>
-    <dd className="text-right font-mono tabular-nums text-ink-hi">{fmtInt(value)}</dd>
+    <dd className="text-right tabular-nums text-ink-lo" aria-hidden={!sign}>{sign || ''}</dd>
+    <dd className="text-right tabular-nums  text-ink-hi">{fmtInt(value)}</dd>
   </div>
 );
 
@@ -34,7 +34,7 @@ const LedgerRow = ({ label, value, sign }) => (
  */
 export const Ledger = ({ ledger, evidence, showLink = true }) => {
   if (!ledger) {
-    return <div className="h-64 animate-pulse rounded-lg border border-line bg-(--sheet)" aria-hidden="true" />;
+    return <div className="h-64 animate-pulse rounded-ctrl border border-line bg-(--sheet)" aria-hidden="true" />;
   }
   const { rawCollected, spamRemoved, inauthenticFlagged, pendingReview, validForAnalysis, countedForMetrics } = ledger;
   // Con số cuối là số phản hồi góp vào chỉ số, khớp với mọi trang khác. Phần
@@ -49,7 +49,7 @@ export const Ledger = ({ ledger, evidence, showLink = true }) => {
   const removed = (spamRemoved?.count ?? 0) + (inauthenticFlagged?.count ?? 0) + pendingOut + aged;
   const diff = rawCollected - removed - counted;
   return (
-    <figure className="rounded-lg border border-line bg-(--sheet) px-5 pt-4 pb-5">
+    <figure className="rounded-ctrl border border-line bg-(--sheet) px-5 pt-4 pb-5">
       <figcaption className="flex items-baseline justify-between gap-3">
         <span className="text-base font-semibold text-ink-hi">Số liệu này đứng trên gì</span>
         {showLink && <Link to="/trust" className="shrink-0 text-sm font-medium text-accent-hi underline-offset-4 hover:underline">Xem phễu</Link>}
@@ -63,7 +63,7 @@ export const Ledger = ({ ledger, evidence, showLink = true }) => {
         {/* Gạch đôi trên dòng tổng, như sổ kế toán */}
         <div className="mt-px grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2 border-0 border-t-[3px] border-double border-ink-lo pt-2.5">
           <dt className="font-semibold text-ink-hi">Được tính vào chỉ số</dt>
-          <dd className="text-right font-mono text-metric font-semibold tracking-[-0.02em] tabular-nums text-ink-hi">{fmtInt(counted)}</dd>
+          <dd className="text-right tabular-nums text-metric font-semibold tracking-[-0.02em]  text-ink-hi">{fmtInt(counted)}</dd>
         </div>
       </dl>
       <p role="status" className={`mt-3 flex items-start gap-2 text-sm leading-snug ${diff === 0 ? 'text-ink-mid' : 'text-crit'}`}>
@@ -84,7 +84,7 @@ export const Ledger = ({ ledger, evidence, showLink = true }) => {
       </p>
       {pct != null && (
         <div className="mt-4">
-          <div className="flex h-2 overflow-hidden rounded-sm bg-raised" aria-hidden="true">
+          <div className="flex h-2 overflow-hidden rounded-ctrl bg-raised" aria-hidden="true">
             <span className="h-full bg-accent" style={{ flexBasis: `${pct}%` }} />
           </div>
           <p className="mt-2 text-sm leading-snug text-ink-mid">

@@ -12,3 +12,11 @@ export const readToken = (name, el = typeof document !== 'undefined' ? document.
   if (!el || typeof getComputedStyle !== 'function') return '';
   return getComputedStyle(el).getPropertyValue(name).trim();
 };
+
+/**
+ * Chữ trục biểu đồ Recharts (F1-05): 13px, bằng --text-xs, chữ nhỏ nhất của giao diện.
+ * Recharts nhận fontSize dạng số chứ không nhận lớp Tailwind, nên giữ một hằng ở đây
+ * cho mọi biểu đồ; màu qua token.
+ */
+export const CHART_FONT = 13;
+export const AXIS_TICK = { fontSize: CHART_FONT, fill: 'var(--text-lo)' };

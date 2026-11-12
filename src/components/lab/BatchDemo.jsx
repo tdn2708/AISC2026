@@ -31,7 +31,7 @@ const BAR = { accent: 'bg-accent', crit: 'bg-crit', ok: 'bg-ok', neutral: 'bg-in
 const Tile = ({ icon: Icon, label, value, unit, tone = 'hi' }) => (
   <div className="min-w-0 rounded-ctrl bg-raised px-4 py-3.5">
     <p className="flex items-center gap-1.5 text-xs text-ink-mid"><Icon size={13} aria-hidden="true" /> {label}</p>
-    <p className={`mt-1.5 font-mono text-display font-semibold ${TONE[tone]}`}>
+    <p className={`mt-1.5 tabular-nums text-display font-semibold ${TONE[tone]}`}>
       {value}
       {unit && <span className="ml-1 font-sans text-xs font-medium text-ink-mid">{unit}</span>}
     </p>
@@ -44,7 +44,7 @@ const Bar = ({ label, count, max, tone }) => (
     <span className="h-2 overflow-hidden rounded-full bg-raised">
       <span className={`block h-full rounded-full ${BAR[tone]}`} style={{ width: `${Math.max(1, (count / max) * 100)}%` }} />
     </span>
-    <span className="text-right font-mono text-sm text-ink-hi">{fmtInt(count)}</span>
+    <span className="text-right tabular-nums text-sm text-ink-hi">{fmtInt(count)}</span>
   </div>
 );
 

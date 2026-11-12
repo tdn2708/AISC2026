@@ -25,10 +25,10 @@ const SentimentDonut = ({ data = [] }) => {
       ) : (
         <>
           <p className="flex items-baseline gap-2">
-            <span className="font-mono text-metric font-semibold tracking-[-0.02em] text-ink-hi">{fmtPct(negShare, 0)}</span>
+            <span className="tabular-nums text-metric font-semibold tracking-[-0.02em] text-ink-hi">{fmtPct(negShare, 0)}</span>
             <span className="text-base text-ink-mid">tiêu cực</span>
           </p>
-          <div className="mt-4 flex h-3 w-full gap-0.5 overflow-hidden rounded-sm" role="img" aria-label={rows.map((r) => `${r.label} ${fmtPct(r.value / total)}`).join(', ')}>
+          <div className="mt-4 flex h-3 w-full gap-0.5 overflow-hidden rounded-ctrl" role="img" aria-label={rows.map((r) => `${r.label} ${fmtPct(r.value / total)}`).join(', ')}>
             {rows.filter((r) => r.value > 0).map((r) => (
               <span key={r.key} className="h-full bg-(--c)" style={{ '--c': r.color, flexGrow: r.value, flexBasis: 0 }} title={`${r.label}: ${fmtPct(r.value / total)}`} />
             ))}
@@ -37,7 +37,7 @@ const SentimentDonut = ({ data = [] }) => {
           <ul className="mt-5 flex list-none flex-col text-sm">
             {rows.map((r) => (
               <li key={r.key} className="grid grid-cols-[auto_1fr_auto_4rem] items-center gap-2 border-b border-line-soft py-2 last:border-b-0">
-                <span className="size-2.5 rounded-sm bg-(--c)" style={{ '--c': r.color }} aria-hidden="true" />
+                <span className="size-2.5 rounded-ctrl bg-(--c)" style={{ '--c': r.color }} aria-hidden="true" />
                 <span className="text-ink-mid">{r.label}</span>
                 <span className="tabular-nums text-ink-lo">{fmtInt(r.value)}</span>
                 <span className="text-right font-medium tabular-nums text-ink-hi">{fmtPct(r.value / total)}</span>

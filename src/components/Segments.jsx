@@ -90,16 +90,16 @@ const Segments = () => {
               type="button"
               onClick={() => setSegment(s.key)}
               aria-pressed={active}
-              className={`glass rounded-xl p-5 text-left transition-[box-shadow,transform] hover:-translate-y-0.5 ${active ? 'shadow-[0_0_0_2px_var(--accent),var(--glass-shade)]' : ''}`}
+              className={`rounded-surf border p-5 text-left transition-[background-color,border-color] duration-micro ease-out ${active ? 'border-accent bg-accent-dim' : 'border-line bg-surface hover:border-ink-lo'}`}
             >
               <div className="flex items-start justify-between gap-3">
-                <span className={`grid size-10 place-items-center rounded-lg ${s.tone}`}>
+                <span className={`grid size-10 place-items-center rounded-ctrl ${s.tone}`}>
                   <s.icon size={18} aria-hidden="true" />
                 </span>
-                <span className="font-mono text-xs text-ink-lo">{total ? Math.round((n / total) * 100) : 0}%</span>
+                <span className="tabular-nums text-xs text-ink-lo">{total ? Math.round((n / total) * 100) : 0}%</span>
               </div>
               <p className="mt-4 text-sm font-medium text-ink-mid">{s.label}</p>
-              <p className="font-mono text-3xl font-semibold tracking-tight text-ink-hi">{loading ? '—' : fmtInt(n)}</p>
+              <p className="tabular-nums text-metric font-semibold tracking-tight text-ink-hi">{loading ? '—' : fmtInt(n)}</p>
               <p className="mt-1.5 text-xs leading-relaxed text-ink-lo">{s.note}</p>
             </button>
           );
@@ -122,7 +122,7 @@ const Segments = () => {
         </div>
 
         {loading ? (
-          <div className="flex flex-col gap-2 p-5">{Array.from({ length: 6 }, (_, i) => <div key={i} className="h-14 animate-pulse rounded-lg bg-raised" />)}</div>
+          <div className="flex flex-col gap-2 p-5">{Array.from({ length: 6 }, (_, i) => <div key={i} className="h-14 animate-pulse rounded-ctrl bg-raised" />)}</div>
         ) : rows.length === 0 ? (
           <EmptyState compact title="Không có khách hàng khớp" description="Thử đổi khoảng thời gian hoặc từ khoá." />
         ) : (
@@ -153,7 +153,7 @@ const Segments = () => {
                           <span className="font-medium">{u.author}</span>
                         </div>
                       </td>
-                      <td className="font-mono">{fmtInt(u.total)}</td>
+                      <td className="tabular-nums">{fmtInt(u.total)}</td>
                       <td>
                         <div className="flex items-center gap-3">
                           <div className="flex h-2 w-32 gap-0.5 overflow-hidden rounded-full bg-raised" role="img" aria-label={`${u.positive} tích cực, ${u.neutral} trung tính, ${u.negative} tiêu cực`}>
@@ -163,14 +163,14 @@ const Segments = () => {
                           </div>
                           <span className="flex items-center gap-1.5">
                             {parts.filter(([, n]) => n > 0).map(([k, n]) => (
-                              <span key={k} className="inline-flex items-center gap-1 font-mono text-xs text-ink-mid">
+                              <span key={k} className="inline-flex items-center gap-1 tabular-nums text-xs text-ink-mid">
                                 <SentimentFace sentiment={k} size={18} />{n}
                               </span>
                             ))}
                           </span>
                         </div>
                       </td>
-                      <td className="pr-6 font-mono text-xs text-ink-mid">{fmtDate(u.latestFeedback)}</td>
+                      <td className="pr-6 tabular-nums text-xs text-ink-mid">{fmtDate(u.latestFeedback)}</td>
                     </tr>
                   );
                 })}

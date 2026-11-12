@@ -95,7 +95,7 @@ const Settings = () => {
               type="button"
               onClick={() => setTab(t.id)}
               aria-current={tab === t.id || undefined}
-              className={`flex shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+              className={`flex shrink-0 items-center gap-3 rounded-ctrl px-3 py-2.5 text-left text-sm transition-colors ${
                 tab === t.id ? 'bg-accent-dim font-semibold text-ink-hi' : 'text-ink-mid hover:bg-raised hover:text-ink-hi'
               }`}
             >
@@ -110,7 +110,7 @@ const Settings = () => {
             <>
               <PanelHeader title="Hồ sơ" subtitle="Tên của bạn được ghi vào nhật ký quyết định." />
               <div className="mb-6 flex items-center gap-4">
-                <span className="grid size-14 place-items-center rounded-full bg-accent-dim text-lg font-semibold text-accent-hi">{initials(form.name)}</span>
+                <span className="grid size-14 place-items-center rounded-full bg-accent-dim text-heading font-semibold text-accent-hi">{initials(form.name)}</span>
                 <div>
                   <p className="font-semibold text-ink-hi">{form.name}</p>
                   <p className="text-sm text-ink-lo">Quản lý trải nghiệm khách hàng</p>
@@ -167,7 +167,7 @@ const Settings = () => {
             <>
               <PanelHeader title="Bảo mật" />
               {/* Bản này dùng tài khoản dùng thử cố định, chưa có máy chủ xác thực */}
-              <p className="mb-5 rounded-lg bg-raised px-4 py-3 text-sm text-ink-mid">
+              <p className="mb-5 rounded-ctrl bg-raised px-4 py-3 text-sm text-ink-mid">
                 Bản demo dùng tài khoản dùng thử cố định. Đổi mật khẩu và xác thực hai lớp sẽ mở khi có máy chủ xác thực.
               </p>
               <form className="grid gap-4 md:grid-cols-2" onSubmit={(e) => e.preventDefault()}>

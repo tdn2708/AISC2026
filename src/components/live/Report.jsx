@@ -21,7 +21,7 @@ const PRIO = { high: { label: 'Ưu tiên', tone: 'crit' }, medium: { label: 'Nê
 const Big = ({ label, value, sub, tone }) => (
   <div className="glass-strong rounded-surf px-4 py-3.5">
     <p className="text-xs text-ink-lo">{label}</p>
-    <p className={`mt-1 font-mono text-display leading-none font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
+    <p className={`mt-1 tabular-nums text-display leading-none font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
     {sub && <p className="mt-1.5 text-xs text-ink-lo">{sub}</p>}
   </div>
 );
@@ -50,7 +50,7 @@ const Funnel = ({ f }) => {
           <li key={label}>
             <div className="flex items-baseline justify-between gap-3 text-sm">
               <span className="text-ink-hi">{label}</span>
-              <span className="font-mono text-ink-hi">
+              <span className="tabular-nums text-ink-hi">
                 {fmtInt(v)}
                 {prev ? <span className="ml-2 text-xs text-ink-lo">{fmtPct(v / prev, 0)} bước trước</span> : null}
               </span>
@@ -110,7 +110,7 @@ const Report = ({ sessionId }) => {
           <ol className="flex list-none flex-col">
             {r.todo.map((x, i) => (
               <li key={`${x.kind}-${i}`} className="flex gap-3 border-b border-line-soft py-3 last:border-0">
-                <span className="mt-0.5 font-mono text-sm text-ink-lo">{i + 1}</span>
+                <span className="mt-0.5 tabular-nums text-sm text-ink-lo">{i + 1}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone={PRIO[x.priority].tone}>{PRIO[x.priority].label}</Badge>
@@ -143,7 +143,7 @@ const Report = ({ sessionId }) => {
             )}
           />
           {push?.done && (
-            <p role="status" className="mb-3 rounded-md bg-ok/10 px-3 py-2 text-sm text-ok">
+            <p role="status" className="mb-3 rounded-ctrl bg-ok/10 px-3 py-2 text-sm text-ok">
               {push.message || `Đã đưa ${push.inserted} khiếu nại vào hệ thống phản hồi${push.duplicates ? `, bỏ ${push.duplicates} câu trùng` : ''}.`}{' '}
               <Link to="/feedbacks" className="font-medium underline">Xem</Link>
             </p>
@@ -153,7 +153,7 @@ const Report = ({ sessionId }) => {
             <ul className="flex list-none flex-col gap-3">
               {r.complaints.byCategory.map((c) => (
                 <li key={c.category}>
-                  <div className="flex justify-between text-sm"><span className="text-ink-hi">{c.label}</span><span className="font-mono text-ink-mid">{fmtInt(c.count)}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-ink-hi">{c.label}</span><span className="tabular-nums text-ink-mid">{fmtInt(c.count)}</span></div>
                   {c.samples.map((s, i) => <p key={i} className="mt-0.5 truncate text-xs text-ink-lo">“{s}”</p>)}
                 </li>
               ))}
@@ -174,7 +174,7 @@ const Report = ({ sessionId }) => {
             <ul className="flex list-none flex-col">
               {r.response.missed.map((m, i) => (
                 <li key={i} className="flex items-baseline gap-3 border-b border-line-soft py-2 last:border-0">
-                  <span className="w-10 shrink-0 font-mono text-sm text-ink-hi">{fmtInt(m.people)}</span>
+                  <span className="w-10 shrink-0 tabular-nums text-sm text-ink-hi">{fmtInt(m.people)}</span>
                   <div className="min-w-0">
                     <p className="text-sm text-ink-hi">{m.topicLabel}{m.productName ? `, ${m.productName}` : ''}</p>
                     <p className="truncate text-xs text-ink-lo">“{m.sample}”</p>
@@ -194,9 +194,9 @@ const Report = ({ sessionId }) => {
                 {r.revenue.lost.map((l) => (
                   <tr key={`${l.productId}-${l.variant}`} className="border-b border-line-soft last:border-0">
                     <td className="py-2 text-ink-hi">{l.name}{l.variant ? `, ${/^[A-Z0-9]+$/.test(l.variant) ? `size ${l.variant}` : l.variant}` : ''}</td>
-                    <td className="py-2 text-right font-mono">{fmtInt(l.people)}</td>
-                    <td className="py-2 text-right font-mono">{fmtInt(l.qty)}</td>
-                    <td className="py-2 text-right font-mono text-crit">{money(l.value)}</td>
+                    <td className="py-2 text-right tabular-nums">{fmtInt(l.people)}</td>
+                    <td className="py-2 text-right tabular-nums">{fmtInt(l.qty)}</td>
+                    <td className="py-2 text-right tabular-nums text-crit">{money(l.value)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -213,7 +213,7 @@ const Report = ({ sessionId }) => {
               {r.actions.slice().reverse().map((a) => (
                 <li key={`${a.id}-${a.at}`} className="border-b border-line-soft py-2 last:border-0">
                   <div className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="font-mono text-xs text-ink-lo">{clock(a.at)}</span>
+                    <span className="tabular-nums text-xs text-ink-lo">{clock(a.at)}</span>
                     <span className="text-sm text-ink-hi">{a.title}</span>
                     {a.status === 'dismissed' && <Badge>Bỏ qua</Badge>}
                   </div>
@@ -238,16 +238,16 @@ const Report = ({ sessionId }) => {
                 ].map(([label, a, b, f]) => (
                   <tr key={label} className="border-b border-line-soft last:border-0">
                     <td className="py-2 text-ink-hi">{label}</td>
-                    <td className="py-2 text-right font-mono">{f ? f(a) : fmtInt(a)}</td>
-                    <td className="py-2 text-right font-mono text-ink-mid">{b == null ? '—' : f ? f(b) : fmtInt(b)}</td>
-                    <td className="py-2 text-right font-mono"><Delta now={a} prev={b} fmt={f || fmtInt} /></td>
+                    <td className="py-2 text-right tabular-nums">{f ? f(a) : fmtInt(a)}</td>
+                    <td className="py-2 text-right tabular-nums text-ink-mid">{b == null ? '—' : f ? f(b) : fmtInt(b)}</td>
+                    <td className="py-2 text-right tabular-nums"><Delta now={a} prev={b} fmt={f || fmtInt} /></td>
                   </tr>
                 ))}
                 <tr>
                   <td className="py-2 text-ink-hi">Khách hỏi được trả lời</td>
-                  <td className="py-2 text-right font-mono">{r.response.answeredShare != null ? fmtPct(r.response.answeredShare, 0) : '—'}</td>
-                  <td className="py-2 text-right font-mono text-ink-mid">{prev.answeredShare != null ? fmtPct(prev.answeredShare, 0) : '—'}</td>
-                  <td className="py-2 text-right font-mono"><Delta now={r.response.answeredShare} prev={prev.answeredShare} pctMode /></td>
+                  <td className="py-2 text-right tabular-nums">{r.response.answeredShare != null ? fmtPct(r.response.answeredShare, 0) : '—'}</td>
+                  <td className="py-2 text-right tabular-nums text-ink-mid">{prev.answeredShare != null ? fmtPct(prev.answeredShare, 0) : '—'}</td>
+                  <td className="py-2 text-right tabular-nums"><Delta now={r.response.answeredShare} prev={prev.answeredShare} pctMode /></td>
                 </tr>
               </tbody>
             </table>
@@ -265,11 +265,11 @@ const Report = ({ sessionId }) => {
                 {r.products.map((p) => (
                   <tr key={p.id} className="border-b border-line-soft last:border-0">
                     <td className="px-1 py-2 text-ink-hi">{p.name}</td>
-                    <td className="px-1 py-2 text-right font-mono">{fmtInt(p.questions)}</td>
-                    <td className="px-1 py-2 text-right font-mono">{fmtInt(p.orders)}</td>
-                    <td className="px-1 py-2 text-right font-mono">{fmtInt(p.quantity)}</td>
-                    <td className="px-1 py-2 text-right font-mono">{p.conversion != null ? fmtPct(p.conversion, 0) : '—'}</td>
-                    <td className={`px-1 py-2 text-right font-mono ${p.complaints ? 'text-crit' : ''}`}>{fmtInt(p.complaints)}</td>
+                    <td className="px-1 py-2 text-right tabular-nums">{fmtInt(p.questions)}</td>
+                    <td className="px-1 py-2 text-right tabular-nums">{fmtInt(p.orders)}</td>
+                    <td className="px-1 py-2 text-right tabular-nums">{fmtInt(p.quantity)}</td>
+                    <td className="px-1 py-2 text-right tabular-nums">{p.conversion != null ? fmtPct(p.conversion, 0) : '—'}</td>
+                    <td className={`px-1 py-2 text-right tabular-nums ${p.complaints ? 'text-crit' : ''}`}>{fmtInt(p.complaints)}</td>
                   </tr>
                 ))}
               </tbody>

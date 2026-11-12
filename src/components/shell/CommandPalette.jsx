@@ -132,7 +132,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
             aria-activedescendant={items[active] ? `cmd-${items[active].id}` : undefined}
             className="h-14 w-full min-w-0 border-0 bg-transparent text-base text-ink-hi outline-none placeholder:text-ink-lo"
           />
-          <kbd className="rounded-md border border-line px-1.5 py-0.5 font-mono text-xs text-ink-lo">Esc</kbd>
+          <kbd className="rounded-ctrl border border-line px-1.5 py-0.5 tabular-nums text-xs text-ink-lo">Esc</kbd>
         </div>
 
         <ul ref={listRef} role="listbox" className="max-h-[52vh] list-none overflow-y-auto p-2">
@@ -169,9 +169,9 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
         </ul>
 
         <div className="flex items-center gap-4 border-t border-line-soft px-5 py-2.5 text-xs text-ink-lo">
-          <span><kbd className="font-mono">↑ ↓</kbd> chọn</span>
-          <span><kbd className="font-mono">Enter</kbd> mở</span>
-          <span><kbd className="font-mono">Esc</kbd> đóng</span>
+          <span><kbd className="tabular-nums">↑ ↓</kbd> chọn</span>
+          <span><kbd className="tabular-nums">Enter</kbd> mở</span>
+          <span><kbd className="tabular-nums">Esc</kbd> đóng</span>
         </div>
       </div>
     </div>,

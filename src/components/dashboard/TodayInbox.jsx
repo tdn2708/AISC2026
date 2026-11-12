@@ -128,7 +128,7 @@ const TodayInbox = ({ alerts = [], items = [], loading }) => {
   const visible = showAll ? todo : todo.slice(0, PREVIEW);
 
   return (
-    <section id="today" aria-labelledby="today-title" className="mb-8 scroll-mt-24 overflow-hidden glass-strong rounded-xl">
+    <section id="today" aria-labelledby="today-title" className="mb-8 scroll-mt-24 overflow-hidden glass-strong rounded-surf">
       <header className="flex flex-wrap items-end justify-between gap-2 border-b border-line-soft px-5 pt-5 pb-4 sm:px-6">
         <div>
           <h2 id="today-title" className="text-heading font-semibold tracking-[-0.01em] text-ink-hi">Việc hôm nay</h2>

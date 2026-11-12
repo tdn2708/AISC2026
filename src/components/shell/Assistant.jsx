@@ -58,7 +58,7 @@ const Inline = ({ text, onCite, maxCite = 0 }) => {
           key={i}
           type="button"
           onClick={() => onCite(Number(cite[1]))}
-          className="mx-0.5 inline-grid h-[1.15rem] min-w-[1.15rem] place-items-center rounded bg-accent-dim px-1 align-text-top font-mono text-xs font-semibold text-accent-hi hover:bg-accent hover:text-on-accent"
+          className="mx-0.5 inline-grid h-[1.15rem] min-w-[1.15rem] place-items-center rounded-ctrl bg-accent-dim px-1 align-text-top tabular-nums text-xs font-semibold text-accent-hi hover:bg-accent hover:text-on-accent"
           aria-label={`Xem dẫn chứng số ${cite[1]}`}
         >
           {cite[1]}
@@ -104,14 +104,14 @@ const Answer = ({ msg, index, onOpenFeedback }) => {
     listRef.current?.querySelector(`[data-cite="${n}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
-  if (msg.error) return <p className="rounded-lg bg-crit/8 px-3 py-2.5 text-sm text-crit">{msg.error}</p>;
+  if (msg.error) return <p className="rounded-ctrl bg-crit/8 px-3 py-2.5 text-sm text-crit">{msg.error}</p>;
 
   return (
     <div className="flex flex-col gap-3">
       <Markdown text={msg.text} onCite={cite} maxCite={Math.min(5, msg.evidence?.length || 0)} />
 
       {msg.facts?.length > 0 && (
-        <details className="rounded-lg border border-line-soft">
+        <details className="rounded-ctrl border border-line-soft">
           <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-ink-mid hover:text-ink-hi">
             Số liệu hệ thống đã tính
           </summary>
@@ -140,7 +140,7 @@ const Answer = ({ msg, index, onOpenFeedback }) => {
                   className={`rounded-ctrl p-2.5 transition-colors duration-short ease-out ${focus === i + 1 ? 'bg-accent-dim' : 'bg-raised'}`}
                 >
                   <p className="flex gap-2 text-sm leading-relaxed text-ink-hi">
-                    <span className="font-mono text-xs font-semibold text-accent-hi">{i + 1}</span>
+                    <span className="tabular-nums text-xs font-semibold text-accent-hi">{i + 1}</span>
                     <span className="line-clamp-3">“{e.text}”</span>
                   </p>
                   <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-4 text-xs text-ink-lo">
@@ -150,7 +150,7 @@ const Answer = ({ msg, index, onOpenFeedback }) => {
                     </span>
                     {e.cause || e.category ? <span>{e.cause || e.category}</span> : null}
                     <span>{e.source}</span>
-                    {e.date && <span className="font-mono">{fmtDate(e.date)}</span>}
+                    {e.date && <span className="tabular-nums">{fmtDate(e.date)}</span>}
                     <Button variant="link" size="sm" onClick={() => onOpenFeedback(e.text)} className="ml-auto">
                       Mở
                     </Button>
@@ -298,7 +298,7 @@ const Assistant = () => {
         <div className="flex flex-col gap-5">
           {messages.map((m, i) =>
             m.role === 'user' ? (
-              <p key={i} className="ml-10 self-end rounded-lg bg-raised px-3.5 py-2 text-sm text-ink-hi">{m.text}</p>
+              <p key={i} className="ml-10 self-end rounded-ctrl bg-raised px-3.5 py-2 text-sm text-ink-hi">{m.text}</p>
             ) : (
               <Answer key={i} msg={m} index={i} onOpenFeedback={openFeedback} />
             )
@@ -306,9 +306,9 @@ const Assistant = () => {
           {busy && (
             <div className="flex flex-col gap-2" aria-live="polite">
               <span className="sr-only">Đang tính câu trả lời</span>
-              <div className="h-3 w-3/4 animate-pulse rounded bg-raised" />
-              <div className="h-3 w-2/3 animate-pulse rounded bg-raised" />
-              <div className="h-3 w-1/2 animate-pulse rounded bg-raised" />
+              <div className="h-3 w-3/4 animate-pulse rounded-ctrl bg-raised" />
+              <div className="h-3 w-2/3 animate-pulse rounded-ctrl bg-raised" />
+              <div className="h-3 w-1/2 animate-pulse rounded-ctrl bg-raised" />
             </div>
           )}
           <div ref={endRef} />

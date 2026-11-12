@@ -19,7 +19,7 @@ const PRIO_TONE = { high: 'crit', medium: 'high', low: 'neutral' };
 const Mini = ({ label, value, tone }) => (
   <div className="min-w-0">
     <p className="truncate text-xs text-ink-lo">{label}</p>
-    <p className={`font-mono text-base font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
+    <p className={`tabular-nums text-base font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
   </div>
 );
 
@@ -40,7 +40,7 @@ const LiveDigest = () => {
   const last = data.latest;
 
   return (
-    <div className="glass-strong mt-6 rounded-xl p-5">
+    <div className="glass-strong mt-6 rounded-surf p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="inline-flex items-center gap-2 text-heading font-semibold text-ink-hi">
           <Radio size={16} className="text-accent" aria-hidden="true" />Livestream

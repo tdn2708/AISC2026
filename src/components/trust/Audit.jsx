@@ -43,9 +43,9 @@ const Result = ({ label, r }) => (
     <p className="text-sm text-ink-mid">{label}</p>
     {r?.n ? (
       <>
-        <p className="mt-1.5 font-mono text-metric leading-none font-semibold text-ink-hi">{fmtPct(r.p, 0)}</p>
+        <p className="mt-1.5 tabular-nums text-metric leading-none font-semibold text-ink-hi">{fmtPct(r.p, 0)}</p>
         <p className="mt-1.5 text-xs text-ink-lo">
-          Khoảng tin cậy 95%: <span className="font-mono text-ink-mid">từ {fmtPct(r.low, 0)} đến {fmtPct(r.high, 0)}</span>
+          Khoảng tin cậy 95%: <span className="tabular-nums text-ink-mid">từ {fmtPct(r.low, 0)} đến {fmtPct(r.high, 0)}</span>
         </p>
       </>
     ) : (
@@ -69,7 +69,7 @@ const MachineVotes = ({ item, categories }) => {
   const v = item.labelVotes;
   if (!item.sarcasm?.suspected && !v) return null;
   return (
-    <div className="mt-4 rounded-lg bg-raised px-4 py-3 text-xs leading-relaxed text-ink-mid">
+    <div className="mt-4 rounded-ctrl bg-raised px-4 py-3 text-xs leading-relaxed text-ink-mid">
       {item.sarcasm?.signals?.length > 0 && <p><b className="text-ink-hi">Vì sao bị đánh dấu:</b> {item.sarcasm.signals.join('; ')}.</p>}
       {v && (
         <ul className="mt-1.5 flex list-none flex-col gap-0.5">
@@ -181,9 +181,9 @@ const Audit = () => {
         )}
         {summary?.totalReviewed > 0 && (
           <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-            <dt className="text-ink-mid">Tổng câu người đã duyệt</dt><dd className="text-right font-mono text-ink-hi">{fmtInt(summary.totalReviewed)}</dd>
-            <dt className="text-ink-mid">Câu mỉa mai đã xác nhận</dt><dd className="text-right font-mono text-ink-hi">{fmtInt(summary.sarcasm?.sarcastic)} / {fmtInt(summary.sarcasm?.labelled)}</dd>
-            <dt className="text-ink-mid">Thuộc bộ test mù</dt><dd className="text-right font-mono text-ink-hi">{fmtInt(summary.blindTest)}</dd>
+            <dt className="text-ink-mid">Tổng câu người đã duyệt</dt><dd className="text-right tabular-nums text-ink-hi">{fmtInt(summary.totalReviewed)}</dd>
+            <dt className="text-ink-mid">Câu mỉa mai đã xác nhận</dt><dd className="text-right tabular-nums text-ink-hi">{fmtInt(summary.sarcasm?.sarcastic)} / {fmtInt(summary.sarcasm?.labelled)}</dd>
+            <dt className="text-ink-mid">Thuộc bộ test mù</dt><dd className="text-right tabular-nums text-ink-hi">{fmtInt(summary.blindTest)}</dd>
           </dl>
         )}
         {summary?.topConfusions?.length > 0 && (
@@ -193,7 +193,7 @@ const Audit = () => {
               {summary.topConfusions.map((c) => (
                 <li key={`${c.from}-${c.to}`} className="flex justify-between gap-3">
                   <span>AI xếp “{c.from}”, người sửa thành “{c.to}”</span>
-                  <span className="font-mono text-ink-hi">{c.count}</span>
+                  <span className="tabular-nums text-ink-hi">{c.count}</span>
                 </li>
               ))}
             </ul>
@@ -211,7 +211,7 @@ const Audit = () => {
         <p className="mb-4 text-xs leading-relaxed text-ink-lo">{MODE_HINT[mode]}</p>
 
         {loading ? (
-          <div className="h-[360px] animate-pulse rounded-lg bg-raised" />
+          <div className="h-[360px] animate-pulse rounded-ctrl bg-raised" />
         ) : error && !item ? (
           <EmptyState variant="error" title="Không tải được" description={error} />
         ) : !item ? (
@@ -222,12 +222,12 @@ const Audit = () => {
               title="Phản hồi này AI xếp có đúng không?"
               subtitle={remaining != null ? `Còn ${fmtInt(remaining)} phản hồi trong hàng này` : undefined}
             />
-            <blockquote className="rounded-lg border border-line-soft p-4 text-base leading-relaxed text-ink-hi">
+            <blockquote className="rounded-ctrl border border-line-soft p-4 text-base leading-relaxed text-ink-hi">
               {item.originalText}
               <span className="mt-2 flex flex-wrap gap-x-3 text-xs text-ink-lo">
-                {item.rating != null && <span className="font-mono">{item.rating}★</span>}
+                {item.rating != null && <span className="tabular-nums">{item.rating}★</span>}
                 <span>{item.source}</span>
-                <span className="font-mono">{fmtDate(item.timestamp)}</span>
+                <span className="tabular-nums">{fmtDate(item.timestamp)}</span>
                 {item.productName && <span className="truncate">{item.productName}</span>}
               </span>
             </blockquote>

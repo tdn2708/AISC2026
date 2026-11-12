@@ -52,7 +52,7 @@ const WorkspacePicker = ({ collapsed }) => {
         aria-haspopup="listbox"
         aria-expanded={open}
         title={collapsed ? `Kho dữ liệu: ${WORKSPACES[current].label}` : undefined}
-        className={`flex w-full items-center rounded-lg border border-line bg-surface text-left transition-colors hover:border-ink-lo ${collapsed ? 'h-10 justify-center' : 'gap-2.5 px-3 py-2'}`}
+        className={`flex w-full items-center rounded-ctrl border border-line bg-surface text-left transition-colors hover:border-ink-lo ${collapsed ? 'h-10 justify-center' : 'gap-2.5 px-3 py-2'}`}
       >
         <Database size={15} className="shrink-0 text-ink-lo" aria-hidden="true" />
         {!collapsed && (
@@ -106,11 +106,11 @@ const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
       onClick={onNavigate}
       title={collapsed ? `${item.label}${count ? ` (${count})` : ''}` : undefined}
       className={({ isActive }) =>
-        `group relative flex h-10 items-center rounded-lg text-sm transition-[background-color,color,box-shadow] duration-150 ${
+        `group relative flex h-10 items-center rounded-ctrl text-sm transition-[background-color,color,box-shadow] duration-150 ${
           collapsed ? 'justify-center' : 'gap-3 px-3'
         } ${
           isActive
-            ? 'bg-accent-dim font-semibold text-ink-hi before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-r before:bg-accent'
+            ? 'bg-accent-dim font-semibold text-ink-hi before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-r-ctrl before:bg-accent'
             : 'text-ink-mid hover:bg-raised hover:text-ink-hi'
         }`
       }
@@ -238,7 +238,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
             onClick={isOpen ? onClose : onToggleCollapse}
             aria-label={isOpen ? 'Đóng menu' : collapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
             title={collapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
-            className={`grid place-items-center rounded-lg text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi ${isOpen ? 'size-10' : 'size-8'}`}
+            className={`grid place-items-center rounded-ctrl text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi ${isOpen ? 'size-10' : 'size-8'}`}
           >
             {isOpen ? <X size={16} /> : collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
           </button>
@@ -279,7 +279,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
                 type="button"
                 onClick={() => navigate('/trust')}
                 title={updatedAt ? `Tính lúc ${updatedAt}` : undefined}
-                className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-xs text-ink-mid hover:bg-raised hover:text-ink-hi"
+                className="flex w-full items-center gap-2 rounded-ctrl px-3 py-1.5 text-left text-xs text-ink-mid hover:bg-raised hover:text-ink-hi"
               >
                 <ShieldCheck size={13} className="shrink-0 text-ink-lo" aria-hidden="true" />
                 <span className="flex-1">Độ tin số liệu</span>
@@ -290,7 +290,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
                 type="button"
                 onClick={() => navigate('/lab')}
                 title={nlpView.title}
-                className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-xs text-ink-mid hover:bg-raised hover:text-ink-hi"
+                className="flex w-full items-center gap-2 rounded-ctrl px-3 py-1.5 text-left text-xs text-ink-mid hover:bg-raised hover:text-ink-hi"
               >
                 <Cpu size={13} className="shrink-0 text-ink-lo" aria-hidden="true" />
                 <span className="flex-1 truncate">{nlpView.label}</span>
@@ -322,7 +322,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
             onClick={() => setShowMenu((v) => !v)}
             aria-expanded={showMenu}
             title={collapsed ? profile.name : undefined}
-            className={`flex w-full items-center rounded-lg p-1.5 transition-colors hover:bg-raised ${collapsed ? 'justify-center' : 'gap-2.5'}`}
+            className={`flex w-full items-center rounded-ctrl p-1.5 transition-colors hover:bg-raised ${collapsed ? 'justify-center' : 'gap-2.5'}`}
           >
             <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-dim text-xs font-semibold text-accent-hi">
               {initials(profile.name)}

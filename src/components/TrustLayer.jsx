@@ -43,7 +43,7 @@ const HealthDial = ({ score = 0 }) => {
   const label = score >= 75 ? 'Đáng tin cậy' : score >= 50 ? 'Cần chú ý' : 'Rủi ro cao';
   return (
     <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-      <span className="font-mono text-metric font-semibold tracking-[-0.02em] text-ink-hi">{score}</span>
+      <span className="tabular-nums text-metric font-semibold tracking-[-0.02em] text-ink-hi">{score}</span>
       <span className="text-base text-ink-lo">trên 100</span>
       <span className={`w-full text-base font-semibold ${tone}`}>{label}</span>
     </p>
@@ -110,8 +110,8 @@ const TrustOverview = () => {
       <div>
         {header}
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="h-[260px] animate-pulse rounded-xl bg-raised lg:col-span-2" />
-          <div className="h-[260px] animate-pulse rounded-xl bg-raised" />
+          <div className="h-[260px] animate-pulse rounded-surf bg-raised lg:col-span-2" />
+          <div className="h-[260px] animate-pulse rounded-surf bg-raised" />
         </div>
       </div>
     );
@@ -148,18 +148,18 @@ const TrustOverview = () => {
             ]}
           />
           <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-line-soft pt-4 text-xs">
-            <div className="flex gap-1.5"><dt className="text-ink-lo">Số kênh có dữ liệu</dt><dd className="font-mono font-semibold text-ink-hi">{health.channelCoverage.covered}/{health.channelCoverage.expected}</dd></div>
-            <div className="flex gap-1.5"><dt className="text-ink-lo">Khớp với đơn hàng</dt><dd className="font-mono font-semibold text-ink-hi">{pct1(health.reconciliationRate)}</dd></div>
+            <div className="flex gap-1.5"><dt className="text-ink-lo">Số kênh có dữ liệu</dt><dd className="tabular-nums font-semibold text-ink-hi">{health.channelCoverage.covered}/{health.channelCoverage.expected}</dd></div>
+            <div className="flex gap-1.5"><dt className="text-ink-lo">Khớp với đơn hàng</dt><dd className="tabular-nums font-semibold text-ink-hi">{pct1(health.reconciliationRate)}</dd></div>
             {health.lowInformation?.count > 0 && (
               <div className="flex gap-1.5" title="Đánh giá ngắn kiểu “ok”, “hàng tốt”: không phải rác, vẫn được tính vào chỉ số">
                 <dt className="text-ink-lo">Đánh giá ngắn, vẫn được tính</dt>
-                <dd className="font-mono font-semibold text-ink-hi">{fmtInt(health.lowInformation.count)}</dd>
+                <dd className="tabular-nums font-semibold text-ink-hi">{fmtInt(health.lowInformation.count)}</dd>
               </div>
             )}
             {health.halfLifeDays && (
-              <div className="flex gap-1.5"><dt className="text-ink-lo">Trọng số giảm một nửa sau</dt><dd className="font-mono font-semibold text-ink-hi">{health.halfLifeDays} ngày</dd></div>
+              <div className="flex gap-1.5"><dt className="text-ink-lo">Trọng số giảm một nửa sau</dt><dd className="tabular-nums font-semibold text-ink-hi">{health.halfLifeDays} ngày</dd></div>
             )}
-            <div className="flex gap-1.5"><dt className="text-ink-lo">Độ trễ thu thập</dt><dd className="font-mono font-semibold text-ink-hi">{health.ingestionLagMinutes != null ? `${fmtInt(health.ingestionLagMinutes)} phút` : 'chưa rõ'}</dd></div>
+            <div className="flex gap-1.5"><dt className="text-ink-lo">Độ trễ thu thập</dt><dd className="tabular-nums font-semibold text-ink-hi">{health.ingestionLagMinutes != null ? `${fmtInt(health.ingestionLagMinutes)} phút` : 'chưa rõ'}</dd></div>
           </dl>
         </GlassPanel>
 
@@ -181,7 +181,7 @@ const TrustOverview = () => {
             title="Nếu không có Trust Layer thì sao?"
             subtitle="Tính lại cùng dữ liệu như một hệ thống đếm mọi phản hồi bằng nhau."
             right={
-              <label className="flex shrink-0 items-center gap-3 rounded-lg border border-line bg-surface py-1.5 pr-1.5 pl-3">
+              <label className="flex shrink-0 items-center gap-3 rounded-ctrl border border-line bg-surface py-1.5 pr-1.5 pl-3">
                 <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${trustOn ? 'text-ok' : 'text-crit'}`}>
                   {trustOn ? <ShieldCheck size={16} /> : <ShieldOff size={16} />}
                   {trustOn ? 'Đang bật' : 'Đã tắt'}
@@ -200,7 +200,7 @@ const TrustOverview = () => {
             ].map((m) => (
               <div key={m.label} className={`min-w-0 border-t-2 pt-3 transition-colors ${!trustOn && !m.keep ? 'border-crit' : 'border-line'}`}>
                 <p className="text-sm text-ink-mid">{m.label}</p>
-                <p className={`mt-1.5 font-mono text-2xl font-semibold ${!trustOn && !m.keep ? 'text-crit' : 'text-ink-hi'}`}>{m.value}</p>
+                <p className={`mt-1.5 tabular-nums text-display font-semibold ${!trustOn && !m.keep ? 'text-crit' : 'text-ink-hi'}`}>{m.value}</p>
               </div>
             ))}
           </div>
@@ -230,13 +230,13 @@ const TrustOverview = () => {
             <tbody>
               {health.tierBreakdown.map((t) => (
                 <tr key={t.tier}>
-                  <td className="pl-5"><span className="font-mono font-semibold text-accent">{t.tier}</span></td>
+                  <td className="pl-5"><span className="tabular-nums font-semibold text-accent">{t.tier}</span></td>
                   <td>
                     <span className="block text-sm text-ink-hi">{t.label}</span>
                     <span className="block text-xs text-ink-lo">Đối soát: {t.reconciliation.toLowerCase()}</span>
                   </td>
-                  <td className="text-right font-mono">{t.weight.toFixed(2).replace('.', ',')}</td>
-                  <td className="pr-5 text-right font-mono">{fmtInt(t.count)}</td>
+                  <td className="text-right tabular-nums">{t.weight.toFixed(2).replace('.', ',')}</td>
+                  <td className="pr-5 text-right tabular-nums">{fmtInt(t.count)}</td>
                 </tr>
               ))}
             </tbody>
@@ -268,10 +268,10 @@ const TrustOverview = () => {
                     {isOpen && (
                       <ul className="flex list-none flex-col gap-2 px-4 pb-4">
                         {c.members.map((m) => (
-                          <li key={m._id} className="rounded-lg bg-raised p-3 text-sm">
+                          <li key={m._id} className="rounded-ctrl bg-raised p-3 text-sm">
                             <div className="mb-1 flex flex-wrap justify-between gap-2">
                               <b className="font-medium text-ink-hi">{m.author}</b>
-                              <span className="font-mono text-xs text-ink-lo">{fmtDateTime(m.timestamp)}</span>
+                              <span className="tabular-nums text-xs text-ink-lo">{fmtDateTime(m.timestamp)}</span>
                             </div>
                             <p className="leading-relaxed text-ink-mid">{m.originalText}</p>
                             {m.trust?.triggeredSignals?.length > 0 && (
@@ -295,7 +295,7 @@ const TrustOverview = () => {
           subtitle={`Phản hồi hệ thống phân vân nhất được xếp lên đầu; mỗi nhãn của bạn giúp mô hình học đúng hơn.${health.humanLabelCount > 0 ? ` Đã duyệt ${fmtInt(health.humanLabelCount)} phản hồi.` : ''}`}
           right={queue.length > 0 && <Badge tone="med">{queue.length} đang chờ</Badge>}
         />
-        {labelError && <p className="mb-3 rounded-lg bg-crit/10 px-3 py-2 text-sm text-crit">{labelError}</p>}
+        {labelError && <p className="mb-3 rounded-ctrl bg-crit/10 px-3 py-2 text-sm text-crit">{labelError}</p>}
         {queue.length === 0 ? (
           <EmptyState compact variant="calm" title="Hàng đợi trống" description="Không còn phản hồi nào cần người đọc lại." />
         ) : (

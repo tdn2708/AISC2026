@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
 import { GlassPanel, PanelHeader, Segmented, ChartTooltip } from '../ui';
 import { fmtInt } from '../../lib/format';
+import { AXIS_TICK, CHART_FONT } from '../../lib/tokens';
 
 /**
  * LINE CHART — diễn biến theo thời gian.
@@ -15,7 +16,6 @@ const SERIES = [
   { key: 'satisfaction', label: 'Tích cực', color: 'var(--viz-pos)' }
 ];
 
-const AXIS_TICK = { fontSize: 11, fill: 'var(--text-lo)' };
 
 const TrendTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -104,7 +104,7 @@ const SentimentTrendChart = ({ data = [] }) => {
                   stroke="var(--surface-solid)"
                   strokeWidth={2}
                   isFront
-                  label={{ value: `Đỉnh ${peak.name}: ${fmtInt(peak.complaints)} tiêu cực`, position: peakPos, offset: 10, fill: 'var(--text-hi)', fontSize: 11, fontWeight: 600 }}
+                  label={{ value: `Đỉnh ${peak.name}: ${fmtInt(peak.complaints)} tiêu cực`, position: peakPos, offset: 10, fill: 'var(--text-hi)', fontSize: CHART_FONT, fontWeight: 600 }}
                 />
               )}
             </LineChart>

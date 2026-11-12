@@ -63,14 +63,14 @@ const Orders = ({ stats, sessionId, onChanged }) => {
             <tbody>
               {items.slice(0, 100).map((o) => (
                 <tr key={o.id} className={`border-b border-line-soft last:border-0 ${o.status === 'cancelled' ? 'opacity-50' : ''}`}>
-                  <td className="px-1 py-2 font-mono text-xs text-ink-lo">{clock(o.ts)}</td>
+                  <td className="px-1 py-2 tabular-nums text-xs text-ink-lo">{clock(o.ts)}</td>
                   <td className="px-1 py-2 text-ink-hi">
                     <span className="block max-w-[10rem] truncate">@{o.handle || '—'}</span>
                     {o.hasPhone && <span className="inline-flex items-center gap-0.5 text-xs text-ink-lo"><Phone size={10} aria-hidden="true" />Để lại SĐT</span>}
                   </td>
                   <td className="px-1 py-2 text-ink-hi"><span className="block max-w-[11rem] truncate">{o.productName || <span className="text-ink-lo">Chưa rõ</span>}</span></td>
                   <td className="px-1 py-2 text-ink-mid">{variantText(o.variant) || '—'}</td>
-                  <td className="px-1 py-2 text-right font-mono text-ink-hi">{o.quantity}</td>
+                  <td className="px-1 py-2 text-right tabular-nums text-ink-hi">{o.quantity}</td>
                   <td className="px-1 py-2 text-ink-mid"><span className="block max-w-[14rem] truncate" title={o.text}>{o.text}</span></td>
                   <td className="px-1 py-2">
                     <select
