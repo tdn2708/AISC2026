@@ -8,6 +8,7 @@ import {
   Modal, Badge, ProgressBar, Stepper, SentimentFace, SeverityBadge, EmptyState
 } from './ui';
 import { LogoMark } from './Logo';
+import MotionDemo from './motion/MotionDemo';
 
 /**
  * BỘ GIAO DIỆN — mọi thành phần của hệ thiết kế trên một trang, sắp theo
@@ -213,6 +214,9 @@ const UiKit = () => {
           </div>
         </Cell>
       </div>
+
+      {/* Bộ chuyển động dùng chung (F2), xem components/motion */}
+      <MotionDemo />
 
       <Modal
         open={modal === 'ok'}

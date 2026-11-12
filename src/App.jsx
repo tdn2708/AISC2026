@@ -22,6 +22,7 @@ import { API_URL } from './config';
 import { readStorage, writeStorage } from './lib/storage';
 import { applyWorkspaceHeader } from './lib/workspace';
 import ErrorBoundary from './components/ErrorBoundary';
+import { RouteTransition } from './components/motion/RouteTransition';
 import './hooks/useTheme';
 
 axios.defaults.baseURL = API_URL;
@@ -69,9 +70,10 @@ const MainLayout = ({ children, onLogout }) => {
         />
         <main className={`main-content ${collapsed ? 'is-collapsed' : ''}`}>
           <Topbar onOpenMenu={() => setMenuOpen(true)} onOpenCommand={() => setCommandOpen(true)} />
-          <div key={location.pathname} className="animate-fade-in">
+          {/* Chuyển trang: View Transitions khi trình duyệt có, không thì mờ dần như cũ */}
+          <RouteTransition>
             <ErrorBoundary>{children}</ErrorBoundary>
-          </div>
+          </RouteTransition>
         </main>
       </div>
       <CommandPalette open={commandOpen} onClose={closeCommand} onLogout={onLogout} />
