@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Activity, CircleSlash } from 'lucide-react';
 import { Modal, Button, TextArea, Chip } from '../ui';
+import { MOTION, EASE, useReducedMotion } from '../motion';
 import { fmtInt, fmtPct, fmtSignedPct, growthOf, alertTitle } from '../../lib/format';
 
 /** Dải bằng chứng thống kê: chữ nhãn ở chữ chính, chỉ con số và chuỗi z, p, n dùng font đơn cách (font-code) */
@@ -21,7 +22,7 @@ export const Evidence = ({ alert, className = '' }) => {
   return (
     <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-lo ${className}`}>
       <span className="font-semibold text-ink-hi">{g == null ? alert.typeVi : Number.isFinite(g) ? fmtSignedPct(g) : 'mới'}</span>
-      <span className="tabular-nums">{fmtPct(st.baselineRate)} → {fmtPct(st.currentRate)}</span>
+      <span className="tabular-nums">từ {fmtPct(st.baselineRate)} sang {fmtPct(st.currentRate)}</span>
       {st.z != null && <span className="font-code">z={st.z}</span>}
       {st.pValueDisplay && <span className="font-code">{st.pValueDisplay.replace(/\s/g, '')}</span>}
       {st.sampleCurrent != null && <span className="font-code">n={fmtInt(st.sampleCurrent)}</span>}
@@ -106,4 +107,43 @@ export const DismissModal = ({ alert, open, onClose, onConfirm }) => {
       />
     </Modal>
   );
+};
+
+/**
+ * Mở và gập một khối bằng clip-path + opacity (không đổi height).
+ * Lần gắn đầu hiện luôn, không chạy chuyển động: chỉ thao tác của người dùng
+ * (đổi `open`) mới có. Gập xong thì gỡ khối khỏi trang để vùng bên dưới dồn lên.
+ */
+export const Fold = ({ open, children, className = '' }) => {
+  const reduced = useReducedMotion();
+  const ref = useRef(null);
+  const first = useRef(true);
+  const [mounted, setMounted] = useState(open);
+
+  useEffect(() => {
+    if (open) setMounted(true);
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return undefined;
+    }
+    const el = ref.current;
+    if (reduced || !el || typeof el.animate !== 'function') {
+      if (!open) setMounted(false);
+      return undefined;
+    }
+    const hidden = { opacity: 0, clipPath: 'inset(0 0 100% 0)' };
+    const shown = { opacity: 1, clipPath: 'inset(0 0 0% 0)' };
+    const a = el.animate(open ? [hidden, shown] : [shown, hidden], {
+      duration: open ? MOTION.medium : MOTION.short,
+      easing: open ? EASE.out : EASE.in
+    });
+    if (!open) a.onfinish = () => setMounted(false);
+    return () => a.cancel();
+  }, [open, mounted, reduced]);
+
+  if (!mounted) return null;
+  return <div ref={ref} className={className}>{children}</div>;
 };

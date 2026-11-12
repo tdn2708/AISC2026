@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { Check, CircleSlash, Clock, FileSearch, RotateCcw, ShieldCheck, MessageSquareText, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
@@ -6,7 +6,8 @@ import { askAssistant } from '../lib/assistant';
 import {
   PageHeader, GlassPanel, SeverityBadge, Button, ChipGroup, Drawer, EmptyState, Badge, SentimentFace, Toast, Tabs
 } from './ui';
-import { Evidence, ConfidenceMeter, DismissModal } from './alerts/AlertParts';
+import { Evidence, ConfidenceMeter, DismissModal, Fold } from './alerts/AlertParts';
+import { Pulse, MOTION, EASE, prefersReducedMotion } from './motion';
 import { useDecisions } from '../hooks/useDecisions';
 import { alertTitle, alertInWords, fmtInt, fmtPct, fmtDateTime, SEVERITY, SEVERITY_ORDER } from '../lib/format';
 
@@ -22,12 +23,12 @@ import { alertTitle, alertInWords, fmtInt, fmtPct, fmtDateTime, SEVERITY, SEVERI
 
 const AlertRow = ({ alert, status, active, onClick }) => {
   return (
-    <li>
+    <Pulse as="li" trigger={status} className="rounded-ctrl">
       <button
         type="button"
         onClick={onClick}
         aria-current={active || undefined}
-        className={`relative w-full rounded-ctrl p-4 text-left transition-colors ${
+        className={`relative w-full rounded-ctrl p-4 text-left transition-colors duration-micro ${
           active ? 'bg-accent-dim' : 'hover:bg-raised'
         }`}
       >
@@ -47,11 +48,23 @@ const AlertRow = ({ alert, status, active, onClick }) => {
           )}
         </p>
       </button>
-    </li>
+    </Pulse>
   );
 };
 
 const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence }) => {
+  // Đã quyết định thì kế hoạch gập lại sau một nhịp Pulse; bấm để xem lại
+  const [planOpen, setPlanOpen] = useState(!status);
+  const prevStatus = useRef(status);
+  useEffect(() => {
+    if (prevStatus.current === status) return undefined;
+    const wasUndecided = !prevStatus.current;
+    prevStatus.current = status;
+    if (!status) { setPlanOpen(true); return undefined; }
+    if (!wasUndecided) return undefined;
+    const t = setTimeout(() => setPlanOpen(false), prefersReducedMotion() ? 0 : MOTION.long);
+    return () => clearTimeout(t);
+  }, [status]);
   const steps = rec?.steps || alert.recommendation?.steps || [];
   const confidence = rec?.confidence ?? alert.recommendation?.confidence;
   const evidence = rec?.evidence || {};
@@ -69,7 +82,8 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
   ];
 
   return (
-    <GlassPanel tone="strong" className="p-6" key={alert.id}>
+    <Pulse trigger={status} className="rounded-surf" key={alert.id}>
+    <GlassPanel tone="strong" className="p-6">
       <div className="flex flex-wrap items-center gap-2">
         <SeverityBadge level={alert.severity} />
         {alert.typeVi && <Badge tone="neutral">{alert.typeVi}</Badge>}
@@ -90,7 +104,15 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
       </dl>
 
       <div className="mt-5">
-        <h3 className="mb-3 text-sm font-semibold text-ink-hi">Kế hoạch đề xuất</h3>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-ink-hi">Kế hoạch đề xuất</h3>
+          {status && steps.length > 0 && (
+            <Button variant="ghost" size="sm" pressed={planOpen} aria-expanded={planOpen} onClick={() => setPlanOpen((o) => !o)}>
+              {planOpen ? 'Gập kế hoạch' : `Xem lại ${steps.length} bước`}
+            </Button>
+          )}
+        </div>
+        <Fold open={planOpen}>
         {steps.length === 0 ? (
           <p className="text-sm text-ink-lo">Chưa có hành động nào khớp với dữ liệu của cảnh báo này.</p>
         ) : (
@@ -114,6 +136,7 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
           </ol>
         )}
         <ConfidenceMeter value={confidence} className="mt-4" />
+        </Fold>
       </div>
 
       <details className="group mt-5 border-t border-line-soft">
@@ -156,6 +179,7 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
         Hệ thống chỉ đề xuất. Việc tốn chi phí hoặc chạm tới khách hàng luôn cần người có thẩm quyền duyệt.
       </p>
     </GlassPanel>
+    </Pulse>
   );
 };
 
@@ -179,7 +203,7 @@ const SourceDrawer = ({ alert, onClose }) => {
         <EmptyState variant="error" compact title="Không tải được" description={error} />
       ) : !data ? (
         <div className="flex flex-col gap-3">
-          {[0, 1, 2].map((i) => <div key={i} className="h-24 animate-pulse rounded-ctrl bg-raised" />)}
+          {[0, 1, 2].map((i) => <div key={i} className="h-24 animate-skeleton rounded-ctrl bg-raised" />)}
         </div>
       ) : data.evidence?.length === 0 ? (
         <EmptyState compact title="Không có phản hồi đính kèm" description="Cảnh báo tăng chậm được phát hiện trên chuỗi thời gian, không gắn với từng phản hồi riêng." />
@@ -229,7 +253,7 @@ const Effect = ({ e }) => {
     <span className="inline-flex flex-col">
       <span className={`inline-flex items-center gap-1 font-semibold ${better ? 'text-ok' : worse ? 'text-crit' : 'text-ink-mid'}`}>
         <Icon size={14} aria-hidden="true" />
-        {pctSmart(e.before.rate)} → {pctSmart(e.after.rate)}
+        từ {pctSmart(e.before.rate)} sang {pctSmart(e.after.rate)}
       </span>
       <span className="text-xs text-ink-lo">
         {better ? 'Giảm' : worse ? 'Tăng' : 'Gần như không đổi'}, trên {fmtInt(e.before.n)} và {fmtInt(e.after.n)} phản hồi
@@ -251,7 +275,7 @@ const DecisionLog = () => {
   }, []);
 
   if (error) return <GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel>;
-  if (!rows) return <div className="h-64 animate-pulse rounded-surf bg-raised" />;
+  if (!rows) return <div className="h-64 animate-skeleton rounded-surf bg-raised" />;
   if (!rows.length) {
     return (
       <GlassPanel>
@@ -381,6 +405,21 @@ const RiskCenter = () => {
   }, [selectedId, sorted]);
   const selected = visible.find((a) => a.id === selectedId) || visible[0] || null;
   const detailRef = useRef(null);
+  // Màn mở đầu duy nhất: dòng nghiêm trọng nhất hiện trước, các dòng còn lại hiện theo sau một nhịp
+  const listRef = useRef(null);
+  const openedRef = useRef(false);
+  useLayoutEffect(() => {
+    const ul = listRef.current;
+    if (openedRef.current || !ul || !ul.children.length) return;
+    openedRef.current = true;
+    if (prefersReducedMotion()) return;
+    Array.from(ul.children).forEach((li, i) => {
+      li.animate(
+        i === 0 ? [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }] : [{ opacity: 0 }, { opacity: 1 }],
+        { duration: i === 0 ? MOTION.medium : MOTION.short, delay: i === 0 ? 0 : 200, easing: EASE.out, fill: 'backwards' }
+      );
+    });
+  });
   const select = (id) => {
     setParams(id ? { alert: id } : {}, { replace: true });
     // Màn hẹp: chi tiết nằm DƯỚI danh sách, chạm một cảnh báo mà không cuộn
@@ -432,8 +471,8 @@ const RiskCenter = () => {
             <GlassPanel><EmptyState variant="error" title="Không tải được cảnh báo" description={error} action={<Button onClick={load}>Thử lại</Button>} /></GlassPanel>
           ) : loading && alerts.length === 0 ? (
             <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-              <div className="flex flex-col gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-pulse rounded-ctrl bg-raised" />)}</div>
-              <div className="h-[520px] animate-pulse rounded-surf bg-raised" />
+              <div className="flex flex-col gap-3">{[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-skeleton rounded-ctrl bg-raised" />)}</div>
+              <div className="h-[520px] animate-skeleton rounded-surf bg-raised" />
             </div>
           ) : visible.length === 0 ? (
             <GlassPanel>
@@ -446,7 +485,7 @@ const RiskCenter = () => {
           ) : (
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
               {/* Cuộn riêng chỉ trên màn rộng; trên điện thoại cuộn lồng trong trang cuộn rất khó dùng */}
-              <ul className="flex list-none flex-col gap-1 rounded-surf border border-line bg-surface p-2 lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto" aria-label="Danh sách cảnh báo">
+              <ul ref={listRef} className="flex list-none flex-col gap-1 rounded-surf border border-line bg-surface p-2 lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto" aria-label="Danh sách cảnh báo">
                 {visible.map((a) => (
                   <AlertRow key={a.id} alert={a} status={statusOf(a)} active={selected?.id === a.id} onClick={() => select(a.id)} />
                 ))}
