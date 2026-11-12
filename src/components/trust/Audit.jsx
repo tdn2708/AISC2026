@@ -39,7 +39,7 @@ const currentUser = () => {
 };
 
 const Result = ({ label, r }) => (
-  <div className="rounded-lg border border-line-soft p-4">
+  <div className="min-w-0 border-t border-line pt-3">
     <p className="text-sm text-ink-mid">{label}</p>
     {r?.n ? (
       <>

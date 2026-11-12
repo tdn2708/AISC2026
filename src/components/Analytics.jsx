@@ -232,9 +232,9 @@ const RootCauses = () => {
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Stat label="Khiếu nại" value={fmtInt(current.count)} />
               <Stat label="Tỉ trọng trong mọi khiếu nại" value={fmtPct(current.count / complaints.length, 1)} />
-              <div className="rounded-lg border border-line-soft bg-surface p-4">
-                <p className="eyebrow">7 ngày gần nhất</p>
-                <p className="mt-1.5 font-mono text-2xl font-semibold text-ink-hi">{fmtInt(delta.cur)}</p>
+              <div className="min-w-0 border-t border-line pt-3">
+                <p className="text-sm text-ink-mid">7 ngày gần nhất</p>
+                <p className="mt-1 text-metric font-semibold tracking-tight text-ink-hi tabular-nums">{fmtInt(delta.cur)}</p>
                 {delta.rel == null ? (
                   <p className="mt-0.5 text-xs text-ink-lo">Chưa đủ dữ liệu tuần trước để so</p>
                 ) : (
@@ -300,9 +300,9 @@ const RootCauses = () => {
 
             <GlassPanel tone="strong" className="p-5">
               <PanelHeader title="Phản hồi mới nhất" />
-              <ul className="flex list-none flex-col gap-2.5">
+              <ul className="flex list-none flex-col divide-y divide-line-soft">
                 {samples.map((f) => (
-                  <li key={f._id} className="rounded-lg border border-line-soft p-3">
+                  <li key={f._id} className="py-3 first:pt-0 last:pb-0">
                     <p className="line-clamp-2 text-sm leading-relaxed text-ink-hi">{f.originalText}</p>
                     <p className="mt-1.5 flex flex-wrap gap-x-3 text-xs text-ink-lo">
                       {f.causeLabel && <span>{f.causeLabel}</span>}

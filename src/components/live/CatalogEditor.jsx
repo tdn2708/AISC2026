@@ -90,7 +90,7 @@ const CatalogEditor = ({ rows, onRows, policy, onPolicy }) => {
         {rows.length === 0 && <p className="text-sm text-ink-lo">Chưa có sản phẩm. Không có danh mục thì vẫn phân loại được bình luận, nhưng không gợi ý được giá, size, tồn kho.</p>}
         <ol className="flex list-none flex-col gap-3">
           {rows.map((r, i) => (
-            <li key={r.id || i} className="rounded-lg border border-line-soft p-3">
+            <li key={r.id || i} className="rounded-ctrl bg-raised p-3">
               <div className="grid grid-cols-[4rem_1fr_auto] gap-2">
                 <Field label="Số giỏ"><input className={inputCls} value={r.code || ''} onChange={(e) => set(i, 'code', e.target.value)} /></Field>
                 <Field label="Tên sản phẩm"><input className={inputCls} value={r.name || ''} onChange={(e) => set(i, 'name', e.target.value)} placeholder="Áo thun cotton basic" /></Field>

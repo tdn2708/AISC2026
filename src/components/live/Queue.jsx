@@ -62,7 +62,7 @@ const QueueCard = ({ g, sessionId, onResolved }) => {
   };
 
   return (
-    <li className={`rounded-lg border p-3.5 ${complaint ? 'border-crit/40 bg-crit/5' : 'border-line-soft bg-surface/60'}`}>
+    <li className={`rounded-ctrl p-3.5 ${complaint ? 'bg-crit/8' : 'bg-raised'}`}>
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={complaint ? 'crit' : 'accent'}>{g.topicLabel}</Badge>
         {g.productName && <span className="truncate text-xs font-medium text-ink-mid">{g.productName}{g.size ? `, size ${g.size}` : ''}</span>}

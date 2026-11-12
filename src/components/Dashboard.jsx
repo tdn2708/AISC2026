@@ -90,7 +90,7 @@ const Dashboard = () => {
           nào được tính (vd. một sản phẩm vừa cào, toàn đánh giá cũ) thì mọi thẻ về
           0 — phải nói rõ là do bộ lọc */}
       {!loading && hasFilter && stats?.totalFeedbacks?.valid === 0 && (
-        <div role="status" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-high/40 bg-high/10 px-4 py-3 text-sm text-ink-hi">
+        <div role="status" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-ctrl bg-high/10 px-4 py-3 text-sm text-ink-hi">
           <span>
             Bộ lọc đang chọn không có phản hồi nào được tính vào chỉ số
             {stats.totalFeedbacks.value > 0 && ` (${stats.totalFeedbacks.value} phản hồi thô đều quá cũ hoặc bị Trust Layer loại)`}

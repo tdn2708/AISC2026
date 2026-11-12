@@ -1,4 +1,5 @@
 import React from 'react';
+import { Radio } from 'lucide-react';
 import { Badge } from '../ui';
 
 /**
@@ -40,8 +41,7 @@ export const STATUS = {
 export const StatusPill = ({ status }) => {
   const s = STATUS[status] || STATUS.ended;
   return (
-    <Badge tone={s.tone} className="gap-1.5">
-      {status === 'live' && <span className="size-1.5 animate-pulse rounded-full bg-crit" aria-hidden="true" />}
+    <Badge tone={s.tone} icon={status === 'live' ? Radio : undefined}>
       {s.label}
     </Badge>
   );

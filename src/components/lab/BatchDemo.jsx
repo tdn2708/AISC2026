@@ -29,7 +29,7 @@ const TONE = { hi: 'text-ink-hi', accent: 'text-accent-hi', high: 'text-high', c
 const BAR = { accent: 'bg-accent', crit: 'bg-crit', ok: 'bg-ok', neutral: 'bg-ink-lo' };
 
 const Tile = ({ icon: Icon, label, value, unit, tone = 'hi' }) => (
-  <div className="min-w-0 rounded-lg border border-line-soft bg-surface px-4 py-3.5">
+  <div className="min-w-0 rounded-ctrl bg-raised px-4 py-3.5">
     <p className="flex items-center gap-1.5 text-xs text-ink-mid"><Icon size={13} aria-hidden="true" /> {label}</p>
     <p className={`mt-1.5 font-mono text-display font-semibold ${TONE[tone]}`}>
       {value}
@@ -160,7 +160,7 @@ export default function BatchDemo() {
         <ModelStatus className="mt-3" />
 
         {error && (
-          <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg border border-crit/30 bg-crit/8 px-4 py-2.5 text-sm text-crit">
+          <p role="alert" className="mt-3 flex items-center gap-2 rounded-ctrl bg-crit/10 px-4 py-2.5 text-sm text-crit">
             <XCircle size={15} aria-hidden="true" /> {error}
           </p>
         )}

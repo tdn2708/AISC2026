@@ -176,7 +176,7 @@ const TrustOverview = () => {
       </div>
 
       {impact && (
-        <GlassPanel tone="strong" className={`mb-6 p-6 ${!trustOn ? 'border-crit/50' : ''}`}>
+        <GlassPanel tone="strong" className={`mb-6 p-6 ${!trustOn ? 'border-crit/35' : ''}`}>
           <PanelHeader
             title="Nếu không có Trust Layer thì sao?"
             subtitle="Tính lại cùng dữ liệu như một hệ thống đếm mọi phản hồi bằng nhau."
@@ -248,11 +248,11 @@ const TrustOverview = () => {
           {clusters.length === 0 ? (
             <EmptyState compact variant="calm" title="Không có cụm nào" description="Chưa thấy nhóm đánh giá nào giống nhau bất thường." />
           ) : (
-            <ul className="flex list-none flex-col gap-2">
+            <ul className="flex list-none flex-col divide-y divide-line-soft border-y border-line-soft">
               {clusters.map((c) => {
                 const isOpen = openCluster === c.clusterId;
                 return (
-                  <li key={c.clusterId} className="overflow-hidden rounded-lg border border-line-soft">
+                  <li key={c.clusterId}>
                     <button
                       type="button"
                       onClick={() => setOpenCluster(isOpen ? null : c.clusterId)}
@@ -301,7 +301,7 @@ const TrustOverview = () => {
         ) : (
           <ul className="grid list-none gap-3 lg:grid-cols-2">
             {queue.map((q) => (
-              <li key={q._id} className="flex flex-col rounded-lg border border-line-soft p-4">
+              <li key={q._id} className="flex flex-col rounded-ctrl bg-raised p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-sm font-medium text-ink-hi">{q.author} <span className="font-normal text-ink-lo">trên {q.source}</span></span>
                   {q.uncertainty != null && <span className="text-xs text-ink-lo">Hệ thống phân vân {Math.round(q.uncertainty * 100)}%</span>}

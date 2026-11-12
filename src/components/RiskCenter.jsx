@@ -94,10 +94,10 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
         {steps.length === 0 ? (
           <p className="text-sm text-ink-lo">Chưa có hành động nào khớp với dữ liệu của cảnh báo này.</p>
         ) : (
-          <ol className="flex list-none flex-col gap-2">
+          <ol className="flex list-none flex-col divide-y divide-line-soft">
             {steps.map((s, i) => (
-              <li key={s.actionId || i} className="flex gap-3 rounded-lg border border-line-soft p-3.5">
-                <span className={`grid size-6 shrink-0 place-items-center rounded-md font-mono text-xs font-semibold ${i === 0 ? 'bg-accent text-on-accent' : 'bg-raised text-ink-mid'}`}>
+              <li key={s.actionId || i} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+                <span className={`grid size-6 shrink-0 place-items-center rounded-ctrl text-xs font-semibold tabular-nums ${i === 0 ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-mid'}`}>
                   {i + 1}
                 </span>
                 <div className="min-w-0">
@@ -116,11 +116,11 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
         <ConfidenceMeter value={confidence} className="mt-4" />
       </div>
 
-      <details className="group mt-5 rounded-lg border border-line-soft">
-        <summary className="cursor-pointer list-none px-4 py-2.5 text-xs font-semibold text-ink-mid hover:text-ink-hi">
+      <details className="group mt-5 border-t border-line-soft">
+        <summary className="cursor-pointer list-none rounded-ctrl py-2.5 text-xs font-semibold text-ink-mid hover:text-ink-hi">
           Số liệu kiểm định
         </summary>
-        <div className="border-t border-line-soft px-4 py-3">
+        <div className="pb-1">
           <Evidence alert={alert} />
         </div>
       </details>

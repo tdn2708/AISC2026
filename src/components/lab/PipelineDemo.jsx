@@ -93,10 +93,10 @@ const PII_TOKEN = /(\[(?:SĐT|EMAIL|MÃ ĐƠN|CCCD|SỐ TÀI KHOẢN)\])/;
 
 const CHIP_TONE = {
   neutral: 'border-line bg-raised text-ink-mid',
-  accent: 'border-accent/50 bg-accent-dim text-accent-hi',
-  ok: 'border-ok/40 bg-ok/10 text-ok',
-  warn: 'border-high/40 bg-high/10 text-high',
-  danger: 'border-crit/40 bg-crit/10 text-crit'
+  accent: 'border-accent/35 bg-accent-dim text-accent-hi',
+  ok: 'border-ok/35 bg-ok/10 text-ok',
+  warn: 'border-high/35 bg-high/10 text-high',
+  danger: 'border-crit/35 bg-crit/10 text-crit'
 };
 
 const Chip = ({ children, tone = 'neutral', mono, title }) => (
@@ -106,7 +106,7 @@ const Chip = ({ children, tone = 'neutral', mono, title }) => (
 );
 
 const TextBox = ({ children, mono }) => (
-  <div className={`rounded-lg border border-line bg-canvas px-3.5 py-3 leading-relaxed break-words text-ink-hi ${mono ? 'font-mono text-sm' : 'text-base'}`}>
+  <div className={`rounded-ctrl bg-raised px-3.5 py-3 leading-relaxed break-words text-ink-hi ${mono ? 'text-sm tabular-nums' : 'text-base'}`}>
     {children}
   </div>
 );
@@ -116,8 +116,8 @@ const Label = ({ children }) => <p className="mt-4 mb-1.5 text-xs font-semibold 
 const Note = ({ children }) => <p className="mt-3 max-w-[80ch] text-xs leading-relaxed text-ink-mid">{children}</p>;
 
 const Callout = ({ tone, children }) => {
-  const cls = { ok: 'border-ok/40 bg-ok/8', warn: 'border-high/40 bg-high/8', danger: 'border-crit/40 bg-crit/8' }[tone];
-  return <div className={`rounded-lg border px-4 py-3 text-sm leading-relaxed ${cls}`}>{children}</div>;
+  const cls = { ok: 'bg-ok/10', warn: 'bg-high/10', danger: 'bg-crit/10' }[tone];
+  return <div className={`rounded-ctrl px-4 py-3 text-sm leading-relaxed ${cls}`}>{children}</div>;
 };
 
 const Unavailable = ({ reason }) => (
@@ -145,7 +145,7 @@ const MaskedText = ({ text }) => (
   <TextBox>
     {String(text).split(new RegExp(PII_TOKEN.source, 'g')).map((part, i) =>
       PII_TOKEN.test(part)
-        ? <mark key={i} className="rounded border border-ok/50 bg-ok/12 px-1 font-semibold text-ok">{part}</mark>
+        ? <mark key={i} className="rounded-xs bg-ok/12 px-1 font-semibold text-ok">{part}</mark>
         : <span key={i}>{part}</span>
     )}
   </TextBox>
@@ -265,7 +265,7 @@ function StepTokens({ t }) {
           const wordStart = tok.startsWith('▁');
           const cls = special
             ? 'border-dashed border-line text-ink-lo'
-            : wordStart ? 'border-accent/60 bg-accent-dim text-ink-hi' : 'border-line bg-raised text-ink-hi';
+            : wordStart ? 'border-accent/35 bg-accent-dim text-ink-hi' : 'border-line bg-raised text-ink-hi';
           return (
             <span
               key={i}
@@ -367,7 +367,7 @@ function StepExplain({ t }) {
         Nhãn được giải thích: <strong className="text-ink-hi">{imp.targetVi || imp.target}</strong> (xác suất {(imp.base * 100).toFixed(1).replace('.', ',')}%)
       </p>
 
-      <div className="flex flex-wrap gap-1 rounded-lg border border-line bg-canvas px-3 py-2.5 leading-loose">
+      <div className="flex flex-wrap gap-1 rounded-ctrl bg-raised px-3 py-2.5 leading-loose">
         {m.words.map((w, i) => {
           const v = imp.values[i];
           const after = imp.probAfter?.[i];
@@ -485,7 +485,7 @@ function StepFinal({ t, scenario }) {
   return (
     <>
       {expect && (
-        <div className={`mb-1 flex items-start gap-3 rounded-lg border px-4 py-3 ${expect.ok ? 'border-ok/40 bg-ok/8' : 'border-crit/40 bg-crit/8'}`}>
+        <div className={`mb-1 flex items-start gap-3 rounded-ctrl px-4 py-3 ${expect.ok ? 'bg-ok/10' : 'bg-crit/10'}`}>
           {expect.ok
             ? <CheckCircle2 size={19} className="mt-0.5 shrink-0 text-ok" aria-hidden="true" />
             : <XCircle size={19} className="mt-0.5 shrink-0 text-crit" aria-hidden="true" />}
@@ -509,7 +509,7 @@ function StepFinal({ t, scenario }) {
             Do <strong className="text-accent-hi">{f.source === 'visobert' ? 'ViSoBERT' : 'luật từ khóa'}</strong> sinh ra. Đây là bản ghi được
             lưu, được đếm vào chỉ số và có thể kích hoạt cảnh báo.
           </p>
-          <dl className="overflow-hidden rounded-lg border border-accent/50">
+          <dl className="border-y border-line">
             {rows.map(([k, v]) => (
               <div key={k} className="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-3 px-3.5 py-2 text-sm odd:bg-raised">
                 <dt className="text-ink-mid">{k}</dt>
@@ -524,11 +524,11 @@ function StepFinal({ t, scenario }) {
           ) : (
             <ul className="flex list-none flex-col gap-1.5">
               {aspects.map((a, i) => (
-                <li key={a.category + i} className={`flex flex-wrap justify-between gap-2 rounded-lg border-l-2 bg-raised px-3 py-2 ${i === 0 ? 'border-accent' : 'border-line'}`}>
+                <li key={a.category + i} className="flex flex-wrap justify-between gap-2 rounded-ctrl bg-raised px-3 py-2">
                   <span className="text-sm text-ink-hi">
                     {a.categoryLabel}: {a.causeLabel || 'chưa rõ nguyên nhân'}
                     {a.causeUncertain && <span className="text-high">, nguyên nhân chưa chắc</span>}
-                    {i === 0 && <span className="text-ink-mid">, chính</span>}
+                    {i === 0 && <span className="font-semibold text-accent-hi">, chính</span>}
                   </span>
                   <span className="font-mono text-xs text-ink-mid">{a.owner}{a.confidence != null ? `, ${a.confidence}` : ''}</span>
                 </li>
@@ -707,7 +707,7 @@ export default function PipelineDemo() {
                 title={s.text}
                 aria-pressed={active}
                 onClick={() => { setScenarioId(s.id); setText(s.text); }}
-                className={`rounded-lg border px-3.5 py-2.5 text-left transition-colors ${active ? 'border-accent bg-accent-dim' : 'border-line bg-raised hover:border-ink-lo'}`}
+                className={`rounded-ctrl border px-3.5 py-2.5 text-left transition-[background-color,border-color] duration-micro ease-out ${active ? 'border-accent bg-accent-dim' : 'border-line bg-surface hover:border-ink-lo'}`}
               >
                 <span className={`block text-sm font-semibold ${active ? 'text-accent-hi' : 'text-ink-hi'}`}>{s.label}</span>
                 <span className="mt-0.5 block text-xs text-ink-mid">{s.proves}</span>
@@ -742,7 +742,7 @@ export default function PipelineDemo() {
         </div>
 
         {error && (
-          <p role="alert" className="mt-3 flex items-center gap-2 rounded-lg border border-crit/30 bg-crit/8 px-4 py-2.5 text-sm text-crit">
+          <p role="alert" className="mt-3 flex items-center gap-2 rounded-ctrl bg-crit/10 px-4 py-2.5 text-sm text-crit">
             <XCircle size={15} aria-hidden="true" /> {error}
           </p>
         )}
@@ -793,10 +793,10 @@ export default function PipelineDemo() {
                 ref={(el) => { stepRefs.current[i] = el; }}
                 tone="strong"
                 aria-labelledby={`step-${s.key}`}
-                className={`scroll-mt-24 overflow-hidden border-l-[3px] p-5 transition-opacity duration-300 ${visible ? 'border-l-accent' : 'border-l-line opacity-40'}`}
+                className={`scroll-mt-24 overflow-hidden p-5 transition-opacity duration-medium ease-out ${visible ? '' : 'opacity-40'}`}
               >
                 <div className="flex items-start gap-3.5">
-                  <span className={`grid size-9 shrink-0 place-items-center rounded-full border ${visible ? 'border-accent bg-accent-dim text-accent-hi' : 'border-line bg-raised text-ink-lo'}`}>
+                  <span className={`grid size-9 shrink-0 place-items-center rounded-ctrl ${visible ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-lo'}`}>
                     <Icon size={17} aria-hidden="true" />
                   </span>
                   <div className="min-w-0 flex-1">

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Copy, Check, X, Zap, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Copy, Check, X, Zap, TrendingUp, TrendingDown, Minus, CircleCheck } from 'lucide-react';
 import { Button, Badge } from '../ui';
 import { fmtRelative } from '../../lib/format';
 
@@ -13,9 +13,9 @@ import { fmtRelative } from '../../lib/format';
  */
 
 const SEV = {
-  critical: { label: 'Khẩn', tone: 'crit', bar: 'bg-crit' },
-  high: { label: 'Nên làm ngay', tone: 'high', bar: 'bg-high' },
-  medium: { label: 'Cơ hội', tone: 'accent', bar: 'bg-accent' }
+  critical: { label: 'Khẩn', tone: 'crit' },
+  high: { label: 'Nên làm ngay', tone: 'high' },
+  medium: { label: 'Cơ hội', tone: 'accent' }
 };
 
 const PRIMARY = {
@@ -39,7 +39,7 @@ export const EffectLine = ({ effect }) => {
   return (
     <span className={`inline-flex items-center gap-1 ${effect.better ? 'text-ok' : 'text-ink-mid'}`}>
       <Icon size={13} aria-hidden="true" />
-      {effect.metric}: <span className="font-mono">{num(effect.before)} → {num(effect.after)}</span>
+      {effect.metric}: <span className="tabular-nums">{num(effect.before)} → {num(effect.after)}</span>
     </span>
   );
 };
@@ -62,15 +62,14 @@ const ActionCard = ({ a, sessionId, onOpenCatalog }) => {
   };
 
   return (
-    <li className="relative flex min-w-0 flex-col overflow-hidden rounded-lg border border-line-soft bg-surface p-3.5 pl-4">
-      <span className={`absolute inset-y-0 left-0 w-1 ${sev.bar}`} aria-hidden="true" />
+    <li className="flex min-w-0 flex-col rounded-ctrl bg-raised p-3.5">
       <div className="flex items-center gap-2">
         <Badge tone={sev.tone}>{sev.label}</Badge>
       </div>
       <p className="mt-1.5 text-sm leading-snug font-semibold text-ink-hi">{a.title}</p>
       <p className="mt-1 text-xs leading-relaxed text-ink-mid">{a.why}</p>
       {a.script && (
-        <div className="mt-2 rounded-md bg-raised px-3 py-2">
+        <div className="mt-2 border-t border-line-soft pt-2">
           <p className="text-xs font-medium text-ink-lo">Câu nói mẫu</p>
           <p className="mt-0.5 text-sm leading-snug text-ink-hi">“{a.script}”</p>
           {a.grounded === false && <p className="mt-1 text-xs text-high">Danh mục chưa đủ thông tin, kiểm tra trước khi đọc.</p>}
@@ -107,7 +106,7 @@ const ActionCoach = ({ stats, sessionId, live, onOpenCatalog }) => {
   const shown = showAll ? active : active.slice(0, 3);
 
   return (
-    <section aria-labelledby="coach-title" className="rounded-xl border border-line-soft bg-accent-dim/40 p-4 sm:p-5">
+    <section aria-labelledby="coach-title" className="glass-strong rounded-surf p-4 sm:p-5">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h2 id="coach-title" className="text-heading font-semibold text-ink-hi">Việc nên làm ngay</h2>
@@ -125,7 +124,7 @@ const ActionCoach = ({ stats, sessionId, live, onOpenCatalog }) => {
           {shown.map((a) => <ActionCard key={a.id} a={a} sessionId={sessionId} onOpenCatalog={onOpenCatalog} />)}
         </ul>
       ) : (
-        <p className="rounded-lg border border-dashed border-line px-4 py-3 text-sm text-ink-mid">Phiên đang ổn. Trợ lý sẽ báo khi có khách hỏi dồn, hàng sắp hết, khiếu nại tăng hay bình luận chững lại.</p>
+        <p className="flex items-start gap-2 text-sm text-ink-mid"><CircleCheck size={16} className="mt-0.5 shrink-0 text-ok" aria-hidden="true" />Phiên đang ổn. Trợ lý sẽ báo khi có khách hỏi dồn, hàng sắp hết, khiếu nại tăng hay bình luận chững lại.</p>
       ))}
 
       {history.length > 0 && (

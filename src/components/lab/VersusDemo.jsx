@@ -218,7 +218,7 @@ const VersusDemo = () => {
             </p>
 
             {spam?.isSpam ? (
-              <div className="rounded-lg border border-crit/30 bg-crit/8 p-4">
+              <div className="rounded-ctrl bg-crit/10 p-4">
                 <p className="flex items-center gap-2 font-semibold text-crit"><ShieldCheck size={17} />Chặn: không phải phản hồi thật</p>
                 <p className="mt-1 text-sm text-ink-mid">{spam.reasons?.[0]}. Không được đếm vào bất kỳ chỉ số nào.</p>
               </div>

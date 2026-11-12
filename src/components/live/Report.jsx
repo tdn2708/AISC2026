@@ -19,7 +19,7 @@ const money = (n) => (n == null ? '—' : n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1
 const PRIO = { high: { label: 'Ưu tiên', tone: 'crit' }, medium: { label: 'Nên làm', tone: 'high' }, low: { label: 'Gợi ý', tone: 'neutral' } };
 
 const Big = ({ label, value, sub, tone }) => (
-  <div className="rounded-lg border border-line-soft bg-surface/60 px-4 py-3.5">
+  <div className="glass-strong rounded-surf px-4 py-3.5">
     <p className="text-xs text-ink-lo">{label}</p>
     <p className={`mt-1 font-mono text-display leading-none font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
     {sub && <p className="mt-1.5 text-xs text-ink-lo">{sub}</p>}

@@ -36,7 +36,7 @@ const TABS = [
 ];
 
 const Row = ({ icon: Icon, title, description, children }) => (
-  <div className="flex items-center justify-between gap-4 rounded-lg border border-line-soft p-4">
+  <div className="flex items-center justify-between gap-4 border-t border-line-soft pt-3 first:border-t-0 first:pt-0">
     <div className="flex min-w-0 items-center gap-3.5">
       {Icon && <Icon size={18} className="shrink-0 text-ink-lo" aria-hidden="true" />}
       <div className="min-w-0">

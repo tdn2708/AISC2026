@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, XCircle, Lightbulb } from 'lucide-react';
 import PipelineDemo from './lab/PipelineDemo';
 import BatchDemo from './lab/BatchDemo';
 import VersusDemo from './lab/VersusDemo';
@@ -66,7 +66,7 @@ const Experiments = () => {
   return (
     <div className="flex flex-col gap-5">
       {/* Giới hạn của tập dữ liệu — đặt TRƯỚC mọi con số */}
-      <section className="rounded-xl border border-high/30 bg-high/8 px-5 py-4">
+      <section className="rounded-ctrl bg-high/10 px-5 py-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-high">
           <AlertTriangle size={16} aria-hidden="true" /> Giới hạn của các con số dưới đây
         </h3>
@@ -85,7 +85,7 @@ const Experiments = () => {
       </section>
 
       {data.leakageAudit && (
-        <p className={`flex items-start gap-2.5 rounded-xl border px-5 py-3.5 text-sm leading-relaxed text-ink-mid ${data.leakageAudit.clean ? 'border-ok/30 bg-ok/8' : 'border-crit/30 bg-crit/8'}`}>
+        <p className={`flex items-start gap-2.5 rounded-ctrl px-5 py-3.5 text-sm leading-relaxed text-ink-mid ${data.leakageAudit.clean ? 'bg-ok/10' : 'bg-crit/10'}`}>
           {data.leakageAudit.clean
             ? <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-ok" aria-hidden="true" />
             : <XCircle size={17} className="mt-0.5 shrink-0 text-crit" aria-hidden="true" />}
@@ -184,9 +184,11 @@ const Experiments = () => {
 
       {/* Phát hiện quan trọng nhất: khoảng cách dev/test */}
       {gap != null && (
-        <GlassPanel tone="strong" className="relative overflow-hidden p-5 pl-6">
-          <span className="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true" />
-          <h3 className="text-heading font-semibold text-ink-hi">Phát hiện chính: bộ phân loại luật không khái quát hóa được</h3>
+        <GlassPanel tone="strong" className="p-5">
+          <h3 className="flex items-start gap-2 text-heading font-semibold text-ink-hi">
+            <Lightbulb size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />
+            Phát hiện chính: bộ phân loại luật không khái quát hóa được
+          </h3>
           <p className="mt-2 max-w-[78ch] text-sm leading-relaxed text-ink-mid">
             Cùng một bộ phân loại luật đạt Macro-F1 <strong className="font-mono text-ok">{b1.devCategoryMacroF1.toFixed(2).replace('.', ',')}</strong> trên tập đã dùng
             để tinh chỉnh từ khóa, nhưng chỉ còn <strong className="font-mono text-crit">{b1.categoryMacroF1.toFixed(2).replace('.', ',')}</strong> trên tập kiểm tra giữ
@@ -208,7 +210,7 @@ const Experiments = () => {
             ].map(([label, value, target, lowerIsBetter]) => {
               const pass = lowerIsBetter ? value <= target : value >= target;
               return (
-                <div key={label} className="rounded-lg border border-line-soft bg-canvas px-4 py-3.5">
+                <div key={label} className="rounded-ctrl bg-raised px-4 py-3.5">
                   <p className="text-xs leading-snug text-ink-mid">{label}</p>
                   <p className={`mt-1.5 font-mono text-display font-semibold ${pass ? 'text-ok' : 'text-crit'}`}>
                     {lowerIsBetter ? `${(value * 100).toFixed(1).replace('.', ',')}%` : value.toFixed(3).replace('.', ',')}
@@ -230,14 +232,14 @@ const Experiments = () => {
         <GlassPanel tone="strong" className="p-5">
           <PanelHeader title="Thí nghiệm loại bỏ thành phần" subtitle="Tắt từng thành phần để đo đúng phần nó đóng góp" />
           <dl className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-line-soft bg-canvas px-4 py-3.5">
+            <div className="rounded-ctrl bg-raised px-4 py-3.5">
               <dt className="text-sm font-semibold text-ink-hi">Chuẩn hóa teencode</dt>
               <dd className="mt-1 text-sm text-ink-mid">
                 Macro-F1 <span className="font-mono">{f4(data.ablations.slangNormalization.categoryMacroF1_off)}</span> khi tắt,{' '}
                 <span className="font-mono font-semibold text-ink-hi">{f4(data.ablations.slangNormalization.categoryMacroF1_on)}</span> khi bật
               </dd>
             </div>
-            <div className="rounded-lg border border-line-soft bg-canvas px-4 py-3.5">
+            <div className="rounded-ctrl bg-raised px-4 py-3.5">
               <dt className="text-sm font-semibold text-ink-hi">Trust Layer</dt>
               <dd className="mt-1 text-sm text-ink-mid">
                 Tỉ lệ khiếu nại có trọng số <span className="font-mono">{data.ablations.trustLayer.wcrWithoutTrustLayer}</span> khi tắt,{' '}

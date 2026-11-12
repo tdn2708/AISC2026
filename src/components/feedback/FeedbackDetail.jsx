@@ -86,7 +86,7 @@ const FeedbackDetail = ({ item, onClose }) => {
           </dl>
 
           {(item.sarcasm?.suspected || item.sarcasm?.verdict === 'sarcastic') && (
-            <div className="rounded-lg border border-high/30 bg-high/8 px-4 py-3 text-sm text-ink-mid">
+            <div className="rounded-ctrl bg-high/10 px-4 py-3 text-sm text-ink-mid">
               <p className="font-semibold text-ink-hi">
                 {item.sarcasm.verdict === 'sarcastic' ? 'Câu mỉa mai: lời khen ngoài miệng, thật ra là chê' : item.sarcasm.verdict === 'literal' ? 'Đã kiểm tra: không phải mỉa mai' : 'Nghi mỉa mai, chờ xác nhận'}
               </p>

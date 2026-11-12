@@ -121,7 +121,7 @@ const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
           {!collapsed && <span className="flex-1 truncate">{item.short || item.label}</span>}
           {!collapsed && count ? (
             <span
-              className={`rounded px-1.5 py-px font-mono text-xs font-semibold ${
+              className={`rounded-ctrl px-1.5 py-px text-xs font-semibold tabular-nums ${
                 critical ? 'bg-crit text-on-crit' : 'bg-raised text-ink-mid'
               }`}
             >
@@ -129,7 +129,9 @@ const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
             </span>
           ) : null}
           {collapsed && count ? (
-            <span className={`absolute top-1.5 right-3 size-2 rounded-full ${critical ? 'bg-crit' : 'bg-accent'}`} />
+            <span className={`absolute top-0.5 right-0.5 min-w-4 rounded-ctrl px-1 text-center text-xs leading-4 font-semibold tabular-nums ${critical ? 'bg-crit text-on-crit' : 'bg-raised text-ink-mid'}`} aria-hidden="true">
+              {count > 9 ? '9+' : count}
+            </span>
           ) : null}
         </>
       )}
@@ -200,7 +202,6 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
 
   const counts = { alerts: status?.openAlerts || null, queue: status?.reviewQueue || null };
   const health = status?.dataHealth;
-  const healthTone = health == null ? 'bg-ink-lo' : health >= 75 ? 'bg-ok' : health >= 50 ? 'bg-high' : 'bg-crit';
   const healthText = health == null ? 'text-ink-lo' : health >= 75 ? 'text-ok' : health >= 50 ? 'text-high' : 'text-crit';
 
   // Máy chủ không có mô hình nhưng trình duyệt đã nạp bản ONNX: nói đúng điều đó
@@ -269,8 +270,8 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
         <div className="shrink-0 px-3 pb-2">
           {collapsed ? (
             <div className="flex flex-col items-center gap-2 py-2" title={`Sức khoẻ dữ liệu ${health ?? '—'}, ${nlpView.label}`}>
-              <span className={`size-2 rounded-full ${healthTone}`} />
-              <span className={`size-2 rounded-full ${nlpView.dot}`} />
+              <ShieldCheck size={16} className={healthText} aria-hidden="true" />
+              <Cpu size={16} className={nlpView.dot.replace('bg-', 'text-')} aria-hidden="true" />
             </div>
           ) : (
             <div className="flex flex-col gap-1">
@@ -282,7 +283,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
               >
                 <ShieldCheck size={13} className="shrink-0 text-ink-lo" aria-hidden="true" />
                 <span className="flex-1">Độ tin số liệu</span>
-                <span className={`font-mono font-semibold ${healthText}`}>{health ?? '—'}</span>
+                <span className={`font-semibold tabular-nums ${healthText}`}>{health ?? '—'}</span>
               </button>
               {/* Lối vào Phòng thí nghiệm: ai quan tâm mô hình đang chạy bằng gì thì bấm vào đây */}
               <button

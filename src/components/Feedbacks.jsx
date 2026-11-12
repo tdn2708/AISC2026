@@ -118,7 +118,7 @@ const Feedbacks = () => {
       />
 
       {includeAll && counts && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-accent/30 bg-accent-dim px-4 py-3 text-sm text-ink-mid">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-ctrl bg-accent-dim px-4 py-3 text-sm text-ink-mid">
           <span>
             Đang xem cả phản hồi không được tính: <b className="text-ink-hi">{fmtInt(counts.counted)}</b> được tính,{' '}
             <b className="text-ink-hi">{fmtInt(counts.all - counts.counted)}</b> không tính (rác, nghi ảo hoặc quá cũ).

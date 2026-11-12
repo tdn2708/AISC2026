@@ -77,9 +77,9 @@ const ScrapeResult = ({ result }) => {
         <Badge tone="accent">Phân loại bằng {LABELLER[result.labelledBy] || 'hệ thống'}</Badge>
       </div>
       {rows.length > 0 && (
-        <ul className="flex max-h-[28rem] list-none flex-col gap-2 overflow-y-auto pr-1">
+        <ul className="flex max-h-[28rem] list-none flex-col divide-y divide-line-soft overflow-y-auto pr-1">
           {rows.map((r, i) => (
-            <li key={i} className="rounded-lg border border-line-soft px-3.5 py-3">
+            <li key={i} className="py-3">
               <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-lo">
                 {r.rating != null && <span className="font-mono text-high">{'★'.repeat(r.rating)}<span className="text-ink-lo/50">{'★'.repeat(5 - r.rating)}</span></span>}
                 <span>{r.author}</span>

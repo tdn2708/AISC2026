@@ -137,7 +137,7 @@ const Answer = ({ msg, index, onOpenFeedback }) => {
                 <li
                   key={`${index}-${e.id}`}
                   data-cite={i + 1}
-                  className={`rounded-lg border p-2.5 transition-colors ${focus === i + 1 ? 'border-accent bg-accent-dim' : 'border-line-soft'}`}
+                  className={`rounded-ctrl p-2.5 transition-colors duration-short ease-out ${focus === i + 1 ? 'bg-accent-dim' : 'bg-raised'}`}
                 >
                   <p className="flex gap-2 text-sm leading-relaxed text-ink-hi">
                     <span className="font-mono text-xs font-semibold text-accent-hi">{i + 1}</span>

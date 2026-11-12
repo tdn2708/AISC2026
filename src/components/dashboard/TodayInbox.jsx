@@ -19,9 +19,9 @@ import { alertTitle, alertInWords } from '../../lib/format';
  */
 
 export const SEV = {
-  critical: { rank: 3, label: 'Khẩn', dot: 'bg-crit', text: 'text-crit' },
-  high: { rank: 2, label: 'Gấp', dot: 'bg-high', text: 'text-high' },
-  medium: { rank: 1, label: 'Nên làm', dot: 'bg-accent', text: 'text-accent-hi' }
+  critical: { rank: 3, label: 'Khẩn', text: 'text-crit' },
+  high: { rank: 2, label: 'Gấp', text: 'text-high' },
+  medium: { rank: 1, label: 'Nên làm', text: 'text-accent-hi' }
 };
 const SOURCE = { alert: 'Cảnh báo', live: 'Livestream', orders: 'Đơn hàng', review: 'Duyệt phản hồi', data: 'Dữ liệu' };
 const ALERT_SEV = { Critical: 'critical', High: 'high', Medium: 'medium', Low: 'medium' };
@@ -43,7 +43,7 @@ const AlertPlan = ({ alert, state, onAccept, onDismiss }) => {
   const rec = alert.recommendation;
   const step = rec?.steps?.[0];
   return (
-    <div className="mt-3 rounded-lg border border-line-soft bg-canvas p-4">
+    <div className="mt-3 rounded-ctrl bg-raised p-4">
       {step ? (
         <>
           <p className="text-sm font-semibold text-ink-mid">Hệ thống đề xuất</p>
