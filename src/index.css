@@ -131,17 +131,47 @@
   --font-mono: var(--font-sans);
   --font-code: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
-  /* Khoảng cách và chuyển động (giữ nguyên; F2-01 sẽ sắp lại chuyển động) */
+  /* Khoảng cách */
   --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px;
   --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
-  --ease: cubic-bezier(.2, .8, .2, 1);
-  --dur-fast: 120ms;
-  --dur-base: 200ms;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --dur-micro: 120ms;
-  --dur-short: 220ms;
+
+  /* Chuyển động (F2-01, KE-HOACH-GIAO-DIEN.md mục 4.3). Thời lượng theo việc:
+       instant 0      giảm chuyển động
+       micro   120ms  đổi màu nút, tick ô chọn
+       short   220ms  mở menu, thả chip lọc, hiện tooltip
+       medium  420ms  ngăn kéo, đổi tab, chuyển trang
+       long    900ms  vẽ biểu đồ, đếm số lớn
+       story   1600ms phép trừ chạy (cả chuỗi)
+     Lối ra chạy bằng 60 đến 75% lối vào. Tailwind: duration-micro..story,
+     ease-out, ease-in-out, ease-spring (styles/tailwind.css). Bản JS cùng số
+     ở components/motion/tokens.js, đổi ở đây thì đổi cả bên đó. */
+  --motion-instant: 0ms;
+  --motion-micro: 120ms;
+  --motion-short: 220ms;
+  --motion-medium: 420ms;
+  --motion-long: 900ms;
+  --motion-story: 1600ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);       /* vào */
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);        /* ra */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);   /* đổi trạng thái */
+  /* Lò xo nhẹ (vượt khoảng 4% rồi về) cho số "chốt" vào vị trí; trình duyệt
+     chưa có linear() dùng đường cong vượt nhẹ tương đương bên dưới */
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* Tên cũ, giữ làm bí danh để style nội tuyến và CSS cũ không phải đổi */
+  --ease: var(--ease-out);
+  --dur-fast: var(--motion-micro);
+  --dur-base: var(--motion-short);
+  --dur-micro: var(--motion-micro);
+  --dur-short: var(--motion-short);
+  --dur-long: var(--motion-medium);
   --z-dropdown: 100; --z-sticky: 200; --z-modal: 400; --z-toast: 500;
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --ease-spring: linear(0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%, 1.017 19.8%, 1.051 22.9%, 1.058 26.1%, 1.04 31.2%, 1.009 38.4%, 0.996 46.3%, 1 60%, 1);
+  }
 }
 
 /* ---------- TẦNG 2: NGỮ NGHĨA, SÁNG (mặc định) ----------
@@ -431,18 +461,111 @@ a { color: inherit; text-decoration: none; }
   backdrop-filter: none !important;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
+/* ==================================================================
+   CHUYỂN ĐỘNG DÙNG CHUNG (F2). Chỉ transform, opacity, clip-path.
+   Thành phần ở src/components/motion/; trạng thái mặc định của mọi lớp
+   dưới đây là "đã hiện đủ", JS chỉ thêm trạng thái chờ khi sắp chạy.
+   ================================================================== */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: none; }
 }
-.animate-fade-in { animation: fadeUp var(--dur-base) var(--ease) both; }
+.animate-fade-in { animation: fadeUp var(--motion-short) var(--ease-out) both; }
+
+/* Số "chốt" vào vị trí: một nhịp co rất nhỏ rồi về, theo lò xo */
+@keyframes motion-settle {
+  from { transform: scale(0.965); }
+  to   { transform: none; }
+}
+.motion-settle { animation: motion-settle var(--motion-medium) var(--ease-spring) both; transform-origin: left center; }
+
+/* ChartReveal: mở từ trái sang bằng clip-path, một lần */
+@keyframes motion-reveal-x {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+.motion-reveal[data-reveal='wait'] { clip-path: inset(0 100% 0 0); }
+.motion-reveal[data-reveal='run']  { animation: motion-reveal-x var(--motion-long) var(--ease-out) both; }
+
+/* BarGrow: thanh ngang mọc từ mép trái bằng scaleX */
+.motion-bar {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  transition: transform var(--motion-long) var(--ease-out);
+}
+
+/* Pulse: một nhịp tô nền ở phần tử vừa đổi, rồi tắt hẳn */
+@keyframes motion-pulse {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+.motion-pulse { position: relative; isolation: isolate; }
+.motion-pulse-layer {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--accent-dim);
+  pointer-events: none;
+  opacity: 0;
+}
+.motion-pulse-layer.is-on { animation: motion-pulse var(--motion-long) var(--ease-in-out) both; }
+
+/* Phép trừ chạy: cột số đếm bằng trục chữ số trượt dọc (transform), không
+   đổi chữ trong lúc chạy nên trình duyệt không phải dàn trang lại.
+   Mỗi cột: một chữ 0 vô hình giữ bề ngang và đường chân chữ, dải 0..9,0 nằm
+   chồng lên và bị cắt bằng clip-path (overflow: hidden sẽ làm lệch chân chữ). */
+.ledger-roll { --roll-lh: 1.15em; display: inline-block; white-space: nowrap; }
+.ledger-roll-slot { position: relative; display: inline-block; line-height: var(--roll-lh); clip-path: inset(0); }
+.ledger-roll-strip { position: absolute; top: 0; left: 0; right: 0; }
+.ledger-roll-strip > span { display: block; height: var(--roll-lh); text-align: center; }
+
+/* Chuyển trang (F2-06, View Transitions API). Tên chỉ gắn trong lúc chuyển
+   (lớp vt-route trên <html>), nên ngoài lúc đó không tạo lớp xếp chồng thừa.
+   Thanh bên và thanh trên đứng yên; chỉ vùng nội dung mờ ra rồi hiện vào,
+   dịch lên 6px. */
+html.vt-route .sidebar-container { view-transition-name: app-sidebar; }
+html.vt-route .main-content { view-transition-name: app-main; }
+html.vt-route .main-content > .sticky:first-child { view-transition-name: app-topbar; }
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(app-main),
+::view-transition-group(app-sidebar),
+::view-transition-group(app-topbar),
+::view-transition-new(app-sidebar),
+::view-transition-new(app-topbar) { animation: none; }
+::view-transition-old(app-sidebar),
+::view-transition-old(app-topbar) { display: none; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in  { from { opacity: 0; transform: translateY(6px); } }
+::view-transition-old(app-main) { animation: vt-out var(--motion-micro) var(--ease-in) both; }
+::view-transition-new(app-main) { animation: vt-in var(--motion-medium) var(--ease-out) both; }
+
+/* Giảm chuyển động: mọi token thời lượng về 0, mọi animation và transition
+   kết thúc ngay ở trạng thái cuối (fill both giữ trạng thái cuối, delay bỏ,
+   vòng lặp còn một lần). Phần tử nào buộc phải chạy (vòng xoay đang tải) đặt
+   lớp keep-motion. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-micro: var(--motion-instant);
+    --motion-short: var(--motion-instant);
+    --motion-medium: var(--motion-instant);
+    --motion-long: var(--motion-instant);
+    --motion-story: var(--motion-instant);
+  }
+  html { scroll-behavior: auto; }
+  *:where(:not(.keep-motion)), *:where(:not(.keep-motion))::before, *:where(:not(.keep-motion))::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+  .motion-reveal[data-reveal] { clip-path: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
 
 /* Huy hiệu cũ — trỏ vào thang trạng thái mới */
 .badge {

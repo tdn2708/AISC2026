@@ -96,10 +96,31 @@
   --text-metric--line-height: 1;
 }
 
+/* Chuyển động: giá trị ở index.css (--motion-*, --ease-*). Ở đây chỉ đặt
+   tên lớp. reference: Tailwind không phát lại biến, lớp đọc thẳng var().
+     duration-micro, -short, -medium, -long, -story   (transition-duration)
+     delay-micro, -short                               (transition-delay)
+     ease-out, ease-in, ease-in-out, ease-spring       (transition-timing-function)
+   ease-out, ease-in, ease-in-out là khóa sẵn của Tailwind, lớp dùng
+   var(--ease-out)..., nên tự lấy giá trị ở index.css (ngoài layer, thắng). */
+@theme reference {
+  --transition-duration-instant: var(--motion-instant);
+  --transition-duration-micro: var(--motion-micro);
+  --transition-duration-short: var(--motion-short);
+  --transition-duration-medium: var(--motion-medium);
+  --transition-duration-long: var(--motion-long);
+  --transition-duration-story: var(--motion-story);
+  --transition-delay-micro: var(--motion-micro);
+  --transition-delay-short: var(--motion-short);
+  --ease-spring: var(--ease-spring);
+}
+
 @theme {
-  --animate-fade-up: fade-up 220ms cubic-bezier(.2, .8, .2, 1) both;
-  --animate-pop-in: pop-in 180ms cubic-bezier(.2, .8, .2, 1) both;
-  --animate-grow-x: grow-x 700ms cubic-bezier(.2, .8, .2, 1) both;
+  --animate-fade-up: fade-up var(--motion-short) var(--ease-out) both;
+  --animate-pop-in: pop-in var(--motion-short) var(--ease-out) both;
+  /* Cũ: thành phần mới dùng BarGrow (components/motion) */
+  --animate-grow-x: grow-x var(--motion-long) var(--ease-out) both;
+  --animate-settle: motion-settle var(--motion-medium) var(--ease-spring) both;
 
   @keyframes fade-up {
     from { opacity: 0; transform: translateY(6px); }
