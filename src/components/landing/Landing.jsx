@@ -25,17 +25,17 @@ import './landing.css';
  * Số liệu: data.js gọi /trust/health của kho mô phỏng MỘT lần; quá 4 giây hoặc
  * lỗi thì dùng ảnh chụp số ngày 12/11/2026 và ghi rõ ngày.
  *
- * ẢNH TẠM, CHỤP LẠI SAU F5 (giao diện app đang được F1-05, F4, F5 chỉnh):
+ * ẢNH CHỤP APP BẢN MỚI (sau F4 đến F7, chụp 12/11/2026 20:53, giảm chuyển động bật):
  *   public/landing/tong-quan-{light,dark}.webp       Tổng quan nguyên màn (hero, lớp giữa)
  *   public/landing/bang-so-lieu-{light,dark}.webp    Bảng số liệu, bỏ thanh bên (hero lớp sau, rãnh)
  *   public/landing/so-doi-chieu-{light,dark}.webp    tờ sổ đối chiếu cắt ra, góc bo trong suốt (hero lớp trước)
  *   public/landing/viec-hom-nay-{light,dark}.webp    khối Việc hôm nay (rãnh)
  *   public/landing/livestream-{light,dark}.webp      báo cáo sau live của phiên mô phỏng (rãnh)
  *   public/landing/nhom.webp                         ảnh nhóm, cắt bớt tường trống (không chụp lại)
- * Chụp lại (backend local chỉ đọc ở :5000, Vite ở :5299, puppeteer-core ở `npm root -g`;
+ * Chụp lại (backend local chỉ đọc ở :5000, Vite ở :5199, puppeteer-core ở `npm root -g`;
  * script chặn mọi request không phải GET):
- *   node <scratchpad>/cap_app.mjs  http://localhost:5299 cap/light light   (rồi dark)
- *   node <scratchpad>/cap_live.mjs http://localhost:5299 cap/light light   (rồi dark)
+ *   node <scratchpad>/cap_app.mjs  http://localhost:5199 cap/light light   (rồi dark)
+ *   node <scratchpad>/cap_live.mjs http://localhost:5199 cap/light light "Báo cáo sau live"   (rồi dark)
  *   python <scratchpad>/make_webp.py cap .hallmark/team/nhom-customer-radar.png public/landing
  * (Ba script đó chép lại trong .hallmark/shots/F3/scripts/.) Ảnh 1440x900 ở tỉ lệ 1,5,
  * localStorage workspace=demo, cr-theme=light|dark, isAuthenticated=true. Đổi kích thước
@@ -46,8 +46,8 @@ import './landing.css';
 const SHOTS = {
   overview: { base: 'tong-quan', w: 1600, h: 1000 },
   insights: { base: 'bang-so-lieu', w: 1400, h: 979 },
-  sheet: { base: 'so-doi-chieu', w: 600, h: 663 },
-  today: { base: 'viec-hom-nay', w: 1400, h: 778 },
+  sheet: { base: 'so-doi-chieu', w: 600, h: 669 },
+  today: { base: 'viec-hom-nay', w: 1400, h: 654 },
   live: { base: 'livestream', w: 1400, h: 979 }
 };
 const shot = (key, theme) => `/landing/${SHOTS[key].base}-${theme === 'dark' ? 'dark' : 'light'}.webp`;

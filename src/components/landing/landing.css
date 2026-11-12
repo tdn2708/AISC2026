@@ -224,6 +224,16 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
 
 /* ---------- 3. đỉnh: nền mực, cắt cứng ---------- */
 .lp-peak { background: var(--strip-bg); color: var(--on-strip); }
+/* Chế độ tối: trang đã gần đen (navy-20) nên khối mực navy-30 chỉ hơn nền 1,35 lần, cú cắt vào đỉnh yếu.
+   Đảo ngược đúng cách chế độ sáng làm (khối mực trên nền giấy): ở tối, đỉnh là khối giấy navy-94 trên nền mực,
+   hơn nền 15,1 lần. Chữ mực navy-26 trên giấy: 12,99 : 1; câu phụ navy-39 7,92 : 1; chú thích navy-50 4,97 : 1.
+   Chỉ dùng token có sẵn, không gradient, không phát sáng; tờ sổ bên trong vẫn là tờ tối (navy-27, hơn giấy 12,56 : 1). */
+[data-theme='dark'] .lp-peak {
+  --strip-bg: var(--navy-94);
+  --on-strip: var(--navy-26);
+  --on-strip-mid: var(--navy-39);
+  --on-strip-lo: var(--navy-50);
+}
 .lp-peak__stage {
   display: grid;
   align-items: center;

@@ -11,26 +11,26 @@ import axios from 'axios';
  * con số nhảy khi người xem đang đọc.
  *
  * SNAPSHOT: chụp từ backend local (cùng cụm Atlas với prod, kho demo)
- * lúc 15:17 ngày 12/11/2026, `computedAt` 2026-11-12T08:17:41Z. Chỉ giữ
+ * lúc 20:53 ngày 12/11/2026, `computedAt` 2026-11-12T13:51:51Z. Chỉ giữ
  * các trường trang này đọc, đúng tên trường của API.
  */
 export const SNAPSHOT_DATE = '12/11/2026';
 
 export const SNAPSHOT = {
-  rawCollected: 15076,
-  spamRemoved: { count: 566 },
+  rawCollected: 15112,
+  spamRemoved: { count: 567 },
   inauthenticFlagged: { count: 69 },
   pendingReview: { count: 14 },
-  validForAnalysis: 14427,
-  countedForMetrics: 14279,
-  ledger: { spam: 566, inauthentic: 69, pendingNotCounted: 12, pendingCounted: 2, aged: 150, counted: 14279 },
+  validForAnalysis: 14462,
+  countedForMetrics: 14314,
+  ledger: { spam: 567, inauthentic: 69, pendingNotCounted: 12, pendingCounted: 2, aged: 150, counted: 14314 },
   reconciliationRate: 60,
   humanLabelCount: 0,
   tierBreakdown: [
-    { tier: 'P1', count: 8256 },
-    { tier: 'P2', count: 793 },
-    { tier: 'P3', count: 3076 },
-    { tier: 'P4', count: 2895 },
+    { tier: 'P1', count: 8277 },
+    { tier: 'P2', count: 794 },
+    { tier: 'P3', count: 3081 },
+    { tier: 'P4', count: 2904 },
     { tier: 'P5', count: 56 }
   ]
 };
