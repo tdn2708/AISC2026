@@ -793,7 +793,7 @@ export default function PipelineDemo() {
                 ref={(el) => { stepRefs.current[i] = el; }}
                 tone="strong"
                 aria-labelledby={`step-${s.key}`}
-                className={`scroll-mt-24 overflow-hidden p-5 transition-opacity duration-medium ease-out ${visible ? '' : 'opacity-40'}`}
+                className={`overflow-hidden p-5 transition-opacity duration-medium ease-out ${visible ? '' : 'opacity-40'}`}
               >
                 <div className="flex items-start gap-3.5">
                   <span className={`grid size-9 shrink-0 place-items-center rounded-ctrl ${visible ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-lo'}`}>

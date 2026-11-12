@@ -493,7 +493,7 @@ const RiskCenter = () => {
               </ul>
 
               {selected && (
-                <div ref={detailRef} className="scroll-mt-20 lg:sticky lg:top-20">
+                <div ref={detailRef} className="lg:sticky lg:top-[calc(var(--topbar-h,5rem)+var(--filter-h,0px))]">
                   <Detail
                     alert={selected}
                     rec={recs[selected.id]}

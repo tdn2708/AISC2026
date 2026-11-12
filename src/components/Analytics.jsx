@@ -207,7 +207,7 @@ const RootCauses = () => {
       {filters}
       <div className={`grid items-start gap-6 transition-opacity lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] ${loading ? 'opacity-60' : ''}`}>
         {/* Cột trái — nhóm vấn đề xếp hạng */}
-        <GlassPanel tone="strong" className="p-5 lg:sticky lg:top-20">
+        <GlassPanel tone="strong" className="p-5 lg:sticky lg:top-[calc(var(--topbar-h,5rem)+var(--filter-h,0px))]">
           <PanelHeader title="Nhóm vấn đề" subtitle={`${fmtInt(complaints.length)} khiếu nại đã phân loại`} />
           <div className="flex flex-col gap-1">
             {categories.map((c, i) => (
@@ -231,7 +231,7 @@ const RootCauses = () => {
         </GlassPanel>
 
         {/* Cột phải — bóc tách nhóm đang chọn */}
-        <div ref={drillRef} className="flex scroll-mt-20 flex-col gap-6" key={current.key}>
+        <div ref={drillRef} className="flex flex-col gap-6" key={current.key}>
           <GlassPanel className="p-6">
             <h2 className="text-display font-semibold text-ink-hi">{current.label}</h2>
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
