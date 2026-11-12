@@ -152,6 +152,17 @@
     from { opacity: 0; transform: translateY(4px) scale(.98); }
     to { opacity: 1; transform: none; }
   }
+  /* Khung xương đang tải (ui/Skeleton.jsx, F4-05): thở nhẹ bằng opacity, lặp.
+     Giảm chuyển động: đứng yên (khối @media ngay dưới). */
+  --animate-skeleton: skeleton var(--motion-story) var(--ease-in-out) infinite alternate;
+  @keyframes skeleton {
+    from { opacity: 1; }
+    to { opacity: 0.45; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-skeleton { animation: none; }
 }
 
 /* Bề mặt: nền đặc + viền 1px. Tên "glass" giữ lại cho các trang cũ;

@@ -149,7 +149,7 @@ Token (`index.css`; bản JS cùng số `MOTION`, `EASE`, `STAGGER_STEP` ở `co
 | `--ease-in-out` | `cubic-bezier(0.65, 0, 0.35, 1)` | `ease-in-out` | đổi trạng thái |
 | `--ease-spring` | `linear()` lò xo vượt khoảng 4% (trình duyệt cũ: `cubic-bezier(0.34, 1.4, 0.64, 1)`) | `ease-spring` | số "chốt" vào vị trí |
 
-Lớp có sẵn: `animate-pop-in` (lớp nổi mở), `animate-fade-up` (lớp phủ), `animate-fade-in` (vùng nội dung khi không có View Transitions), `animate-settle` và `.motion-settle` (nhịp chốt), `animate-grow-x` (cũ, thay bằng `BarGrow`), `keep-motion` (vòng xoay đang tải vẫn quay khi giảm chuyển động).
+Lớp có sẵn: `animate-pop-in` (lớp nổi mở), `animate-fade-up` (lớp phủ), `animate-fade-in` (vùng nội dung khi không có View Transitions), `animate-settle` và `.motion-settle` (nhịp chốt), `animate-grow-x` (cũ, thay bằng `BarGrow`), `animate-skeleton` (khung xương đang tải thở bằng opacity 1 xuống 0,45, `--motion-story`, lặp qua lại; keyframe `skeleton` ở `tailwind.css`, giảm chuyển động thì `animation: none`, đứng yên), `keep-motion` (vòng xoay đang tải vẫn quay khi giảm chuyển động).
 
 API (import từ `src/components/motion`, `AnimatedNumber` từ `src/components/ui`; demo ở `/ui-kit`). Dùng, không viết lại:
 
@@ -164,6 +164,7 @@ API (import từ `src/components/motion`, `AnimatedNumber` từ `src/components/
 | `RouteTransition` | | View Transitions khi bấm liên kết nội bộ; `navigate()` từ code rơi về `animate-fade-in` |
 | `useReducedMotion()`, `prefersReducedMotion()` | | nơi duy nhất đọc media query bằng JS |
 | `useInView(ref, { threshold=0.25, rootMargin, enabled })` | | trả true một lần; không có IntersectionObserver thì coi như đã thấy |
+| `Skeleton`, `SkeletonLines`, `SkeletonBlock` (`src/components/ui/Skeleton.jsx`) | `className, as` / `lines, lineClassName` / `label, as` | khung xương theo đúng hình nội dung sắp về, thay chữ "Đang tải"; `SkeletonBlock` đặt `role="status"`, `aria-busy` và câu ẩn cho trình đọc màn hình. Mỗi khối dữ liệu có đủ: đang tải (khung xương), rỗng (`EmptyState`), lỗi (`EmptyState variant="error"` + nút thử lại), đủ. |
 
 Luật:
 
