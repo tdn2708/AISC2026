@@ -47,6 +47,13 @@ const nf = new Intl.NumberFormat('vi-VN');
 
 export const fmtInt = (n) => nf.format(n ?? 0);
 
+const nfDec = {};
+/** Số thập phân kiểu Việt có dấu chấm nghìn: (1322.5, 1) -> "1.322,5" */
+export const fmtDec = (n, digits = 1) => {
+  nfDec[digits] ??= new Intl.NumberFormat('vi-VN', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  return nfDec[digits].format(n ?? 0);
+};
+
 /** 0.1234 -> "12,3%". Không có giá trị thì "—": "không biết" khác với "bằng 0". */
 export const fmtPct = (v, digits = 1) =>
   v == null || !Number.isFinite(v) ? '—' : `${(v * 100).toFixed(digits).replace('.', ',')}%`;
@@ -54,8 +61,8 @@ export const fmtPct = (v, digits = 1) =>
 /** Chênh lệch tương đối có dấu: 0.42 -> "+42%" */
 export const fmtSignedPct = (rel, digits = 0) => {
   if (rel == null || !Number.isFinite(rel)) return '—';
-  const body = Math.abs(rel * 100).toFixed(digits).replace('.', ',');
-  if (Number(body.replace(',', '.')) === 0) return `${body}%`;
+  const body = fmtDec(Math.abs(rel * 100), digits);
+  if (Number(body.replace(/\./g, '').replace(',', '.')) === 0) return `${body}%`;
   return `${rel > 0 ? '+' : '−'}${body}%`;
 };
 

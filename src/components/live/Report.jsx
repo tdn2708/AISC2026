@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { Send, CircleCheck } from 'lucide-react';
 import { GlassPanel, PanelHeader, Button, Badge, EmptyState, Skeleton } from '../ui';
-import { fmtInt, fmtPct } from '../../lib/format';
+import { fmtInt, fmtPct, fmtDec } from '../../lib/format';
 import { EffectLine } from './ActionCoach';
 import { reportRefreshing } from '../../lib/dataVersion';
 import { clock } from './shared';
@@ -15,7 +15,7 @@ import { clock } from './shared';
  * nại, hiệu quả từng hành động, so với phiên trước).
  */
 
-const money = (n) => (n == null ? '—' : n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace('.', ',')} triệu` : `${fmtInt(Math.round(n / 1000))} nghìn`);
+const money = (n) => (n == null ? '—' : n >= 1e6 ? `${fmtDec(n / 1e6, n >= 1e7 ? 0 : 1)} triệu` : `${fmtInt(Math.round(n / 1000))} nghìn`);
 const PRIO = { high: { label: 'Ưu tiên', tone: 'crit' }, medium: { label: 'Nên làm', tone: 'high' }, low: { label: 'Gợi ý', tone: 'neutral' } };
 
 const Big = ({ label, value, sub, tone }) => (

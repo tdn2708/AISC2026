@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { Radio } from 'lucide-react';
 import { Badge, Button } from '../ui';
-import { fmtInt, fmtPct, fmtRelative } from '../../lib/format';
+import { fmtInt, fmtDec, fmtPct, fmtRelative } from '../../lib/format';
 
 /**
  * LIVESTREAM TRÊN TRANG TỔNG QUAN
@@ -12,7 +12,7 @@ import { fmtInt, fmtPct, fmtRelative } from '../../lib/format';
  * Ẩn hẳn khi kho chưa có phiên live nào.
  */
 
-const money = (n) => (n == null ? '—' : n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} triệu` : `${fmtInt(Math.round(n / 1000))} nghìn`);
+const money = (n) => (n == null ? '—' : n >= 1e6 ? `${fmtDec(n / 1e6, 1)} triệu` : `${fmtInt(Math.round(n / 1000))} nghìn`);
 const SEV_TONE = { critical: 'crit', high: 'high', medium: 'accent' };
 const PRIO_TONE = { high: 'crit', medium: 'high', low: 'neutral' };
 
