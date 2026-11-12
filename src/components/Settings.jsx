@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserRound, Palette, Database, ShieldCheck, Save, Mail, KeyRound, FlaskConical, FileText } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme, useGlass } from '../hooks/useTheme';
 import { PageHeader, GlassPanel, PanelHeader, Button, TextField, Select, RadioCards, Toast } from './ui';
 import { DEFAULT_USER, currentUser } from '../hooks/useDecisions';
 
@@ -66,6 +66,7 @@ const PRIVACY = [
 const Settings = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { glass, setGlass } = useGlass();
   const [tab, setTab] = useState('general');
   const [form, setForm] = useState(load);
   const [saved, setSaved] = useState(false);
@@ -133,6 +134,16 @@ const Settings = () => {
                 options={[
                   { value: 'light', label: 'Sáng', description: 'Mặc định, dễ đọc trong văn phòng', preview: <Swatches theme="light" /> },
                   { value: 'dark', label: 'Tối', description: 'Dịu mắt khi làm việc buổi tối', preview: <Swatches theme="dark" /> }
+                ]}
+              />
+              <PanelHeader title="Hiệu ứng kính" subtitle="Thanh bên, lớp nổi và panel mờ nhẹ trên nền không khí. Tắt thì mọi bề mặt về nền đặc, nhẹ hơn cho máy yếu." className="mt-8" />
+              <RadioCards
+                name="Hiệu ứng kính"
+                value={glass ? 'on' : 'off'}
+                onChange={(v) => setGlass(v === 'on')}
+                options={[
+                  { value: 'on', label: 'Bật', description: 'Kính mờ ở thanh bên và lớp nổi' },
+                  { value: 'off', label: 'Tắt', description: 'Nền đặc, không lớp không khí' }
                 ]}
               />
             </>
