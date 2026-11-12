@@ -161,7 +161,7 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
   return (
     <div ref={barRef} className={`cx sticky top-0 z-[120] -mr-2 pt-[max(0.75rem,env(safe-area-inset-top))] pr-2 pb-3 ${scrolled ? 'bg-(--canvas)' : ''}`}>
       <div
-        className={`flex items-center gap-2 rounded-ctrl px-1 py-2 sm:gap-3 sm:px-2 transition-[background-color,box-shadow,backdrop-filter] duration-200 ${
+        className={`flex items-center gap-2 rounded-ctrl px-1 py-2 sm:gap-3 sm:px-2 transition-colors duration-short ease-out ${
           scrolled ? 'glass' : ''
         }`}
       >
@@ -189,7 +189,7 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
         {/* Sau một thao tác ghi, máy chủ tính lại số liệu ở nền; trang tự tải lại khi xong */}
         {refreshing && (
           <span role="status" className="hidden shrink-0 items-center gap-2 rounded-full bg-accent-dim px-3 py-1.5 text-xs font-medium text-accent-hi md:inline-flex">
-            <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+            <Loader2 size={13} className="keep-motion animate-spin" aria-hidden="true" />
             Đang cập nhật số liệu
           </span>
         )}

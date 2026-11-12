@@ -7,6 +7,7 @@ import { NAV, HIDDEN_PAGES } from '../../lib/nav';
 import { useTheme } from '../../hooks/useTheme';
 import { foldVi } from '../../lib/format';
 import { Backdrop } from '../ui';
+import { Stagger, useReducedMotion, MOTION, EASE } from '../motion';
 
 /**
  * BẢNG LỆNH Ctrl+K
@@ -14,6 +15,11 @@ import { Backdrop } from '../ui';
  * Gõ vài chữ là tới trang cần đến, tìm thẳng trong phản hồi, hoặc gửi
  * nguyên câu gõ cho trợ lý "Hỏi dữ liệu". Bàn phím đi được hết: ↑ ↓ để
  * chọn, Enter để mở.
+ *
+ * Chuyển động (F4-02): mở bằng pop-in (opacity + dịch 4px + scale 0,98,
+ * --motion-short, ease-out); đóng chạy ngược nhanh hơn (70%, ease-in) rồi
+ * mới gỡ khỏi DOM. Kết quả lệch nhịp nhẹ (Stagger) CHỈ khi người dùng gõ,
+ * không khi vừa mở. Giảm chuyển động: hiện và tắt ngay.
  */
 
 const strip = foldVi;
@@ -25,6 +31,31 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
   const [active, setActive] = useState(0);
   const inputRef = useRef(null);
   const listRef = useRef(null);
+  const panelRef = useRef(null);
+  const reduced = useReducedMotion();
+  // Còn hiện trên màn hình (kể cả lúc đang chạy hiệu ứng đóng)
+  const [shown, setShown] = useState(open);
+  if (open && !shown) setShown(true);
+
+  useEffect(() => {
+    if (open || !shown) return undefined;
+    const panel = panelRef.current;
+    if (reduced || !panel || typeof panel.animate !== 'function') {
+      setShown(false);
+      return undefined;
+    }
+    const opts = { duration: Math.round(MOTION.short * 0.7), easing: EASE.in, fill: 'forwards' };
+    const anims = [
+      panel.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(4px) scale(0.98)' }], opts),
+      panel.previousElementSibling?.animate([{ opacity: 1 }, { opacity: 0 }], opts)
+    ].filter(Boolean);
+    let alive = true;
+    anims[0].finished.then(() => alive && setShown(false)).catch(() => {});
+    return () => {
+      alive = false;
+      anims.forEach((a) => a.cancel());
+    };
+  }, [open, shown, reduced]);
 
   useEffect(() => {
     if (open) {
@@ -82,7 +113,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
     listRef.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: 'nearest' });
   }, [active]);
 
-  if (!open) return null;
+  if (!shown) return null;
 
   const runAt = (i) => {
     const it = items[i];
@@ -115,6 +146,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
     <div className="cx fixed inset-0 z-[2200] flex items-start justify-center p-4 pt-[12vh]">
       <Backdrop onClose={onClose} />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Bảng lệnh"
@@ -135,7 +167,9 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
           <kbd className="rounded-ctrl border border-line px-1.5 py-0.5 tabular-nums text-xs text-ink-lo">Esc</kbd>
         </div>
 
-        <ul ref={listRef} role="listbox" className="max-h-[52vh] list-none overflow-y-auto p-2">
+        {/* Lệch nhịp chỉ khi ô tìm có chữ (người dùng đang gõ); lúc vừa mở thì không */}
+        <div ref={listRef}>
+        <Stagger as="ul" role="listbox" active={query.trim() !== ''} runKey={query} step={30} className="max-h-[52vh] list-none overflow-y-auto p-2">
           {items.length === 0 && <li className="px-4 py-10 text-center text-sm text-ink-lo">Không có kết quả phù hợp</li>}
           {items.map((it, i) => {
             const header = it.section !== lastSection ? it.section : null;
@@ -166,7 +200,8 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
               </React.Fragment>
             );
           })}
-        </ul>
+        </Stagger>
+        </div>
 
         <div className="flex items-center gap-4 border-t border-line-soft px-5 py-2.5 text-xs text-ink-lo">
           <span><kbd className="tabular-nums">↑ ↓</kbd> chọn</span>
