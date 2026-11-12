@@ -16,14 +16,14 @@ const SEGMENTS = [
     label: 'Có nguy cơ rời bỏ',
     icon: TriangleAlert,
     note: 'Đã để lại ít nhất một phản hồi tiêu cực, cần liên hệ trước tiên.',
-    tone: 'bg-blush/45 text-[#8E2F45]'
+    tone: 'bg-crit/12 text-crit'
   },
   {
     key: 'promoters',
     label: 'Khách trung thành',
     icon: HeartHandshake,
     note: 'Phản hồi chủ yếu tích cực, ứng viên cho chương trình giới thiệu.',
-    tone: 'bg-sky/50 text-[#2F5E92]'
+    tone: 'bg-accent-dim text-accent-hi'
   },
   {
     key: 'passives',

@@ -446,7 +446,7 @@ const RiskCenter = () => {
           ) : (
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
               {/* Cuộn riêng chỉ trên màn rộng; trên điện thoại cuộn lồng trong trang cuộn rất khó dùng */}
-              <ul className="flex list-none flex-col gap-1 rounded-[10px] border border-line bg-surface p-2 lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto" aria-label="Danh sách cảnh báo">
+              <ul className="flex list-none flex-col gap-1 rounded-xl border border-line bg-surface p-2 lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto" aria-label="Danh sách cảnh báo">
                 {visible.map((a) => (
                   <AlertRow key={a.id} alert={a} status={statusOf(a)} active={selected?.id === a.id} onClick={() => select(a.id)} />
                 ))}

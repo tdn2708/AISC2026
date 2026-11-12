@@ -4,13 +4,15 @@ import { Badge } from '../ui';
 /**
  * Màu theo ý định bình luận. Mỗi loại một màu cố định trên mọi chỗ của trang
  * (huy hiệu, cột biểu đồ nhịp bình luận), luôn đi kèm chữ, không chỉ dựa vào màu.
+ * Màu cột đọc token ngữ nghĩa ở index.css. "Khen" dùng --viz-4 (cam vàng): nền
+ * sky cũ chỉ 1,75:1 trên trắng; cam vàng đạt 3,8:1 và tách xa bốn màu còn lại.
  */
 export const INTENTS = [
-  { key: 'complaint', label: 'Khiếu nại', tone: 'crit', color: 'var(--color-crit)' },
-  { key: 'question', label: 'Câu hỏi', tone: 'accent', color: 'var(--color-accent)' },
-  { key: 'order', label: 'Chốt đơn', tone: 'ok', color: 'var(--color-ok)' },
-  { key: 'praise', label: 'Khen', tone: 'sky', color: 'var(--color-sky)' },
-  { key: 'chatter', label: 'Tương tác', tone: 'neutral', color: 'var(--color-ink-lo)' }
+  { key: 'complaint', label: 'Khiếu nại', tone: 'crit', color: 'var(--sev-crit)' },
+  { key: 'question', label: 'Câu hỏi', tone: 'accent', color: 'var(--accent)' },
+  { key: 'order', label: 'Chốt đơn', tone: 'ok', color: 'var(--sev-ok)' },
+  { key: 'praise', label: 'Khen', tone: 'sky', color: 'var(--viz-4)' },
+  { key: 'chatter', label: 'Tương tác', tone: 'neutral', color: 'var(--text-lo)' }
 ];
 export const INTENT_MAP = Object.fromEntries(INTENTS.map((i) => [i.key, i]));
 

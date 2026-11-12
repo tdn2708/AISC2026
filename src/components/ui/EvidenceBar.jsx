@@ -43,7 +43,7 @@ const FILL = {
 
 /** Mẫu tô nhỏ dùng trong chú giải */
 export const EvidenceSwatch = ({ kind, size = 10 }) => (
-  <span aria-hidden="true" className="inline-block shrink-0 rounded-[2px]" style={{ width: size, height: size, ...FILL[kind] }} />
+  <span aria-hidden="true" className="inline-block shrink-0 rounded-xs" style={{ width: size, height: size, ...FILL[kind] }} />
 );
 
 const pct = (n, total) => (total ? Math.round((n / total) * 100) : 0);
@@ -75,11 +75,11 @@ export const EvidenceBar = ({ mix, height = 6, showCaption = true, className = '
       <div
         role="img"
         aria-label={evidenceSentence(mix)}
-        className="flex w-full gap-[2px] overflow-hidden rounded-[3px] bg-raised"
+        className="flex w-full gap-[2px] overflow-hidden rounded-xs bg-raised"
         style={{ height }}
       >
         {segments.map((s) => (
-          <span key={s.key} title={`${s.label}: ${fmtInt(s.n)} phản hồi`} className="h-full rounded-[2px]" style={{ flexGrow: s.n, ...FILL[s.key] }} />
+          <span key={s.key} title={`${s.label}: ${fmtInt(s.n)} phản hồi`} className="h-full rounded-xs" style={{ flexGrow: s.n, ...FILL[s.key] }} />
         ))}
       </div>
       {showCaption && (

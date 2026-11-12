@@ -48,9 +48,11 @@ const Row = ({ icon: Icon, title, description, children }) => (
   </div>
 );
 
-const Swatches = ({ colors }) => (
-  <span className="mt-3 flex gap-1.5">
-    {colors.map((c) => <span key={c} className="size-6 rounded-full border border-line" style={{ background: c }} />)}
+// Ô xem trước đọc token của đúng chủ đề đó: data-theme trên khối con làm
+// tầng ngữ nghĩa của index.css tính lại, nên màu luôn khớp bảng màu đang dùng
+const Swatches = ({ theme, colors = ['--canvas', '--surface', '--accent', '--text-hi'] }) => (
+  <span data-theme={theme} className="mt-3 flex gap-1.5">
+    {colors.map((c) => <span key={c} className="size-6 rounded-full border border-line" style={{ background: `var(${c})` }} />)}
   </span>
 );
 
@@ -136,8 +138,8 @@ const Settings = () => {
                 value={theme}
                 onChange={setTheme}
                 options={[
-                  { value: 'light', label: 'Sáng', description: 'Mặc định, dễ đọc trong văn phòng', preview: <Swatches colors={['#F3F5F4', '#FFFFFF', '#0E6B5E', '#13232B']} /> },
-                  { value: 'dark', label: 'Tối', description: 'Dịu mắt khi làm việc buổi tối', preview: <Swatches colors={['#0F1A1F', '#16232A', '#6CC2AF', '#E6EEED']} /> }
+                  { value: 'light', label: 'Sáng', description: 'Mặc định, dễ đọc trong văn phòng', preview: <Swatches theme="light" /> },
+                  { value: 'dark', label: 'Tối', description: 'Dịu mắt khi làm việc buổi tối', preview: <Swatches theme="dark" /> }
                 ]}
               />
             </>

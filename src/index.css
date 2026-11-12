@@ -108,9 +108,16 @@
   --plum-42:  #733160;
   --plum-61:  #B0679A;
 
-  /* Hình dạng — bo góc theo cấp: điều khiển 6, bề mặt 10 */
-  --r-ctrl: 6px;
-  --r-surf: 10px;
+  /* Bo góc: ba bậc, một bán kính mỗi tầng lồng nhau.
+     Tailwind đọc qua @theme trong styles/tailwind.css:
+       rounded, rounded-sm, rounded-md, rounded-lg, rounded-ctrl = --r-ctrl
+       rounded-xl, rounded-2xl, rounded-surf                     = --r-surf
+       rounded-full                                              = tròn (công tắc, ảnh đại diện, thanh tiến độ)
+     Ngoại lệ có chủ đích: ô màu chú giải và vạch thanh bằng chứng là dấu
+     dữ liệu, không phải khung, dùng --r-mark (rounded-xs). */
+  --r-ctrl: 6px;    /* điều khiển và khối bên trong panel: nút, ô nhập, chip, huy hiệu */
+  --r-surf: 10px;   /* bề mặt ngoài cùng: panel, hộp thoại, ngăn kéo, popover */
+  --r-mark: 2px;
 
   /* Kích thước khung */
   --sidebar-w: 240px;
@@ -328,9 +335,6 @@
   --risk-low:       var(--sev-ok);
   --glass-border:   1px solid var(--border);
   --glass-shadow:   var(--glass-shade);
-  --radius-sm:      var(--r-ctrl);
-  --radius-md:      var(--r-surf);
-  --radius-lg:      var(--r-surf);
 
   /* Thang chung tên theo Hallmark, trỏ về tầng 2 */
   --color-paper:      var(--canvas);
@@ -443,7 +447,7 @@ a { color: inherit; text-decoration: none; }
 /* Huy hiệu cũ — trỏ vào thang trạng thái mới */
 .badge {
   padding: var(--space-2xs) var(--space-xs);
-  border-radius: 4px;
+  border-radius: var(--r-ctrl);
   font-size: 0.8125rem;
   font-weight: 600;
   display: inline-flex;
@@ -458,7 +462,7 @@ a { color: inherit; text-decoration: none; }
 
 .cat-badge {
   padding: var(--space-2xs) var(--space-xs);
-  border-radius: 4px;
+  border-radius: var(--r-ctrl);
   font-size: 0.8125rem;
   font-weight: 500;
   background: var(--raised);
@@ -536,7 +540,7 @@ a { color: inherit; text-decoration: none; }
 .fb-product { color: var(--text-mid); font-size: 0.86rem; }
 .fb-chip {
   display: inline-block; max-width: 100%;
-  padding: var(--space-2xs) var(--space-xs); border-radius: 4px;
+  padding: var(--space-2xs) var(--space-xs); border-radius: var(--r-ctrl);
   font-size: 0.8125rem; font-weight: 500;
   color: var(--text-mid); background: var(--raised);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;
@@ -547,8 +551,8 @@ a { color: inherit; text-decoration: none; }
 .fb-neu { color: var(--text-mid); }
 .fb-trust { display: flex; align-items: center; gap: var(--space-xs); }
 .fb-trust-tier { font-family: var(--font-mono); font-size: 0.74rem; font-weight: 600; min-width: 1.6rem; }
-.fb-trust-bar { width: 44px; height: 4px; border-radius: 2px; background: var(--raised); overflow: hidden; }
-.fb-trust-bar > span { display: block; height: 100%; border-radius: 2px; background: currentColor; }
+.fb-trust-bar { width: 44px; height: 4px; border-radius: var(--r-mark); background: var(--raised); overflow: hidden; }
+.fb-trust-bar > span { display: block; height: 100%; border-radius: var(--r-mark); background: currentColor; }
 .fb-source { color: var(--text-mid); font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fb-empty { text-align: center; padding: var(--space-xl) var(--space-md) !important; color: var(--text-lo) !important; }
 .fb-pager {
@@ -561,7 +565,7 @@ a { color: inherit; text-decoration: none; }
 .fb-pager-btns { display: flex; align-items: center; gap: var(--space-2xs); flex-wrap: wrap; }
 .fb-page-btn {
   min-width: 32px; height: 32px; padding: 0 var(--space-sm);
-  border-radius: 6px; border: 1px solid transparent;
+  border-radius: var(--r-ctrl); border: 1px solid transparent;
   background: transparent; color: var(--text-mid);
   font: inherit; font-size: 0.8125rem; font-family: var(--font-mono);
   cursor: pointer;

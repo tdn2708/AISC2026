@@ -118,7 +118,7 @@ export const SentimentFace = ({ sentiment, size = 28 }) => {
   const s = Math.max(8, Math.round(size * 0.34));
   return (
     <span
-      className="inline-block shrink-0 rounded-[3px]"
+      className="inline-block shrink-0 rounded-xs"
       style={{ width: s, height: s, background: m.color }}
       title={m.label}
       aria-label={m.label}
@@ -135,7 +135,7 @@ export const Toast = ({ show, tone = 'ok', children }) => {
   // backdrop-filter, `position: fixed` sẽ bám theo tổ tiên đó thay vì màn hình
   return createPortal(
     <div role="status" className="cx fixed right-4 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-[2100] max-w-[calc(100vw-2rem)] animate-pop-in sm:right-6">
-      <div className="glass-strong flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-ink-hi">
+      <div className="glass-strong flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-ink-hi">
         <span className={`grid size-7 place-items-center rounded-md ${tone === 'crit' ? 'bg-crit/12 text-crit' : 'bg-ok/12 text-ok'}`}>
           <Icon size={16} aria-hidden="true" />
         </span>

@@ -155,7 +155,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
                     isActive ? 'bg-accent text-on-accent' : 'text-ink-hi'
                   }`}
                 >
-                  <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${isActive ? 'bg-white/20' : 'bg-raised text-ink-mid'}`}>
+                  <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${isActive ? 'bg-on-accent/20' : 'bg-raised text-ink-mid'}`}>
                     <Icon size={16} aria-hidden="true" />
                   </span>
                   <span className="flex-1 truncate">{it.label}</span>

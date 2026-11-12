@@ -41,7 +41,7 @@ const ExportMenu = ({ sessionId }) => {
     <div className="relative">
       <Button size="sm" variant="secondary" icon={Download} iconRight={ChevronDown} onClick={() => setOpen((v) => !v)} aria-expanded={open}>Xuất dữ liệu</Button>
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-72 rounded-lg border border-line bg-surface p-1 shadow-xl" role="menu">
+        <div className="absolute right-0 z-20 mt-1 w-72 rounded-xl border border-line bg-surface p-1 shadow-xl" role="menu">
           {[
             ['comments', 'jsonl', 'Bình luận đã chuẩn hóa', 'JSONL, không có tên tài khoản. Dùng cho huấn luyện.'],
             ['qa', 'jsonl', 'Cặp hỏi đáp đã xác nhận', 'JSONL. Câu hỏi của khách và câu shop đã trả lời.'],

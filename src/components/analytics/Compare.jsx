@@ -22,7 +22,7 @@ const pct = (v) => fmtPct(v, v != null && v > 0 && v < 0.01 ? 2 : 1);
 const Side = ({ p, color, tag }) => (
   <GlassPanel tone="strong" className="p-5">
     <div className="flex items-start gap-2.5">
-      <span className="mt-1.5 size-2.5 shrink-0 rounded-[3px]" style={{ background: color }} aria-hidden="true" />
+      <span className="mt-1.5 size-2.5 shrink-0 rounded-xs" style={{ background: color }} aria-hidden="true" />
       <div className="min-w-0">
         <p className="text-xs text-ink-lo">Sản phẩm {tag}</p>
         <h3 className="text-sm leading-snug font-semibold text-ink-hi">{p.name}</h3>

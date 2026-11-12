@@ -27,12 +27,14 @@ const PosMark = () => <SentimentFace sentiment="Positive" size={24} />;
 const NeuMark = () => <SentimentFace sentiment="Neutral" size={24} />;
 const NegMark = () => <SentimentFace sentiment="Negative" size={24} />;
 
+// Bảng màu B, đọc thẳng token ngữ nghĩa (src/index.css) nên tự đổi theo chế độ sáng, tối
 const PALETTE = [
-  ['#5E8B7E', 'Sage', 'Nhấn'],
-  ['#A7C7E7', 'Sky', 'Tích cực'],
-  ['#2F3E46', 'Slate', 'Chữ'],
-  ['#F1F5F4', 'Mist', 'Nền'],
-  ['#E8AEB7', 'Blush', 'Tiêu cực']
+  ['--accent', 'Xanh polo', 'Nhấn'],
+  ['--text-hi', 'Navy', 'Chữ'],
+  ['--canvas', 'Nền', 'Nền trang'],
+  ['--coral', 'San hô', 'Điểm nhấn đồ họa'],
+  ['--sev-crit', 'Đỏ', 'Xấu'],
+  ['--sev-ok', 'Xanh lá', 'Tốt']
 ];
 
 const UiKit = () => {
@@ -64,11 +66,11 @@ const UiKit = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-4">
-              {PALETTE.map(([hex, name, role]) => (
-                <div key={hex} className="text-center">
-                  <span className="mx-auto block size-12 rounded-full border border-white/70 shadow-sm" style={{ background: hex }} />
+              {PALETTE.map(([token, name, role]) => (
+                <div key={token} className="text-center">
+                  <span className="mx-auto block size-12 rounded-full border border-line shadow-sm" style={{ background: `var(${token})` }} />
                   <p className="mt-1.5 text-xs font-medium text-ink-hi">{name}</p>
-                  <p className="font-mono text-xs text-ink-lo">{hex}</p>
+                  <p className="font-mono text-xs text-ink-lo">{token}</p>
                   <p className="text-xs text-ink-lo">{role}</p>
                 </div>
               ))}

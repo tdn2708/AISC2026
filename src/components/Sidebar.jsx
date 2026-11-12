@@ -70,7 +70,7 @@ const WorkspacePicker = ({ collapsed }) => {
         <ul
           role="listbox"
           aria-label="Kho dữ liệu"
-          className="glass-strong absolute top-[calc(100%-2px)] left-3 z-20 w-[248px] list-none rounded-lg p-1.5 animate-pop-in"
+          className="glass-strong absolute top-[calc(100%-2px)] left-3 z-20 w-[248px] list-none rounded-xl p-1.5 animate-pop-in"
         >
           {Object.entries(WORKSPACES).map(([key, ws]) => (
             <li key={key} role="option" aria-selected={key === current}>
@@ -120,7 +120,7 @@ const NavItem = ({ item, collapsed, count, critical, onNavigate }) => {
           {!collapsed && count ? (
             <span
               className={`rounded px-1.5 py-px font-mono text-xs font-semibold ${
-                critical ? 'bg-crit text-white' : 'bg-raised text-ink-mid'
+                critical ? 'bg-crit text-on-crit' : 'bg-raised text-ink-mid'
               }`}
             >
               {count}
@@ -299,7 +299,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
         {/* Người dùng */}
         <div className="relative shrink-0 border-t border-line-soft p-3" ref={menuRef}>
           {showMenu && (
-            <div className="glass-strong absolute right-3 bottom-[calc(100%+6px)] left-3 z-10 min-w-[200px] rounded-lg p-1.5 animate-pop-in">
+            <div className="glass-strong absolute right-3 bottom-[calc(100%+6px)] left-3 z-10 min-w-[200px] rounded-xl p-1.5 animate-pop-in">
               <div className="border-b border-line-soft px-3 py-2">
                 <p className="text-xs text-ink-lo">Đang đăng nhập</p>
                 <p className="truncate text-sm font-medium text-ink-hi">{profile.email}</p>

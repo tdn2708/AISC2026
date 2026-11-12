@@ -61,6 +61,21 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 
+  /* Bo góc ba bậc (giá trị ở index.css, tầng tham chiếu). Tên cũ sm/md/lg
+     cùng ra bậc điều khiển, xl/2xl ra bậc bề mặt, để trang hiện có không
+     phải đổi lớp; thành phần mới dùng rounded-ctrl, rounded-surf.
+     Trước F1-04, index.css đè --radius-sm/md/lg ngoài layer nên md và lg
+     cùng ra 10px, xl ra 12px. */
+  --radius: var(--r-ctrl);
+  --radius-xs: var(--r-mark);
+  --radius-sm: var(--r-ctrl);
+  --radius-md: var(--r-ctrl);
+  --radius-lg: var(--r-ctrl);
+  --radius-ctrl: var(--r-ctrl);
+  --radius-xl: var(--r-surf);
+  --radius-2xl: var(--r-surf);
+  --radius-surf: var(--r-surf);
+
   /* Chữ nhỏ nhất trong giao diện là 13px: chú thích, nhãn, huy hiệu đều phải
      đọc được không cần nheo mắt (bản cũ có chỗ chỉ 10-11px) */
   --text-xs: 0.8125rem;

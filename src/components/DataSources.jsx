@@ -19,10 +19,10 @@ import AutoCollect from './datasources/AutoCollect';
  */
 
 const PLATFORM = {
-  Shopee: { icon: ShoppingBag, tile: 'bg-[#F6D9C9] text-[#9A4316]', label: 'Shopee' },
-  TikTok: { icon: Music2, tile: 'bg-blush/55 text-[#8E2F45]', label: 'TikTok Shop' },
-  Tiki: { icon: ShoppingBag, tile: 'bg-sky/55 text-[#2F5E92]', label: 'Tiki' },
-  Web: { icon: Globe, tile: 'bg-sky/55 text-[#2F5E92]', label: 'Website' }
+  Shopee: { icon: ShoppingBag, tile: 'bg-high/12 text-high', label: 'Shopee' },
+  TikTok: { icon: Music2, tile: 'bg-blush/45 text-ink-hi', label: 'TikTok Shop' },
+  Tiki: { icon: ShoppingBag, tile: 'bg-sky/45 text-ink-hi', label: 'Tiki' },
+  Web: { icon: Globe, tile: 'bg-sky/45 text-ink-hi', label: 'Website' }
 };
 
 const isLink = (v) => /^https?:\/\//i.test(String(v || '').trim());

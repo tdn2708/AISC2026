@@ -51,7 +51,7 @@ const Dropdown = ({ open, onClose, children, width = 240, align = 'left' }) => {
   return (
     <div
       ref={ref}
-      className={`glass-strong absolute top-[calc(100%+8px)] z-[150] rounded-lg p-1.5 animate-pop-in ${align === 'right' ? 'right-0' : 'left-0'}`}
+      className={`glass-strong absolute top-[calc(100%+8px)] z-[150] rounded-xl p-1.5 animate-pop-in ${align === 'right' ? 'right-0' : 'left-0'}`}
       style={{ width }}
     >
       {children}

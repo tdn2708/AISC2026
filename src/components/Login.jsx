@@ -57,7 +57,7 @@ const Login = ({ onLogin }) => {
 
   return (
     <div className="cx grid min-h-screen min-h-dvh bg-canvas lg:grid-cols-[minmax(0,1fr)_minmax(420px,560px)]">
-      <section className="hidden flex-col justify-between bg-strip p-12 text-white lg:flex">
+      <section className="hidden flex-col justify-between bg-strip p-12 text-on-strip lg:flex">
         {/* Đổi token chữ cục bộ để chữ ký thương hiệu đọc được trên nền mực */}
         <div style={{ '--text-hi': 'var(--on-strip)', '--accent': 'var(--accent-on-strip)' }}>
           <Logo size="md" showTagline={false} />
@@ -66,7 +66,7 @@ const Login = ({ onLogin }) => {
           <h1 className="text-[2.6rem] leading-[1.12] font-semibold tracking-[-0.02em] text-balance">
             Phản hồi khách hàng, kèm bằng chứng cho từng con số.
           </h1>
-          <p className="mt-5 text-base leading-relaxed text-white/75">
+          <p className="mt-5 text-base leading-relaxed text-on-strip-mid">
             Đánh giá ảo, quảng cáo và chiến dịch có tổ chức bị lọc trước khi được tính. Phần còn lại cho bạn biết
             con số nào dựa trên chứng từ, con số nào do AI đoán.
           </p>
@@ -75,7 +75,7 @@ const Login = ({ onLogin }) => {
               <Ledger ledger={ledger} showLink={false} />
             </div>
           ) : (
-          <ul className="mt-8 flex list-none flex-col gap-3 text-sm text-white/85">
+          <ul className="mt-8 flex list-none flex-col gap-3 text-sm text-on-strip-mid">
             {PROOF.map((p) => (
               <li key={p.kind} className="flex items-center gap-3">
                 {/* Mẫu tô sáng trên nền mực: cùng ngôn ngữ với thanh bằng chứng trong ứng dụng */}
@@ -86,7 +86,7 @@ const Login = ({ onLogin }) => {
           </ul>
           )}
         </div>
-        <p className="text-xs text-white/55">© 2026 Customer Radar, đội LDS, Trường Đại học Công nghệ Thông tin</p>
+        <p className="text-xs text-on-strip-lo">© 2026 Customer Radar, đội LDS, Trường Đại học Công nghệ Thông tin</p>
       </section>
 
       <section className="flex items-center justify-center px-6 py-12">

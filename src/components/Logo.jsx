@@ -3,35 +3,41 @@ import React, { useId } from 'react';
 /**
  * NHẬN DIỆN THƯƠNG HIỆU CUSTOMER RADAR
  * ------------------------------------------------------------------
- * Dấu hiệu là một ô vuông bo tròn màu sage — cùng ngữ pháp với ô logo
+ * Dấu hiệu là một ô vuông bo tròn màu xanh polo — cùng ngữ pháp với ô logo
  * của bộ kit tham chiếu — bên trong là các vòng quét radar, một tia quét
- * và một chấm tín hiệu màu blush: thứ hệ thống tồn tại để phát hiện.
+ * và một chấm tín hiệu màu san hô: thứ hệ thống tồn tại để phát hiện.
  * Vẽ bằng SVG nên sắc nét ở mọi cỡ, từ favicon tới màn đăng nhập.
+ * (F1-03 sẽ vẽ lại dấu này; ở đây chỉ đổi màu sang token bảng B.)
+ *
+ * Màu đọc token --logo-* ở index.css. Bản in PDF truyền `colors` bằng hex
+ * (REPORT trong report_kit.jsx) vì html2canvas chụp SVG không kèm biến CSS.
  */
-export const LogoMark = ({ size = 40, title = 'Customer Radar' }) => {
+const TOKEN_COLORS = { from: 'var(--logo-from)', to: 'var(--logo-to)', ink: 'var(--logo-ink)', dot: 'var(--logo-dot)' };
+
+export const LogoMark = ({ size = 40, title = 'Customer Radar', colors = TOKEN_COLORS }) => {
   const id = useId().replace(/:/g, '');
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" role="img" aria-label={title} className="block shrink-0">
       <defs>
         <linearGradient id={`lg-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#6E9D8F" />
-          <stop offset="1" stopColor="#3D6B5F" />
+          <stop offset="0" style={{ stopColor: colors.from }} />
+          <stop offset="1" style={{ stopColor: colors.to }} />
         </linearGradient>
         <radialGradient id={`sweep-${id}`} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0.2" stopColor="#FFFFFF" stopOpacity="0" />
-          <stop offset="1" stopColor="#FFFFFF" stopOpacity="0.32" />
+          <stop offset="0.2" stopOpacity="0" style={{ stopColor: colors.ink }} />
+          <stop offset="1" stopOpacity="0.32" style={{ stopColor: colors.ink }} />
         </radialGradient>
       </defs>
       <rect width="48" height="48" rx="13" fill={`url(#lg-${id})`} />
-      <rect x="0.5" y="0.5" width="47" height="47" rx="12.5" fill="none" stroke="#FFFFFF" strokeOpacity="0.28" />
-      <g fill="none" stroke="#FFFFFF" strokeLinecap="round">
+      <rect x="0.5" y="0.5" width="47" height="47" rx="12.5" fill="none" strokeOpacity="0.28" style={{ stroke: colors.ink }} />
+      <g fill="none" strokeLinecap="round" style={{ stroke: colors.ink }}>
         <circle cx="24" cy="25" r="14" strokeOpacity="0.45" strokeWidth="1.6" />
         <circle cx="24" cy="25" r="9" strokeOpacity="0.7" strokeWidth="1.6" />
         <circle cx="24" cy="25" r="4" strokeWidth="1.8" />
       </g>
       <path d="M24 25 L24 11 A14 14 0 0 1 36.1 18 Z" fill={`url(#sweep-${id})`} />
-      <path d="M24 25 L34.5 15" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="31.5" cy="31" r="2.6" fill="#F4C3CB" stroke="#FFFFFF" strokeWidth="1.2" />
+      <path d="M24 25 L34.5 15" strokeWidth="2" strokeLinecap="round" style={{ stroke: colors.ink }} />
+      <circle cx="31.5" cy="31" r="2.6" strokeWidth="1.2" style={{ fill: colors.dot, stroke: colors.ink }} />
     </svg>
   );
 };

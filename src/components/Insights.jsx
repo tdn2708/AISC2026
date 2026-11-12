@@ -260,7 +260,7 @@ const ProductTable = ({ groups, names, selected, onPick }) => {
 const TimeTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="glass rounded-lg px-3 py-2 text-xs">
+    <div className="glass rounded-xl px-3 py-2 text-xs">
       <p className="mb-1 text-ink-lo">{label}</p>
       {[...payload].reverse().map((p) => (
         <p key={p.dataKey} className="flex items-center gap-2 leading-6">

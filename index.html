@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Customer Radar — phân tích phản hồi khách hàng đa kênh có tầng kiểm soát tin cậy dữ liệu. Đội LDS, Trường ĐH Công nghệ Thông tin – ĐHQG-HCM." />
     <!-- Màu thanh trạng thái/thanh địa chỉ trên điện thoại; useTheme cập nhật khi đổi theme -->
-    <meta name="theme-color" content="#E9EFEE" />
+    <meta name="theme-color" content="#F4F6F9" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -19,13 +19,13 @@
       try {
         var t = localStorage.getItem('cr-theme');
         document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
-        document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#121B20' : '#E9EFEE');
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#0D1524' : '#F4F6F9');
         if (localStorage.getItem('cr-glass') === 'off') document.documentElement.setAttribute('data-glass', 'off');
       } catch (e) {}
     </script>
     <style>
-      body { background-color: #E9EFEE; margin: 0; font-family: 'Inter', system-ui, sans-serif; }
-      [data-theme='dark'] body { background-color: #121B20; }
+      body { background-color: #F4F6F9; margin: 0; font-family: 'Inter', system-ui, sans-serif; }
+      [data-theme='dark'] body { background-color: #0D1524; }
     </style>
   </head>
   <body>

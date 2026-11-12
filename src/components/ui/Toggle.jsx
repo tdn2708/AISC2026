@@ -1,7 +1,8 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 
-/** Công tắc — vai trò switch thật, không phải checkbox đội lốt */
+/** Công tắc — vai trò switch thật, không phải checkbox đội lốt. Rãnh lúc tắt dùng
+ *  --border-field (3,83:1 sáng, 4,78:1 tối) thay cho ink-lo 25% (1,43:1, trượt 3:1) */
 export const Switch = ({ checked, onChange, label, disabled, size = 'md' }) => {
   const dims = size === 'sm' ? { track: 'h-5 w-9', knob: 'size-4', on: 'translate-x-4' } : { track: 'h-6 w-11', knob: 'size-5', on: 'translate-x-5' };
   return (
@@ -13,7 +14,7 @@ export const Switch = ({ checked, onChange, label, disabled, size = 'md' }) => {
       disabled={disabled}
       onClick={() => onChange?.(!checked)}
       className={`relative inline-flex shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 disabled:opacity-45 ${dims.track} ${
-        checked ? 'bg-accent' : 'bg-ink-lo/25'
+        checked ? 'bg-accent' : 'bg-field'
       }`}
     >
       <span

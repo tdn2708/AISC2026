@@ -20,7 +20,7 @@ const ChartTip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
-    <div className="rounded-md border border-line bg-surface px-3 py-2 text-xs shadow-lg">
+    <div className="rounded-xl border border-line bg-surface px-3 py-2 text-xs shadow-lg">
       <p className="font-semibold text-ink-hi">{hhmm(label)}</p>
       <p className="mt-1 text-ink-mid">{fmtInt(row.total)} bình luận</p>
       {SERIES.map((k) => (
@@ -67,10 +67,10 @@ export const Rhythm = ({ stats }) => {
         <div className="h-40">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={series} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
-              <CartesianGrid vertical={false} stroke="var(--color-line-soft)" />
-              <XAxis dataKey="t" tickFormatter={hhmm} tick={{ fontSize: 10, fill: 'var(--color-ink-lo)' }} tickLine={false} axisLine={false} minTickGap={24} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: 'var(--color-ink-lo)' }} tickLine={false} axisLine={false} />
-              <Tooltip content={<ChartTip />} cursor={{ fill: 'var(--color-raised)' }} />
+              <CartesianGrid vertical={false} stroke="var(--border-soft)" />
+              <XAxis dataKey="t" tickFormatter={hhmm} tick={{ fontSize: 10, fill: 'var(--text-lo)' }} tickLine={false} axisLine={false} minTickGap={24} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: 'var(--text-lo)' }} tickLine={false} axisLine={false} />
+              <Tooltip content={<ChartTip />} cursor={{ fill: 'var(--raised)' }} />
               {SERIES.map((k, i) => (
                 <Bar key={k} dataKey={k} stackId="a" fill={INTENT_MAP[k].color} radius={i === SERIES.length - 1 ? [2, 2, 0, 0] : 0} isAnimationActive={false} />
               ))}

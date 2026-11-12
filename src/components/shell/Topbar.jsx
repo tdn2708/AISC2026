@@ -92,14 +92,14 @@ const Notifications = () => {
         onClick={() => setOpen((v) => !v)}
         badge={
           unread > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 grid min-w-[18px] place-items-center rounded-full bg-crit px-1 font-mono text-xs leading-[18px] font-semibold text-white ring-2 ring-[var(--canvas)]">
+            <span className="absolute -top-0.5 -right-0.5 grid min-w-[18px] place-items-center rounded-full bg-crit px-1 font-mono text-xs leading-[18px] font-semibold text-on-crit ring-2 ring-canvas">
               {unread > 9 ? '9+' : unread}
             </span>
           )
         }
       />
       {open && (
-        <div className="glass-strong absolute top-[calc(100%+10px)] right-0 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg animate-pop-in">
+        <div className="glass-strong absolute top-[calc(100%+10px)] right-0 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl animate-pop-in">
           <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
             <h3 className="text-sm font-semibold text-ink-hi">Thông báo</h3>
             {unread > 0 && <span className="rounded bg-crit/12 px-1.5 py-0.5 font-mono text-xs font-medium text-crit">{unread} mới</span>}

@@ -109,7 +109,7 @@ const RankBar = ({ label, count, max, total, active, onClick, tone = 'bg-neg' })
 
 const TrendTip = ({ active, payload, label }) =>
   active && payload?.length ? (
-    <div className="glass-strong rounded-lg px-3 py-2 text-xs">
+    <div className="glass-strong rounded-xl px-3 py-2 text-xs">
       <p className="text-ink-lo">Ngày {label}</p>
       <p className="mt-0.5"><span className="font-mono font-semibold text-ink-hi">{fmtInt(payload[0].value)}</span> <span className="text-ink-mid">khiếu nại</span></p>
     </div>

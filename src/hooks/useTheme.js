@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { readToken } from '../lib/tokens';
 
 /**
  * Theme là trạng thái TOÀN CỤC, không phải trạng thái của từng component.
@@ -23,11 +24,16 @@ const read = () => {
 
 let current = read();
 // Màu thanh trạng thái / thanh địa chỉ trên điện thoại đi theo theme — để cố
-// định màu sáng thì ở theme tối đầu màn hình là một dải sáng chói
-const THEME_COLOR = { light: '#E9EFEE', dark: '#121B20' };
+// định màu sáng thì ở theme tối đầu màn hình là một dải sáng chói. Màu lấy
+// từ token --canvas; nếu CSS chưa nạp thì thử lại ở khung hình sau.
+const syncThemeColor = (retry = true) => {
+  const c = readToken('--canvas');
+  if (c) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', c);
+  else if (retry && typeof requestAnimationFrame === 'function') requestAnimationFrame(() => syncThemeColor(false));
+};
 const apply = (t) => {
   document.documentElement.setAttribute('data-theme', t);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[t] || THEME_COLOR.light);
+  syncThemeColor();
 };
 apply(current);
 
