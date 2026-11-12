@@ -66,8 +66,6 @@ export const REPORT = {
   warn: '#875200',
   // Dấu logo trên dải bìa: html2canvas chụp SVG không kèm biến CSS nên logo
   // trong bản in nhận màu hex (cùng giá trị với --logo-* ở index.css)
-  logoFrom: '#2B7FB8',
-  logoTo: '#185A8A',
   logoInk: '#FFFFFF',
   logoDot: '#E66A78'
 };

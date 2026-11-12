@@ -1,55 +1,43 @@
-import React, { useId } from 'react';
+import React from 'react';
 
 /**
  * NHẬN DIỆN THƯƠNG HIỆU CUSTOMER RADAR
  * ------------------------------------------------------------------
- * Dấu hiệu là một ô vuông bo tròn màu xanh polo — cùng ngữ pháp với ô logo
- * của bộ kit tham chiếu — bên trong là các vòng quét radar, một tia quét
- * và một chấm tín hiệu màu san hô: thứ hệ thống tồn tại để phát hiện.
- * Vẽ bằng SVG nên sắc nét ở mọi cỡ, từ favicon tới màn đăng nhập.
- * (F1-03 sẽ vẽ lại dấu này; ở đây chỉ đổi màu sang token bảng B.)
+ * Dấu "khung ngắm" (phương án A2, người dùng chọn 12/11/2026): một chữ L
+ * đứng ở góc dưới trái và chính nó xoay ngược ở góc trên phải, lấy từ ký
+ * hiệu tay chữ L của hai bạn trong ảnh nhóm. Hai chữ L tạo thành khung
+ * ngắm; chấm san hô ở giữa là khách hàng được nhìn thấy, được xác nhận.
  *
- * Màu đọc token --logo-* ở index.css. Bản in PDF truyền `colors` bằng hex
- * (REPORT trong report_kit.jsx) vì html2canvas chụp SVG không kèm biến CSS.
+ * Vẽ trên lưới 16 nên ở 16 px (favicon) mỗi nét rơi đúng điểm ảnh. Không
+ * nền, không vòng tròn, không gradient. Nét theo var(--text-hi) của nền
+ * đang đứng (khối mực đổi token cục bộ là đủ); chấm đọc --logo-dot.
+ * Bản in PDF truyền `colors` bằng hex (REPORT trong report_kit.jsx) vì
+ * html2canvas chụp SVG không kèm biến CSS. Bản SVG gốc và bản một màu:
+ * .hallmark/logo/vong-2/A2-*.svg.
  */
-const TOKEN_COLORS = { from: 'var(--logo-from)', to: 'var(--logo-to)', ink: 'var(--logo-ink)', dot: 'var(--logo-dot)' };
+const TOKEN_COLORS = { ink: 'var(--text-hi)', dot: 'var(--logo-dot)' };
 
-export const LogoMark = ({ size = 40, title = 'Customer Radar', colors = TOKEN_COLORS }) => {
-  const id = useId().replace(/:/g, '');
-  return (
-    <svg width={size} height={size} viewBox="0 0 48 48" role="img" aria-label={title} className="block shrink-0">
-      <defs>
-        <linearGradient id={`lg-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" style={{ stopColor: colors.from }} />
-          <stop offset="1" style={{ stopColor: colors.to }} />
-        </linearGradient>
-        <radialGradient id={`sweep-${id}`} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0.2" stopOpacity="0" style={{ stopColor: colors.ink }} />
-          <stop offset="1" stopOpacity="0.32" style={{ stopColor: colors.ink }} />
-        </radialGradient>
-      </defs>
-      <rect width="48" height="48" rx="13" fill={`url(#lg-${id})`} />
-      <rect x="0.5" y="0.5" width="47" height="47" rx="12.5" fill="none" strokeOpacity="0.28" style={{ stroke: colors.ink }} />
-      <g fill="none" strokeLinecap="round" style={{ stroke: colors.ink }}>
-        <circle cx="24" cy="25" r="14" strokeOpacity="0.45" strokeWidth="1.6" />
-        <circle cx="24" cy="25" r="9" strokeOpacity="0.7" strokeWidth="1.6" />
-        <circle cx="24" cy="25" r="4" strokeWidth="1.8" />
-      </g>
-      <path d="M24 25 L24 11 A14 14 0 0 1 36.1 18 Z" fill={`url(#sweep-${id})`} />
-      <path d="M24 25 L34.5 15" strokeWidth="2" strokeLinecap="round" style={{ stroke: colors.ink }} />
-      <circle cx="31.5" cy="31" r="2.6" strokeWidth="1.2" style={{ fill: colors.dot, stroke: colors.ink }} />
-    </svg>
-  );
-};
+export const LogoMark = ({ size = 28, title = 'Customer Radar', colors = TOKEN_COLORS }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" role="img" aria-label={title} className="block shrink-0">
+    <path
+      d="M2.5 6.5V13.5H6.5 M13.5 9.5V2.5H9.5"
+      fill="none"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="miter"
+      style={{ stroke: colors.ink }}
+    />
+    <circle cx="8" cy="8" r="2" style={{ fill: colors.dot }} />
+  </svg>
+);
 
-/** Chữ ký: "Customer" + "Radar" màu nhấn, cùng một font */
+/** Chữ ký: "Customer Radar" một màu, cùng màu nét của dấu */
 export const LogoWordmark = ({ size = 'md', showTagline = true, tagline = 'Radar khách hàng' }) => {
   const scale = { sm: 1, md: 1.3, lg: 1.9 }[size] || 1.3;
   return (
     <div className="flex min-w-0 flex-col" style={{ gap: 1 }}>
-      <div className="whitespace-nowrap text-ink-hi" style={{ fontSize: `${1 * scale}rem`, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-        <span className="font-semibold">Customer</span>
-        <span className="ml-1 font-semibold text-accent">Radar</span>
+      <div className="whitespace-nowrap font-semibold text-ink-hi" style={{ fontSize: `${1 * scale}rem`, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+        Customer Radar
       </div>
       {showTagline && (
         <div
@@ -64,9 +52,9 @@ export const LogoWordmark = ({ size = 'md', showTagline = true, tagline = 'Radar
 };
 
 export const Logo = ({ size = 'md', showTagline = true, tagline, markSize }) => {
-  const defaultMark = { sm: 34, md: 42, lg: 58 }[size] || 42;
+  const defaultMark = { sm: 24, md: 30, lg: 44 }[size] || 30;
   return (
-    <div className="flex min-w-0 items-center" style={{ gap: size === 'sm' ? '0.65rem' : '0.85rem' }}>
+    <div className="flex min-w-0 items-center" style={{ gap: size === 'sm' ? '0.55rem' : '0.7rem' }}>
       <LogoMark size={markSize || defaultMark} />
       <LogoWordmark size={size} showTagline={showTagline} tagline={tagline} />
     </div>

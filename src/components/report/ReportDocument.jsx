@@ -46,7 +46,7 @@ function Cover({ meta }) {
     <div className="rpt-cover">
       <div className="rpt-band">
         <div className="rpt-band-brand">
-          <LogoMark size={30} colors={{ from: REPORT.logoFrom, to: REPORT.logoTo, ink: REPORT.logoInk, dot: REPORT.logoDot }} />
+          <LogoMark size={24} colors={{ ink: REPORT.logoInk, dot: REPORT.logoDot }} />
           <span>Customer Radar</span>
         </div>
         <div>

@@ -229,7 +229,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
       >
         {/* Thương hiệu + thu gọn */}
         <div className={`flex shrink-0 items-center pt-4 pb-3 ${collapsed ? 'flex-col gap-3 px-0' : 'justify-between pr-3 pl-4'}`}>
-          {collapsed ? <LogoMark size={36} /> : <Logo size="sm" showTagline={false} />}
+          {collapsed ? <LogoMark size={28} /> : <Logo size="sm" showTagline={false} />}
           <button
             type="button"
             onClick={isOpen ? onClose : onToggleCollapse}

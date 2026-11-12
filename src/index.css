@@ -317,10 +317,9 @@
    Khai báo trên mọi khối có data-theme để giá trị tính lại theo tầng 2 của
    đúng khối đó. */
 :root, [data-theme] {
-  /* Logo: giữ một màu ở cả hai chế độ (F1-03 sẽ vẽ lại dấu logo) */
-  --logo-from: var(--polo-57);
-  --logo-to:   var(--polo-45);
-  --logo-ink:  var(--white);
+  /* Logo "khung ngắm" (F1-03, A2): nét theo màu chữ đậm của nền đang đứng
+     (navy trên nền sáng, trắng trên nền tối và khối mực); chấm san hô cố định.
+     Component đọc thẳng var(--text-hi) để khối mực đổi token cục bộ là đủ. */
   --logo-dot:  var(--coral);
 
   /* Thanh bên áp sát mép */
