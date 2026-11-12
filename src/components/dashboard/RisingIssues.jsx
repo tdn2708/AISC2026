@@ -92,7 +92,7 @@ const RisingIssues = ({ alerts = [] }) => {
       )}
 
       {driftCount > 0 && (
-        <p className="mt-auto border-t border-line/40 pt-3 text-xs text-ink-lo">
+        <p className="mt-auto border-t border-line-soft pt-3 text-xs text-ink-lo">
           Thêm <span className="tabular-nums text-ink-mid">{driftCount}</span> vấn đề đang tăng chậm nhưng đều, xem ở trang Cảnh báo.
         </p>
       )}

@@ -16,7 +16,7 @@ import MotionDemo from './motion/MotionDemo';
  *
  * F1-05: mỗi control có bảng tám trạng thái (mặc định, rê, nhấn, focus bàn phím, tắt, đang tải,
  * lỗi, đã chọn). Rê, nhấn, focus được ép bằng lớp kit-hover, kit-active, kit-focus trên ô bọc
- * (styles/tailwind.css, index.css), nên xem được không cần chuột. "—" là trạng thái không áp dụng.
+ * (styles/tailwind.css, index.css), nên xem được không cần chuột.
  */
 
 const Cell = ({ title, note, children, className = '' }) => (
@@ -39,7 +39,7 @@ const STATES = [
   ['selected', 'Đã chọn']
 ];
 const FORCE = { hover: 'kit-hover', active: 'kit-active kit-hover', focus: 'kit-focus' };
-const NA = <span className="text-xs text-ink-lo" title="Không áp dụng">—</span>;
+const NA = <span className="text-xs text-ink-lo">Không áp dụng</span>;
 
 /** Bảng trạng thái xoay ngang: mỗi hàng một trạng thái, mỗi cột một control (cho control rộng như ô nhập) */
 const StateColumns = ({ rows, label }) => (
@@ -365,7 +365,7 @@ const UiKit = () => {
         </Cell>
 
         <Cell title="Trạng thái rỗng" className="lg:col-span-12">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="flex flex-col divide-y divide-line-soft">
             <EmptyState compact variant="calm" title="Mọi thứ ổn định" description="Không có cảnh báo nào." />
             <EmptyState compact variant="empty" title="Chưa có dữ liệu" description="Kết nối nguồn để bắt đầu." />
             <EmptyState compact variant="error" title="Không tải được" description="Kiểm tra kết nối máy chủ." />

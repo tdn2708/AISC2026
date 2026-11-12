@@ -63,7 +63,7 @@ const Login = ({ onLogin }) => {
           <Logo size="md" showTagline={false} />
         </div>
         <div className="max-w-[34rem]">
-          <h1 className="text-hero leading-[1.12] font-semibold tracking-[-0.02em] text-balance">
+          <h1 className="text-cover font-semibold tracking-[-0.02em] text-balance">
             Phản hồi khách hàng, kèm bằng chứng cho từng con số.
           </h1>
           <p className="mt-5 text-base leading-relaxed text-on-strip-mid">

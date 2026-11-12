@@ -42,8 +42,8 @@ const SIZE = {
   md: 'h-10 gap-2 px-4 text-sm',
   lg: 'h-12 gap-2 px-5 text-base'
 };
-/** Nút chữ không có chiều cao cố định: nó nằm trong dòng chữ */
-const LINK_SIZE = { sm: 'gap-1 text-xs', md: 'gap-1 text-sm', lg: 'gap-1.5 text-base' };
+/** Nút chữ: không đệm ngang để thẳng mép với chữ quanh nó, nhưng vẫn cao tối thiểu 32px cho dễ bấm */
+const LINK_SIZE = { sm: 'min-h-8 gap-1 text-xs', md: 'min-h-8 gap-1 text-sm', lg: 'min-h-10 gap-1.5 text-base' };
 
 export const Button = ({
   as: Tag = 'button',

@@ -45,7 +45,7 @@ const SentimentDonut = ({ data = [] }) => {
             ))}
           </ul>
 
-          <p className="mt-auto border-t border-line/40 pt-3 text-xs leading-relaxed text-ink-mid">
+          <p className="mt-auto border-t border-line-soft pt-3 text-xs leading-relaxed text-ink-mid">
             Cứ 10 phản hồi thì có <span className="font-semibold text-ink-hi">{Math.round((negShare ?? 0) * 10)}</span> phản hồi tiêu cực.
           </p>
         </>

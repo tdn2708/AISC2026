@@ -266,7 +266,7 @@ const RootCauses = () => {
               <PanelHeader title={`Khiếu nại mỗi ngày, ${DAYS} ngày gần nhất`} />
               <div className="h-[230px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={series} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
+                  <AreaChart data={series} margin={{ top: 6, right: 6, left: -6, bottom: 0 }}>
                     <defs>
                       <linearGradient id="rc-fill" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0" stopColor="var(--viz-neg)" stopOpacity={0.22} />

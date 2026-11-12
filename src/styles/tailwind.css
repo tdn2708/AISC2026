@@ -110,8 +110,8 @@
   --text-metric--line-height: 1;
   /* Ngoại lệ có chủ đích, ngoài thang trong app: tiêu đề khối mực ở đăng nhập và trang
      giới thiệu công khai. Không dùng trong các trang của app. */
-  --text-hero: 2.6rem;
-  --text-hero--line-height: 1.12;
+  --text-cover: 2.6rem;
+  --text-cover--line-height: 1.12;
 }
 
 /* Chuyển động: giá trị ở index.css (--motion-*, --ease-*). Ở đây chỉ đặt

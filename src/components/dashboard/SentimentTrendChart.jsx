@@ -77,7 +77,7 @@ const SentimentTrendChart = ({ data = [] }) => {
       ) : view === 'chart' ? (
         <div className="h-[280px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 26, right: 12, left: -12, bottom: 0 }}>
+            <LineChart data={data} margin={{ top: 26, right: 12, left: -4, bottom: 0 }}>
               <CartesianGrid stroke="var(--viz-grid)" vertical={false} />
               <XAxis dataKey="name" tick={AXIS_TICK} axisLine={{ stroke: 'var(--border)' }} tickLine={false} dy={6} minTickGap={16} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={44} allowDecimals={false} tickFormatter={fmtInt} />
@@ -124,7 +124,7 @@ const SentimentTrendChart = ({ data = [] }) => {
             </thead>
             <tbody className="tabular-nums text-ink-mid">
               {data.map((d) => (
-                <tr key={d.name} className="border-t border-line/40">
+                <tr key={d.name} className="border-t border-line-soft">
                   <td className="py-1.5 pr-4">{d.name}</td>
                   {SERIES.map((s) => (
                     <td key={s.key} className="py-1.5 pr-4 text-right text-ink-hi">{fmtInt(d[s.key])}</td>

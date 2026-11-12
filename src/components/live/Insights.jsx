@@ -66,7 +66,7 @@ export const Rhythm = ({ stats }) => {
       {series.length ? (
         <div className="h-40">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={series} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
+            <BarChart data={series} margin={{ top: 4, right: 4, bottom: 0, left: -12 }}>
               <CartesianGrid vertical={false} stroke="var(--border-soft)" />
               <XAxis dataKey="t" tickFormatter={hhmm} tick={AXIS_TICK} tickLine={false} axisLine={false} minTickGap={24} />
               <YAxis allowDecimals={false} tick={AXIS_TICK} tickLine={false} axisLine={false} />
