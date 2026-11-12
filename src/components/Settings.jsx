@@ -90,7 +90,7 @@ const Settings = () => {
       />
 
       <div className="grid items-start gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <nav className="flex gap-1 overflow-x-auto lg:sticky lg:top-20 lg:flex-col" aria-label="Mục cài đặt">
+        <nav className="flex gap-1 overflow-x-auto lg:sticky lg:top-[var(--topbar-h,5rem)] lg:flex-col" aria-label="Mục cài đặt">
           {TABS.map((t) => (
             <button
               key={t.id}
