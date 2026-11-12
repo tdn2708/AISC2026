@@ -317,10 +317,10 @@ const Reports = () => {
           }
         ].map((c) => (
           <GlassPanel key={c.type} tone="strong" className="flex flex-col p-6">
-            <h3 className="flex items-center gap-2 text-heading font-semibold text-ink-hi">
+            <h2 className="flex items-center gap-2 text-heading font-semibold text-ink-hi">
               <c.icon size={18} className="shrink-0 text-ink-lo" aria-hidden="true" />
               {c.title}
-            </h3>
+            </h2>
             <p className="mt-0.5 text-sm text-ink-lo">{c.ext}</p>
             <p className="mt-4 flex-1 text-sm leading-relaxed text-ink-mid">{c.text}</p>
             <Button className="mt-5 self-start" variant={c.secondary ? 'secondary' : 'primary'} icon={Download} loading={c.loading} disabled={busy} onClick={() => openExport(c.type)}>
@@ -333,7 +333,7 @@ const Reports = () => {
       <GlassPanel tone="strong" className="overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-4">
           <div>
-            <h3 className="text-base font-semibold text-ink-hi">Lịch sử báo cáo</h3>
+            <h2 className="text-base font-semibold text-ink-hi">Lịch sử báo cáo</h2>
             <p className="text-xs text-ink-lo">Lưu trên máy này</p>
           </div>
           <div className="flex items-center gap-2">

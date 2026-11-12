@@ -229,6 +229,7 @@
   --sev-high-dim: rgb(168 77 6 / 0.12);
   --sev-ok-dim:   rgb(29 106 70 / 0.12);
   --on-crit:  var(--white);                  /* số đếm trên huy hiệu đỏ đặc */
+  --heat-span: 52%;                          /* bảng nhiệt: độ đậm thêm của ô đậm nhất (nền sáng, chữ mực: đủ 4,5:1) */
 
   /* Biểu đồ — cảm xúc là thang phân kỳ đỏ, xám, xanh; tiêu cực cùng màu "xấu",
      tách hẳn khỏi san hô */
@@ -299,6 +300,7 @@
   --sev-high-dim: rgb(240 168 96 / 0.13);
   --sev-ok-dim:   rgb(127 203 158 / 0.13);
   --on-crit:  var(--polo-23);
+  --heat-span: 26%;                          /* tối: ô đậm nhất vẫn đủ tối để chữ sáng đạt 4,5:1; quá mức này nền vào vùng giữa mà cả chữ sáng lẫn tối đều trượt */
 
   --viz-neg:  var(--red-79);
   --viz-neu:  var(--navy-78);
@@ -557,23 +559,6 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
   justify-content: center;
   white-space: nowrap;
 }
-.badge-critical { background: var(--sev-crit-dim); color: var(--sev-crit); }
-.badge-high     { background: var(--sev-high-dim); color: var(--sev-high); }
-.badge-medium   { background: var(--raised);       color: var(--sev-med); }
-.badge-low      { background: var(--sev-ok-dim);   color: var(--sev-ok); }
-
-.cat-badge {
-  padding: var(--space-2xs) var(--space-xs);
-  border-radius: var(--r-ctrl);
-  font-size: var(--fs-xs);
-  font-weight: 500;
-  background: var(--raised);
-  color: var(--text-mid);
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-}
-
 /* ---------- Bảng dữ liệu ---------- */
 .data-table { width: 100%; border-collapse: collapse; text-align: left; }
 :where(.data-table) th {
@@ -659,20 +644,6 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
 .fb-empty { text-align: center; padding: var(--space-xl) var(--space-md) !important; color: var(--text-lo) !important; }
 /* .fb-pager, .fb-page-btn: bỏ ở F1-05, mọi bảng dùng ui/Pager */
 
-/* ---------- Lưới cũ (Lab còn dùng) ---------- */
-.dashboard-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--space-md); margin-bottom: var(--space-md); }
-.col-span-1  { grid-column: span 1; }
-.col-span-2  { grid-column: span 2; }
-.col-span-3  { grid-column: span 3; }
-.col-span-4  { grid-column: span 4; }
-.col-span-5  { grid-column: span 5; }
-.col-span-6  { grid-column: span 6; }
-.col-span-7  { grid-column: span 7; }
-.col-span-8  { grid-column: span 8; }
-.col-span-9  { grid-column: span 9; }
-.col-span-10 { grid-column: span 10; }
-.col-span-11 { grid-column: span 11; }
-.col-span-12 { grid-column: span 12; }
 
 /* ---------- Thanh cuộn mảnh, chỉ hiện khi rê chuột ---------- */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -724,9 +695,8 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
 }
 
 @media (max-width: 768px) {
-  .dashboard-grid { display: flex; flex-direction: column; }
-  /* Chọn theo tiền tố: lớp col-span nào cũng chiếm trọn hàng trên điện thoại */
-  [class*="col-span-"] { grid-column: span 12; width: 100%; }
+  /* Đã bỏ [class*="col-span-"] { grid-column: span 12 }: nó bắt cả lg:col-span-2 của Tailwind và đẻ 12 cột ngầm
+     ở màn hẹp (nguyên nhân B2: panel /trust rộng 94 px). Chỗ nào cần trọn hàng thì dùng col-span-full. */
 
   .main-content, .main-content.is-collapsed {
     margin-left: 0;

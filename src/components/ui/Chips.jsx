@@ -53,7 +53,7 @@ export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
           onClick={() => onChange(o.value)}
           disabled={o.disabled}
           className={`inline-flex shrink-0 items-center gap-1.5 rounded-[calc(var(--r-ctrl)-2px)] border font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-micro ease-out disabled:cursor-not-allowed disabled:opacity-55 ${
-            size === 'sm' ? 'h-7 px-3 text-xs' : 'h-9 px-4 text-sm'
+            size === 'sm' ? 'h-8 px-3 text-xs' : 'h-9 px-4 text-sm'
           } ${active ? SELECTED : 'border-transparent text-ink-mid hover:bg-raised hover:text-ink-hi'}`}
         >
           {o.icon && <o.icon size={14} aria-hidden="true" />}
@@ -76,7 +76,7 @@ export const Tabs = ({ tabs, value, onChange, className = '' }) => (
           role="tab"
           aria-selected={active}
           onClick={() => onChange(t.value)}
-          className={`relative inline-flex shrink-0 items-center gap-2 pb-3 text-sm whitespace-nowrap transition-colors duration-micro ease-out ${
+          className={`relative inline-flex min-h-8 shrink-0 items-center gap-2 pt-1 pb-3 text-sm whitespace-nowrap transition-colors duration-micro ease-out ${
             active ? 'font-semibold text-accent-hi' : 'text-ink-mid hover:text-ink-hi'
           }`}
         >
