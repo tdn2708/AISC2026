@@ -40,9 +40,6 @@ export const fmtRelative = (ts) => {
   return day < 30 ? `${day} ngày trước` : fmtDate(d);
 };
 
-export const initials = (name = '') =>
-  name.trim().split(/[\s._-]+/).filter(Boolean).slice(-2).map((w) => w[0]).join('').toUpperCase() || '?';
-
 const nf = new Intl.NumberFormat('vi-VN');
 
 export const fmtInt = (n) => nf.format(n ?? 0);
