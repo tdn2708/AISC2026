@@ -398,6 +398,9 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
   .lp-plane { transform: none !important; }
   .lp-navlink { transition: none; }
   .lp-peak__stage { min-height: 0; padding-block: var(--lp-section); }
+  /* Engine để chữ dưới màn hình ẩn (opacity 0) tới lúc cuộn tới; giảm chuyển động thì hiện ngay,
+     để tìm trong trang, in và ảnh chụp toàn trang đều thấy chữ. Không sửa engine. */
+  .lp [data-sc-in], .lp [data-sc-stagger] > * { opacity: 1; transform: none; transition: none; }
 }
 .lp.is-reduced .lp-peak__stage { min-height: 0; padding-block: var(--lp-section); }
 /* Giảm chuyển động: ba câu của đỉnh không đổi theo cuộn nữa, xếp lần lượt */
