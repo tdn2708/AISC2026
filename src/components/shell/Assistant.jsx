@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUp, RotateCcw } from 'lucide-react';
@@ -6,6 +6,8 @@ import { Drawer, EvidenceSwatch, Button, IconButton, fieldClass } from '../ui';
 import { fmtInt, fmtDate } from '../../lib/format';
 import { readStorage } from '../../lib/storage';
 import { ASK_EVENT } from '../../lib/assistant';
+import { Stagger, useReducedMotion, prefersReducedMotion, MOTION, EASE } from '../motion';
+import { SkeletonBlock, SkeletonLines } from '../ui/Skeleton';
 
 /**
  * TRỢ LÝ "HỎI DỮ LIỆU"
@@ -18,7 +20,17 @@ import { ASK_EVENT } from '../../lib/assistant';
  *
  * Lịch sử giữ trong sessionStorage theo kho dữ liệu: khung trang dựng lại
  * mỗi lần chuyển trang, nhưng cuộc hỏi đáp thì không được mất.
+ *
+ * Chuyển động (F4-03): ngăn kéo trượt vào từ mép phải (transform,
+ * --motion-medium, ease-out) và trượt ra nhanh hơn (70%, ease-in). Câu trả
+ * lời MỚI hiện theo đoạn: từng đoạn, rồi số liệu, dẫn chứng, nguồn, lệch
+ * nhịp nhẹ bằng opacity + dịch 4px (Stagger). Không giả hiệu ứng gõ chữ.
+ * Câu trả lời cũ (mở lại ngăn kéo, tải lại trang) hiện ngay. Giảm chuyển
+ * động: không trượt, không lệch nhịp.
  */
+
+// Câu trả lời về trong khoảng này (tính từ lúc nhận) thì coi là mới, được hiện theo đoạn
+const FRESH_MS = 3000;
 
 const PROVIDER = {
   gemini: 'Gemini diễn đạt lại từ số liệu hệ thống tính',
@@ -69,7 +81,8 @@ const Inline = ({ text, onCite, maxCite = 0 }) => {
   });
 };
 
-const Markdown = ({ text, onCite, maxCite = 0 }) => {
+/** Các khối (đoạn, danh sách, tiêu đề) của một câu trả lời, để hiện lệch nhịp theo đoạn */
+const markdownBlocks = ({ text, onCite, maxCite = 0 }) => {
   const blocks = [];
   let list = null;
   String(text || '').split('\n').forEach((raw, i) => {
@@ -93,25 +106,32 @@ const Markdown = ({ text, onCite, maxCite = 0 }) => {
     );
   });
   if (list) blocks.push(<ul key="lend" className="my-1.5 list-disc space-y-1 pl-5">{list}</ul>);
-  return <div className="text-sm leading-relaxed text-ink-mid">{blocks}</div>;
+  return blocks;
 };
 
 const Answer = ({ msg, index, onOpenFeedback }) => {
   const [focus, setFocus] = useState(null);
   const listRef = useRef(null);
+  // Mới về thì hiện theo đoạn: đổi runKey ngay trong layout effect (trước khi vẽ)
+  // để Stagger giấu các đoạn rồi cho hiện lần lượt, không nháy
+  const [fresh] = useState(() => Boolean(msg.at) && Date.now() - msg.at < FRESH_MS);
+  const [runKey, setRunKey] = useState(0);
+  useLayoutEffect(() => {
+    if (fresh) setRunKey(1);
+  }, [fresh]);
   const cite = (n) => {
     setFocus(n);
-    listRef.current?.querySelector(`[data-cite="${n}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    listRef.current?.querySelector(`[data-cite="${n}"]`)?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
   };
 
   if (msg.error) return <p className="rounded-ctrl bg-crit/8 px-3 py-2.5 text-sm text-crit">{msg.error}</p>;
 
   return (
-    <div className="flex flex-col gap-3">
-      <Markdown text={msg.text} onCite={cite} maxCite={Math.min(5, msg.evidence?.length || 0)} />
+    <Stagger active={fresh} runKey={runKey} step={70} className="text-sm leading-relaxed text-ink-mid">
+      {markdownBlocks({ text: msg.text, onCite: cite, maxCite: Math.min(5, msg.evidence?.length || 0) })}
 
       {msg.facts?.length > 0 && (
-        <details className="rounded-ctrl border border-line-soft">
+        <details className="mt-3 rounded-ctrl border border-line-soft">
           <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-ink-mid hover:text-ink-hi">
             Số liệu hệ thống đã tính
           </summary>
@@ -127,7 +147,7 @@ const Answer = ({ msg, index, onOpenFeedback }) => {
       )}
 
       {msg.evidence?.length > 0 && (
-        <div>
+        <div className="mt-3">
           <p className="mb-1.5 text-xs font-semibold text-ink-mid">Dẫn chứng</p>
           {/* Đánh số vì câu trả lời trích dẫn theo [n] */}
           <ol ref={listRef} className="flex list-none flex-col gap-1.5">
@@ -163,11 +183,11 @@ const Answer = ({ msg, index, onOpenFeedback }) => {
       )}
 
       {msg.meta && (
-        <p className="text-xs leading-relaxed text-ink-lo">
+        <p className="mt-3 text-xs leading-relaxed text-ink-lo">
           {PROVIDER[msg.meta.provider] || PROVIDER.deterministic}. Dựa trên {fmtInt(msg.meta.validFeedbacks)} phản hồi được tính, cùng số liệu với Tổng quan.
         </p>
       )}
-    </div>
+    </Stagger>
   );
 };
 
@@ -179,6 +199,9 @@ const Assistant = () => {
   const [busy, setBusy] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const endRef = useRef(null);
+  const bodyRef = useRef(null);
+  const closingRef = useRef(false);
+  const reduced = useReducedMotion();
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
 
@@ -207,10 +230,10 @@ const Assistant = () => {
           product: readStorage('productFilter', 'All')
         }
       });
-      setMessages((m) => [...m, { role: 'assistant', text: data.text, facts: data.facts, evidence: data.evidence, meta: data.meta }]);
+      setMessages((m) => [...m, { role: 'assistant', text: data.text, facts: data.facts, evidence: data.evidence, meta: data.meta, at: Date.now() }]);
     } catch (e) {
       const msg = e.response?.data?.message || 'Không kết nối được máy chủ phân tích. Thử lại sau ít phút.';
-      setMessages((m) => [...m, { role: 'assistant', error: msg }]);
+      setMessages((m) => [...m, { role: 'assistant', error: msg, at: Date.now() }]);
     } finally {
       setBusy(false);
     }
@@ -230,8 +253,40 @@ const Assistant = () => {
     axios.get('/chat/suggestions').then((r) => setSuggestions(r.data?.suggestions || [])).catch(() => {});
   }, [open, suggestions.length]);
 
+  // Ngăn kéo trượt vào khi mở. Drawer dùng chung mở bằng pop-in; hiệu ứng
+  // Web Animations ở đây đè lên transform của nó (thứ tự hợp thành cao hơn).
+  const panelOf = () => bodyRef.current?.closest('[role="dialog"]');
+  useLayoutEffect(() => {
+    if (!open || reduced) return undefined;
+    const panel = panelOf();
+    if (!panel || typeof panel.animate !== 'function') return undefined;
+    const a = panel.animate(
+      [{ transform: 'translateX(calc(100% + 12px))' }, { transform: 'none' }],
+      { duration: MOTION.medium, easing: EASE.out }
+    );
+    return () => a.cancel();
+  }, [open, reduced]);
+
+  // Đóng: trượt ra rồi mới gỡ khỏi DOM; lớp phủ mờ đi cùng lúc
+  const close = useCallback(() => {
+    const panel = panelOf();
+    if (reduced || !panel || typeof panel.animate !== 'function') {
+      setOpen(false);
+      return;
+    }
+    if (closingRef.current) return;
+    closingRef.current = true;
+    const opts = { duration: Math.round(MOTION.medium * 0.7), easing: EASE.in, fill: 'forwards' };
+    const out = panel.animate([{ transform: 'none' }, { transform: 'translateX(calc(100% + 12px))' }], opts);
+    panel.previousElementSibling?.animate([{ opacity: 1 }, { opacity: 0 }], opts);
+    out.finished.catch(() => {}).finally(() => {
+      closingRef.current = false;
+      setOpen(false);
+    });
+  }, [reduced]);
+
   const openFeedback = (text) => {
-    setOpen(false);
+    close();
     navigate(`/feedbacks?q=${encodeURIComponent(String(text).slice(0, 40))}`);
   };
 
@@ -246,7 +301,7 @@ const Assistant = () => {
   return (
     <Drawer
       open={open}
-      onClose={() => setOpen(false)}
+      onClose={close}
       title="Hỏi dữ liệu"
       subtitle="Trả lời bằng chính số liệu trên dashboard, kèm dẫn chứng"
       width={520}
@@ -273,6 +328,7 @@ const Assistant = () => {
         </div>
       }
     >
+      <div ref={bodyRef}>
       {messages.length === 0 ? (
         <div>
           <p className="text-sm leading-relaxed text-ink-mid">
@@ -304,16 +360,15 @@ const Assistant = () => {
             )
           )}
           {busy && (
-            <div className="flex flex-col gap-2" aria-live="polite">
-              <span className="sr-only">Đang tính câu trả lời</span>
-              <div className="h-3 w-3/4 animate-pulse rounded-ctrl bg-raised" />
-              <div className="h-3 w-2/3 animate-pulse rounded-ctrl bg-raised" />
-              <div className="h-3 w-1/2 animate-pulse rounded-ctrl bg-raised" />
-            </div>
+            <SkeletonBlock label="Đang tính câu trả lời" className="flex max-w-[80%] flex-col gap-4">
+              <SkeletonLines lines={3} />
+              <SkeletonLines lines={2} />
+            </SkeletonBlock>
           )}
           <div ref={endRef} />
         </div>
       )}
+      </div>
     </Drawer>
   );
 };
