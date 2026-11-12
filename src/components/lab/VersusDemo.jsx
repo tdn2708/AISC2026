@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
   Swords, Play, Loader2, Check, X, MessageSquareText, Building2, ShieldCheck, Lock, Layers, Target, Info, Sparkles
 } from 'lucide-react';
-import { GlassPanel, PanelHeader, Badge, SentimentFace, Chip, Button } from '../ui';
+import { GlassPanel, PanelHeader, Badge, SentimentFace, Chip, Button, fieldClass } from '../ui';
 
 /** Vòng xoay trong nút: nút không bị khóa khi đang chạy (xem chú thích ở form) */
 const Spinner = (props) => <Loader2 {...props} className="keep-motion animate-spin" />;
@@ -169,7 +169,7 @@ const VersusDemo = () => {
             rows={2}
             aria-label="Câu phản hồi cần phân tích"
             placeholder="Gõ một phản hồi bất kỳ, kể cả teencode…"
-            className="min-h-[3.25rem] w-full resize-y rounded-lg border border-line bg-surface px-3.5 py-3 text-base leading-relaxed text-ink-hi outline-none focus:border-accent"
+            className={`min-h-12 resize-y px-3 py-2.5 text-base! leading-relaxed ${fieldClass({ multiline: true })}`}
           />
           {/* Không khóa nút khi đang chạy: câu mặc định chạy lúc mở trang có thể
               chờ máy chủ vài giây, và cú bấm của người xem trong lúc đó từng bị

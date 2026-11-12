@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Copy, Check, Sparkles, X, TriangleAlert, Undo2 } from 'lucide-react';
-import { GlassPanel, PanelHeader, Button, Badge, EmptyState, Segmented } from '../ui';
+import { GlassPanel, PanelHeader, Button, Badge, EmptyState, Segmented, fieldClass } from '../ui';
 import { fmtInt, fmtRelative } from '../../lib/format';
 import { clock } from './shared';
 
@@ -85,7 +85,7 @@ const QueueCard = ({ g, sessionId, onResolved }) => {
           rows={3}
           value={text}
           onChange={(e) => { setText(e.target.value); setEdited(true); }}
-          className="w-full resize-y rounded-md border border-line bg-surface px-3 py-2 font-sans text-sm leading-relaxed text-ink-hi outline-none focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-dim)]"
+          className={`resize-y px-3 py-2 leading-relaxed ${fieldClass({ multiline: true })}`}
         />
       </label>
       {g.suggestion && !g.suggestion.grounded && !edited && (

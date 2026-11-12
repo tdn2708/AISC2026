@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Phone, Download } from 'lucide-react';
-import { GlassPanel, PanelHeader, Segmented, EmptyState, Button } from '../ui';
+import { GlassPanel, PanelHeader, Segmented, EmptyState, Button, fieldClass } from '../ui';
 import { fmtInt } from '../../lib/format';
 import { clock, variantText } from './shared';
 import { liveUrl } from '../../hooks/useLiveSession';
@@ -77,7 +77,7 @@ const Orders = ({ stats, sessionId, onChanged }) => {
                       aria-label="Trạng thái đơn"
                       value={o.status}
                       onChange={(e) => setStatus(o, e.target.value)}
-                      className="h-8 rounded-md border border-line bg-surface px-2 text-xs text-ink-hi"
+                      className={`w-auto! px-2 text-xs! ${fieldClass({ size: 'sm' })}`}
                     >
                       {STATUS_OPTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                     </select>

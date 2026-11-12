@@ -3,7 +3,7 @@ import axios from 'axios';
 import { analyzeText, useBrowserModelStatus } from '../../lib/analyze';
 import { browserModelSupported } from '../../lib/visobertBrowser';
 import ModelStatus from './ModelStatus';
-import { GlassPanel, Button, TextArea } from '../ui';
+import { GlassPanel, Button, TextArea, SELECTED } from '../ui';
 import {
   MessageSquare, EyeOff, Languages, ShieldCheck, Puzzle, Brain, Search, ClipboardCheck,
   Play, Pause, FastForward, CheckCircle2, XCircle, AlertTriangle, Cpu, Zap
@@ -356,7 +356,7 @@ function StepExplain({ t }) {
               type="button"
               aria-pressed={task === k}
               onClick={() => setTask(k)}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${task === k ? 'border-accent bg-accent-dim text-accent-hi' : 'border-line text-ink-mid hover:border-ink-lo'}`}
+              className={`inline-flex h-8 items-center rounded-ctrl border px-3 text-xs font-medium transition-[background-color,border-color,color] duration-micro ease-out ${task === k ? SELECTED : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'}`}
             >
               {label}
             </button>
@@ -760,7 +760,7 @@ export default function PipelineDemo() {
                   type="button"
                   disabled={!on}
                   onClick={() => stepRefs.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs transition-colors ${on ? 'border-accent bg-accent-dim text-accent-hi' : 'border-line bg-surface text-ink-lo'}`}
+                  className={`flex h-8 items-center gap-2 rounded-ctrl border px-3 text-xs transition-[background-color,border-color,color] duration-micro ease-out disabled:cursor-not-allowed ${on ? `${SELECTED} hover:bg-accent/20` : 'border-line bg-surface text-ink-lo'}`}
                 >
                   <span className="font-mono font-semibold">{i + 1}</span>
                   <span className="whitespace-nowrap">{s.title}</span>

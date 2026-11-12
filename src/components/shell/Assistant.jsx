@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUp, RotateCcw } from 'lucide-react';
-import { Drawer, EvidenceSwatch, Button, IconButton } from '../ui';
+import { Drawer, EvidenceSwatch, Button, IconButton, fieldClass } from '../ui';
 import { fmtInt, fmtDate } from '../../lib/format';
 import { readStorage } from '../../lib/storage';
 import { ASK_EVENT } from '../../lib/assistant';
@@ -261,7 +261,7 @@ const Assistant = () => {
               rows={2}
               placeholder="Ví dụ: Tuần này khách chê gì nhiều nhất?"
               aria-label="Câu hỏi"
-              className="min-h-[2.75rem] flex-1 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink-hi outline-none placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
+              className={`min-h-11 flex-1 resize-none px-3 py-2 ${fieldClass({ multiline: true })}`}
             />
             <IconButton icon={ArrowUp} variant="primary" size={44} label="Gửi câu hỏi" onClick={() => ask(input)} disabled={busy || !input.trim()} />
           </div>
@@ -285,7 +285,7 @@ const Assistant = () => {
                   <button
                     type="button"
                     onClick={() => ask(s)}
-                    className="w-full rounded-lg border border-line px-3.5 py-2.5 text-left text-sm text-ink-hi transition-colors hover:border-accent hover:bg-accent-dim"
+                    className="w-full rounded-ctrl border border-line px-3.5 py-2.5 text-left text-sm text-ink-hi transition-colors duration-micro ease-out hover:border-accent hover:text-accent-hi"
                   >
                     {s}
                   </button>

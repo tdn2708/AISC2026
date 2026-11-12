@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ArrowLeft, Square, RotateCw, Package, MessageSquarePlus, Download, ChevronDown } from 'lucide-react';
-import { Button, Badge, Drawer, EmptyState, GlassPanel, Tabs } from '../ui';
+import { Button, Badge, Drawer, EmptyState, GlassPanel, Tabs, Modal, Popover, MenuItem, SELECTED } from '../ui';
 import { fmtInt, fmtPct } from '../../lib/format';
 import useLiveSession, { liveUrl } from '../../hooks/useLiveSession';
 import { StatusPill, PLATFORM_LABEL, duration } from './shared';
@@ -41,18 +41,17 @@ const ExportMenu = ({ sessionId }) => {
     <div className="relative">
       <Button size="sm" variant="secondary" icon={Download} iconRight={ChevronDown} onClick={() => setOpen((v) => !v)} aria-expanded={open}>Xuất dữ liệu</Button>
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-72 rounded-xl border border-line bg-surface p-1 shadow-xl" role="menu">
+        <Popover className="absolute right-0 mt-1 w-72" role="menu">
           {[
             ['comments', 'jsonl', 'Bình luận đã chuẩn hóa', 'JSONL, không có tên tài khoản. Dùng cho huấn luyện.'],
             ['qa', 'jsonl', 'Cặp hỏi đáp đã xác nhận', 'JSONL. Câu hỏi của khách và câu shop đã trả lời.'],
             ['orders', 'csv', 'Danh sách chốt đơn', 'CSV để lên đơn sau live.']
           ].map(([kind, format, label, hint]) => (
-            <button key={kind} type="button" role="menuitem" onClick={() => go(kind, format)} className="block w-full rounded-md px-3 py-2 text-left hover:bg-raised">
-              <span className="block text-sm font-medium text-ink-hi">{label}</span>
-              <span className="block text-xs text-ink-lo">{hint}</span>
-            </button>
+            <MenuItem key={kind} role="menuitem" hint={hint} onClick={() => go(kind, format)} className="font-medium">
+              {label}
+            </MenuItem>
           ))}
-        </div>
+        </Popover>
       )}
     </div>
   );
@@ -67,6 +66,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
   const [policy, setPolicy] = useState({});
   const [busy, setBusy] = useState(null);
   const [view, setView] = useState(null);
+  const [confirmStop, setConfirmStop] = useState(false);
 
   // Đồng hồ thời lượng phiên
   useEffect(() => {
@@ -103,7 +103,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
     }
   };
   const stop = async () => {
-    if (!window.confirm('Kết thúc phiên và ngừng thu bình luận?')) return;
+    setConfirmStop(false);
     setBusy('stop');
     try {
       await axios.post(`/live/sessions/${session.id}/stop`);
@@ -153,7 +153,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
           )}
           <Button size="sm" variant="secondary" icon={Package} onClick={openCatalog}>Sản phẩm, chính sách</Button>
           <ExportMenu sessionId={session.id} />
-          {live && <Button size="sm" variant="danger" icon={Square} loading={busy === 'stop'} onClick={stop}>Kết thúc</Button>}
+          {live && <Button size="sm" variant="danger" icon={Square} loading={busy === 'stop'} onClick={() => setConfirmStop(true)}>Kết thúc</Button>}
           {['interrupted', 'error'].includes(session.status) && session.platform !== 'manual' && (
             <Button size="sm" icon={RotateCw} loading={busy === 'resume'} onClick={resume}>Kết nối lại</Button>
           )}
@@ -189,9 +189,9 @@ const LiveConsole = ({ sessionId, onBack }) => {
                 type="button"
                 aria-pressed={active}
                 onClick={() => setCurrent(p.id)}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${active ? 'border-accent bg-accent-dim font-semibold text-accent-hi' : 'border-line-soft bg-surface/60 text-ink-mid hover:border-ink-lo'}`}
+                className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-ctrl border px-2.5 text-xs transition-[background-color,border-color,color] duration-micro ease-out ${active ? `${SELECTED} font-semibold` : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'}`}
               >
-                <span className="font-mono">{p.code}</span>
+                <span className="tabular-nums">{p.code}</span>
                 <span className="max-w-[12rem] truncate">{p.name}</span>
               </button>
             );
@@ -228,6 +228,15 @@ const LiveConsole = ({ sessionId, onBack }) => {
       <Drawer open={drawer === 'input'} onClose={() => setDrawer(null)} title="Nhập bình luận" subtitle={live ? 'Bình luận được phân loại ngay khi gửi' : 'Nhập bổ sung vào phiên đã kết thúc'} width={600}>
         <ManualInput session={session} onDone={live ? undefined : refresh} />
       </Drawer>
+      <Modal
+        open={confirmStop}
+        onClose={() => setConfirmStop(false)}
+        icon={Square}
+        tone="crit"
+        size="sm"
+        title="Kết thúc phiên và ngừng thu bình luận?"
+        footer={<><Button variant="ghost" onClick={() => setConfirmStop(false)}>Hủy</Button><Button variant="danger" icon={Square} onClick={stop}>Kết thúc</Button></>}
+      />
     </div>
   );
 };

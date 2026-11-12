@@ -1,9 +1,10 @@
 export { GlassPanel, PanelHeader, SeverityBadge, MethodHint } from './Glass';
 export { Button, IconButton } from './Button';
-export { TextField, TextArea, Select } from './Field';
+export { TextField, TextArea, Select, fieldClass } from './Field';
 export { Switch, Checkbox, RadioCards } from './Toggle';
-export { Chip, ChipGroup, Segmented, Tabs } from './Chips';
-export { Modal, Drawer } from './Overlay';
+export { Chip, ChipGroup, Segmented, Tabs, SELECTED } from './Chips';
+export { Modal, Drawer, Backdrop } from './Overlay';
+export { Popover, MenuItem, ChartTooltip, OVERLAY_SURFACE } from './Popover';
 export { PageHeader, SectionLabel, Badge, ProgressBar, Stepper, SentimentFace, Toast, Stat } from './Display';
 export { EmptyState } from './EmptyState';
 export { Pager } from './Pager';

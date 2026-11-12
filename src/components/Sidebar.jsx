@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X, Database, Check, ShieldCheck } from 'lucide-react';
+import { Popover, MenuItem } from './ui';
 import Logo, { LogoMark } from './Logo';
 import { NAV } from '../lib/nav';
 import { WORKSPACES, getWorkspace, switchWorkspace } from '../lib/workspace';
@@ -67,10 +68,11 @@ const WorkspacePicker = ({ collapsed }) => {
         )}
       </button>
       {open && (
-        <ul
+        <Popover
+          as="ul"
           role="listbox"
           aria-label="Kho dữ liệu"
-          className="glass-strong absolute top-[calc(100%-2px)] left-3 z-20 w-[248px] list-none rounded-xl p-1.5 animate-pop-in"
+          className="absolute top-[calc(100%-2px)] left-3 w-[248px] list-none"
         >
           {Object.entries(WORKSPACES).map(([key, ws]) => (
             <li key={key} role="option" aria-selected={key === current}>
@@ -80,7 +82,7 @@ const WorkspacePicker = ({ collapsed }) => {
                   setOpen(false);
                   switchWorkspace(key);
                 }}
-                className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left hover:bg-raised"
+                className={`flex w-full items-start gap-2.5 rounded-ctrl px-2.5 py-2 text-left transition-colors duration-micro ease-out ${key === current ? 'bg-accent-dim' : 'hover:bg-raised'}`}
               >
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-ink-hi">{ws.label}</span>
@@ -90,7 +92,7 @@ const WorkspacePicker = ({ collapsed }) => {
               </button>
             </li>
           ))}
-        </ul>
+        </Popover>
       )}
     </div>
   );
@@ -299,28 +301,20 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
         {/* Người dùng */}
         <div className="relative shrink-0 border-t border-line-soft p-3" ref={menuRef}>
           {showMenu && (
-            <div className="glass-strong absolute right-3 bottom-[calc(100%+6px)] left-3 z-10 min-w-[200px] rounded-xl p-1.5 animate-pop-in">
+            <Popover className="absolute right-3 bottom-[calc(100%+6px)] left-3 min-w-[200px]">
               <div className="border-b border-line-soft px-3 py-2">
                 <p className="text-xs text-ink-lo">Đang đăng nhập</p>
                 <p className="truncate text-sm font-medium text-ink-hi">{profile.email}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => { navigate('/settings'); setShowMenu(false); }}
-                className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink-hi hover:bg-raised"
-              >
-                <Settings size={15} className="text-ink-lo" /> Cài đặt
-              </button>
+              <MenuItem icon={Settings} onClick={() => { navigate('/settings'); setShowMenu(false); }} className="mt-1">
+                Cài đặt
+              </MenuItem>
               {onLogout && (
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-crit hover:bg-crit/10"
-                >
-                  <LogOut size={15} /> Đăng xuất
-                </button>
+                <MenuItem icon={LogOut} onClick={onLogout} className="text-crit! hover:bg-crit/10!">
+                  Đăng xuất
+                </MenuItem>
               )}
-            </div>
+            </Popover>
           )}
           <button
             type="button"

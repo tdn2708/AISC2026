@@ -4,7 +4,7 @@ import { Search, X } from 'lucide-react';
 import FilterBar from './FilterBar';
 import FeedbackList, { FeedbackListSkeleton } from './feedback/FeedbackList';
 import FeedbackDetail from './feedback/FeedbackDetail';
-import { PageHeader, GlassPanel, Button, IconButton, Chip, EmptyState, SentimentFace, EvidenceSwatch, Pager } from './ui';
+import { PageHeader, GlassPanel, Button, IconButton, fieldClass, Chip, EmptyState, SentimentFace, EvidenceSwatch, Pager } from './ui';
 import { fmtInt } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
 import useFeedbackPage from '../hooks/useFeedbackPage';
@@ -138,7 +138,7 @@ const Feedbacks = () => {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm nội dung, khách hàng, sản phẩm (gõ không dấu cũng được)"
               aria-label="Tìm phản hồi"
-              className="h-11 w-full rounded-lg border border-line bg-surface pr-12 pl-11 text-sm text-ink-hi outline-none transition-[border-color,box-shadow] placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
+              className={`pr-12 pl-11 ${fieldClass()}`}
             />
             {search && (
               <IconButton icon={X} variant="ghost" size={28} label="Xoá tìm kiếm" onClick={clearSearch} className="absolute! top-1/2 right-3 -translate-y-1/2" />

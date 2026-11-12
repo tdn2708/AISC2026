@@ -13,12 +13,12 @@ export const Switch = ({ checked, onChange, label, disabled, size = 'md' }) => {
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange?.(!checked)}
-      className={`relative inline-flex shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 disabled:opacity-45 ${dims.track} ${
+      className={`relative inline-flex shrink-0 items-center rounded-full p-0.5 transition-colors duration-short ease-out disabled:cursor-not-allowed disabled:opacity-55 ${dims.track} ${
         checked ? 'bg-accent' : 'bg-field'
       }`}
     >
       <span
-        className={`${dims.knob} rounded-full bg-surface shadow-(--shadow-knob) transition-transform duration-200 ${checked ? dims.on : 'translate-x-0'}`}
+        className={`${dims.knob} rounded-full bg-surface shadow-(--shadow-knob) transition-transform duration-short ease-out ${checked ? dims.on : 'translate-x-0'}`}
       />
     </button>
   );
@@ -32,11 +32,11 @@ export const Checkbox = ({ checked, onChange, label, description, disabled }) =>
     aria-checked={checked}
     disabled={disabled}
     onClick={() => onChange?.(!checked)}
-    className="group flex w-full items-start gap-3 text-left disabled:opacity-45"
+    className="group flex w-full items-start gap-3 rounded-ctrl text-left disabled:cursor-not-allowed disabled:opacity-55"
   >
     <span
-      className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border transition-colors ${
-        checked ? 'border-accent bg-accent text-on-accent' : 'border-line bg-surface/70 group-hover:border-ink-lo'
+      className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-xs border transition-colors duration-micro ease-out ${
+        checked ? 'border-accent bg-accent text-on-accent' : 'border-field bg-surface group-hover:border-ink-lo'
       }`}
     >
       {checked && <Check size={13} strokeWidth={3} aria-hidden="true" />}
@@ -60,11 +60,11 @@ export const RadioCards = ({ value, onChange, options, name }) => (
           role="radio"
           aria-checked={active}
           onClick={() => onChange(o.value)}
-          className={`flex items-start gap-3 rounded-lg border p-4 text-left transition-[border-color,background-color,box-shadow] ${
-            active ? 'border-accent bg-accent-dim shadow-[0_0_0_3px_var(--accent-dim)]' : 'border-line bg-surface/50 hover:border-ink-lo'
+          className={`flex items-start gap-3 rounded-ctrl border p-4 text-left transition-[border-color,background-color] duration-micro ease-out ${
+            active ? 'border-accent bg-accent-dim' : 'border-line bg-surface hover:border-ink-lo'
           }`}
         >
-          <span className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2 ${active ? 'border-accent' : 'border-line'}`}>
+          <span className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2 ${active ? 'border-accent' : 'border-field'}`}>
             {active && <span className="size-2.5 rounded-full bg-accent" />}
           </span>
           <span className="min-w-0 flex-1">

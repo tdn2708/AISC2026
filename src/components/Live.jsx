@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useSearchParams } from 'react-router-dom';
 import { Radio, Trash2, ChevronRight } from 'lucide-react';
-import { PageHeader, GlassPanel, PanelHeader, Button, Badge, EmptyState } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Button, IconButton, Badge, EmptyState, Modal } from './ui';
 import { fmtInt, fmtDateTime, fmtPct } from '../lib/format';
 import StartSession from './live/StartSession';
 import LiveConsole from './live/LiveConsole';
@@ -17,6 +17,7 @@ import { StatusPill, PLATFORM_LABEL, duration } from './live/shared';
  */
 
 const SessionList = ({ sessions, onOpen, onDeleted, empty }) => {
+  const [confirm, setConfirm] = useState(null);
   if (!sessions.length) {
     return empty || <EmptyState title="Chưa có phiên live nào" description="Mở phiên đầu tiên để bắt đầu thu bình luận." />;
   }
@@ -49,22 +50,37 @@ const SessionList = ({ sessions, onOpen, onDeleted, empty }) => {
               <ChevronRight size={16} className="shrink-0 text-ink-lo" aria-hidden="true" />
             </button>
             {s.simulated && (
-              <button
-                type="button"
-                aria-label={`Xóa phiên ${s.title}`}
-                onClick={async () => {
-                  if (!window.confirm('Xóa phiên mô phỏng này cùng toàn bộ bình luận của nó?')) return;
-                  await axios.delete(`/live/sessions/${s.id}`);
-                  onDeleted();
-                }}
-                className="grid size-8 shrink-0 place-items-center rounded-md text-ink-lo hover:bg-crit/12 hover:text-crit"
-              >
-                <Trash2 size={15} aria-hidden="true" />
-              </button>
+              <IconButton icon={Trash2} variant="danger" size="sm" label={`Xóa phiên ${s.title}`} onClick={() => setConfirm(s)} />
             )}
           </li>
         );
       })}
+      <Modal
+        open={!!confirm}
+        onClose={() => setConfirm(null)}
+        icon={Trash2}
+        tone="crit"
+        size="sm"
+        title="Xóa phiên mô phỏng này cùng toàn bộ bình luận của nó?"
+        description={confirm?.title}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirm(null)}>Hủy</Button>
+            <Button
+              variant="danger"
+              icon={Trash2}
+              onClick={async () => {
+                const s = confirm;
+                setConfirm(null);
+                await axios.delete(`/live/sessions/${s.id}`);
+                onDeleted();
+              }}
+            >
+              Xóa phiên
+            </Button>
+          </>
+        }
+      />
     </ul>
   );
 };

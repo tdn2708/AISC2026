@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
-import { GlassPanel, PanelHeader } from '../ui';
+import { GlassPanel, PanelHeader, Segmented, ChartTooltip } from '../ui';
 import { fmtInt } from '../../lib/format';
 
 /**
@@ -20,16 +20,15 @@ const AXIS_TICK = { fontSize: 11, fill: 'var(--text-lo)' };
 const TrendTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="glass rounded-xl px-3 py-2 text-xs shadow-2xl">
-      <p className="mb-1 text-ink-lo">Kỳ {label}</p>
+    <ChartTooltip title={`Kỳ ${label}`}>
       {payload.map((p) => (
         <p key={p.dataKey} className="flex items-center gap-2 leading-6">
           <span className="h-0.5 w-3 rounded-full bg-(--c)" style={{ '--c': p.color }} aria-hidden="true" />
-          <span className="font-semibold tabular-nums text-ink-hi">{fmtInt(p.value)}</span>
-          <span className="text-ink-mid">{p.name}</span>
+          <span className="font-semibold text-ink-hi">{fmtInt(p.value)}</span>
+          <span>{p.name}</span>
         </p>
       ))}
-    </div>
+    </ChartTooltip>
   );
 };
 
@@ -53,22 +52,15 @@ const SentimentTrendChart = ({ data = [] }) => {
           </li>
         ))}
       </ul>
-      <div className="flex rounded-md border border-line/70 p-0.5 text-xs" role="group" aria-label="Kiểu hiển thị">
-        {[
-          ['chart', 'Biểu đồ'],
-          ['table', 'Bảng']
-        ].map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            aria-pressed={view === key}
-            onClick={() => setView(key)}
-            className={`rounded px-2 py-0.5 whitespace-nowrap transition-colors ${view === key ? 'bg-raised text-ink-hi' : 'text-ink-lo hover:text-ink-mid'}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Kiểu hiển thị"
+        value={view}
+        onChange={setView}
+        options={[
+          { value: 'chart', label: 'Biểu đồ' },
+          { value: 'table', label: 'Bảng' }
+        ]}
+      />
     </div>
   );
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { CalendarRange, ChevronDown, Download, Package, Radio, Search, X, Check } from 'lucide-react';
-import { Chip, Button } from './ui';
+import { CalendarRange, ChevronDown, Download, Package, Radio, Search, X } from 'lucide-react';
+import { Chip, Button, Popover, MenuItem, SELECTED, fieldClass } from './ui';
 import { foldVi } from '../lib/format';
 
 /**
@@ -49,27 +49,14 @@ const Dropdown = ({ open, onClose, children, width = 240, align = 'left' }) => {
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div
-      ref={ref}
-      className={`glass-strong absolute top-[calc(100%+8px)] z-[150] rounded-xl p-1.5 animate-pop-in ${align === 'right' ? 'right-0' : 'left-0'}`}
-      style={{ width }}
-    >
+    <Popover ref={ref} className={`absolute top-[calc(100%+8px)] ${align === 'right' ? 'right-0' : 'left-0'}`} style={{ width }}>
       {children}
-    </div>
+    </Popover>
   );
 };
 
 const Option = ({ active, onClick, children }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-      active ? 'bg-accent-dim font-medium text-accent-hi' : 'text-ink-hi hover:bg-raised'
-    }`}
-  >
-    <span className="min-w-0 flex-1 truncate">{children}</span>
-    {active && <Check size={14} aria-hidden="true" />}
-  </button>
+  <MenuItem active={active} onClick={onClick} aria-pressed={active}>{children}</MenuItem>
 );
 
 const Trigger = ({ icon: Icon, active, children, onClick, open }) => (
@@ -77,13 +64,13 @@ const Trigger = ({ icon: Icon, active, children, onClick, open }) => (
     type="button"
     onClick={onClick}
     aria-expanded={open}
-    className={`inline-flex h-8 max-w-[240px] items-center gap-1.5 rounded-md border px-3 text-xs font-medium transition-colors ${
-      active ? 'border-accent/40 bg-accent-dim text-accent-hi' : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'
+    className={`inline-flex h-8 max-w-[240px] items-center gap-1.5 rounded-ctrl border px-3 text-xs font-medium transition-[background-color,border-color,color] duration-micro ease-out ${
+      active ? SELECTED : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'
     }`}
   >
-    <Icon size={13} className="shrink-0" aria-hidden="true" />
+    <Icon size={14} className="shrink-0" aria-hidden="true" />
     <span className="truncate">{children}</span>
-    <ChevronDown size={13} className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+    <ChevronDown size={14} className={`shrink-0 transition-transform duration-short ease-out ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
   </button>
 );
 
@@ -162,11 +149,11 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
               <p className="eyebrow">Khoảng tuỳ chọn</p>
               <label className="text-xs text-ink-mid">
                 Từ ngày
-                <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-sm text-ink-hi outline-none focus:border-accent" />
+                <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className={`mt-1 px-2.5 ${fieldClass({ size: 'sm' })}`} />
               </label>
               <label className="text-xs text-ink-mid">
                 Đến ngày
-                <input type="date" value={customEnd} min={customStart || undefined} onChange={(e) => setCustomEnd(e.target.value)} className="mt-1 h-9 w-full rounded-lg border border-line bg-surface px-2.5 text-sm text-ink-hi outline-none focus:border-accent" />
+                <input type="date" value={customEnd} min={customStart || undefined} onChange={(e) => setCustomEnd(e.target.value)} className={`mt-1 px-2.5 ${fieldClass({ size: 'sm' })}`} />
               </label>
               <Button size="sm" onClick={applyCustom} disabled={!customStart || !customEnd} className="mt-1">
                 Áp dụng
@@ -208,7 +195,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
                   onChange={(e) => setProductQuery(e.target.value)}
                   placeholder="Tìm sản phẩm…"
                   aria-label="Tìm sản phẩm"
-                  className="h-9 w-full rounded-lg border border-line bg-surface pr-3 pl-8 text-sm text-ink-hi outline-none focus:border-accent"
+                  className={`pr-3 pl-8 ${fieldClass({ size: 'sm' })}`}
                 />
               </div>
               <div className="max-h-64 overflow-y-auto">

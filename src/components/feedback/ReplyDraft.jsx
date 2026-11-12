@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { PenLine, Copy, Check, RotateCcw } from 'lucide-react';
-import { Button, Segmented } from '../ui';
+import { Button, Segmented, fieldClass } from '../ui';
 
 /**
  * SOẠN NHÁP TRẢ LỜI KHÁCH
@@ -83,7 +83,7 @@ const ReplyDraft = ({ feedbackId }) => {
             onChange={(e) => setText(e.target.value)}
             rows={5}
             aria-label="Nội dung trả lời"
-            className="w-full resize-y rounded-lg border border-line bg-surface px-3 py-2.5 text-sm leading-relaxed text-ink-hi outline-none focus:border-accent focus:ring-4 focus:ring-accent-dim"
+            className={`resize-y px-3 py-2.5 leading-relaxed ${fieldClass({ multiline: true })}`}
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Button size="sm" icon={copied ? Check : Copy} onClick={copy}>{copied ? 'Đã sao chép' : 'Sao chép'}</Button>

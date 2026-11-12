@@ -1,9 +1,16 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { IconButton } from './Button';
 
 /**
- * Lớp phủ dùng chung cho Modal và Drawer: khoá cuộn nền, đóng bằng Esc,
+ * Hộp thoại (F1-05: Modal, Drawer, hộp riêng của CommandPalette, window.confirm, window.alert
+ * gộp còn 2): Modal cho câu hỏi ngắn và xác nhận (tone="crit" cho thao tác không hoàn tác),
+ * Drawer cho xem chi tiết bên phải. Lỗi không mở hộp thoại, mà hiện bằng Toast tone="crit".
+ * Cả hai: một bề mặt bo --r-surf, nút đóng là IconButton trơn 32px (vùng bấm nới ra 44px),
+ * mở bằng pop-in (transform, opacity), giảm chuyển động thì hiện ngay.
+ *
+ * Lớp phủ dùng chung: khoá cuộn nền, đóng bằng Esc,
  * đưa tiêu điểm vào hộp thoại khi mở và trả về chỗ cũ khi đóng.
  */
 const useOverlay = (open, onClose, panelRef) => {
@@ -30,11 +37,11 @@ const useOverlay = (open, onClose, panelRef) => {
   }, [open, panelRef]);
 };
 
-const Backdrop = ({ onClose }) => (
+export const Backdrop = ({ onClose }) => (
   <div className="absolute inset-0 bg-(--scrim) backdrop-blur-[3px] animate-fade-up" onClick={onClose} aria-hidden="true" />
 );
 
-/** Hộp thoại — theo nhóm "Модальные окна": biểu tượng tròn, tiêu đề, mô tả, hai nút */
+/** Hộp thoại: ô biểu tượng, tiêu đề, mô tả, hai nút */
 export const Modal = ({ open, onClose, title, description, icon: Icon, tone = 'accent', children, footer, size = 'md' }) => {
   const panelRef = useRef(null);
   const titleId = useId();
@@ -53,23 +60,15 @@ export const Modal = ({ open, onClose, title, description, icon: Icon, tone = 'a
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`glass-strong relative max-h-[calc(100dvh-2rem)] w-full ${width} overflow-y-auto overscroll-contain rounded-xl p-5 outline-none animate-pop-in sm:p-6`}
+        className={`glass-strong relative max-h-[calc(100dvh-2rem)] w-full ${width} overflow-y-auto overscroll-contain rounded-surf p-5 shadow-(--shadow-overlay) outline-none animate-pop-in sm:p-6`}
       >
-        <button
-          type="button"
-          data-close
-          onClick={onClose}
-          aria-label="Đóng"
-          className="absolute top-3 right-3 grid size-10 place-items-center rounded-md sm:top-4 sm:right-4 sm:size-8 text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi"
-        >
-          <X size={16} aria-hidden="true" />
-        </button>
+        <IconButton icon={X} label="Đóng" variant="ghost" size="sm" data-close onClick={onClose} className="absolute! top-3 right-3 before:absolute before:-inset-1.5 before:content-[''] sm:top-4 sm:right-4" />
         {Icon && (
-          <span className={`mb-4 grid size-12 place-items-center rounded-full ${toneCls}`}>
-            <Icon size={22} aria-hidden="true" />
+          <span className={`mb-4 grid size-10 place-items-center rounded-ctrl ${toneCls}`}>
+            <Icon size={20} aria-hidden="true" />
           </span>
         )}
-        <h2 id={titleId} className="pr-8 text-lg font-semibold text-ink-hi">{title}</h2>
+        <h2 id={titleId} className="pr-8 text-heading font-semibold text-ink-hi">{title}</h2>
         {description && <p className="mt-1.5 text-sm leading-relaxed text-ink-mid">{description}</p>}
         {children && <div className="mt-5">{children}</div>}
         {footer && <div className="mt-6 flex flex-wrap justify-end gap-2">{footer}</div>}
@@ -95,7 +94,7 @@ export const Drawer = ({ open, onClose, title, subtitle, children, footer, width
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="glass-strong absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col overflow-hidden rounded-xl outline-none animate-pop-in"
+        className="glass-strong absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] flex flex-col overflow-hidden rounded-surf shadow-(--shadow-overlay) outline-none animate-pop-in"
         style={{ width: `min(${width}px, calc(100vw - 24px))` }}
       >
         <header className="flex items-start justify-between gap-4 border-b border-line-soft px-6 py-5">
@@ -103,15 +102,7 @@ export const Drawer = ({ open, onClose, title, subtitle, children, footer, width
             <h2 id={titleId} className="text-base font-semibold text-ink-hi">{title}</h2>
             {subtitle && <p className="mt-0.5 text-xs text-ink-lo">{subtitle}</p>}
           </div>
-          <button
-            type="button"
-            data-close
-            onClick={onClose}
-            aria-label="Đóng"
-            className="grid size-8 shrink-0 place-items-center rounded-md text-ink-lo transition-colors hover:bg-raised hover:text-ink-hi"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
+          <IconButton icon={X} label="Đóng" variant="ghost" size="sm" data-close onClick={onClose} className="before:absolute before:-inset-1.5 before:content-['']" />
         </header>
         <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
         {footer && <footer className="flex flex-wrap justify-end gap-2 border-t border-line-soft px-6 py-4">{footer}</footer>}

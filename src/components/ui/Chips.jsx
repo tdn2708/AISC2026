@@ -1,22 +1,30 @@
 import React from 'react';
 
-/** Chip — theo hàng "Чипы (теги)": viên thuốc mảnh, đang chọn thì tô sage */
+/**
+ * Chọn và lọc (F1-05: 7 cách viết gộp còn 3 thành phần, 1 ngôn ngữ "đang chọn").
+ *   Chip       lọc nhanh, bật tắt từng cái (ChipGroup: chọn một trong nhóm)
+ *   Segmented  đổi chế độ xem trong cùng một panel
+ *   Tabs       đổi khu vực của trang, gạch chân
+ * Đang chọn ở cả ba: nền accent-dim, viền hoặc gạch nhấn, chữ accent-hi.
+ * Tô đặc màu nhấn chỉ dành cho nút chính.
+ * Rê: viền và chữ đổi một bước; focus-visible: viền ngoài chung ở index.css.
+ */
+export const SELECTED = 'border-accent bg-accent-dim text-accent-hi';
+
 export const Chip = ({ active, onClick, icon: Icon, count, children, className = '', ...rest }) => (
   <button
     type="button"
     aria-pressed={active}
     onClick={onClick}
-    className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-3 text-xs font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-150 ${
-      active
-        ? 'border-transparent bg-accent text-on-accent'
-        : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'
+    className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-ctrl border px-3 text-xs font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-micro ease-out disabled:cursor-not-allowed disabled:opacity-55 ${
+      active ? SELECTED : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'
     } ${className}`}
     {...rest}
   >
-    {Icon && <Icon size={13} aria-hidden="true" />}
+    {Icon && <Icon size={14} aria-hidden="true" />}
     {children}
     {count != null && (
-      <span className={`font-mono text-xs ${active ? 'opacity-80' : 'text-ink-lo'}`}>{typeof count === 'number' ? count.toLocaleString('vi-VN') : count}</span>
+      <span className={`text-xs tabular-nums ${active ? 'text-accent-hi' : 'text-ink-lo'}`}>{typeof count === 'number' ? count.toLocaleString('vi-VN') : count}</span>
     )}
   </button>
 );
@@ -25,16 +33,16 @@ export const Chip = ({ active, onClick, icon: Icon, count, children, className =
 export const ChipGroup = ({ options, value, onChange, label, className = '' }) => (
   <div role="group" aria-label={label} className={`flex flex-wrap items-center gap-2 ${className}`}>
     {options.map((o) => (
-      <Chip key={o.value} active={value === o.value} onClick={() => onChange(o.value)} icon={o.icon} count={o.count}>
+      <Chip key={o.value} active={value === o.value} onClick={() => onChange(o.value)} icon={o.icon} count={o.count} disabled={o.disabled}>
         {o.label}
       </Chip>
     ))}
   </div>
 );
 
-/** Điều khiển phân đoạn — chuyển chế độ xem trong cùng một panel */
+/** Điều khiển phân đoạn: chuyển chế độ xem trong cùng một panel. Hẹp hơn chỗ thì cuộn ngang. */
 export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
-  <div role="group" aria-label={label} className="inline-flex max-w-full overflow-x-auto rounded-md border border-line-soft bg-raised p-0.5 [scrollbar-width:none]">
+  <div role="group" aria-label={label} className="inline-flex max-w-full min-w-0 gap-0.5 overflow-x-auto rounded-ctrl border border-line bg-surface p-0.5 [scrollbar-width:none]">
     {options.map((o) => {
       const active = o.value === value;
       return (
@@ -43,11 +51,12 @@ export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
           type="button"
           aria-pressed={active}
           onClick={() => onChange(o.value)}
-          className={`inline-flex shrink-0 items-center gap-1.5 rounded font-medium whitespace-nowrap transition-[background-color,color,box-shadow] duration-150 ${
+          disabled={o.disabled}
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-[calc(var(--r-ctrl)-2px)] border font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-micro ease-out disabled:cursor-not-allowed disabled:opacity-55 ${
             size === 'sm' ? 'h-7 px-3 text-xs' : 'h-9 px-4 text-sm'
-          } ${active ? 'bg-surface text-ink-hi shadow-(--shadow-knob)' : 'text-ink-lo hover:text-ink-mid'}`}
+          } ${active ? SELECTED : 'border-transparent text-ink-mid hover:bg-raised hover:text-ink-hi'}`}
         >
-          {o.icon && <o.icon size={13} aria-hidden="true" />}
+          {o.icon && <o.icon size={14} aria-hidden="true" />}
           {o.label}
         </button>
       );
@@ -55,9 +64,9 @@ export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
   </div>
 );
 
-/** Tab gạch chân — theo nhóm "Вкладки" của bộ kit */
+/** Tab gạch chân. Hẹp hơn chỗ (điện thoại) thì cả hàng cuộn ngang, không bị cắt mép. */
 export const Tabs = ({ tabs, value, onChange, className = '' }) => (
-  <div role="tablist" className={`flex gap-6 overflow-x-auto border-b border-line-soft ${className}`}>
+  <div role="tablist" className={`flex max-w-full min-w-0 gap-6 overflow-x-auto overscroll-x-contain border-b border-line-soft [scrollbar-width:thin] ${className}`}>
     {tabs.map((t) => {
       const active = t.value === value;
       return (
@@ -67,20 +76,20 @@ export const Tabs = ({ tabs, value, onChange, className = '' }) => (
           role="tab"
           aria-selected={active}
           onClick={() => onChange(t.value)}
-          className={`relative inline-flex shrink-0 items-center gap-2 pb-3 text-sm whitespace-nowrap transition-colors ${
-            active ? 'font-semibold text-ink-hi' : 'text-ink-lo hover:text-ink-mid'
+          className={`relative inline-flex shrink-0 items-center gap-2 pb-3 text-sm whitespace-nowrap transition-colors duration-micro ease-out ${
+            active ? 'font-semibold text-accent-hi' : 'text-ink-mid hover:text-ink-hi'
           }`}
         >
-          {t.icon && <t.icon size={15} aria-hidden="true" />}
+          {t.icon && <t.icon size={16} aria-hidden="true" />}
           {t.label}
           {t.count != null && (
-            <span className={`rounded px-1.5 font-mono text-xs ${active ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-mid'}`}>
+            <span className={`rounded-ctrl px-1.5 text-xs tabular-nums ${active ? 'bg-accent-dim text-accent-hi' : 'bg-raised text-ink-mid'}`}>
               {t.count}
             </span>
           )}
           <span
             aria-hidden="true"
-            className={`absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-accent transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-x-0 -bottom-px h-0.5 bg-accent transition-opacity duration-micro ${active ? 'opacity-100' : 'opacity-0'}`}
           />
         </button>
       );

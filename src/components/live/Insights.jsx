@@ -1,6 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { GlassPanel, PanelHeader, EmptyState } from '../ui';
+import { GlassPanel, PanelHeader, EmptyState, ChartTooltip } from '../ui';
 import { fmtInt } from '../../lib/format';
 import { INTENT_MAP } from './shared';
 
@@ -20,16 +20,15 @@ const ChartTip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
   return (
-    <div className="rounded-xl border border-line bg-surface px-3 py-2 text-xs shadow-lg">
-      <p className="font-semibold text-ink-hi">{hhmm(label)}</p>
-      <p className="mt-1 text-ink-mid">{fmtInt(row.total)} bình luận</p>
+    <ChartTooltip title={hhmm(label)}>
+      <p>{fmtInt(row.total)} bình luận</p>
       {SERIES.map((k) => (
-        <p key={k} className="flex items-center gap-1.5 text-ink-mid">
-          <span className="size-2 rounded-sm" style={{ background: INTENT_MAP[k].color }} aria-hidden="true" />
-          {INTENT_MAP[k].label}: <span className="font-mono">{fmtInt(row[k])}</span>
+        <p key={k} className="flex items-center gap-1.5">
+          <span className="size-2 rounded-xs" style={{ background: INTENT_MAP[k].color }} aria-hidden="true" />
+          {INTENT_MAP[k].label}: {fmtInt(row[k])}
         </p>
       ))}
-    </div>
+    </ChartTooltip>
   );
 };
 

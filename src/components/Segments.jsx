@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Search, ChevronLeft, ChevronRight, HeartHandshake, TriangleAlert, Users } from 'lucide-react';
-import { GlassPanel, ChipGroup, EmptyState, SentimentFace } from './ui';
+import { Search, HeartHandshake, TriangleAlert, Users } from 'lucide-react';
+import { GlassPanel, ChipGroup, EmptyState, SentimentFace, Pager, fieldClass } from './ui';
 import { fmtInt, fmtDate, initials } from '../lib/format';
 
 /**
@@ -115,7 +115,7 @@ const Segments = () => {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm khách hàng…"
               aria-label="Tìm khách hàng"
-              className="h-10 w-full rounded-lg border border-line bg-surface/70 pr-3 pl-10 text-sm text-ink-hi outline-none placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
+              className={`pr-3 pl-10 ${fieldClass()}`}
             />
           </div>
           <ChipGroup label="Hoạt động gần nhất" options={RANGES} value={range} onChange={setRange} />
@@ -180,14 +180,7 @@ const Segments = () => {
         )}
 
         {list.length > PAGE && (
-          <div className="fb-pager">
-            <span className="fb-pager-info">{fmtInt((page - 1) * PAGE + 1)} đến {fmtInt(Math.min(page * PAGE, list.length))} / {fmtInt(list.length)} khách</span>
-            <div className="fb-pager-btns">
-              <button className="fb-page-btn" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} aria-label="Trang trước"><ChevronLeft size={14} /></button>
-              <span className="px-2 font-mono text-xs text-ink-mid">{page} / {pages}</span>
-              <button className="fb-page-btn" onClick={() => setPage((p) => Math.min(pages, p + 1))} disabled={page === pages} aria-label="Trang sau"><ChevronRight size={14} /></button>
-            </div>
-          </div>
+          <Pager page={page} pages={pages} total={list.length} pageSize={PAGE} unit="khách" onChange={(p) => setPage(Math.min(pages, Math.max(1, p)))} />
         )}
       </GlassPanel>
     </>

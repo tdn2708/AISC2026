@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Bell, Menu, Moon, Search, Sun, MessageSquareText, Loader2 } from 'lucide-react';
 import { openAssistant } from '../../lib/assistant';
-import { Button, IconButton } from '../ui';
+import { Button, IconButton, Popover } from '../ui';
 import { findPage } from '../../lib/nav';
 import { useTheme } from '../../hooks/useTheme';
 import { alertTitle } from '../../lib/format';
@@ -99,7 +99,7 @@ const Notifications = () => {
         }
       />
       {open && (
-        <div className="glass-strong absolute top-[calc(100%+10px)] right-0 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl animate-pop-in">
+        <Popover className="absolute top-[calc(100%+10px)] right-0 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden p-0!">
           <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
             <h3 className="text-sm font-semibold text-ink-hi">Thông báo</h3>
             {unread > 0 && <span className="rounded-ctrl bg-crit/12 px-1.5 py-0.5 text-xs font-medium text-crit tabular-nums">{unread} mới</span>}
@@ -133,7 +133,7 @@ const Notifications = () => {
           <Button variant="ghost" size="sm" block className="rounded-none" onClick={() => setReadIds(new Set([...readIds, ...risks.map((r) => r.id)]))}>
             Đánh dấu tất cả đã đọc
           </Button>
-        </div>
+        </Popover>
       )}
     </div>
   );

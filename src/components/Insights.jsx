@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { X, RotateCcw, ArrowUp, ArrowDown } from 'lucide-react';
-import { PageHeader, GlassPanel, PanelHeader, Segmented, Button, EmptyState } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Segmented, Button, EmptyState, ChartTooltip, SELECTED } from './ui';
 import { useDataVersion } from '../lib/dataVersion';
 import { fmtInt, fmtPct, SENTIMENT } from '../lib/format';
 import { COL, SENT, slice, kpis, groupBy, crossNeg, series, dataSpan } from '../lib/cube';
@@ -260,16 +260,15 @@ const ProductTable = ({ groups, names, selected, onPick }) => {
 const TimeTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="glass rounded-xl px-3 py-2 text-xs">
-      <p className="mb-1 text-ink-lo">{label}</p>
+    <ChartTooltip title={label}>
       {[...payload].reverse().map((p) => (
         <p key={p.dataKey} className="flex items-center gap-2 leading-6">
-          <span className="size-2 rounded-sm bg-(--c)" style={{ '--c': p.color }} aria-hidden="true" />
-          <span className="font-semibold tabular-nums text-ink-hi">{fmtInt(p.value)}</span>
-          <span className="text-ink-mid">{p.name}</span>
+          <span className="size-2 rounded-xs bg-(--c)" style={{ '--c': p.color }} aria-hidden="true" />
+          <span className="font-semibold text-ink-hi">{fmtInt(p.value)}</span>
+          <span>{p.name}</span>
         </p>
       ))}
-    </div>
+    </ChartTooltip>
   );
 };
 
@@ -398,7 +397,7 @@ const Insights = () => {
                 key={c.k}
                 type="button"
                 onClick={() => setParam({ [c.k]: null })}
-                className="inline-flex h-8 max-w-[260px] items-center gap-1.5 rounded-md border border-accent bg-accent-dim px-2.5 text-sm text-accent-hi hover:bg-accent/20"
+                className={`inline-flex h-8 max-w-[260px] items-center gap-1.5 rounded-ctrl border px-2.5 text-xs font-medium transition-colors duration-micro ease-out hover:bg-accent/20 ${SELECTED}`}
                 aria-label={`Bỏ lọc ${c.label}`}
               >
                 <span className="truncate">{c.label}</span>

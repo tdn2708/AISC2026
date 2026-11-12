@@ -14,6 +14,9 @@ const Reports = () => {
   const [downloadingCsv, setDownloadingCsv] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showToast, setShowToast] = useState('');
+  // Lỗi xuất tệp hiện bằng Toast đỏ (không dùng window.alert), tự ẩn sau 6 giây
+  const [errorToast, setErrorToast] = useState('');
+  const showError = (msg) => { setErrorToast(msg); setTimeout(() => setErrorToast(''), 6000); };
   const [pdfData, setPdfData] = useState(null);
   
   const [timeFilter, setTimeFilter] = useState('All');
@@ -116,7 +119,7 @@ const Reports = () => {
       setShowToast('CSV');
       setTimeout(() => setShowToast(''), 3000);
     } catch (error) {
-      alert("Lỗi khi tải CSV: " + error.message);
+      showError('Lỗi khi tải CSV: ' + error.message);
     } finally {
       setDownloadingCsv(false);
     }
@@ -236,7 +239,7 @@ const Reports = () => {
       setShowToast('PDF');
       setTimeout(() => setShowToast(''), 3000);
     } catch (error) {
-      alert('Lỗi khi tạo PDF: ' + error.message);
+      showError('Lỗi khi tạo PDF: ' + error.message);
       console.error(error);
     } finally {
       setGeneratingPdf(false);
@@ -402,6 +405,7 @@ const Reports = () => {
       />
 
       <Toast show={Boolean(showToast)}>Đã xuất tệp {showToast} thành công</Toast>
+      <Toast show={Boolean(errorToast)} tone="crit">{errorToast}</Toast>
 
       {/* Bản in: xem trước thì trải bốn tờ trên mặt bàn, còn lại dựng ngoài màn hình để chụp */}
       {previewMode ? (

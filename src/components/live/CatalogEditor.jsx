@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { Button, IconButton, TextArea } from '../ui';
+import { Button, IconButton, TextArea, fieldClass } from '../ui';
 
 /**
  * SẢN PHẨM VÀ CHÍNH SÁCH CỦA PHIÊN LIVE
@@ -40,7 +40,7 @@ const textToGuide = (t) => String(t || '').split(',').map((p) => {
   return m ? { size: m[1].toUpperCase(), maxKg: m[2] ? Number(m[2]) : null, maxCm: m[3] ? Number(m[3]) : null } : null;
 }).filter(Boolean);
 
-const inputCls = 'h-9 w-full rounded-md border border-line bg-surface px-2.5 text-sm text-ink-hi outline-none focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-dim)]';
+const inputCls = `px-2.5 ${fieldClass({ size: 'sm' })}`;
 
 /** Dạng nhập liệu (chuỗi) của một sản phẩm */
 export const toRow = (p) => ({

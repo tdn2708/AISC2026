@@ -6,6 +6,7 @@ import { askAssistant } from '../../lib/assistant';
 import { NAV, HIDDEN_PAGES } from '../../lib/nav';
 import { useTheme } from '../../hooks/useTheme';
 import { foldVi } from '../../lib/format';
+import { Backdrop } from '../ui';
 
 /**
  * BẢNG LỆNH Ctrl+K
@@ -112,12 +113,12 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
 
   return createPortal(
     <div className="cx fixed inset-0 z-[2200] flex items-start justify-center p-4 pt-[12vh]">
-      <div className="absolute inset-0 bg-(--scrim) backdrop-blur-[3px]" onClick={onClose} aria-hidden="true" />
+      <Backdrop onClose={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Bảng lệnh"
-        className="glass-strong relative w-full max-w-xl overflow-hidden rounded-xl animate-pop-in"
+        className="glass-strong relative w-full max-w-xl overflow-hidden rounded-surf shadow-(--shadow-overlay) animate-pop-in"
         onKeyDown={onKeyDown}
       >
         <div className="flex items-center gap-3 border-b border-line-soft px-5">
@@ -151,16 +152,16 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
                   data-index={i}
                   onMouseMove={() => setActive(i)}
                   onClick={() => runAt(i)}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                    isActive ? 'bg-accent text-on-accent' : 'text-ink-hi'
+                  className={`flex cursor-pointer items-center gap-3 rounded-ctrl px-3 py-2.5 text-sm transition-colors duration-micro ease-out ${
+                    isActive ? 'bg-accent-dim text-accent-hi' : 'text-ink-hi'
                   }`}
                 >
-                  <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${isActive ? 'bg-on-accent/20' : 'bg-raised text-ink-mid'}`}>
+                  <span className={`grid size-8 shrink-0 place-items-center rounded-ctrl ${isActive ? 'bg-surface text-accent-hi' : 'bg-raised text-ink-mid'}`}>
                     <Icon size={16} aria-hidden="true" />
                   </span>
                   <span className="flex-1 truncate">{it.label}</span>
-                  {it.hint && <span className={`text-xs ${isActive ? 'opacity-80' : 'text-ink-lo'}`}>{it.hint}</span>}
-                  {isActive && <CornerDownLeft size={14} className="opacity-80" aria-hidden="true" />}
+                  {it.hint && <span className={`text-xs ${isActive ? 'text-accent-hi' : 'text-ink-lo'}`}>{it.hint}</span>}
+                  {isActive && <CornerDownLeft size={14} aria-hidden="true" />}
                 </li>
               </React.Fragment>
             );
