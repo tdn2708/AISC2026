@@ -174,7 +174,7 @@ const VersusDemo = () => {
           <button
             type="submit"
             disabled={!text.trim()}
-            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-on-accent transition-[filter] hover:brightness-110 disabled:opacity-50"
+            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-hi disabled:opacity-50"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
             Phân tích

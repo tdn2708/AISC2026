@@ -1,7 +1,7 @@
 /* Hallmark · shape: document, A4 sheets paginated from measured blocks · genre: modern-minimal · theme: brand · redesign: full
- * paper: #FFFFFF · ink: #17242A · accent: #0E6B5E · display: Be Vietnam Pro · body: Be Vietnam Pro
+ * paper: #FFFFFF · ink: #13233F · accent: #1F6FA8 · display: Be Vietnam Pro · body: Be Vietnam Pro
  * signature: the reconciliation ledger beside the executive summary, its subtraction checked on paper · states: loading, empty, full
- * axes: light/grotesk-sans/chromatic-teal · posture: restrained · contrast: pass · v2.0.0 */
+ * axes: light/grotesk-sans/chromatic-blue · posture: restrained · contrast: pass · v2.0.0 */
 /* Hallmark · tokens: the colours live in REPORT_VARS (report_kit.jsx) and are declared on .rpt, the document's own theme block · a PDF prints the same in light and dark mode, and the SVG charts need the same hex values as attributes because html2canvas serialises SVG without the page's stylesheet */
 /* Hallmark · dropped the recharts legends "Khiếu nại", "Hài lòng", "Luỹ kế", "Số phản hồi" · the series are labelled at the line ends and in the table heads, so no legend is needed */
 /* Hallmark · reworded the report heads to action titles built from the data ("Giao hàng và chất lượng sản phẩm chiếm 60,9% số khiếu nại có nêu vấn đề") with numbered exhibits (Hình 1, Bảng 1 to 4, A1 to A4) · a business report states its finding in the head; "—/100" and "Không khả dụng" were empty states of the old cards; 73,9% was the mislabelled "chưa phân loại" note */

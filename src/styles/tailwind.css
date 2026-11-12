@@ -10,7 +10,8 @@
    thắng CSS trong layer bất kể độ đặc hiệu — nếu để utilities trong
    layer thì mọi lớp p-4, m-2 đều bị reset đè mất.
 
-   Giá trị màu nằm ở index.css (:root = Mist, [data-theme=dark] = Dusk).
+   Giá trị màu nằm ở index.css (bảng màu B: tầng 2 ngữ nghĩa, sáng ở :root,
+   tối ở [data-theme=dark]). Ở đây chỉ ánh xạ token ngữ nghĩa sang tên lớp.
    ================================================================== */
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css";
@@ -40,6 +41,21 @@
   --color-neu: var(--viz-neu);
   --color-pos: var(--viz-pos);
   --color-strip: var(--strip-bg);
+  --color-on-strip: var(--on-strip);
+  --color-on-strip-mid: var(--on-strip-mid);
+  --color-on-strip-lo: var(--on-strip-lo);
+  --color-on-crit: var(--on-crit);
+  /* Viền ô nhập, rãnh công tắc lúc tắt (3,83:1 trên trắng) */
+  --color-field: var(--border-field);
+  /* San hô: chỉ cho đồ họa thương hiệu, không cho chữ, trạng thái hay biểu đồ */
+  --color-coral: var(--coral);
+  /* Chuỗi biểu đồ phân loại */
+  --color-viz-1: var(--viz-1);
+  --color-viz-2: var(--viz-2);
+  --color-viz-3: var(--viz-3);
+  --color-viz-4: var(--viz-4);
+  --color-viz-5: var(--viz-5);
+  --color-viz-6: var(--viz-6);
   --color-hero: var(--hero-bg);
 
   --font-sans: var(--font-sans);

@@ -202,7 +202,7 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
           type="button"
           onClick={openAssistant}
           aria-label="Hỏi dữ liệu"
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-accent px-3 text-sm font-semibold text-on-accent transition-[filter] hover:brightness-110"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-accent px-3 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-hi"
         >
           <MessageSquareText size={16} aria-hidden="true" />
           <span className="hidden sm:inline">Hỏi dữ liệu</span>

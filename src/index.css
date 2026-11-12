@@ -1,7 +1,7 @@
 /* Hallmark · shape: app screen · genre: modern-minimal · theme: brand · redesign: full
- * paper: oklch(96.7% 0.004 165) · accent: oklch(46% 0.08 178) · display: Be Vietnam Pro · body: Be Vietnam Pro
+ * paper: oklch(97.2% 0.005 258) · accent: oklch(52.3% 0.117 245) · display: Be Vietnam Pro · body: Be Vietnam Pro
  * nav: kept (sidebar, 7 destinations, menu under 48rem) · signature: the reconciliation ledger, a ruled sheet whose subtraction adds up to the counted figure · states: loading, empty, error, full
- * axes: light/grotesk-sans/chromatic-teal · posture: restrained · contrast: pass · v2.0.0 */
+ * axes: light/grotesk-sans/chromatic-blue · posture: restrained · contrast: pass (134 pairs, light and dark) · palette: B, team navy + polo blue + one coral mark · v2.0.0 */
 /* Hallmark · reworded "Tổng quan" to the summary sentence as the page head · 54 names the small label over it; the page name stays in the sidebar and the phone top bar */
 /* Hallmark · waive 64 · font-mono maps to Be Vietnam Pro with tabular-nums in this file, so no monospace face is drawn · the spans hold figures like 14 ngày and 120 ms whose digits must line up in table columns */
 /* Hallmark · dismissed kept-figures · 11:20, 3% and the phone number are live data that changed between the two captures, not removed content */
@@ -9,120 +9,309 @@
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
 
 /* ==================================================================
-   HỆ THIẾT KẾ "SỔ KIỂM CHỨNG"
+   HỆ THIẾT KẾ "SỔ KIỂM CHỨNG", BẢNG MÀU B (màu nhóm Customer Radar)
    ------------------------------------------------------------------
    Phần mềm cho doanh nghiệp đọc mỗi sáng: nền đặc, viền 1px, không ảnh
    nền, không kính mờ, không bóng đổ mềm. Sự chú ý dành cho đúng một thứ:
    thanh bằng chứng dưới mỗi con số (xem components/ui/EvidenceBar.jsx).
+
+   Màu lấy từ ảnh nhóm: navy của dây đeo thẻ (mực, khối đậm), xanh áo
+   polo (nhấn, bản đậm hơn cho đủ tương phản chữ), một điểm san hô của tay
+   áo. Xấu / tốt / chú ý giữ đỏ, xanh lá, nâu vàng như cũ.
 
    Chữ: Be Vietnam Pro — họ chữ do người Việt thiết kế, dấu chồng hai
    tầng (Ệ, ữ) hiển thị chuẩn. Số liệu dùng chữ số đều cột (tabular-nums)
    thay cho font đơn cách; nhãn viết thường, chỉ hoa chữ đầu câu, vì tiếng
    Việt viết HOA chồng dấu rất khó đọc.
 
-   Tương phản đo trên nền #F3F5F4 và bề mặt #FFFFFF:
-     chữ #13232B 15.6:1 · #3A4A52 9.1:1 · #56656C 5.6:1
-     nhấn #0E6B5E 6.3:1, chữ trắng trên nhấn 6.6:1
-   Tên biến cũ (glass-*, hero-*) được giữ để các trang chưa chuyển đổi
-   vẫn tự đổi diện mạo theo token mới.
+   Tương phản đo bằng .hallmark/contrast-F1.mjs (WCAG 2.x, màu có alpha
+   trộn lên nền thật trước khi đo); 134 cặp sáng và tối, 134 đạt.
+   Sáng, trên canvas #F4F6F9 và bề mặt #FFFFFF:
+     chữ #13233F 14,48 và 15,67:1; #36465F 8,82 và 9,55:1; #56647A 5,54 và 6:1
+     nhấn #1F6FA8 4,98 và 5,39:1; chữ trắng trên nhấn 5,39:1, khi rê (#185A8A) 7,32:1
+     xấu #A3303D 6,89:1, tốt #1D6A46 6,56:1, chú ý #875200 6,49:1
+     chữ trắng trên khối mực #13233F 15,67:1; trắng 75% 9,34:1; trắng 62% 6,82:1
+     đồ họa: viền ô nhập và rãnh công tắc tắt #76839A 3,83:1; san hô #E66A78 3,14:1
+   Tối, trên canvas #0D1524 và bề mặt #142036:
+     chữ #E8EDF5 15,54 và 13,85:1; #BAC5D4 10,46 và 9,32:1; #97A5B9 7,3 và 6,51:1
+     nhấn #8CCBEB 10,31 và 9,19:1; chữ #0B1F33 trên nhấn 9,43:1, khi rê 11,79:1
+     xấu #FF9A80 7,9:1, tốt #7FCB9E 8,48:1, chú ý #E6D27E 10,77:1
+   Biểu đồ: mọi màu chuỗi đạt 3:1 trên bề mặt và canvas ở cả hai chế độ.
+
+   San hô (--coral): chỉ cho đồ họa thương hiệu (chấm của logo, một điểm
+   nhấn mỗi màn). Không dùng cho chữ trên nền trắng (3,14:1), không cho
+   trạng thái, cảnh báo, chuỗi biểu đồ hay nút, và không mang nghĩa "xấu".
+
+   Ba tầng token, theo thứ tự trong file:
+     1. Tham chiếu: bảng màu thô và kích thước gốc. Tên = họ màu + độ sáng
+        OKLCH (navy-26 là navy có L 26%). Component KHÔNG đọc tầng này.
+     2. Ngữ nghĩa: vai của màu (chữ, nền, nhấn, mức độ, biểu đồ), mỗi chế
+        độ sáng/tối một khối. Component và Tailwind đọc tầng này.
+     3. Component và bí danh: token riêng của một thành phần (logo, thanh
+        bên) và tên cũ (glass-*, hero-*, bg-card…) trỏ về tầng 2, giữ để
+        các trang chưa chuyển đổi vẫn tự đổi diện mạo theo token mới.
    ================================================================== */
 
-/* ---------- SÁNG — mặc định ---------- */
+/* ---------- TẦNG 1: THAM CHIẾU (không đổi theo chế độ) ---------- */
 :root {
-  color-scheme: light;
+  /* Navy và xám lam (mực, nền tối, chữ phụ, viền) */
+  --navy-20: #0D1524;
+  --navy-23: #111C30;
+  --navy-25: #142036;
+  --navy-26: #13233F;   /* navy của nhóm: mực chữ, khối mực */
+  --navy-27: #18263E;
+  --navy-30: #1C2E4D;
+  --navy-39: #36465F;
+  --navy-50: #56647A;
+  --navy-58: #6B7A90;
+  --navy-61: #76839A;
+  --navy-64: #7E8CA3;
+  --navy-72: #97A5B9;
+  --navy-78: #AEB8C6;
+  --navy-82: #BAC5D4;
+  --navy-90: #D7DDE7;
+  --navy-94: #E6EAF1;
+  --navy-95: #E8EDF5;
+  --navy-97: #F4F6F9;
+  --navy-98: #F7F8FB;
+  --white:   #FFFFFF;
 
-  /* Nền & bề mặt */
-  --canvas:        #F3F5F4;
-  --surface:       #FFFFFF;
-  --surface-solid: #FFFFFF;
-  --raised:        rgb(19 35 43 / 0.05);
-  --border:        #D9DFDD;
-  --border-soft:   #E7ECEA;
-  /* Viền ô nhập: đủ 3:1 trên nền trắng để thấy chỗ gõ */
-  --border-field:  #7F8D8A;
-  /* Lớp phủ sau ngăn kéo, hộp thoại */
-  --scrim:         rgb(19 35 43 / 0.32);
-  /* Giấy sổ: một bậc lệch khỏi bề mặt, cho tờ sổ đối chiếu */
-  --sheet:         #F7F8F5;
-  --sheet-rule:    #DDE2DC;
-  /* Chữ trên khối mực của trang đăng nhập */
-  --on-strip:      #FFFFFF;
-  --accent-on-strip: #8FD3C3;
-  /* Tô từ trong phần giải thích mô hình: ủng hộ / kéo ngược kết luận */
-  --viz-support:   240 166 75;
-  --viz-oppose:    43 163 199;
-  --shadow-knob:   0 1px 3px rgb(19 35 43 / 0.25);
+  /* Xanh áo polo */
+  --polo-23: #0B1F33;
+  --polo-45: #185A8A;
+  --polo-52: #1F6FA8;   /* xanh polo đậm: nhấn chính */
+  --polo-57: #2B7FB8;
+  --polo-76: #7DB8E8;
+  --polo-81: #8CCBEB;   /* xanh polo sáng: nhấn trên nền tối */
+  --polo-88: #B6DFF3;
 
-  /* "Kính" cũ nay là bề mặt đặc — giữ tên để không phải sửa từng trang */
-  --glass-bg:     #FFFFFF;
-  --glass-strong: #FFFFFF;
-  --glass-line:   #D9DFDD;
-  --glass-hi:     rgb(255 255 255 / 0);
-  --glass-shade:  0 1px 0 rgb(19 35 43 / 0.03);
-  --backdrop-img: none;
-  --backdrop-veil: none;
-  --grid-line:    transparent;
+  /* Màu phụ của nhóm */
+  --coral-68: #E66A78;
+  --rose-47:  #8A3F52;
+  --rose-87:  #F2C6CC;
+  --sky-52:   #3A6F96;
+  --sky-85:   #A9D3EC;
 
-  /* Khối mực duy nhất — dành cho câu tóm tắt đầu trang */
-  --strip-bg:     #13232B;
-  --hero-bg:      #FFFFFF;
-  --hero-fg:      #13232B;
-  --hero-mid:     #3A4A52;
-  --hero-lo:      #56656C;
-  --hero-line:    #D9DFDD;
-  --hero-grid:    transparent;
-  --hero-stroke:  #0E6B5E;
-  --hero-fill:    rgb(14 107 94 / 0.10);
-  --hero-ring:    rgb(14 107 94 / 0.18);
-  --hero-shadow:  none;
-  --sidebar-bg:   #FFFFFF;
+  /* Mức độ và chuỗi biểu đồ */
+  --red-49:   #A3303D;
+  --red-79:   #FF9A80;
+  --amber-49: #875200;
+  --amber-53: #A84D06;
+  --amber-62: #C26E12;
+  --amber-79: #F0A860;
+  --amber-81: #E8B84A;
+  --amber-86: #E6D27E;
+  --green-47: #1D6A46;
+  --green-78: #7FCB9E;
+  --teal-57:  #0F8A7A;
+  --teal-78:  #4FD1B8;
+  --plum-42:  #733160;
+  --plum-61:  #B0679A;
 
-  /* Chữ */
-  --text-hi:  #13232B;
-  --text-mid: #3A4A52;
-  --text-lo:  #56656C;
-
-  /* Nhấn — chỉ cho tương tác và thanh bằng chứng */
-  --accent:     #0E6B5E;
-  --accent-hi:  #0A5449;
-  --accent-dim: rgb(14 107 94 / 0.10);
-  --on-accent:  #FFFFFF;
-  --blush:      #E8AEB7;
-  --sky:        #A7C7E7;
-
-  /* Trạng thái — chỉ cho mức độ */
-  --sev-crit: #B42335;
-  --sev-high: #B45309;
-  --sev-med:  #8A6D00;
-  --sev-low:  #5A6A71;
-  --sev-ok:   #2E7350;
-  --sev-crit-dim: rgb(180 35 53 / 0.08);
-  --sev-high-dim: rgb(180 83 9 / 0.08);
-  --sev-ok-dim:   rgb(46 115 80 / 0.08);
-
-  /* Biểu đồ — cảm xúc là thang phân kỳ đỏ hồng ↔ xám ↔ xanh lam */
-  --viz-neg:  #C4566B;
-  --viz-neu:  #98A6A4;
-  --viz-pos:  #4A80BE;
-  --viz-grid: rgb(19 35 43 / 0.07);
-
-  /* Hình dạng & chuyển động — bo góc theo cấp: điều khiển 6, bề mặt 10 */
+  /* Hình dạng — bo góc theo cấp: điều khiển 6, bề mặt 10 */
   --r-ctrl: 6px;
   --r-surf: 10px;
+
+  /* Kích thước khung */
   --sidebar-w: 240px;
   --sidebar-w-collapsed: 72px;
   --shell-gap: 0px;
-  --ease: cubic-bezier(.2, .8, .2, 1);
-  --dur-fast: 120ms;
-  --dur-base: 200ms;
 
+  /* Chữ */
   --font-sans: 'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif;
   /* Lớp font-mono cũ nay trỏ về chữ chính + chữ số đều cột (xem .font-mono bên dưới);
      font đơn cách thật chỉ còn cho chuỗi thống kê trong ngăn kéo bằng chứng */
   --font-mono: var(--font-sans);
   --font-code: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
-  /* ---- Bí danh tương thích ngược (Lab và style nội tuyến cũ) ---- */
+  /* Khoảng cách và chuyển động (giữ nguyên; F2-01 sẽ sắp lại chuyển động) */
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px;
+  --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --z-dropdown: 100; --z-sticky: 200; --z-modal: 400; --z-toast: 500;
+}
+
+/* ---------- TẦNG 2: NGỮ NGHĨA, SÁNG (mặc định) ----------
+   [data-theme='light'] cho phép một khối con hiện màu sáng khi app đang tối
+   (ô xem trước chủ đề trong Cài đặt). */
+:root, [data-theme='light'] {
+  color-scheme: light;
+
+  /* Nền & bề mặt */
+  --canvas:        var(--navy-97);
+  --surface:       var(--white);
+  --surface-solid: var(--white);
+  --surface-side:  var(--white);
+  --raised:        rgb(19 35 63 / 0.05);   /* navy-26 5% */
+  --border:        var(--navy-90);
+  --border-soft:   var(--navy-94);
+  /* Viền ô nhập, rãnh công tắc lúc tắt: đủ 3:1 trên nền trắng để thấy chỗ gõ */
+  --border-field:  var(--navy-61);
+  /* Lớp phủ sau ngăn kéo, hộp thoại */
+  --scrim:         rgb(19 35 63 / 0.32);
+  /* Giấy sổ: một bậc lệch khỏi bề mặt, cho tờ sổ đối chiếu */
+  --sheet:         var(--navy-98);
+  --sheet-rule:    var(--navy-90);
+  --hairline-shade: 0 1px 0 rgb(19 35 63 / 0.03);
+  --shadow-knob:   0 1px 3px rgb(19 35 63 / 0.25);
+
+  /* Chữ */
+  --text-hi:  var(--navy-26);
+  --text-mid: var(--navy-39);
+  --text-lo:  var(--navy-50);
+
+  /* Nhấn — chỉ cho tương tác và thanh bằng chứng */
+  --accent:     var(--polo-52);
+  --accent-hi:  var(--polo-45);              /* chữ nhấn trên nền nhấn mờ; nền nút chính khi rê */
+  --accent-dim: rgb(31 111 168 / 0.10);      /* polo-52 10% */
+  --on-accent:  var(--white);
+
+  /* Khối mực duy nhất (câu tóm tắt đầu trang, nửa trái trang đăng nhập) */
+  --strip-bg:        var(--navy-26);
+  --on-strip:        var(--white);
+  --on-strip-mid:    rgb(255 255 255 / 0.75);
+  --on-strip-lo:     rgb(255 255 255 / 0.62);
+  --accent-on-strip: var(--polo-81);
+
+  /* Màu nhóm: san hô chỉ là đồ họa (xem quy tắc ở đầu file); blush, sky là nền huy hiệu */
+  --coral: var(--coral-68);
+  --blush: var(--rose-87);
+  --sky:   var(--sky-85);
+
+  /* Trạng thái — chỉ cho mức độ */
+  --sev-crit: var(--red-49);
+  --sev-high: var(--amber-53);
+  --sev-med:  var(--amber-49);
+  --sev-low:  var(--navy-50);
+  --sev-ok:   var(--green-47);
+  --sev-crit-dim: rgb(163 48 61 / 0.12);
+  --sev-high-dim: rgb(168 77 6 / 0.12);
+  --sev-ok-dim:   rgb(29 106 70 / 0.12);
+  --on-crit:  var(--white);                  /* số đếm trên huy hiệu đỏ đặc */
+
+  /* Biểu đồ — cảm xúc là thang phân kỳ đỏ, xám, xanh; tiêu cực cùng màu "xấu",
+     tách hẳn khỏi san hô */
+  --viz-neg:  var(--red-49);
+  --viz-neu:  var(--navy-58);
+  --viz-pos:  var(--polo-57);
+  --viz-grid: rgb(19 35 63 / 0.08);
+  /* Chuỗi phân loại, theo thứ tự dùng; viz-2 chỉ cho chuỗi mang nghĩa xấu,
+     viz-6 xám cho nhóm "Khác" */
+  --viz-1: var(--polo-52);
+  --viz-2: var(--red-49);
+  --viz-3: var(--teal-57);
+  --viz-4: var(--amber-62);
+  --viz-5: var(--plum-42);
+  --viz-6: var(--navy-58);
+  /* Tô từ trong phần giải thích mô hình: ủng hộ / kéo ngược kết luận (bộ ba số cho rgb()) */
+  --viz-support: 240 166 75;
+  --viz-oppose:  43 163 199;
+}
+
+/* ---------- TẦNG 2: NGỮ NGHĨA, TỐI ---------- */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --canvas:        var(--navy-20);
+  --surface:       var(--navy-25);
+  --surface-solid: var(--navy-25);
+  --surface-side:  var(--navy-23);
+  --raised:        rgb(255 255 255 / 0.06);
+  --border:        rgb(255 255 255 / 0.13);
+  --border-soft:   rgb(255 255 255 / 0.08);
+  --border-field:  var(--navy-64);
+  --scrim:         rgb(4 8 16 / 0.60);
+  --sheet:         var(--navy-27);
+  --sheet-rule:    rgb(255 255 255 / 0.10);
+  --hairline-shade: none;
+  --shadow-knob:   0 1px 3px rgb(4 8 16 / 0.45);
+
+  --text-hi:  var(--navy-95);
+  --text-mid: var(--navy-82);
+  --text-lo:  var(--navy-72);
+
+  --accent:     var(--polo-81);
+  --accent-hi:  var(--polo-88);
+  --accent-dim: rgb(140 203 235 / 0.14);     /* polo-81 14% */
+  --on-accent:  var(--polo-23);
+
+  --strip-bg:        var(--navy-30);
+  --on-strip:        var(--white);
+  --on-strip-mid:    rgb(255 255 255 / 0.75);
+  --on-strip-lo:     rgb(255 255 255 / 0.62);
+  --accent-on-strip: var(--polo-81);
+
+  /* San hô giữ nguyên ở hai chế độ để thương hiệu không đổi */
+  --coral: var(--coral-68);
+  /* Blush, sky tối: bg-blush/45 và bg-sky/45 trên nền tối vẫn tối, chữ sáng đạt 10,18 và 8,64:1 */
+  --blush: var(--rose-47);
+  --sky:   var(--sky-52);
+
+  /* Màu xấu lệch về cam đỏ để xa san hô (ΔE2000 16, xem .hallmark/inventory.md phụ lục B) */
+  --sev-crit: var(--red-79);
+  --sev-high: var(--amber-79);
+  --sev-med:  var(--amber-86);
+  --sev-low:  var(--navy-72);
+  --sev-ok:   var(--green-78);
+  --sev-crit-dim: rgb(255 154 128 / 0.13);
+  --sev-high-dim: rgb(240 168 96 / 0.13);
+  --sev-ok-dim:   rgb(127 203 158 / 0.13);
+  --on-crit:  var(--polo-23);
+
+  --viz-neg:  var(--red-79);
+  --viz-neu:  var(--navy-78);
+  --viz-pos:  var(--polo-76);
+  --viz-grid: rgb(255 255 255 / 0.08);
+  --viz-1: var(--polo-76);
+  --viz-2: var(--red-79);
+  --viz-3: var(--teal-78);
+  --viz-4: var(--amber-81);
+  --viz-5: var(--plum-61);
+  --viz-6: var(--navy-78);
+}
+
+/* ---------- TẦNG 3: COMPONENT VÀ BÍ DANH ----------
+   Khai báo trên mọi khối có data-theme để giá trị tính lại theo tầng 2 của
+   đúng khối đó. */
+:root, [data-theme] {
+  /* Logo: giữ một màu ở cả hai chế độ (F1-03 sẽ vẽ lại dấu logo) */
+  --logo-from: var(--polo-57);
+  --logo-to:   var(--polo-45);
+  --logo-ink:  var(--white);
+  --logo-dot:  var(--coral);
+
+  /* Thanh bên áp sát mép */
+  --sidebar-bg: var(--surface-side);
+
+  /* "Kính" cũ nay là bề mặt đặc — giữ tên để không phải sửa từng trang */
+  --glass-bg:      var(--surface);
+  --glass-strong:  var(--surface);
+  --glass-line:    var(--border);
+  --glass-hi:      transparent;
+  --glass-shade:   var(--hairline-shade);
+  --backdrop-img:  none;
+  --backdrop-veil: none;
+  --grid-line:     transparent;
+
+  /* "Hero" cũ — không còn trang nào dùng, giữ tên làm bí danh */
+  --hero-bg:     var(--surface);
+  --hero-fg:     var(--text-hi);
+  --hero-mid:    var(--text-mid);
+  --hero-lo:     var(--text-lo);
+  --hero-line:   var(--border);
+  --hero-grid:   transparent;
+  --hero-stroke: var(--accent);
+  --hero-fill:   var(--accent-dim);
+  --hero-ring:   var(--accent-dim);
+  --hero-shadow: none;
+
+  /* Bí danh tương thích ngược (Lab và style nội tuyến cũ) */
   --bg-dark:        var(--canvas);
   --bg-card:        var(--surface-solid);
   --bg-card-hover:  var(--raised);
@@ -143,87 +332,19 @@
   --radius-md:      var(--r-surf);
   --radius-lg:      var(--r-surf);
 
-  /* ---- Thang chung (tên theo Hallmark, trỏ về token ở trên) ---- */
-  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px;
-  --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --dur-micro: 120ms;
-  --dur-short: 220ms;
-  --color-paper: var(--canvas);
-  --color-paper-2: var(--surface);
-  --color-paper-3: var(--sheet);
-  --color-ink: var(--text-hi);
-  --color-ink-2: var(--text-mid);
-  --color-muted: var(--border-field);
-  --color-rule: var(--border);
-  --color-accent: var(--accent);
+  /* Thang chung tên theo Hallmark, trỏ về tầng 2 */
+  --color-paper:      var(--canvas);
+  --color-paper-2:    var(--surface);
+  --color-paper-3:    var(--sheet);
+  --color-ink:        var(--text-hi);
+  --color-ink-2:      var(--text-mid);
+  --color-muted:      var(--border-field);
+  --color-rule:       var(--border);
+  --color-accent:     var(--accent);
   --color-accent-ink: var(--on-accent);
-  --color-focus: var(--accent);
-  --font-display: var(--font-sans);
-  --font-body: var(--font-sans);
-  --z-dropdown: 100; --z-sticky: 200; --z-modal: 400; --z-toast: 500;
-}
-
-/* ---------- TỐI ---------- */
-[data-theme='dark'] {
-  color-scheme: dark;
-
-  --canvas:        #0F1A1F;
-  --surface:       #16232A;
-  --surface-solid: #16232A;
-  --raised:        rgb(255 255 255 / 0.06);
-  --border:        rgb(255 255 255 / 0.12);
-  --border-soft:   rgb(255 255 255 / 0.07);
-  --border-field:  #7C8E90;
-  --scrim:         rgb(4 10 13 / 0.55);
-  --sheet:         #1A2930;
-  --sheet-rule:    rgb(255 255 255 / 0.10);
-
-  --glass-bg:     #16232A;
-  --glass-strong: #16232A;
-  --glass-line:   rgb(255 255 255 / 0.12);
-  --glass-hi:     rgb(255 255 255 / 0);
-  --glass-shade:  none;
-  --backdrop-img: none;
-  --backdrop-veil: none;
-  --grid-line:    transparent;
-
-  --strip-bg:     #23363F;
-  --hero-bg:      #16232A;
-  --hero-fg:      #E6EEED;
-  --hero-mid:     #BAC7C7;
-  --hero-lo:      #9AABAD;
-  --hero-line:    rgb(255 255 255 / 0.12);
-  --hero-grid:    transparent;
-  --hero-stroke:  #6CC2AF;
-  --hero-fill:    rgb(108 194 175 / 0.14);
-  --hero-ring:    rgb(108 194 175 / 0.22);
-  --hero-shadow:  none;
-  --sidebar-bg:   #131F25;
-
-  --text-hi:  #E6EEED;
-  --text-mid: #BAC7C7;
-  --text-lo:  #9AABAD;
-
-  --accent:     #6CC2AF;
-  --accent-hi:  #9ADBCB;
-  --accent-dim: rgb(108 194 175 / 0.14);
-  --on-accent:  #06201B;
-
-  --sev-crit: #F08A9B;
-  --sev-high: #E8B46A;
-  --sev-med:  #DCC062;
-  --sev-low:  #9AA8A8;
-  --sev-ok:   #7CC79C;
-  --sev-crit-dim: rgb(240 138 155 / 0.13);
-  --sev-high-dim: rgb(232 180 106 / 0.13);
-  --sev-ok-dim:   rgb(124 199 156 / 0.13);
-
-  --viz-neg:  #E8899B;
-  --viz-neu:  #7C8B8B;
-  --viz-pos:  #7AAAE0;
-  --viz-grid: rgb(255 255 255 / 0.07);
+  --color-focus:      var(--accent);
+  --font-display:     var(--font-sans);
+  --font-body:        var(--font-sans);
 }
 
 * {

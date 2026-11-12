@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
  */
 const VARIANT = {
   primary:
-    'bg-accent text-on-accent hover:brightness-110 active:brightness-95',
+    'bg-accent text-on-accent hover:bg-accent-hi disabled:hover:bg-accent',
   secondary: 'border border-line bg-surface text-ink-hi hover:bg-raised',
   soft: 'bg-accent-dim text-accent-hi hover:bg-accent/25',
   outline: 'border border-line bg-transparent text-ink-hi hover:bg-raised',
@@ -41,7 +41,7 @@ export const Button = ({
       type={Tag === 'button' ? rest.type || 'button' : undefined}
       disabled={Tag === 'button' ? disabled || loading : undefined}
       aria-busy={loading || undefined}
-      className={`inline-flex shrink-0 items-center justify-center font-semibold whitespace-nowrap transition-[filter,background-color,color,box-shadow] duration-150 disabled:opacity-45 disabled:shadow-none disabled:brightness-100 ${VARIANT[variant]} ${SIZE[size]} ${block ? 'w-full' : ''} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center font-semibold whitespace-nowrap transition-[background-color,color,box-shadow] duration-150 disabled:opacity-45 disabled:shadow-none ${VARIANT[variant]} ${SIZE[size]} ${block ? 'w-full' : ''} ${className}`}
       {...rest}
     >
       {loading ? <Loader2 size={iconSize} className="animate-spin" aria-hidden="true" /> : Icon && <Icon size={iconSize} aria-hidden="true" />}
@@ -55,7 +55,7 @@ export const Button = ({
 export const IconButton = ({ icon: Icon, label, variant = 'glass', size = 40, className = '', badge, ...rest }) => {
   const tone = {
     glass: 'border border-line bg-surface text-ink-mid hover:bg-raised hover:text-ink-hi',
-    primary: 'bg-accent text-on-accent hover:brightness-110',
+    primary: 'bg-accent text-on-accent hover:bg-accent-hi',
     ghost: 'text-ink-lo hover:bg-raised hover:text-ink-hi'
   }[variant];
   return (
@@ -63,7 +63,7 @@ export const IconButton = ({ icon: Icon, label, variant = 'glass', size = 40, cl
       type="button"
       aria-label={label}
       title={label}
-      className={`relative grid shrink-0 place-items-center rounded-lg transition-[color,background-color,filter] duration-150 disabled:opacity-45 ${tone} ${className}`}
+      className={`relative grid shrink-0 place-items-center rounded-lg transition-[color,background-color] duration-150 disabled:opacity-45 ${tone} ${className}`}
       style={{ width: size, height: size }}
       {...rest}
     >

@@ -16,43 +16,60 @@ import React from 'react';
  */
 
 /**
- * Bảng màu bản in — tông Mist sáng của hệ thiết kế, viết thành hằng số.
+ * Bảng màu bản in — bảng màu B của hệ thiết kế (navy + xanh polo), viết
+ * thành hằng số. Giá trị trùng tầng tham chiếu trong src/index.css.
  * Bản in nền sáng: in ra giấy không tốn mực, đọc được cả khi photo đen trắng.
+ *
+ * Tương phản đo bằng .hallmark/contrast-F1.mjs --print (WCAG 2.x):
+ *   mực #13233F trên giấy 15,67:1, trên nền nhạt #F4F6F9 14,48:1
+ *   mực phụ #36465F 9,55:1, chú thích #56647A 6:1 (5,54:1 trên nền nhạt)
+ *   nhấn #1F6FA8 5,39:1 (4,58:1 trên nền nhấn nhạt #E4EEF5)
+ *   chữ trắng trên dải bìa navy 15,67:1, chữ mờ #C4C8CF 9,34:1
+ *   xấu #A3303D 6,89:1, tốt #1D6A46 6,56:1, chú ý #875200 6,49:1
+ * Photo đen trắng: đường nhấn và đường chú thích gần cùng độ xám (1,08:1),
+ * nên hai đường trong biểu đồ xu hướng phân biệt bằng độ dày và nhãn ở cuối.
  */
 export const REPORT = {
-  canvas: '#F6F8F7',
+  // Bảng cho các thành phần nhỏ (DeltaPill, SeverityDot)
+  canvas: '#F4F6F9',
   surface: '#FFFFFF',
-  raised: '#EEF2F1',
-  border: '#DCE4E2',
-  hi: '#1F2D35',
-  mid: '#4A5A62',
-  lo: '#5A6A71',
-  accent: '#3D6B5F',
-  accentHi: '#2F574D',
-  accentDim: '#E3EEEA',
-  crit: '#B03A4F',
-  critDim: '#F8E6E9',
-  high: '#8F5509',
-  highDim: '#F6ECDD',
-  ok: '#2E7350',
-  okDim: '#E2F0E8',
-  // Bản in A4 (components/report): giấy trắng, mực xanh đen, một màu nhấn
-  // xanh rêu của thương hiệu. Màu xấu và màu tốt chỉ dùng cho số thay đổi.
+  raised: '#EEF1F5',
+  border: '#D7DDE7',
+  hi: '#13233F',
+  mid: '#36465F',
+  lo: '#56647A',
+  accent: '#1F6FA8',
+  accentHi: '#185A8A',
+  accentDim: '#E4EEF5',
+  crit: '#A3303D',
+  critDim: '#F6E7E9',
+  high: '#A84D06',
+  highDim: '#F6EBE1',
+  ok: '#1D6A46',
+  okDim: '#E4EFE9',
+  // Bản in A4 (components/report): giấy trắng, mực navy, một màu nhấn xanh
+  // polo của thương hiệu, dải bìa navy. Màu xấu và màu tốt chỉ dùng cho số thay đổi.
   paper: '#FFFFFF',
-  ink: '#17242A',
-  ink2: '#3E4E55',
-  ink3: '#5F6E74',
-  rule: '#CBD5D2',
-  ruleSoft: '#E4EAE8',
-  tint: '#F3F6F5',
-  brand: '#0E6B5E',
-  brandSoft: '#D9EAE5',
-  brandInk: '#0B3B35',
+  ink: '#13233F',
+  ink2: '#36465F',
+  ink3: '#56647A',
+  rule: '#D7DDE7',
+  ruleSoft: '#E6EAF1',
+  tint: '#F4F6F9',
+  brand: '#1F6FA8',
+  brandSoft: '#E4EEF5',
+  brandInk: '#13233F',
   onInk: '#FFFFFF',
-  onInkMuted: '#B7D2CB',
+  onInkMuted: '#C4C8CF',
   bad: '#A3303D',
   good: '#1D6A46',
-  warn: '#875200'
+  warn: '#875200',
+  // Dấu logo trên dải bìa: html2canvas chụp SVG không kèm biến CSS nên logo
+  // trong bản in nhận màu hex (cùng giá trị với --logo-* ở index.css)
+  logoFrom: '#2B7FB8',
+  logoTo: '#185A8A',
+  logoInk: '#FFFFFF',
+  logoDot: '#E66A78'
 };
 
 /** Biến CSS cho bản in, đặt lên phần tử gốc của tài liệu (report.css đọc các biến này) */
