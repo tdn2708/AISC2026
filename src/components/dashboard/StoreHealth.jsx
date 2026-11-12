@@ -163,7 +163,7 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry, countStart =
   const trust = health == null ? null : health >= 75 ? ['text-ok', 'Đáng tin'] : health >= 50 ? ['text-high', 'Cần chú ý'] : ['text-crit', 'Chưa đáng tin'];
 
   return (
-    <section ref={sectionRef} aria-labelledby="health-title" className="mb-8 overflow-hidden glass-strong rounded-surf">
+    <section ref={sectionRef} aria-labelledby="health-title" className="reveal mb-8 overflow-hidden glass-strong rounded-surf">
       <h2 id="health-title" className="px-5 pt-5 text-heading font-semibold tracking-[-0.01em] text-ink-hi sm:px-6">Cửa hàng đang thế nào</h2>
       {!stats && failed ? (
         <EmptyState variant="error" compact title="Không tải được chỉ số" description="Máy chủ phân tích chưa trả lời. Số liệu sẽ hiện khi kết nối lại." action={onRetry && <Button size="sm" variant="secondary" icon={RotateCw} onClick={onRetry}>Thử lại</Button>} />

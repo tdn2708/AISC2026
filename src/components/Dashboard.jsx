@@ -148,6 +148,7 @@ const Dashboard = () => {
         ledger={playRun && !entered ? null : ledger} ledgerFailed={ledgerFailed} onRetryLedger={retryLedger} onLedgerDone={onLedgerDone} playRun={playRun}
         evidence={hasFilter ? null : stats?.evidence?.all}
         hasUrgent={lifted.length > 0}
+        asOfRight={lifted.length > 1}
         urgent={(
           <UrgentNow
             lifted={lifted} rest={restCount} ready={inboxReady && !(loading && !stats)} failed={failed || inboxFailed} onRetry={retryAll}
@@ -186,21 +187,21 @@ const Dashboard = () => {
         <StoreHealth stats={stats} trend={trend} loading={loading} failed={failed} onRetry={reload} countStart={reduced || (entered && ledgerDone)} />
 
         <div className="mb-8 grid grid-cols-12 items-start gap-6">
-          <section aria-label="Diễn biến cảm xúc" className="col-span-12 xl:col-span-8">
+          <section aria-label="Diễn biến cảm xúc" className="reveal col-span-12 xl:col-span-8">
             <SentimentTrendChart data={trend} loading={loading && !stats} failed={failed} onRetry={reload} />
           </section>
-          <section aria-label="Phân bổ cảm xúc" className="col-span-12 md:col-span-6 xl:col-span-4">
+          <section aria-label="Phân bổ cảm xúc" className="reveal col-span-12 md:col-span-6 xl:col-span-4">
             <SentimentShare data={sentiments} loading={loading && !stats} failed={failed} onRetry={reload} />
           </section>
-          <section aria-label="Vấn đề đang tăng nhanh" className="col-span-12 md:col-span-6 xl:col-span-6 xl:[&:has(+section:empty)]:col-span-12">
+          <section aria-label="Vấn đề đang tăng nhanh" className="reveal col-span-12 md:col-span-6 xl:col-span-6 xl:[&:has(+section:empty)]:col-span-12">
             <RisingIssues alerts={alerts} loading={loading && !stats} failed={failed} onRetry={reload} />
           </section>
-          <section aria-label="Livestream" className="col-span-12 xl:col-span-6 [&>div]:mt-0">
+          <section aria-label="Livestream" className="reveal col-span-12 xl:col-span-6 [&>div]:mt-0">
             <LiveDigest />
           </section>
         </div>
 
-        <section aria-label="Phản hồi gần đây">
+        <section aria-label="Phản hồi gần đây" className="reveal">
           <FeedbackTable timeFilter={timeFilter} sourceFilter={sourceFilter} productFilter={productFilter} />
         </section>
       </div>

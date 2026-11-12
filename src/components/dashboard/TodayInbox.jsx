@@ -77,6 +77,9 @@ const SOURCE = { alert: 'Cảnh báo', live: 'Livestream', orders: 'Đơn hàng'
 const ALERT_SEV = { Critical: 'critical', High: 'high', Medium: 'medium', Low: 'medium' };
 const PREVIEW = 6;
 
+/** Viết hoa chữ đầu khi lý do đứng riêng một dòng (alertInWords trả câu chữ thường để ghép giữa câu) */
+export const upFirst = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
 /** Gộp cảnh báo chờ quyết và việc từ máy chủ thành một danh sách đã xếp */
 export const buildTodo = (alerts = [], items = [], isDecided = (a) => a.decision && a.decision !== 'PROPOSED') => {
   const fromAlerts = alerts.filter((a) => !isDecided(a)).map((a) => ({
@@ -141,7 +144,7 @@ const Row = ({ t, open, onToggle, state, onAccept, onDismiss }) => {
         <div className="min-w-0 flex-1">
           <p className="hidden text-xs text-ink-mid sm:block">{SOURCE[t.source] || 'Việc khác'}</p>
           <p className="text-base sm:mt-0.5 leading-snug font-semibold text-ink-hi">{t.title}</p>
-          <p className="mt-1 text-sm leading-relaxed text-ink-mid">{t.why}</p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-mid">{upFirst(t.why)}</p>
           {t.kind === 'alert' && (
             <Expand open={open}>
               <AlertPlan alert={t.alert} state={state} onAccept={onAccept} onDismiss={onDismiss} />
@@ -216,7 +219,7 @@ const TodayInbox = ({ alerts = [], items = [], loading, failed, onRetry, skip = 
   if (skip > 0 && todo.length === 0) return null;
 
   return (
-    <section id="today" aria-labelledby="today-title" className="mb-8 scroll-mt-24 overflow-hidden glass-strong rounded-surf">
+    <section id="today" aria-labelledby="today-title" className="reveal mb-8 overflow-hidden glass-strong rounded-surf">
       <header className="flex flex-wrap items-end justify-between gap-2 border-b border-line-soft px-5 pt-5 pb-4 sm:px-6">
         <div>
           <h2 id="today-title" className="text-heading font-semibold tracking-[-0.01em] text-ink-hi">Việc hôm nay</h2>

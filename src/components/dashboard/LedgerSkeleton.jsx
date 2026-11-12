@@ -9,8 +9,9 @@ import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
  */
 const ROWS = ['w-40', 'w-28', 'w-32', 'w-36'];
 
-const LedgerSkeleton = ({ className = '' }) => (
-  <SkeletonBlock label="Đang tải sổ đối chiếu" className={`rounded-lg border border-line bg-(--sheet) px-5 pt-4 pb-5 ${className}`}>
+/** flat: không viền, cho chỗ nằm trong khối kính (Tổng quan); mặc định giữ viền như ở Đăng nhập */
+const LedgerSkeleton = ({ className = '', flat = false }) => (
+  <SkeletonBlock label="Đang tải sổ đối chiếu" className={`${flat ? 'rounded-ctrl' : 'rounded-lg border border-line'} bg-(--sheet) px-5 pt-4 pb-5 ${className}`}>
     <span className="flex items-center justify-between gap-3 py-1">
       <Skeleton className="h-4 w-44" />
     </span>

@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RefreshCw, RotateCw } from 'lucide-react';
 import { Button, EmptyState } from '../ui';
+import { GlassPanel } from '../ui/Glass';
 import { Skeleton } from '../ui/Skeleton';
 import LedgerSkeleton from './LedgerSkeleton';
 import { LedgerRun, prefersReducedMotion } from '../motion';
@@ -10,7 +11,7 @@ import { fmtDate, fmtDateTime } from '../../lib/format';
 /**
  * CÂU TRẢ LỜI ĐỨNG TRƯỚC, CUỐN SỔ ĐỐI CHIẾU ĐỨNG NGAY CẠNH
  * ------------------------------------------------------------------
- * Đầu trang, trên nền giấy. Bên trái: một câu nói hôm nay có mấy việc và
+ * Đầu trang là MỘT khối kính (K4-01). Bên trái: một câu nói hôm nay có mấy việc và
  * việc nào gấp nhất. Bên phải: phép tính từ số phản hồi thu thập được tới số
  * được đưa vào chỉ số — bao nhiêu bị loại vì rác, vì nghi ảo, còn lại bao
  * nhiêu, trong đó bao nhiêu có chứng từ. Đây là thứ các công cụ khác không
@@ -27,6 +28,9 @@ import { fmtDate, fmtDateTime } from '../../lib/format';
  * Giảm chuyển động: tờ sổ tĩnh; nút "Xem việc hôm nay" cuộn không mượt.
  */
 
+/** Tờ sổ là giấy đặc, không viền: nằm trên kính mà không thành thẻ lồng thẻ */
+const SHEET = 'rounded-ctrl bg-(--sheet) px-5 pt-4 pb-5';
+
 const lower1 = (s) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
 
 const todayLabel = () => {
@@ -35,7 +39,7 @@ const todayLabel = () => {
 };
 
 /** todo: danh sách việc đã gộp và xếp (TodayInbox.buildTodo) */
-const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, lastUpdated, ledger, ledgerFailed, onRetryLedger, onLedgerDone, playRun = true, evidence, urgent = null, hasUrgent = false }) => {
+const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, lastUpdated, ledger, ledgerFailed, onRetryLedger, onLedgerDone, playRun = true, evidence, urgent = null, hasUrgent = false, asOfRight = false }) => {
   const navigate = useNavigate();
   const top = todo[0];
   const urgentCount = todo.filter((t) => t.severity === 'critical').length;
@@ -63,52 +67,63 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
     ? `Dữ liệu thật thu thập từ sàn, tên người mua đã che. Tính đến đánh giá mới nhất ngày ${fmtDate(stats.asOf)}${stats.ingestedAt ? `, thu thập lần gần nhất ${fmtDateTime(stats.ingestedAt)}` : ''}.`
     : `Dữ liệu mô phỏng, cập nhật lúc ${lastUpdated}.`;
 
+  const asOf = !stats && error ? null : loading && !stats
+    ? <Skeleton className="mt-5 h-3.5 w-64 max-w-full" />
+    : <p className="mt-5 max-w-[60ch] text-sm leading-relaxed text-ink-mid">{asOfLine}</p>;
+
   return (
-    <section aria-labelledby="summary-title" className="mb-8 border-b border-line pt-4 pb-8">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:items-start lg:gap-12">
+    <GlassPanel as="section" tone="strong" aria-labelledby="summary-title" className="mt-2 mb-8 overflow-hidden">
+      {/* Một khối kính: bên trái câu tóm tắt, nút và "Việc gấp nhất" (hàng kẻ, không thẻ); bên phải sổ đối chiếu
+          là giấy đặc không viền. Điện thoại xếp một cột: câu, việc gấp, rồi sổ. */}
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:items-start">
         <div className="min-w-0">
-          <p className="text-sm text-ink-mid"><time>{todayLabel()}</time></p>
-          <h1 id="summary-title" className="mt-3 max-w-[30ch] text-display font-semibold tracking-[-0.02em] text-ink-hi" aria-live="polite">
-            {sentence ?? (
-              <>
-                <span className="sr-only">Đang tải việc hôm nay</span>
-                <span className="flex flex-col gap-2.5 py-1" aria-hidden="true">
-                  <Skeleton className="h-6 w-[26ch] max-w-full" />
-                  <Skeleton className="h-6 w-[17ch] max-w-full" />
-                </span>
-              </>
-            )}
-          </h1>
-          <div className="mt-6 flex flex-wrap gap-2">
-            {top && !hasUrgent && (
-              <Button onClick={() => document.getElementById('today')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })}>
-                Xem việc hôm nay
+          <div className="px-5 pt-6 pb-6 sm:px-8 sm:pt-8">
+            <p className="text-sm text-ink-mid"><time>{todayLabel()}</time></p>
+            <h1 id="summary-title" className="mt-3 max-w-[30ch] text-display font-semibold tracking-[-0.02em] text-ink-hi" aria-live="polite">
+              {sentence ?? (
+                <>
+                  <span className="sr-only">Đang tải việc hôm nay</span>
+                  <span className="flex flex-col gap-2.5 py-1" aria-hidden="true">
+                    <Skeleton className="h-6 w-[26ch] max-w-full" />
+                    <Skeleton className="h-6 w-[17ch] max-w-full" />
+                  </span>
+                </>
+              )}
+            </h1>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {top && !hasUrgent && (
+                <Button onClick={() => document.getElementById('today')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })}>
+                  Xem việc hôm nay
+                </Button>
+              )}
+              <Button variant="secondary" icon={RefreshCw} onClick={() => navigate('/data')}>
+                Thu thập dữ liệu mới
               </Button>
-            )}
-            <Button variant="secondary" icon={RefreshCw} onClick={() => navigate('/data')}>
-              Thu thập dữ liệu mới
-            </Button>
+            </div>
+            {!asOfRight && asOf}
           </div>
-          {urgent}
-          {!stats && error ? null : loading && !stats ? <Skeleton className="mt-5 h-3.5 w-64 max-w-full" /> : <p className="mt-5 max-w-[60ch] text-sm leading-relaxed text-ink-lo">{asOfLine}</p>}
+          {urgent && <div className="border-t border-line-soft">{urgent}</div>}
         </div>
-        {ledger ? (
-          <LedgerRun ledger={ledger} evidence={evidence} mode="auto" play={playRun} onDone={onLedgerDone} />
-        ) : ledgerFailed ? (
-          <div className="rounded-lg border border-line bg-(--sheet)">
-            <EmptyState
-              variant="error"
-              compact
-              title="Không tải được sổ đối chiếu"
-              description="Chưa lấy được số thu thập và số được tính từ máy chủ."
-              action={<Button size="sm" variant="secondary" icon={RotateCw} onClick={onRetryLedger}>Thử lại</Button>}
-            />
-          </div>
-        ) : (
-          <LedgerSkeleton />
-        )}
+        <div className="min-w-0 px-5 pt-0 pb-6 sm:px-8 lg:py-8 lg:pr-8 lg:pl-0">
+          {ledger ? (
+            <LedgerRun ledger={ledger} evidence={evidence} mode="auto" play={playRun} onDone={onLedgerDone} bare className={SHEET} />
+          ) : ledgerFailed ? (
+            <div className="rounded-ctrl bg-(--sheet)">
+              <EmptyState
+                variant="error"
+                compact
+                title="Không tải được sổ đối chiếu"
+                description="Chưa lấy được số thu thập và số được tính từ máy chủ."
+                action={<Button size="sm" variant="secondary" icon={RotateCw} onClick={onRetryLedger}>Thử lại</Button>}
+              />
+            </div>
+          ) : (
+            <LedgerSkeleton flat />
+          )}
+          {asOfRight && <div className="lg:px-5">{asOf}</div>}
+        </div>
       </div>
-    </section>
+    </GlassPanel>
   );
 };
 

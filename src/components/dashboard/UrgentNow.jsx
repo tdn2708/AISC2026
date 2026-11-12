@@ -2,10 +2,9 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, CircleSlash, RotateCw } from 'lucide-react';
 import { Button } from '../ui';
-import { GlassPanel } from '../ui/Glass';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { Pulse, prefersReducedMotion } from '../motion';
-import { SEV } from './TodayInbox';
+import { SEV, upFirst } from './TodayInbox';
 
 /**
  * VIỆC GẤP NHẤT — hai việc đầu của "Việc hôm nay", ngay dưới câu tóm tắt
@@ -36,13 +35,13 @@ const Row = ({ t, state, onAccept, onDismiss }) => {
   const strong = t.severity !== 'medium';
 
   return (
-    <Pulse as="li" trigger={decided ? state : null} className={`border-b border-line-soft px-5 py-4 last:border-b-0 sm:px-6 ${decided ? 'opacity-70' : ''}`}>
+    <Pulse as="li" trigger={decided ? state : null} className={`border-b border-line-soft px-5 py-4 last:border-b-0 sm:px-8 ${decided ? 'opacity-70' : ''}`}>
       <p className="flex flex-wrap items-baseline gap-x-3 text-sm">
         <span className={`font-semibold ${sev.text}`}>{sev.label}</span>
         <span className="text-xs text-ink-mid">{SOURCE[t.source] || 'Việc khác'}</span>
       </p>
       <p className="mt-1 text-base leading-snug font-semibold text-ink-hi">{t.title}</p>
-      <p className="mt-1 text-sm leading-relaxed text-ink-mid">{t.why}</p>
+      <p className="mt-1 text-sm leading-relaxed text-ink-mid">{upFirst(t.why)}</p>
       {step && <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-hi">Đề xuất: {step.text}</p>}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -77,7 +76,7 @@ const Row = ({ t, state, onAccept, onDismiss }) => {
 const UrgentSkeleton = () => (
   <SkeletonBlock as="ol" label="Đang gom việc gấp" className="list-none">
     {[0, 1].map((i) => (
-      <li key={i} className="flex flex-col gap-2 border-b border-line-soft px-5 py-4 last:border-b-0 sm:px-6">
+      <li key={i} className="flex flex-col gap-2 border-b border-line-soft px-5 py-4 last:border-b-0 sm:px-8">
         <Skeleton className="h-3.5 w-24" />
         <Skeleton className="h-4 w-3/4" />
         <Skeleton className="h-3.5 w-1/2" />
@@ -94,8 +93,8 @@ const UrgentSkeleton = () => (
 const UrgentNow = ({ lifted = [], rest = 0, ready, failed, onRetry, statusOf, accept, onDismiss }) => {
   const empty = ready && lifted.length === 0;
   return (
-    <GlassPanel as="section" tone="strong" aria-labelledby="urgent-title" className="mt-6 overflow-hidden">
-      <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line-soft px-5 pt-4 pb-3 sm:px-6">
+    <section aria-labelledby="urgent-title">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line-soft px-5 pt-5 pb-3 sm:px-8">
         <h2 id="urgent-title" className="text-heading font-semibold tracking-[-0.01em] text-ink-hi">Việc gấp nhất</h2>
         {rest > 0 && (
           <Button variant="link" size="sm" onClick={scrollToToday}>Xem {rest} việc khác</Button>
@@ -105,12 +104,12 @@ const UrgentNow = ({ lifted = [], rest = 0, ready, failed, onRetry, statusOf, ac
       {!ready ? (
         <UrgentSkeleton />
       ) : failed && lifted.length === 0 ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
           <p className="text-sm text-ink-mid">Chưa gom được việc gấp, nên chưa thể nói là không có.</p>
           {onRetry && <Button size="sm" variant="secondary" icon={RotateCw} onClick={onRetry}>Thử lại</Button>}
         </div>
       ) : empty ? (
-        <div className="px-5 py-4 sm:px-6">
+        <div className="px-5 py-4 sm:px-8">
           <p className="text-base font-semibold text-ink-hi">Hôm nay chưa có việc gấp</p>
           {rest > 0 && <p className="mt-1 text-sm text-ink-mid">{`Có ${rest} việc nên làm, nằm ở danh sách bên dưới.`}</p>}
         </div>
@@ -127,7 +126,7 @@ const UrgentNow = ({ lifted = [], rest = 0, ready, failed, onRetry, statusOf, ac
           ))}
         </ol>
       )}
-    </GlassPanel>
+    </section>
   );
 };
 
