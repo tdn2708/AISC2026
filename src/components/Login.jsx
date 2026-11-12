@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, EyeOff, Eye } from 'lucide-react';
 import Logo from './Logo';
 import { Button, IconButton, TextField, EvidenceSwatch } from './ui';
-import { LedgerRun } from './motion';
+import { LedgerRun, PageEnter } from './motion';
 import LedgerSkeleton from './dashboard/LedgerSkeleton';
 
 /**
@@ -96,10 +96,13 @@ const Login = ({ onLogin }) => {
       </section>
 
       <section className="flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-[380px]">
+        {/* M1 (K4-02): chỉ phần form vào bằng PageEnter; khối mực bên trái đứng yên */}
+        <PageEnter className="w-full max-w-[380px]">
           <div className="mb-10 lg:hidden"><Logo size="md" showTagline={false} /></div>
-          <h2 className="text-display font-semibold tracking-[-0.01em] text-ink-hi">Đăng nhập</h2>
-          <p className="mt-1.5 text-sm text-ink-mid">Tài khoản dùng thử đã được điền sẵn.</p>
+          <div>
+            <h2 className="text-display font-semibold tracking-[-0.01em] text-ink-hi">Đăng nhập</h2>
+            <p className="mt-1.5 text-sm text-ink-mid">Tài khoản dùng thử đã được điền sẵn.</p>
+          </div>
 
           <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
             <TextField label="Email" type="email" icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
@@ -126,7 +129,7 @@ const Login = ({ onLogin }) => {
               Xem trang giới thiệu
             </Link>
           </p>
-        </div>
+        </PageEnter>
       </section>
     </div>
   );
