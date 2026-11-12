@@ -24,6 +24,8 @@ import EvidenceDrawer from './EvidenceDrawer';
  * ngay số cuối.
  */
 const COUNT_MS = 600;
+// Số sau bắt đầu khi số trước đi được ~40%: ba số xong trong ~1,1 giây thay vì 1,8
+const STAGGER_MS = Math.round(COUNT_MS * 0.4);
 
 const fmtNum = (n, decimals) => new Intl.NumberFormat('vi-VN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(n);
 
@@ -141,7 +143,7 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry, countStart =
       return undefined;
     }
     if (!inView) return undefined;
-    const t = setTimeout(() => setTurn((n) => n + 1), turn === 0 ? 0 : COUNT_MS);
+    const t = setTimeout(() => setTurn((n) => n + 1), turn === 0 ? 0 : STAGGER_MS);
     return () => clearTimeout(t);
   }, [turn, stats, countStart, reduced, inView]);
 
