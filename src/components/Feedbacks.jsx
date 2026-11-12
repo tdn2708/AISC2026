@@ -8,6 +8,7 @@ import { PageHeader, GlassPanel, Button, IconButton, fieldClass, Chip, EmptyStat
 import { fmtInt } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
 import useFeedbackPage from '../hooks/useFeedbackPage';
+import { PageEnter } from './motion';
 
 /**
  * PHẢN HỒI
@@ -107,7 +108,7 @@ const Feedbacks = () => {
   };
 
   return (
-    <div className="cx">
+    <PageEnter className="cx">
       <PageHeader title="Phản hồi" subtitle="Bấm vào một dòng để xem nội dung đầy đủ và vì sao phản hồi được tính." />
 
       <FilterBar
@@ -185,7 +186,7 @@ const Feedbacks = () => {
       </GlassPanel>
 
       <FeedbackDetail item={selected} onClose={() => setSelected(null)} />
-    </div>
+    </PageEnter>
   );
 };
 

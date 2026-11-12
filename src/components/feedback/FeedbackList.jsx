@@ -16,6 +16,7 @@ const WIDTHS = {
 };
 
 const FeedbackList = ({ items, showProduct = false, onSelect, dimmed = false }) => (
+  <div className="paper">
   <div className={`overflow-x-auto transition-opacity duration-short ${dimmed ? 'opacity-60' : ''}`}>
     <table className="fb-table">
       <colgroup>
@@ -45,7 +46,7 @@ const FeedbackList = ({ items, showProduct = false, onSelect, dimmed = false }) 
               tabIndex={onSelect ? 0 : undefined}
               onClick={onSelect ? open : undefined}
               onKeyDown={onSelect ? (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), open()) : undefined}
-              className={onSelect ? 'cursor-pointer focus-visible:bg-raised focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent' : undefined}
+              className={onSelect ? 'lift cursor-pointer focus-visible:bg-raised focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent' : undefined}
             >
               <td className="fb-c-user">
                 <div className="fb-user">
@@ -85,6 +86,7 @@ const FeedbackList = ({ items, showProduct = false, onSelect, dimmed = false }) 
         })}
       </tbody>
     </table>
+  </div>
   </div>
 );
 
