@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, CircleSlash, ChevronDown, ShieldCheck, RotateCw } from 'lucide-react';
 import { Button, EmptyState } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
+import { Pulse, useReducedMotion, MOTION, EASE } from '../motion';
 import { ConfidenceMeter, DismissModal } from '../alerts/AlertParts';
 import { useDecisions } from '../../hooks/useDecisions';
 import { alertTitle, alertInWords } from '../../lib/format';
@@ -17,7 +18,55 @@ import { alertTitle, alertInWords } from '../../lib/format';
  *   Duyệt phản hồi  nghi đánh giá ảo, AI chưa chắc nhãn
  *   Dữ liệu         kho thật lâu chưa cập nhật
  * Việc gấp ở trên. Mỗi dòng nói việc gì, vì sao, và có nút để làm luôn.
+ *
+ * Chuyển động theo thao tác (F5-03): mở đề xuất thì phần kế hoạch hiện bằng
+ * clip-path từ trên xuống + opacity (--motion-medium, ease-out), thu gọn thì
+ * chạy ngược nhanh hơn rồi mới gỡ. Chấp nhận hoặc bỏ qua xong: dòng tô một
+ * nhịp (Pulse) rồi tự gập. Không animate chiều cao. Giảm chuyển động: mở,
+ * gập ngay, không tô.
  */
+
+const HIDDEN = 'inset(0 0 100% 0)';
+const SHOWN = 'inset(0 0 0 0)';
+
+/** Phần mở rộng của một dòng: hiện bằng clip-path, gập chạy ngược rồi mới gỡ khỏi DOM */
+const Expand = ({ open, children }) => {
+  const ref = useRef(null);
+  const reduced = useReducedMotion();
+  const [shown, setShown] = useState(open);
+  if (open && !shown) setShown(true);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!open || reduced || !el || typeof el.animate !== 'function') return undefined;
+    const a = el.animate(
+      [{ clipPath: HIDDEN, opacity: 0, transform: 'translateY(-4px)' }, { clipPath: SHOWN, opacity: 1, transform: 'none' }],
+      { duration: MOTION.medium, easing: EASE.out }
+    );
+    return () => a.cancel();
+  }, [open, reduced]);
+
+  useEffect(() => {
+    if (open || !shown) return undefined;
+    const el = ref.current;
+    if (reduced || !el || typeof el.animate !== 'function') {
+      setShown(false);
+      return undefined;
+    }
+    const a = el.animate(
+      [{ clipPath: SHOWN, opacity: 1 }, { clipPath: HIDDEN, opacity: 0 }],
+      { duration: Math.round(MOTION.medium * 0.7), easing: EASE.in, fill: 'forwards' }
+    );
+    let alive = true;
+    a.finished.then(() => alive && setShown(false)).catch(() => {});
+    return () => {
+      alive = false;
+      a.cancel();
+    };
+  }, [open, shown, reduced]);
+
+  return shown ? <div ref={ref}>{children}</div> : null;
+};
 
 export const SEV = {
   critical: { rank: 3, label: 'Khẩn', text: 'text-crit' },
@@ -82,7 +131,8 @@ const Row = ({ t, open, onToggle, state, onAccept, onDismiss }) => {
   const sev = SEV[t.severity];
   const decided = state === 'ACCEPTED' || state === 'DISMISSED';
   return (
-    <li className={`border-b border-line-soft px-5 py-4 last:border-b-0 sm:px-6 ${decided ? 'opacity-70' : ''}`}>
+    // Vừa chấp nhận/bỏ qua: một nhịp tô nền ở đúng dòng này (trigger đổi từ null sang quyết định)
+    <Pulse as="li" trigger={decided ? state : null} className={`border-b border-line-soft px-5 py-4 last:border-b-0 sm:px-6 ${decided && !open ? 'opacity-70' : ''}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
         <div className="flex shrink-0 items-center gap-2 sm:w-[6.5rem] sm:pt-0.5">
           <span className={`text-sm font-semibold ${sev.text}`}>{sev.label}</span>
@@ -92,7 +142,11 @@ const Row = ({ t, open, onToggle, state, onAccept, onDismiss }) => {
           <p className="hidden text-xs text-ink-mid sm:block">{SOURCE[t.source] || 'Việc khác'}</p>
           <p className="text-base sm:mt-0.5 leading-snug font-semibold text-ink-hi">{t.title}</p>
           <p className="mt-1 text-sm leading-relaxed text-ink-mid">{t.why}</p>
-          {t.kind === 'alert' && open && <AlertPlan alert={t.alert} state={state} onAccept={onAccept} onDismiss={onDismiss} />}
+          {t.kind === 'alert' && (
+            <Expand open={open}>
+              <AlertPlan alert={t.alert} state={state} onAccept={onAccept} onDismiss={onDismiss} />
+            </Expand>
+          )}
         </div>
         <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
           {t.kind === 'alert' ? (
@@ -107,7 +161,7 @@ const Row = ({ t, open, onToggle, state, onAccept, onDismiss }) => {
           )}
         </div>
       </div>
-    </li>
+    </Pulse>
   );
 };
 
@@ -144,6 +198,14 @@ const TodayInbox = ({ alerts = [], items = [], loading, failed, onRetry }) => {
   const todo = buildTodo(alerts, items, decidedBefore);
   const remaining = todo.filter((t) => t.kind !== 'alert' || !['ACCEPTED', 'DISMISSED'].includes(statusOf(t.alert))).length;
   const visible = showAll ? todo : todo.slice(0, PREVIEW);
+
+  // Quyết định vừa lưu xong cho dòng đang mở: để nhịp Pulse chạy hết rồi tự gập
+  const openState = openId?.startsWith('alert|') ? states[openId.slice(6)] : undefined;
+  useEffect(() => {
+    if (openState !== 'ACCEPTED' && openState !== 'DISMISSED') return undefined;
+    const t = setTimeout(() => setOpenId(null), MOTION.long);
+    return () => clearTimeout(t);
+  }, [openState]);
 
   return (
     <section id="today" aria-labelledby="today-title" className="mb-8 scroll-mt-24 overflow-hidden glass-strong rounded-surf">
