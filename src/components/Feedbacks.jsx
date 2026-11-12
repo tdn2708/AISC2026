@@ -4,7 +4,7 @@ import { Search, X } from 'lucide-react';
 import FilterBar from './FilterBar';
 import FeedbackList, { FeedbackListSkeleton } from './feedback/FeedbackList';
 import FeedbackDetail from './feedback/FeedbackDetail';
-import { PageHeader, GlassPanel, Chip, EmptyState, SentimentFace, EvidenceSwatch, Pager } from './ui';
+import { PageHeader, GlassPanel, Button, IconButton, Chip, EmptyState, SentimentFace, EvidenceSwatch, Pager } from './ui';
 import { fmtInt } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
 import useFeedbackPage from '../hooks/useFeedbackPage';
@@ -123,13 +123,9 @@ const Feedbacks = () => {
             Đang xem cả phản hồi không được tính: <b className="text-ink-hi">{fmtInt(counts.counted)}</b> được tính,{' '}
             <b className="text-ink-hi">{fmtInt(counts.all - counts.counted)}</b> không tính (rác, nghi ảo hoặc quá cũ).
           </span>
-          <button
-            type="button"
-            onClick={() => { const next = new URLSearchParams(params); next.delete('include'); setParams(next, { replace: true }); }}
-            className="text-xs font-semibold text-accent-hi hover:underline"
-          >
+          <Button variant="link" size="sm" onClick={() => { const next = new URLSearchParams(params); next.delete('include'); setParams(next, { replace: true }); }}>
             Chỉ xem phản hồi được tính
-          </button>
+          </Button>
         </div>
       )}
 
@@ -145,9 +141,7 @@ const Feedbacks = () => {
               className="h-11 w-full rounded-lg border border-line bg-surface pr-12 pl-11 text-sm text-ink-hi outline-none transition-[border-color,box-shadow] placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
             />
             {search && (
-              <button type="button" onClick={clearSearch} aria-label="Xoá tìm kiếm" className="absolute top-1/2 right-3 grid size-7 -translate-y-1/2 place-items-center rounded-md text-ink-lo hover:bg-raised hover:text-ink-hi">
-                <X size={15} />
-              </button>
+              <IconButton icon={X} variant="ghost" size={28} label="Xoá tìm kiếm" onClick={clearSearch} className="absolute! top-1/2 right-3 -translate-y-1/2" />
             )}
           </div>
 
@@ -180,7 +174,7 @@ const Feedbacks = () => {
             title="Không có phản hồi khớp"
             description={query ? `Không tìm thấy "${query}" trong phạm vi đang lọc.` : 'Bỏ bớt điều kiện lọc hoặc đổi khoảng thời gian.'}
             action={(query || mood !== 'All' || evidence !== 'All') && (
-              <button type="button" onClick={clearAll} className="text-sm font-semibold text-accent-hi hover:underline">Xoá tìm kiếm và bộ lọc</button>
+              <Button variant="link" onClick={clearAll}>Xoá tìm kiếm và bộ lọc</Button>
             )}
           />
         ) : (

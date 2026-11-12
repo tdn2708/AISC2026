@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight } from 'lucide-react';
-import { EmptyState, Pager } from './ui';
+import { Button, EmptyState, Pager } from './ui';
 import { fmtInt } from '../lib/format';
 import useFeedbackPage from '../hooks/useFeedbackPage';
 import FeedbackList, { FeedbackListSkeleton } from './feedback/FeedbackList';
@@ -39,9 +38,9 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
           <p className="mt-0.5 text-sm text-ink-mid">Mới nhất trước, chỉ gồm phản hồi được tính vào chỉ số. Bấm một dòng để xem chi tiết.</p>
         </div>
         {total > 0 && (
-          <Link to={allHref} className="inline-flex items-center gap-1 text-sm font-semibold text-accent-hi hover:underline">
-            Xem cả {fmtInt(total)} phản hồi <ArrowUpRight size={15} aria-hidden="true" />
-          </Link>
+          <Button as={Link} variant="link" to={allHref}>
+            Xem cả {fmtInt(total)} phản hồi
+          </Button>
         )}
       </header>
 

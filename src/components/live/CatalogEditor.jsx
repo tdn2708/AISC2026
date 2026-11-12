@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { Button, TextArea } from '../ui';
+import { Button, IconButton, TextArea } from '../ui';
 
 /**
  * SẢN PHẨM VÀ CHÍNH SÁCH CỦA PHIÊN LIVE
@@ -94,9 +94,7 @@ const CatalogEditor = ({ rows, onRows, policy, onPolicy }) => {
               <div className="grid grid-cols-[4rem_1fr_auto] gap-2">
                 <Field label="Số giỏ"><input className={inputCls} value={r.code || ''} onChange={(e) => set(i, 'code', e.target.value)} /></Field>
                 <Field label="Tên sản phẩm"><input className={inputCls} value={r.name || ''} onChange={(e) => set(i, 'name', e.target.value)} placeholder="Áo thun cotton basic" /></Field>
-                <button type="button" onClick={() => remove(i)} aria-label={`Xóa ${r.name || 'sản phẩm'}`} className="mt-5 grid size-9 place-items-center rounded-md text-ink-lo hover:bg-crit/12 hover:text-crit">
-                  <Trash2 size={15} aria-hidden="true" />
-                </button>
+                <IconButton icon={Trash2} variant="danger" size="sm" label={`Xóa ${r.name || 'sản phẩm'}`} onClick={() => remove(i)} className="mt-6" />
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <Field label="Giá gốc"><input className={`${inputCls} font-mono`} inputMode="numeric" value={r.price ?? ''} onChange={(e) => set(i, 'price', e.target.value.replace(/\D/g, ''))} /></Field>

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Link2, RefreshCw, Store, ShoppingBag, Music2, Globe, Plus, Trash2, Boxes, Activity, Clock, CircleCheck, CircleX, CircleDashed, Unplug, History, ArrowRight, Info
+  Link2, RefreshCw, Store, ShoppingBag, Music2, Globe, Plus, Trash2, Boxes, Activity, Clock, CircleCheck, CircleX, CircleDashed, Unplug, History, Info
 } from 'lucide-react';
-import { PageHeader, GlassPanel, PanelHeader, Tabs, Button, TextField, Select, Modal, Badge, EmptyState } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Tabs, Button, IconButton, TextField, Select, Modal, Badge, EmptyState } from './ui';
 import { fmtInt } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
 import { reportRefreshing } from '../lib/dataVersion';
@@ -100,7 +100,7 @@ const ScrapeResult = ({ result }) => {
         <p className="text-xs text-ink-lo">
           Lời chê lên trước. {complaints} trên {rows.length} đánh giá nêu vấn đề cụ thể.
         </p>
-        <Button size="sm" iconRight={ArrowRight} onClick={() => navigate(feedbackLink(result.source, result.productName))}>
+        <Button size="sm" onClick={() => navigate(feedbackLink(result.source, result.productName))}>
           Xem trong trang Phản hồi
         </Button>
       </div>
@@ -252,7 +252,7 @@ const DataSources = () => {
                   <div className="mt-4 flex items-center justify-end border-t border-line-soft pt-4">
                     <div className="flex items-center gap-1">
                       {isLink(s.shopId) && (
-                        <Button size="sm" variant="outline" icon={RefreshCw} loading={isSyncing} onClick={() => { setTab('url'); runSync(s.shopId); }}>
+                        <Button size="sm" variant="secondary" icon={RefreshCw} loading={isSyncing} onClick={() => { setTab('url'); runSync(s.shopId); }}>
                           Thu thập ngay
                         </Button>
                       )}
@@ -281,7 +281,7 @@ const DataSources = () => {
               required
               disabled={isSyncing}
             />
-            <Button type="submit" size="lg" icon={RefreshCw} loading={isSyncing} disabled={!url}>
+            <Button type="submit" icon={RefreshCw} loading={isSyncing} disabled={!url}>
               {isSyncing ? 'Đang thu thập…' : 'Thu thập và phân loại'}
             </Button>
           </form>
@@ -323,17 +323,15 @@ const DataSources = () => {
                           {r.error && <p className="mt-1 text-xs text-crit">{r.error}</p>}
                           {r.note && <p className="mt-1 text-xs text-ink-lo">{r.note}</p>}
                           {r.status === 'Success' && r.dataSource && (
-                            <button type="button" onClick={() => navigate(feedbackLink(r.dataSource, r.productName))} className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline">
-                              Xem dữ liệu <ArrowRight size={12} />
-                            </button>
+                            <Button variant="link" size="sm" onClick={() => navigate(feedbackLink(r.dataSource, r.productName))} className="mt-1">
+                              Xem dữ liệu
+                            </Button>
                           )}
                         </td>
                         <td className="text-right font-mono">{fmtInt(r.items || 0)}</td>
                         <td className="font-mono text-xs text-ink-mid">{fmtTime(r.time)}</td>
                         <td className="pr-5 text-right">
-                          <button type="button" onClick={() => setHistory((prev) => prev.filter((x) => x.id !== r.id))} aria-label="Xoá khỏi nhật ký" className="grid size-8 place-items-center rounded-md text-ink-lo hover:bg-crit/10 hover:text-crit">
-                            <Trash2 size={15} />
-                          </button>
+                          <IconButton icon={Trash2} variant="danger" size="sm" label="Xoá khỏi nhật ký" onClick={() => setHistory((prev) => prev.filter((x) => x.id !== r.id))} className="ml-auto" />
                         </td>
                       </tr>
                     );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownRight, Minus, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { AnimatedNumber, EvidenceBar } from '../ui';
 import { fmtInt, fmtPct, fmtSignedPct } from '../../lib/format';
 import EvidenceDrawer from './EvidenceDrawer';
@@ -78,7 +78,7 @@ const Metric = ({ label, children, sub, note, extra, bad, onOpen }) => (
     {note && <span className="mt-1 text-sm text-ink-mid">{note}</span>}
     {extra}
     <span className="mt-3 inline-flex items-center gap-0.5 text-sm font-semibold text-accent-hi opacity-80 group-hover:underline group-hover:opacity-100">
-      Cách tính <ChevronRight size={14} aria-hidden="true" />
+      Cách tính
     </span>
   </button>
 );

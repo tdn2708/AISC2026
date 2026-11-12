@@ -3,7 +3,10 @@ import axios from 'axios';
 import {
   Swords, Play, Loader2, Check, X, MessageSquareText, Building2, ShieldCheck, Lock, Layers, Target, Info, Sparkles
 } from 'lucide-react';
-import { GlassPanel, PanelHeader, Badge, SentimentFace, Chip } from '../ui';
+import { GlassPanel, PanelHeader, Badge, SentimentFace, Chip, Button } from '../ui';
+
+/** Vòng xoay trong nút: nút không bị khóa khi đang chạy (xem chú thích ở form) */
+const Spinner = (props) => <Loader2 {...props} className="keep-motion animate-spin" />;
 import { SENTIMENT_MAP } from '../../lib/format';
 import { analyzeText } from '../../lib/analyze';
 import ModelStatus from './ModelStatus';
@@ -171,14 +174,9 @@ const VersusDemo = () => {
           {/* Không khóa nút khi đang chạy: câu mặc định chạy lúc mở trang có thể
               chờ máy chủ vài giây, và cú bấm của người xem trong lúc đó từng bị
               nuốt mất. Kết quả về muộn của câu trước đã bị chặn bởi `latest`. */}
-          <button
-            type="submit"
-            disabled={!text.trim()}
-            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-hi disabled:opacity-50"
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+          <Button type="submit" icon={loading ? Spinner : Play} disabled={!text.trim()} aria-busy={loading || undefined} className="h-12 px-5">
             Phân tích
-          </button>
+          </Button>
         </form>
         {error && <p className="mt-3 text-sm text-crit">{error}</p>}
         <ModelStatus className="mt-4" />

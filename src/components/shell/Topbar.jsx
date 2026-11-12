@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Bell, Menu, Moon, Search, Sun, MessageSquareText, Loader2 } from 'lucide-react';
 import { openAssistant } from '../../lib/assistant';
-import { IconButton } from '../ui';
+import { Button, IconButton } from '../ui';
 import { findPage } from '../../lib/nav';
 import { useTheme } from '../../hooks/useTheme';
 import { alertTitle } from '../../lib/format';
@@ -102,7 +102,7 @@ const Notifications = () => {
         <div className="glass-strong absolute top-[calc(100%+10px)] right-0 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl animate-pop-in">
           <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
             <h3 className="text-sm font-semibold text-ink-hi">Thông báo</h3>
-            {unread > 0 && <span className="rounded bg-crit/12 px-1.5 py-0.5 font-mono text-xs font-medium text-crit">{unread} mới</span>}
+            {unread > 0 && <span className="rounded-ctrl bg-crit/12 px-1.5 py-0.5 text-xs font-medium text-crit tabular-nums">{unread} mới</span>}
           </div>
           <ul className="max-h-[340px] list-none overflow-y-auto">
             {risks.length === 0 ? (
@@ -117,9 +117,11 @@ const Notifications = () => {
                       onClick={() => openRisk(risk.id)}
                       className={`flex w-full gap-3 border-b border-line-soft px-4 py-3 text-left transition-colors hover:bg-raised ${isRead ? 'opacity-60' : ''}`}
                     >
-                      <span className={`mt-1.5 size-2 shrink-0 rounded-full ${isRead ? 'bg-transparent' : 'bg-crit'}`} />
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-ink-hi">{risk.issue}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline justify-between gap-2">
+                          <span className="text-sm font-semibold text-ink-hi">{risk.issue}</span>
+                          {!isRead && <span className="shrink-0 text-xs font-medium text-crit">Chưa đọc</span>}
+                        </span>
                         <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-ink-mid">{risk.insight}</span>
                       </span>
                     </button>
@@ -128,13 +130,9 @@ const Notifications = () => {
               })
             )}
           </ul>
-          <button
-            type="button"
-            onClick={() => setReadIds(new Set([...readIds, ...risks.map((r) => r.id)]))}
-            className="w-full py-2.5 text-center text-xs font-semibold text-accent hover:bg-raised"
-          >
+          <Button variant="ghost" size="sm" block className="rounded-none" onClick={() => setReadIds(new Set([...readIds, ...risks.map((r) => r.id)]))}>
             Đánh dấu tất cả đã đọc
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -198,15 +196,9 @@ const Topbar = ({ onOpenMenu, onOpenCommand }) => {
 
 
         {/* Trợ lý: nút có chữ trên màn rộng, chỉ biểu tượng trên điện thoại */}
-        <button
-          type="button"
-          onClick={openAssistant}
-          aria-label="Hỏi dữ liệu"
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-accent px-3 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-hi"
-        >
-          <MessageSquareText size={16} aria-hidden="true" />
+        <Button icon={MessageSquareText} onClick={openAssistant} aria-label="Hỏi dữ liệu" className="px-3">
           <span className="hidden sm:inline">Hỏi dữ liệu</span>
-        </button>
+        </Button>
 
         {/* Màn điện thoại không đủ chỗ cho năm nút; đổi giao diện vẫn có trong Cài đặt */}
         <span className="hidden sm:contents">

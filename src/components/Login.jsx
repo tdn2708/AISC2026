@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, EyeOff, Eye } from 'lucide-react';
+import { Mail, Lock, EyeOff, Eye } from 'lucide-react';
 import Logo from './Logo';
-import { Button, TextField, EvidenceSwatch } from './ui';
+import { Button, IconButton, TextField, EvidenceSwatch } from './ui';
 import { Ledger } from './dashboard/SummaryHeader';
 
 /**
@@ -107,12 +107,10 @@ const Login = ({ onLogin }) => {
               required
               error={error || undefined}
               trailing={
-                <button type="button" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} className="grid size-8 place-items-center rounded-lg text-ink-lo hover:bg-raised hover:text-ink-hi">
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+                <IconButton icon={showPw ? EyeOff : Eye} variant="ghost" size="sm" label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} pressed={showPw} onClick={() => setShowPw((v) => !v)} />
               }
             />
-            <Button type="submit" size="lg" block iconRight={ArrowRight} loading={loading} className="mt-2">
+            <Button type="submit" block loading={loading} className="mt-2 h-11">
               Đăng nhập
             </Button>
           </form>

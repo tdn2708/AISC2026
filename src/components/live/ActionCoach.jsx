@@ -114,9 +114,9 @@ const ActionCoach = ({ stats, sessionId, live, onOpenCatalog }) => {
           <p className="text-xs text-ink-mid">Rút ra từ bình luận trong vài phút gần nhất. Câu nói mẫu chỉ dùng thông tin shop đã khai báo.</p>
         </div>
         {active.length > 3 && (
-          <button type="button" onClick={() => setShowAll((v) => !v)} className="text-xs font-medium text-accent-hi hover:underline">
+          <Button variant="link" size="sm" onClick={() => setShowAll((v) => !v)} aria-expanded={showAll}>
             {showAll ? 'Thu gọn' : `Xem cả ${active.length} việc`}
-          </button>
+          </Button>
         )}
       </div>
 

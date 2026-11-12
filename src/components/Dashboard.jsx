@@ -12,6 +12,7 @@ import SentimentTrendChart from './dashboard/SentimentTrendChart';
 import SentimentDonut from './dashboard/SentimentDonut';
 import RisingIssues from './dashboard/RisingIssues';
 import LiveDigest from './dashboard/LiveDigest';
+import { Button } from './ui';
 
 /**
  * TỔNG QUAN — việc cần làm trước, số liệu sau
@@ -95,9 +96,9 @@ const Dashboard = () => {
             {stats.totalFeedbacks.value > 0 && ` (${stats.totalFeedbacks.value} phản hồi thô đều quá cũ hoặc bị Trust Layer loại)`}
             , nên các con số bên dưới đều trống.
           </span>
-          <button type="button" onClick={clearFilters} className="text-xs font-semibold text-accent hover:underline">
+          <Button variant="link" size="sm" onClick={clearFilters}>
             Xoá bộ lọc, xem toàn bộ
-          </button>
+          </Button>
         </div>
       )}
 

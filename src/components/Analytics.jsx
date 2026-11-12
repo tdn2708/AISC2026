@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { readStorage, writeStorage } from '../lib/storage';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, ArrowRight, GitCompareArrows } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, GitCompareArrows } from 'lucide-react';
 import FilterBar from './FilterBar';
 import Segments from './Segments';
 import Compare from './analytics/Compare';
@@ -316,7 +316,6 @@ const RootCauses = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                iconRight={ArrowRight}
                 className="mt-3"
                 onClick={() => navigate(`/feedbacks?q=${encodeURIComponent(causes[0]?.label || current.label)}`)}
               >

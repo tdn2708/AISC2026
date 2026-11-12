@@ -157,9 +157,11 @@ const TodayInbox = ({ alerts = [], items = [], loading }) => {
             ))}
           </ol>
           {todo.length > PREVIEW && (
-            <button type="button" onClick={() => setShowAll((v) => !v)} className="w-full border-t border-line-soft px-6 py-3 text-left text-sm font-semibold text-accent-hi hover:bg-raised">
-              {showAll ? 'Thu gọn' : `Xem thêm ${todo.length - PREVIEW} việc`}
-            </button>
+            <div className="border-t border-line-soft">
+              <Button variant="ghost" block onClick={() => setShowAll((v) => !v)} aria-expanded={showAll} className="h-12 justify-start rounded-none px-5 text-accent-hi sm:px-6">
+                {showAll ? 'Thu gọn' : `Xem thêm ${todo.length - PREVIEW} việc`}
+              </Button>
+            </div>
           )}
           <p className="flex gap-2 border-t border-line-soft px-5 py-3 text-xs leading-relaxed text-ink-mid sm:px-6">
             <ShieldCheck size={15} className="mt-0.5 shrink-0" aria-hidden="true" />

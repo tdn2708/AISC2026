@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserRound, Palette, Database, ShieldCheck, Save, Mail, KeyRound, FlaskConical, FileText, ArrowRight } from 'lucide-react';
+import { UserRound, Palette, Database, ShieldCheck, Save, Mail, KeyRound, FlaskConical, FileText } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { PageHeader, GlassPanel, PanelHeader, Button, TextField, Select, RadioCards, Toast } from './ui';
 import { initials } from '../lib/format';
@@ -154,10 +154,10 @@ const Settings = () => {
               <PanelHeader title="Mô hình và báo cáo" />
               <div className="flex flex-col gap-3">
                 <Row icon={FlaskConical} title="Phòng thí nghiệm mô hình" description="Thử bộ phân loại tiếng Việt với câu của bạn, so sánh mô hình với bộ luật.">
-                  <Button size="sm" variant="secondary" iconRight={ArrowRight} onClick={() => navigate('/lab')}>Mở</Button>
+                  <Button size="sm" variant="secondary" onClick={() => navigate('/lab')}>Mở</Button>
                 </Row>
                 <Row icon={FileText} title="Báo cáo" description="Xuất báo cáo tổng hợp dạng PDF cho cấp quản lý.">
-                  <Button size="sm" variant="secondary" iconRight={ArrowRight} onClick={() => navigate('/reports')}>Mở</Button>
+                  <Button size="sm" variant="secondary" onClick={() => navigate('/reports')}>Mở</Button>
                 </Row>
               </div>
             </>

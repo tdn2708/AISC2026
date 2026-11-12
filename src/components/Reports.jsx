@@ -8,7 +8,7 @@ import ReportDocument from './report/ReportDocument';
 import { buildReportModel } from '../lib/reportModel';
 import { WORKSPACES, getWorkspace } from '../lib/workspace';
 import FilterBar from './FilterBar';
-import { PageHeader, GlassPanel, Button, Segmented, Badge, EmptyState, Modal, TextField, Toast } from './ui';
+import { PageHeader, GlassPanel, Button, IconButton, Segmented, Badge, EmptyState, Modal, TextField, Toast } from './ui';
 
 const Reports = () => {
   const [downloadingCsv, setDownloadingCsv] = useState(false);
@@ -351,9 +351,7 @@ const Reports = () => {
                     <td className="font-mono text-xs text-ink-mid"><span className="inline-flex items-center gap-1.5"><Calendar size={13} />{r.date}</span></td>
                     <td className="font-mono text-xs text-ink-mid">{r.size}</td>
                     <td className="pr-5 text-right">
-                      <button type="button" onClick={() => deleteFromHistory(r.id)} aria-label="Xoá khỏi lịch sử" className="grid size-8 place-items-center rounded-md text-ink-lo hover:bg-crit/10 hover:text-crit">
-                        <Trash2 size={15} />
-                      </button>
+                      <IconButton icon={Trash2} variant="danger" size="sm" label="Xoá khỏi lịch sử" onClick={() => deleteFromHistory(r.id)} className="ml-auto" />
                     </td>
                   </tr>
                 ))}

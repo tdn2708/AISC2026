@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { Drawer, Button, EvidenceBar, EvidenceLegend } from '../ui';
 import { fmtInt, fmtPct, fmtDate, LABELLER_LABEL } from '../../lib/format';
 
@@ -132,7 +132,7 @@ const EvidenceDrawer = ({ metric, stats, onClose }) => {
       width={560}
       footer={
         <>
-          <Button variant="ghost" iconRight={ArrowUpRight} onClick={() => go('/feedbacks')}>Xem toàn bộ phản hồi</Button>
+          <Button variant="ghost" onClick={() => go('/feedbacks')}>Xem toàn bộ phản hồi</Button>
           <Button icon={ShieldCheck} onClick={() => go('/trust')}>Mở hàng chờ kiểm duyệt</Button>
         </>
       }
@@ -163,9 +163,9 @@ const EvidenceDrawer = ({ metric, stats, onClose }) => {
             ) : (
               <p className="text-sm leading-relaxed text-ink-mid">Chưa có đợt kiểm tra nào. Người kiểm tra phản hồi ngẫu nhiên ở trang Tin cậy dữ liệu, tab Kiểm tra ngẫu nhiên.</p>
             )}
-            <button type="button" onClick={() => go('/trust?tab=audit')} className="mt-2 text-xs font-semibold text-accent hover:underline">
+            <Button variant="link" size="sm" onClick={() => go('/trust?tab=audit')} className="mt-2">
               Mở trang kiểm tra ngẫu nhiên
-            </button>
+            </Button>
           </Section>
 
           <Section title="Ai gán nhãn nội dung">

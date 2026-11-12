@@ -311,7 +311,7 @@ const TrustOverview = () => {
                   <div className="mt-2.5 flex flex-wrap gap-1.5">{q.triggeredSignals.map((s, i) => <Signal key={i} s={s} />)}</div>
                 )}
                 <div className="mt-3.5 flex flex-wrap gap-2">
-                  <Button size="sm" variant="soft" icon={CheckCircle2} loading={labelling === q._id} onClick={() => submitLabel(q._id, 'valid')}>Thật</Button>
+                  <Button size="sm" variant="secondary" icon={CheckCircle2} loading={labelling === q._id} onClick={() => submitLabel(q._id, 'valid')}>Thật</Button>
                   <Button size="sm" variant="danger" icon={XCircle} disabled={labelling === q._id} onClick={() => submitLabel(q._id, 'inauthentic')}>Đánh giá ảo</Button>
                   <Button size="sm" variant="ghost" icon={Ban} disabled={labelling === q._id} onClick={() => submitLabel(q._id, 'spam')}>Rác, quảng cáo</Button>
                 </div>

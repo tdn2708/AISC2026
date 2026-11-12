@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { Send, ArrowRight, CircleCheck } from 'lucide-react';
+import { Send, CircleCheck } from 'lucide-react';
 import { GlassPanel, PanelHeader, Button, Badge, EmptyState } from '../ui';
 import { fmtInt, fmtPct } from '../../lib/format';
 import { EffectLine } from './ActionCoach';
@@ -145,7 +145,7 @@ const Report = ({ sessionId }) => {
           {push?.done && (
             <p role="status" className="mb-3 rounded-md bg-ok/10 px-3 py-2 text-sm text-ok">
               {push.message || `Đã đưa ${push.inserted} khiếu nại vào hệ thống phản hồi${push.duplicates ? `, bỏ ${push.duplicates} câu trùng` : ''}.`}{' '}
-              <Link to="/feedbacks" className="inline-flex items-center gap-0.5 font-medium underline">Xem<ArrowRight size={12} aria-hidden="true" /></Link>
+              <Link to="/feedbacks" className="font-medium underline">Xem</Link>
             </p>
           )}
           {push?.error && <p role="alert" className="mb-3 text-sm text-crit">{push.error}</p>}

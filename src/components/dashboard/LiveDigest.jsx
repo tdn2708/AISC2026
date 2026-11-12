@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { Radio, ArrowRight } from 'lucide-react';
-import { Badge } from '../ui';
+import { Radio } from 'lucide-react';
+import { Badge, Button } from '../ui';
 import { fmtInt, fmtPct, fmtRelative } from '../../lib/format';
 
 /**
@@ -45,7 +45,7 @@ const LiveDigest = () => {
         <h2 className="inline-flex items-center gap-2 text-heading font-semibold text-ink-hi">
           <Radio size={16} className="text-accent" aria-hidden="true" />Livestream
         </h2>
-        {now ? <Badge tone="crit" className="gap-1.5"><span className="size-1.5 animate-pulse rounded-full bg-crit" aria-hidden="true" />Đang live</Badge> : null}
+        {now ? <Badge tone="crit" icon={Radio}>Đang live</Badge> : null}
       </div>
 
       {now ? (
@@ -66,9 +66,9 @@ const LiveDigest = () => {
               ))}
             </ul>
           )}
-          <Link to={`/live?session=${now.id}`} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-accent-hi hover:underline">
-            Mở bảng điều khiển phiên<ArrowRight size={14} aria-hidden="true" />
-          </Link>
+          <Button as={Link} variant="link" to={`/live?session=${now.id}`} className="mt-3">
+            Mở bảng điều khiển phiên
+          </Button>
         </>
       ) : (
         <>
@@ -95,9 +95,9 @@ const LiveDigest = () => {
           {last.complaintsUnpushed > 0 && (
             <p className="mt-2 text-xs text-high">{last.complaintsUnpushed} khiếu nại từ phiên này chưa đưa vào hệ thống phản hồi.</p>
           )}
-          <Link to={`/live?session=${last.id}`} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-accent-hi hover:underline">
-            Xem báo cáo sau live<ArrowRight size={14} aria-hidden="true" />
-          </Link>
+          <Button as={Link} variant="link" to={`/live?session=${last.id}`} className="mt-3">
+            Xem báo cáo sau live
+          </Button>
         </>
       )}
     </div>

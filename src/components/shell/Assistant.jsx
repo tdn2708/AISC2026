@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUp, RotateCcw, ArrowUpRight } from 'lucide-react';
-import { Drawer, EvidenceSwatch } from '../ui';
+import { ArrowUp, RotateCcw } from 'lucide-react';
+import { Drawer, EvidenceSwatch, Button, IconButton } from '../ui';
 import { fmtInt, fmtDate } from '../../lib/format';
 import { readStorage } from '../../lib/storage';
 import { ASK_EVENT } from '../../lib/assistant';
@@ -151,9 +151,9 @@ const Answer = ({ msg, index, onOpenFeedback }) => {
                     {e.cause || e.category ? <span>{e.cause || e.category}</span> : null}
                     <span>{e.source}</span>
                     {e.date && <span className="font-mono">{fmtDate(e.date)}</span>}
-                    <button type="button" onClick={() => onOpenFeedback(e.text)} className="ml-auto inline-flex items-center gap-0.5 font-semibold text-accent hover:underline">
-                      Mở <ArrowUpRight size={11} aria-hidden="true" />
-                    </button>
+                    <Button variant="link" size="sm" onClick={() => onOpenFeedback(e.text)} className="ml-auto">
+                      Mở
+                    </Button>
                   </p>
                 </li>
               );
@@ -263,20 +263,12 @@ const Assistant = () => {
               aria-label="Câu hỏi"
               className="min-h-[2.75rem] flex-1 resize-none rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink-hi outline-none placeholder:text-ink-lo focus:border-accent focus:ring-4 focus:ring-accent-dim"
             />
-            <button
-              type="button"
-              onClick={() => ask(input)}
-              disabled={busy || !input.trim()}
-              aria-label="Gửi câu hỏi"
-              className="grid size-11 shrink-0 place-items-center rounded-lg bg-accent text-on-accent transition-opacity disabled:opacity-40"
-            >
-              <ArrowUp size={18} aria-hidden="true" />
-            </button>
+            <IconButton icon={ArrowUp} variant="primary" size={44} label="Gửi câu hỏi" onClick={() => ask(input)} disabled={busy || !input.trim()} />
           </div>
           {messages.length > 0 && (
-            <button type="button" onClick={() => setMessages([])} className="inline-flex items-center gap-1 self-start text-xs text-ink-lo hover:text-ink-hi">
-              <RotateCcw size={12} aria-hidden="true" /> Bắt đầu cuộc hỏi mới
-            </button>
+            <Button variant="link" size="sm" icon={RotateCcw} onClick={() => setMessages([])} className="self-start">
+              Bắt đầu cuộc hỏi mới
+            </Button>
           )}
         </div>
       }
