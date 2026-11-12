@@ -1,10 +1,11 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { RefreshCw, Check, TriangleAlert, RotateCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { RefreshCw, RotateCw } from 'lucide-react';
 import { Button, EmptyState } from '../ui';
 import { Skeleton } from '../ui/Skeleton';
 import LedgerSkeleton from './LedgerSkeleton';
-import { fmtDate, fmtDateTime, fmtInt } from '../../lib/format';
+import { LedgerRun, prefersReducedMotion } from '../motion';
+import { fmtDate, fmtDateTime } from '../../lib/format';
 
 /**
  * CÂU TRẢ LỜI ĐỨNG TRƯỚC, CUỐN SỔ ĐỐI CHIẾU ĐỨNG NGAY CẠNH
@@ -17,86 +18,16 @@ import { fmtDate, fmtDateTime, fmtInt } from '../../lib/format';
  *
  * Sổ đọc từ /trust/health (cả kho, không theo bộ lọc) để phép cộng trừ khớp
  * từng đơn vị; phần "có chứng từ" chỉ hiện khi không lọc, vì nó đến từ /stats.
+ *
+ * F5-01: sổ là "phép trừ chạy" (LedgerRun mode="auto"), màn mở đầu có dàn
+ * dựng DUY NHẤT của trang: chạy một lần khi vào khung nhìn, dừng đúng ở
+ * countedForMetrics (ledgerSplit: chỉ trừ phần chờ duyệt chưa tính), khớp số
+ * "được tính" ở mọi trang. Xong thì gọi onLedgerDone để "Cửa hàng đang thế
+ * nào" bắt đầu đếm. Tải lại dữ liệu thì sổ đổi số tại chỗ, không chạy lại.
+ * Giảm chuyển động: tờ sổ tĩnh; nút "Xem việc hôm nay" cuộn không mượt.
  */
 
 const lower1 = (s) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
-
-const LedgerRow = ({ label, value, sign }) => (
-  <div className="grid grid-cols-[minmax(0,1fr)_1rem_auto] items-baseline gap-x-2 border-b border-(--sheet-rule) py-2">
-    <dt className="min-w-0 text-ink-mid">{label}</dt>
-    <dd className="text-right tabular-nums text-ink-lo" aria-hidden={!sign}>{sign || ''}</dd>
-    <dd className="text-right tabular-nums  text-ink-hi">{fmtInt(value)}</dd>
-  </div>
-);
-
-/**
- * Sổ đối chiếu: thu thập, trừ phần bị loại, ra số được tính; trong đó bao
- * nhiêu có chứng từ. Dòng cuối tự cộng trừ lại các dòng phía trên: khớp thì
- * đóng dấu, lệch thì nói lệch bao nhiêu. Không có chỗ nào để con số "đẹp" hơn.
- */
-export const Ledger = ({ ledger, evidence, showLink = true }) => {
-  if (!ledger) {
-    return <div className="h-64 animate-pulse rounded-ctrl border border-line bg-(--sheet)" aria-hidden="true" />;
-  }
-  const { rawCollected, spamRemoved, inauthenticFlagged, pendingReview, validForAnalysis, countedForMetrics } = ledger;
-  // Con số cuối là số phản hồi góp vào chỉ số, khớp với mọi trang khác. Phần
-  // chênh với số qua bộ lọc là phản hồi quá cũ, trọng số đã giảm về 0.
-  const counted = countedForMetrics ?? validForAnalysis;
-  // ledger (máy chủ mới): phản hồi chờ duyệt còn trọng số được tính tạm, không trừ
-  const split = ledger.ledger;
-  const aged = split ? split.aged : Math.max(0, validForAnalysis - counted);
-  const pendingOut = split ? split.pendingNotCounted : (pendingReview?.count ?? 0);
-  const verifiedShare = evidence?.total ? (evidence.verified + evidence.human) / evidence.total : null;
-  const pct = verifiedShare == null ? null : Math.round(verifiedShare * 100);
-  const removed = (spamRemoved?.count ?? 0) + (inauthenticFlagged?.count ?? 0) + pendingOut + aged;
-  const diff = rawCollected - removed - counted;
-  return (
-    <figure className="rounded-ctrl border border-line bg-(--sheet) px-5 pt-4 pb-5">
-      <figcaption className="flex items-baseline justify-between gap-3">
-        <span className="text-base font-semibold text-ink-hi">Số liệu này đứng trên gì</span>
-        {showLink && <Link to="/trust" className="shrink-0 text-sm font-medium text-accent-hi underline-offset-4 hover:underline">Xem phễu</Link>}
-      </figcaption>
-      <dl className="mt-2 text-sm">
-        <LedgerRow label="Phản hồi thu thập được" value={rawCollected} />
-        <LedgerRow label="Rác, quảng cáo" value={spamRemoved?.count ?? 0} sign="−" />
-        <LedgerRow label="Nghi đánh giá ảo" value={inauthenticFlagged?.count ?? 0} sign="−" />
-        {pendingOut > 0 && <LedgerRow label={split?.pendingCounted ? 'Chờ duyệt, chưa tính' : 'Chờ người duyệt'} value={pendingOut} sign="−" />}
-        {aged > 0 && <LedgerRow label="Quá cũ, không còn trọng số" value={aged} sign="−" />}
-        {/* Gạch đôi trên dòng tổng, như sổ kế toán */}
-        <div className="mt-px grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2 border-0 border-t-[3px] border-double border-ink-lo pt-2.5">
-          <dt className="font-semibold text-ink-hi">Được tính vào chỉ số</dt>
-          <dd className="text-right tabular-nums text-metric font-semibold tracking-[-0.02em]  text-ink-hi">{fmtInt(counted)}</dd>
-        </div>
-      </dl>
-      <p role="status" className={`mt-3 flex items-start gap-2 text-sm leading-snug ${diff === 0 ? 'text-ink-mid' : 'text-crit'}`}>
-        {diff === 0 ? (
-          <>
-            <span className="grid size-5 shrink-0 place-items-center rounded-full border border-accent text-accent-hi" aria-hidden="true"><Check size={12} strokeWidth={3} /></span>
-            <span>
-              Phép trừ khớp: {fmtInt(rawCollected)} trừ {fmtInt(removed)} đúng bằng {fmtInt(counted)}
-              {split?.pendingCounted > 0 && `. ${fmtInt(split.pendingCounted)} phản hồi chờ duyệt vẫn được tính tạm theo trọng số`}
-            </span>
-          </>
-        ) : (
-          <>
-            <TriangleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-            <span>Phép trừ lệch {fmtInt(Math.abs(diff))} phản hồi so với số được tính</span>
-          </>
-        )}
-      </p>
-      {pct != null && (
-        <div className="mt-4">
-          <div className="flex h-2 overflow-hidden rounded-ctrl bg-raised" aria-hidden="true">
-            <span className="h-full bg-accent" style={{ flexBasis: `${pct}%` }} />
-          </div>
-          <p className="mt-2 text-sm leading-snug text-ink-mid">
-            <span className="font-semibold text-ink-hi">{pct}%</span> có chứng từ hoặc người đã duyệt, {100 - pct}% do AI đoán
-          </p>
-        </div>
-      )}
-    </figure>
-  );
-};
 
 const todayLabel = () => {
   const s = new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric', year: 'numeric' });
@@ -104,7 +35,7 @@ const todayLabel = () => {
 };
 
 /** todo: danh sách việc đã gộp và xếp (TodayInbox.buildTodo) */
-const SummaryHeader = ({ stats, todo = [], loading, error, lastUpdated, ledger, ledgerFailed, onRetryLedger, evidence }) => {
+const SummaryHeader = ({ stats, todo = [], loading, error, lastUpdated, ledger, ledgerFailed, onRetryLedger, onLedgerDone, evidence }) => {
   const navigate = useNavigate();
   const top = todo[0];
   const urgent = todo.filter((t) => t.severity === 'critical').length;
@@ -149,7 +80,7 @@ const SummaryHeader = ({ stats, todo = [], loading, error, lastUpdated, ledger, 
           </h1>
           <div className="mt-6 flex flex-wrap gap-2">
             {top && (
-              <Button onClick={() => document.getElementById('today')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+              <Button onClick={() => document.getElementById('today')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })}>
                 Xem việc hôm nay
               </Button>
             )}
@@ -160,7 +91,7 @@ const SummaryHeader = ({ stats, todo = [], loading, error, lastUpdated, ledger, 
           {!stats && error ? null : loading && !stats ? <Skeleton className="mt-5 h-3.5 w-64 max-w-full" /> : <p className="mt-5 max-w-[60ch] text-sm leading-relaxed text-ink-lo">{asOfLine}</p>}
         </div>
         {ledger ? (
-          <Ledger ledger={ledger} evidence={evidence} />
+          <LedgerRun ledger={ledger} evidence={evidence} mode="auto" onDone={onLedgerDone} />
         ) : ledgerFailed ? (
           <div className="rounded-lg border border-line bg-(--sheet)">
             <EmptyState
