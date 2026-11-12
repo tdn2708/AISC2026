@@ -23,9 +23,9 @@ import './landing.css';
  * Việc hôm nay (rãnh ngang), Người làm ra (ảnh nhóm), Chốt (đứng yên).
  *
  * Số liệu: data.js gọi /trust/health của kho mô phỏng MỘT lần; quá 4 giây hoặc
- * lỗi thì dùng ảnh chụp số ngày 12/11/2026 và ghi rõ ngày.
+ * lỗi thì dùng ảnh chụp số ngày 13/11/2026 và ghi rõ ngày.
  *
- * ẢNH CHỤP APP BẢN MỚI (sau F4 đến F7, chụp 12/11/2026 20:53, giảm chuyển động bật):
+ * ẢNH CHỤP APP BẢN MỚI (sau F4 đến F7, chụp 13/11/2026 03:11, giảm chuyển động bật):
  *   public/landing/tong-quan-{light,dark}.webp       Tổng quan nguyên màn (hero, lớp giữa)
  *   public/landing/bang-so-lieu-{light,dark}.webp    Bảng số liệu, bỏ thanh bên (hero lớp sau, rãnh)
  *   public/landing/so-doi-chieu-{light,dark}.webp    tờ sổ đối chiếu cắt ra, góc bo trong suốt (hero lớp trước)
@@ -45,10 +45,10 @@ import './landing.css';
 
 const SHOTS = {
   overview: { base: 'tong-quan', w: 1600, h: 1000 },
-  insights: { base: 'bang-so-lieu', w: 1400, h: 979 },
-  sheet: { base: 'so-doi-chieu', w: 600, h: 669 },
-  today: { base: 'viec-hom-nay', w: 1400, h: 654 },
-  live: { base: 'livestream', w: 1400, h: 979 }
+  insights: { base: 'bang-so-lieu', w: 1400, h: 972 },
+  sheet: { base: 'so-doi-chieu', w: 552, h: 666 },
+  today: { base: 'viec-hom-nay', w: 1400, h: 531 },
+  live: { base: 'livestream', w: 1400, h: 972 }
 };
 const shot = (key, theme) => `/landing/${SHOTS[key].base}-${theme === 'dark' ? 'dark' : 'light'}.webp`;
 

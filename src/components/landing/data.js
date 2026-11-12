@@ -7,30 +7,30 @@ import axios from 'axios';
  * Mọi con số trên trang đến từ ĐÚNG MỘT lần gọi `/trust/health` của kho
  * mô phỏng (demo). Máy chủ Render ngủ thì lần gọi đầu có thể mất cả phút,
  * nên quá 4 giây hoặc lỗi là dùng ảnh chụp số tĩnh bên dưới, và trang ghi
- * rõ "Số liệu ngày 12/11/2026". Số về muộn hơn 4 giây bị bỏ qua: không để
+ * rõ "Số liệu ngày 13/11/2026". Số về muộn hơn 4 giây bị bỏ qua: không để
  * con số nhảy khi người xem đang đọc.
  *
  * SNAPSHOT: chụp từ backend local (cùng cụm Atlas với prod, kho demo)
- * lúc 20:53 ngày 12/11/2026, `computedAt` 2026-11-12T13:51:51Z. Chỉ giữ
+ * lúc 03:11 ngày 13/11/2026, `computedAt` 2026-11-12T19:34:08Z. Chỉ giữ
  * các trường trang này đọc, đúng tên trường của API.
  */
-export const SNAPSHOT_DATE = '12/11/2026';
+export const SNAPSHOT_DATE = '13/11/2026';
 
 export const SNAPSHOT = {
-  rawCollected: 15112,
-  spamRemoved: { count: 567 },
+  rawCollected: 15129,
+  spamRemoved: { count: 569 },
   inauthenticFlagged: { count: 69 },
   pendingReview: { count: 14 },
-  validForAnalysis: 14462,
-  countedForMetrics: 14314,
-  ledger: { spam: 567, inauthentic: 69, pendingNotCounted: 12, pendingCounted: 2, aged: 150, counted: 14314 },
+  validForAnalysis: 14477,
+  countedForMetrics: 14329,
+  ledger: { spam: 569, inauthentic: 69, pendingNotCounted: 12, pendingCounted: 2, aged: 150, counted: 14329 },
   reconciliationRate: 60,
   humanLabelCount: 0,
   tierBreakdown: [
-    { tier: 'P1', count: 8277 },
-    { tier: 'P2', count: 794 },
-    { tier: 'P3', count: 3081 },
-    { tier: 'P4', count: 2904 },
+    { tier: 'P1', count: 8284 },
+    { tier: 'P2', count: 796 },
+    { tier: 'P3', count: 3085 },
+    { tier: 'P4', count: 2908 },
     { tier: 'P5', count: 56 }
   ]
 };
