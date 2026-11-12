@@ -9,7 +9,7 @@ import { fmtInt } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
 import { reportRefreshing } from '../lib/dataVersion';
 import AutoCollect from './datasources/AutoCollect';
-import { MOTION, EASE, useReducedMotion } from './motion';
+import { MOTION, EASE, useReducedMotion, PageEnter } from './motion';
 
 /**
  * NGUỒN DỮ LIỆU
@@ -78,7 +78,7 @@ const ScrapeResult = ({ result }) => {
         <Badge tone="accent">Phân loại bằng {LABELLER[result.labelledBy] || 'hệ thống'}</Badge>
       </div>
       {rows.length > 0 && (
-        <ul className="flex max-h-[28rem] list-none flex-col divide-y divide-line-soft overflow-y-auto pr-1">
+        <div className="paper"><ul className="flex max-h-[28rem] list-none flex-col divide-y divide-line-soft overflow-y-auto pr-1">
           {rows.map((r, i) => (
             <li key={i} className="py-3">
               <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-lo">
@@ -95,7 +95,7 @@ const ScrapeResult = ({ result }) => {
               )}
             </li>
           ))}
-        </ul>
+        </ul></div>
       )}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-ink-lo">
@@ -241,7 +241,7 @@ const DataSources = () => {
   };
 
   return (
-    <div className="cx">
+    <PageEnter className="cx">
       <PageHeader
         title="Nguồn dữ liệu"
         subtitle={`Thu thập phản hồi từ sàn.${trackedProducts ? ` Đang theo dõi ${fmtInt(trackedProducts)} sản phẩm.` : ''}`}
@@ -345,7 +345,7 @@ const DataSources = () => {
           {history.length === 0 ? (
             <EmptyState compact title="Chưa thu thập lần nào" description="Mỗi lần thu thập theo liên kết sẽ được ghi lại ở đây." />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="paper"><div className="overflow-x-auto">
               <table className="data-table min-w-[680px]">
                 <thead><tr><th className="pl-5">Nguồn</th><th>Trạng thái</th><th className="text-right">Bản ghi</th><th>Thời điểm</th><th className="pr-5" /></tr></thead>
                 <tbody>
@@ -377,7 +377,7 @@ const DataSources = () => {
                   })}
                 </tbody>
               </table>
-            </div>
+            </div></div>
           )}
         </GlassPanel>
       )}
@@ -435,7 +435,7 @@ const DataSources = () => {
           </>
         }
       />
-    </div>
+    </PageEnter>
   );
 };
 

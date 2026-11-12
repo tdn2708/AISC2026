@@ -9,6 +9,7 @@ import { buildReportModel } from '../lib/reportModel';
 import { WORKSPACES, getWorkspace } from '../lib/workspace';
 import FilterBar from './FilterBar';
 import { PageHeader, GlassPanel, Button, IconButton, Segmented, Badge, EmptyState, Modal, TextField, Toast, ProgressBar } from './ui';
+import { PageEnter } from './motion';
 
 const Reports = () => {
   const [downloadingCsv, setDownloadingCsv] = useState(false);
@@ -255,7 +256,7 @@ const Reports = () => {
   const typeLabel = { All: 'Tất cả', PDF: 'PDF', CSV: 'CSV' };
 
   return (
-    <div className="cx relative">
+    <PageEnter className="cx relative">
       {previewMode ? (
         <PageHeader
           title="Bản in báo cáo"
@@ -353,7 +354,7 @@ const Reports = () => {
             description={reportHistory.length === 0 ? 'Tạo một báo cáo PDF hoặc tải CSV để bắt đầu.' : 'Đổi bộ lọc loại tệp để xem các báo cáo khác.'}
           />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="paper"><div className="overflow-x-auto">
             <table className="data-table min-w-[620px]">
               <thead><tr><th className="pl-5">Tên báo cáo</th><th>Loại</th><th>Ngày tạo</th><th>Dung lượng</th><th className="pr-5" /></tr></thead>
               <tbody>
@@ -375,7 +376,7 @@ const Reports = () => {
                 ))}
               </tbody>
             </table>
-          </div>
+          </div></div>
         )}
       </GlassPanel>
       </>
@@ -433,7 +434,7 @@ const Reports = () => {
         <ReportDocument ref={pdfTemplateRef} model={model} mode="offscreen" />
       )}
 
-    </div>
+    </PageEnter>
   );
 };
 

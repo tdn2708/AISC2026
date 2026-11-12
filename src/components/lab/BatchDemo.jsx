@@ -205,7 +205,7 @@ export default function BatchDemo() {
 
           <GlassPanel tone="strong" className="overflow-hidden">
             <h3 className="border-b border-line-soft px-5 py-3.5 text-sm font-semibold text-ink-hi">{Math.min(result.items.length, 60)} phản hồi đầu của lô</h3>
-            <div className="max-h-[420px] overflow-auto">
+            <div className="paper"><div className="max-h-[420px] overflow-auto">
               <table className="w-full min-w-[640px] text-left text-sm">
                 <thead className="sticky top-0 bg-surface">
                   <tr className="border-b border-line-soft text-xs text-ink-mid">
@@ -235,7 +235,7 @@ export default function BatchDemo() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </div></div>
           </GlassPanel>
         </>
       )}

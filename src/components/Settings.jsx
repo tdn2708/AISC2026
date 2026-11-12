@@ -4,6 +4,7 @@ import { UserRound, Palette, Database, ShieldCheck, Save, Mail, KeyRound, FlaskC
 import { useTheme, useGlass } from '../hooks/useTheme';
 import { PageHeader, GlassPanel, PanelHeader, Button, TextField, Select, RadioCards, Toast } from './ui';
 import { DEFAULT_USER, currentUser } from '../hooks/useDecisions';
+import { PageEnter } from './motion';
 
 /**
  * CÀI ĐẶT
@@ -82,7 +83,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="cx">
+    <PageEnter className="cx">
       <PageHeader
         title="Cài đặt"
         actions={tab === 'general' && <Button icon={Save} onClick={save}>Lưu thay đổi</Button>}
@@ -185,7 +186,7 @@ const Settings = () => {
       </div>
 
       <Toast show={saved}>Đã lưu cài đặt</Toast>
-    </div>
+    </PageEnter>
   );
 };
 

@@ -5,6 +5,7 @@ import PipelineDemo from './lab/PipelineDemo';
 import BatchDemo from './lab/BatchDemo';
 import VersusDemo from './lab/VersusDemo';
 import { preloadBrowserModel } from '../lib/analyze';
+import { PageEnter } from './motion';
 import { PageHeader, GlassPanel, PanelHeader, Tabs, Badge, EmptyState, Skeleton } from './ui';
 
 /**
@@ -96,7 +97,7 @@ const Experiments = () => {
       {/* Bảng mô hình */}
       <GlassPanel tone="strong" className="overflow-hidden">
         <PanelHeader className="mb-0 border-b border-line-soft px-5 pt-5 pb-4" title="Phân loại danh mục (Level 1)" subtitle="Macro-F1 trên tập kiểm tra giữ riêng, so với tập phát triển" />
-        <div className="overflow-x-auto">
+        <div className="paper"><div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr className="border-b border-line-soft text-xs text-ink-mid">
@@ -123,7 +124,7 @@ const Experiments = () => {
               ))}
             </tbody>
           </table>
-        </div>
+        </div></div>
         {unavailable.length > 0 && (
           <div className="border-t border-line-soft px-5 py-3.5">
             {unavailable.map((m) => (
@@ -135,7 +136,7 @@ const Experiments = () => {
 
       {/* Đối đầu từng câu: luật và ViSoBERT, liệt kê đủ cả hai chiều */}
       {h2h && (
-        <GlassPanel tone="strong" className="overflow-hidden">
+        <GlassPanel tone="strong" className="reveal overflow-hidden">
           <PanelHeader
             className="mb-0 border-b border-line-soft px-5 pt-5 pb-4"
             title="Luật từ khóa và ViSoBERT trên từng câu"
@@ -147,7 +148,7 @@ const Experiments = () => {
               {rows.length === 0 ? (
                 <p className="mt-1 text-sm text-ink-lo">Không có câu nào.</p>
               ) : (
-                <div className="mt-2 overflow-x-auto">
+                <div className="paper"><div className="mt-2 overflow-x-auto">
                   <table className="w-full min-w-[640px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-line-soft text-xs text-ink-mid">
@@ -168,7 +169,7 @@ const Experiments = () => {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </div></div>
               )}
             </div>
           ))}
@@ -184,7 +185,7 @@ const Experiments = () => {
 
       {/* Phát hiện quan trọng nhất: khoảng cách dev/test */}
       {gap != null && (
-        <GlassPanel tone="strong" className="p-5">
+        <GlassPanel tone="strong" className="reveal p-5">
           <h3 className="flex items-start gap-2 text-heading font-semibold text-ink-hi">
             <Lightbulb size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />
             Phát hiện chính: bộ phân loại luật không khái quát hóa được
@@ -200,7 +201,7 @@ const Experiments = () => {
 
       {/* Trust Layer */}
       {data.trustLayer && (
-        <GlassPanel tone="strong" className="p-5">
+        <GlassPanel tone="strong" className="reveal p-5">
           <PanelHeader title="Tầng kiểm soát tin cậy dữ liệu" />
           <div className="grid gap-3 sm:grid-cols-3">
             {[
@@ -229,8 +230,8 @@ const Experiments = () => {
 
       {/* Ablation */}
       {data.ablations?.trustLayer && (
-        <GlassPanel tone="strong" className="p-5">
-          <PanelHeader title="Thí nghiệm loại bỏ thành phần" subtitle="Tắt từng thành phần để đo đúng phần nó đóng góp" />
+        <GlassPanel tone="strong" className="reveal p-5">
+          <PanelHeader title="Thí nghiệm loại bỏ thành phần"subtitle="Tắt từng thành phần để đo đúng phần nó đóng góp" />
           <dl className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-ctrl bg-raised px-4 py-3.5">
               <dt className="text-sm font-semibold text-ink-hi">Chuẩn hóa teencode</dt>
@@ -273,14 +274,14 @@ const Lab = () => {
   }, []);
 
   return (
-    <div className="cx pb-12">
+    <PageEnter className="cx pb-12">
       <PageHeader
         title="Phòng thí nghiệm mô hình"
         subtitle="Thử bộ phân loại tiếng Việt với câu của bạn, và xem kết quả đo trên tập kiểm tra."
       />
       <Tabs tabs={TABS} value={tab} onChange={setTab} className="mb-6" />
       {tab === 'versus' ? <VersusDemo /> : tab === 'live' ? <PipelineDemo /> : tab === 'batch' ? <BatchDemo /> : <Experiments />}
-    </div>
+    </PageEnter>
   );
 };
 
