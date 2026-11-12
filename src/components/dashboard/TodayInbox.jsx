@@ -182,8 +182,12 @@ const InboxSkeleton = () => (
   </SkeletonBlock>
 );
 
-const TodayInbox = ({ alerts = [], items = [], loading, failed, onRetry }) => {
-  const { states, accept, dismiss } = useDecisions();
+/** Việc gấp nhất đã được đưa lên đầu trang (UrgentNow): `skip` bỏ bấy nhiêu việc đầu ở đây, `decisions` là useDecisions dùng chung với khối đó */
+export const urgentOf = (todo, max = 2) => todo.filter((t) => t.severity !== 'medium').slice(0, max);
+
+const TodayInbox = ({ alerts = [], items = [], loading, failed, onRetry, skip = 0, decisions }) => {
+  const own = useDecisions();
+  const { states, accept, dismiss } = decisions || own;
   const [openId, setOpenId] = useState(null);
   const [showAll, setShowAll] = useState(false);
   const [dismissing, setDismissing] = useState(null);
@@ -195,7 +199,8 @@ const TodayInbox = ({ alerts = [], items = [], loading, failed, onRetry }) => {
     return a.decision && a.decision !== 'PROPOSED' ? a.decision : undefined;
   };
   const decidedBefore = (a) => !states[a.id] && a.decision && a.decision !== 'PROPOSED';
-  const todo = buildTodo(alerts, items, decidedBefore);
+  const all = buildTodo(alerts, items, decidedBefore);
+  const todo = all.slice(skip);
   const remaining = todo.filter((t) => t.kind !== 'alert' || !['ACCEPTED', 'DISMISSED'].includes(statusOf(t.alert))).length;
   const visible = showAll ? todo : todo.slice(0, PREVIEW);
 
@@ -207,13 +212,16 @@ const TodayInbox = ({ alerts = [], items = [], loading, failed, onRetry }) => {
     return () => clearTimeout(t);
   }, [openState]);
 
+  // Mọi việc đã nằm ở đầu trang: không dựng khối trống thứ hai
+  if (skip > 0 && todo.length === 0) return null;
+
   return (
     <section id="today" aria-labelledby="today-title" className="mb-8 scroll-mt-24 overflow-hidden glass-strong rounded-surf">
       <header className="flex flex-wrap items-end justify-between gap-2 border-b border-line-soft px-5 pt-5 pb-4 sm:px-6">
         <div>
           <h2 id="today-title" className="text-heading font-semibold tracking-[-0.01em] text-ink-hi">Việc hôm nay</h2>
           <p className="mt-0.5 text-sm text-ink-mid">
-            {loading && !todo.length ? <Skeleton as="span" className="mt-1 h-3.5 w-44" /> : failed && !todo.length ? 'Chưa gom được việc' : remaining ? `${remaining} việc cần làm, việc gấp ở trên` : 'Đã xử lý hết'}
+            {loading && !todo.length ? <Skeleton as="span" className="mt-1 h-3.5 w-44" /> : failed && !todo.length ? 'Chưa gom được việc' : remaining ? (skip ? `Còn ${remaining} việc khác, ${skip === 1 ? 'việc gấp nhất' : `${skip} việc gấp nhất`} ở đầu trang` : `${remaining} việc cần làm, việc gấp ở trên`) : 'Đã xử lý hết'}
           </p>
         </div>
         <p className="hidden text-xs text-ink-mid sm:block">Gộp từ cảnh báo, livestream, đơn hàng và hàng đợi duyệt</p>

@@ -7,7 +7,10 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { readStorage, writeStorage } from '../lib/storage';
 import SummaryHeader from './dashboard/SummaryHeader';
 import StoreHealth from './dashboard/StoreHealth';
-import TodayInbox, { buildTodo } from './dashboard/TodayInbox';
+import TodayInbox, { buildTodo, urgentOf } from './dashboard/TodayInbox';
+import UrgentNow from './dashboard/UrgentNow';
+import { DismissModal } from './alerts/AlertParts';
+import { useDecisions } from '../hooks/useDecisions';
 import SentimentTrendChart from './dashboard/SentimentTrendChart';
 import SentimentShare from './dashboard/SentimentShare';
 import RisingIssues from './dashboard/RisingIssues';
@@ -19,6 +22,7 @@ import { useReducedMotion, MOTION } from './motion';
  * TỔNG QUAN — việc cần làm trước, số liệu sau
  * ------------------------------------------------------------------
  *   [ Câu tóm tắt: hôm nay có mấy việc, việc nào gấp nhất            ]
+ *     (cột trái: hai việc gấp nhất, cùng hành động với khối dưới)
  *   [ Bộ lọc                                                         ]
  *   [ Việc hôm nay: cảnh báo, livestream, đơn hàng, duyệt, dữ liệu   ]
  *   [ Cửa hàng đang thế nào: khiếu nại | không hài lòng | độ tin     ]
@@ -67,6 +71,20 @@ const Dashboard = () => {
     setInboxAttempt((n) => n + 1);
   };
   const todo = buildTodo(alerts, inbox);
+
+  // Hai việc gấp nhất lên đầu trang (F8-09c). Chung một useDecisions với "Việc hôm nay":
+  // bấm ở đâu cũng ghi một quyết định, hai khối không bao giờ lệch nhau.
+  const decisions = useDecisions();
+  const decidedBefore = (a) => !decisions.states[a.id] && a.decision && a.decision !== 'PROPOSED';
+  const todoAll = buildTodo(alerts, inbox, decidedBefore);
+  const lifted = urgentOf(todoAll);
+  const statusOf = (a) => {
+    const local = decisions.states[a.id];
+    if (local) return local;
+    return a.decision && a.decision !== 'PROPOSED' ? a.decision : undefined;
+  };
+  const restCount = todoAll.length - lifted.length;
+  const [dismissing, setDismissing] = useState(null);
 
   // Sổ đối chiếu ở đầu trang: phễu của cả kho (thu thập, loại, được tính)
   const [ledger, setLedger] = useState(null);
@@ -127,7 +145,15 @@ const Dashboard = () => {
         stats={stats} todo={todo} todoReady={inboxReady} loading={loading} error={error} lastUpdated={lastUpdated}
         ledger={ledger} ledgerFailed={ledgerFailed} onRetryLedger={retryLedger} onLedgerDone={onLedgerDone} playRun={playRun}
         evidence={hasFilter ? null : stats?.evidence?.all}
+        hasUrgent={lifted.length > 0}
+        urgent={(
+          <UrgentNow
+            lifted={lifted} rest={restCount} ready={inboxReady && !(loading && !stats)} failed={failed || inboxFailed} onRetry={retryAll}
+            statusOf={statusOf} accept={decisions.accept} onDismiss={setDismissing}
+          />
+        )}
       />
+      <DismissModal alert={dismissing} open={Boolean(dismissing)} onClose={() => setDismissing(null)} onConfirm={(reason) => decisions.dismiss(dismissing, reason)} />
 
       <FilterBar
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}
@@ -153,7 +179,7 @@ const Dashboard = () => {
 
       {/* Tải lại thì giữ khung cũ ở độ mờ thấp: không nháy, không nhảy bố cục */}
       <div className={`transition-opacity duration-short ease-out ${loading && stats ? 'opacity-60' : ''}`} aria-busy={loading}>
-        <TodayInbox alerts={alerts} items={inbox} loading={loading} failed={failed || inboxFailed} onRetry={retryAll} />
+        <TodayInbox alerts={alerts} items={inbox} loading={loading} failed={failed || inboxFailed} onRetry={retryAll} skip={lifted.length} decisions={decisions} />
 
         <StoreHealth stats={stats} trend={trend} loading={loading} failed={failed} onRetry={reload} countStart={reduced || ledgerDone} />
 

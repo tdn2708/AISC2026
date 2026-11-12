@@ -35,10 +35,10 @@ const todayLabel = () => {
 };
 
 /** todo: danh sách việc đã gộp và xếp (TodayInbox.buildTodo) */
-const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, lastUpdated, ledger, ledgerFailed, onRetryLedger, onLedgerDone, playRun = true, evidence }) => {
+const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, lastUpdated, ledger, ledgerFailed, onRetryLedger, onLedgerDone, playRun = true, evidence, urgent = null, hasUrgent = false }) => {
   const navigate = useNavigate();
   const top = todo[0];
-  const urgent = todo.filter((t) => t.severity === 'critical').length;
+  const urgentCount = todo.filter((t) => t.severity === 'critical').length;
   const real = stats?.workspace === 'real';
 
   let sentence;
@@ -51,7 +51,8 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
   } else if (top) {
     sentence = (
       <>
-        Hôm nay có {todo.length} việc cần làm{urgent ? `, ${urgent} việc khẩn` : ''}. Gấp nhất: {lower1(top.title)}.
+        Hôm nay có {todo.length} việc cần làm{urgentCount ? `, ${urgentCount} việc khẩn` : ''}.{' '}
+        {hasUrgent ? 'Việc gấp nhất ở ngay bên dưới.' : <>Gấp nhất: {lower1(top.title)}.</>}
       </>
     );
   } else {
@@ -79,7 +80,7 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
             )}
           </h1>
           <div className="mt-6 flex flex-wrap gap-2">
-            {top && (
+            {top && !hasUrgent && (
               <Button onClick={() => document.getElementById('today')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })}>
                 Xem việc hôm nay
               </Button>
@@ -88,6 +89,7 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
               Thu thập dữ liệu mới
             </Button>
           </div>
+          {urgent}
           {!stats && error ? null : loading && !stats ? <Skeleton className="mt-5 h-3.5 w-64 max-w-full" /> : <p className="mt-5 max-w-[60ch] text-sm leading-relaxed text-ink-lo">{asOfLine}</p>}
         </div>
         {ledger ? (
