@@ -5,7 +5,15 @@
 /* Hallmark · reworded "Tổng quan" to the summary sentence as the page head · 54 names the small label over it; the page name stays in the sidebar and the phone top bar */
 /* Hallmark · dismissed kept-figures · 11:20, 3% and the phone number are live data that changed between the two captures, not removed content */
 /* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V3 · weakest: V, an app shell has few axes to move; spent the change on the ledger sheet and on dropping the ink block, the dots and the gauge */
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+/* Font Be Vietnam Pro nạp ở index.html. Chữ dự phòng chỉnh cỡ gần Be Vietnam Pro để dòng không nhảy khi font về. */
+@font-face {
+  font-family: 'Be Vietnam Pro Fallback';
+  src: local('Segoe UI'), local('Arial');
+  size-adjust: 106%;
+  ascent-override: 96%;
+  descent-override: 26%;
+  line-gap-override: 0%;
+}
 
 /* ==================================================================
    HỆ THIẾT KẾ "SỔ KIỂM CHỨNG", BẢNG MÀU B (màu nhóm Customer Radar)
@@ -124,7 +132,7 @@
   --shell-gap: 0px;
 
   /* Chữ */
-  --font-sans: 'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Be Vietnam Pro', 'Be Vietnam Pro Fallback', 'Segoe UI', system-ui, sans-serif;
   /* Lớp font-mono cũ nay trỏ về chữ chính + chữ số đều cột (xem .font-mono bên dưới);
      font đơn cách thật chỉ còn cho chuỗi thống kê trong ngăn kéo bằng chứng */
   --font-mono: var(--font-sans);
