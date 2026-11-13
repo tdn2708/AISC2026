@@ -42,7 +42,7 @@ export const ChipGroup = ({ options, value, onChange, label, className = '' }) =
 
 /** Điều khiển phân đoạn: chuyển chế độ xem trong cùng một panel. Hẹp hơn chỗ thì cuộn ngang. */
 export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
-  <div role="group" aria-label={label} className="inline-flex max-w-full min-w-0 gap-0.5 overflow-x-auto rounded-ctrl border border-line bg-surface p-0.5 [scrollbar-width:none]">
+  <div role="group" aria-label={label} className="inline-flex max-w-full min-w-0 gap-0.5 scroll-hint-x overflow-x-auto rounded-ctrl border border-line bg-surface p-0.5 [scrollbar-width:none]">
     {options.map((o) => {
       const active = o.value === value;
       return (
@@ -66,7 +66,7 @@ export const Segmented = ({ options, value, onChange, label, size = 'sm' }) => (
 
 /** Tab gạch chân. Hẹp hơn chỗ (điện thoại) thì cả hàng cuộn ngang, không bị cắt mép. */
 export const Tabs = ({ tabs, value, onChange, className = '' }) => (
-  <div role="tablist" className={`flex max-w-full min-w-0 gap-6 overflow-x-auto overscroll-x-contain border-b border-line-soft [scrollbar-width:thin] ${className}`}>
+  <div role="tablist" className={`flex max-w-full min-w-0 gap-6 scroll-hint-x overflow-x-auto overscroll-x-contain border-b border-line-soft [scrollbar-width:thin] ${className}`}>
     {tabs.map((t) => {
       const active = t.value === value;
       return (

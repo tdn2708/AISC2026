@@ -97,7 +97,7 @@ const Experiments = () => {
       {/* Bảng mô hình */}
       <GlassPanel tone="strong" className="overflow-hidden">
         <PanelHeader className="mb-0 border-b border-line-soft px-5 pt-5 pb-4" title="Phân loại danh mục (Level 1)" subtitle="Macro-F1 trên tập kiểm tra giữ riêng, so với tập phát triển" />
-        <div className="paper"><div className="overflow-x-auto">
+        <div className="paper"><div className="scroll-hint-x overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr className="border-b border-line-soft text-xs text-ink-mid">
@@ -148,7 +148,7 @@ const Experiments = () => {
               {rows.length === 0 ? (
                 <p className="mt-1 text-sm text-ink-lo">Không có câu nào.</p>
               ) : (
-                <div className="paper"><div className="mt-2 overflow-x-auto">
+                <div className="paper"><div className="mt-2 scroll-hint-x overflow-x-auto">
                   <table className="w-full min-w-[640px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-line-soft text-xs text-ink-mid">

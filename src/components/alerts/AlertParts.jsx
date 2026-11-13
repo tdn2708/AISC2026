@@ -2,7 +2,10 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Activity, CircleSlash } from 'lucide-react';
 import { Modal, Button, TextArea, Chip } from '../ui';
 import { MOTION, EASE, useReducedMotion } from '../motion';
-import { fmtInt, fmtPct, fmtSignedPct, growthOf, alertTitle } from '../../lib/format';
+import { fmtInt, fmtPct, fmtGrowth, growthOf, alertTitle } from '../../lib/format';
+
+/** Số kiểu Việt trong chuỗi z, p, n: dấu thập phân là dấu phẩy */
+const vi = (v) => String(v).replace('.', ',');
 
 /** Dải bằng chứng thống kê: chữ nhãn ở chữ chính, chỉ con số và chuỗi z, p, n dùng font đơn cách (font-code) */
 export const Evidence = ({ alert, className = '' }) => {
@@ -11,9 +14,9 @@ export const Evidence = ({ alert, className = '' }) => {
     return (
       <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-lo ${className}`}>
         <span className="inline-flex items-center gap-1 text-ink-mid">
-          <Activity size={14} aria-hidden="true" /> EWMA <span className="font-code">{st.ewmaCurrent}{st.unit || ''}</span>
+          <Activity size={14} aria-hidden="true" /> EWMA <span className="font-code">{vi(st.ewmaCurrent)}{st.unit || ''}</span>
         </span>
-        <span>giới hạn <span className="font-code">{st.controlLimit}{st.unit || ''}</span></span>
+        <span>giới hạn <span className="font-code">{vi(st.controlLimit)}{st.unit || ''}</span></span>
         {st.consecutiveBreaches != null && <span><span className="tabular-nums">{st.consecutiveBreaches}</span> chu kỳ liên tiếp</span>}
       </p>
     );
@@ -21,10 +24,10 @@ export const Evidence = ({ alert, className = '' }) => {
   const g = growthOf(alert);
   return (
     <p className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-lo ${className}`}>
-      <span className="font-semibold text-ink-hi">{g == null ? alert.typeVi : Number.isFinite(g) ? fmtSignedPct(g) : 'mới'}</span>
+      <span className="font-semibold text-ink-hi">{g == null ? alert.typeVi : Number.isFinite(g) ? fmtGrowth(g) : 'mới'}</span>
       <span className="tabular-nums">từ {fmtPct(st.baselineRate)} sang {fmtPct(st.currentRate)}</span>
-      {st.z != null && <span className="font-code">z={st.z}</span>}
-      {st.pValueDisplay && <span className="font-code">{st.pValueDisplay.replace(/\s/g, '')}</span>}
+      {st.z != null && <span className="font-code">z={vi(st.z)}</span>}
+      {st.pValueDisplay && <span className="font-code">{vi(st.pValueDisplay.replace(/\s/g, ''))}</span>}
       {st.sampleCurrent != null && <span className="font-code">n={fmtInt(st.sampleCurrent)}</span>}
     </p>
   );

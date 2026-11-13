@@ -749,7 +749,7 @@ export default function PipelineDemo() {
       </GlassPanel>
 
       {/* Thanh tiến trình tám bước */}
-      <nav aria-label="Tám bước xử lý" className="overflow-x-auto">
+      <nav aria-label="Tám bước xử lý" className="scroll-hint-x overflow-x-auto">
         <ol className="flex min-w-max list-none gap-1.5">
           {STEPS.map((s, i) => {
             const on = trace && i < revealed;

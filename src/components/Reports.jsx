@@ -354,7 +354,7 @@ const Reports = () => {
             description={reportHistory.length === 0 ? 'Tạo một báo cáo PDF hoặc tải CSV để bắt đầu.' : 'Đổi bộ lọc loại tệp để xem các báo cáo khác.'}
           />
         ) : (
-          <div className="paper"><div className="overflow-x-auto">
+          <div className="paper"><div className="scroll-hint-x overflow-x-auto">
             <table className="data-table min-w-[620px]">
               <thead><tr><th className="pl-5">Tên báo cáo</th><th>Loại</th><th>Ngày tạo</th><th>Dung lượng</th><th className="pr-5" /></tr></thead>
               <tbody>

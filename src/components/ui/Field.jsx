@@ -1,5 +1,6 @@
 import React, { useId } from 'react';
 import { ChevronDown, CircleAlert } from 'lucide-react';
+import { fieldClass } from './fieldClass';
 
 /**
  * Ô nhập (F1-05: 13 ô tự viết, 5 chiều cao, 4 kiểu focus gộp còn 1 họ, 2 cỡ, 1 kiểu focus).
@@ -10,13 +11,6 @@ import { ChevronDown, CircleAlert } from 'lucide-react';
  *   Lỗi luôn có CHỮ, không chỉ đổi màu viền.
  * `fieldClass()` cho ô tự dựng (ô tìm trong popover, ô trong bảng) dùng chung đúng diện mạo này.
  */
-const FIELD_BASE =
-  'w-full rounded-ctrl border bg-surface text-sm text-ink-hi placeholder:text-ink-lo transition-[border-color,background-color] duration-micro ease-out disabled:cursor-not-allowed disabled:opacity-55';
-const FIELD_H = { sm: 'h-8', md: 'h-10' };
-
-export const fieldClass = ({ size = 'md', error = false, multiline = false } = {}) =>
-  `${FIELD_BASE} ${error ? 'border-crit' : 'border-field hover:border-ink-lo disabled:hover:border-field'} ${multiline ? '' : FIELD_H[size] || FIELD_H.md}`;
-
 const Shell = ({ id, label, hint, error, children, className = '', aside }) => (
   <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
     {(label || aside) && (

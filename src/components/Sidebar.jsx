@@ -238,9 +238,9 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
   const readProfile = () => {
     try {
       const s = JSON.parse(localStorage.getItem('crSettings') || '{}');
-      return { name: currentUser(), email: s.email || 'admin@company.com' };
+      return { name: currentUser(), email: s.email || 'demo@customerradar.vn' };
     } catch {
-      return { name: DEFAULT_USER, email: 'admin@company.com' };
+      return { name: DEFAULT_USER, email: 'demo@customerradar.vn' };
     }
   };
   const [profile, setProfile] = useState(readProfile);

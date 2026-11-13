@@ -449,7 +449,8 @@ kbd { font-family: inherit; }
 /* Chuỗi thống kê (z, p, n) — nơi duy nhất còn font đơn cách */
 .font-code {
   font-family: var(--font-code);
-  font-size: 0.92em;
+  /* K7-02 lỗi 23: 0,92em của chữ 13px ra 11,96px, dưới mức tối thiểu 13px; giữ 1em */
+  font-size: 1em;
   letter-spacing: 0;
 }
 
@@ -708,7 +709,8 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
   padding: var(--space-2xs) var(--space-xs); border-radius: var(--r-ctrl);
   font-size: var(--fs-xs); font-weight: 500;
   color: var(--text-mid); background: var(--raised);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;
+  /* K7-02 lỗi 24: nhóm vấn đề dài ('Dịch vụ khách hàng') xuống dòng thay vì cắt thành 'Dịch vụ k...' */
+  white-space: normal; line-height: 1.35; overflow-wrap: anywhere; vertical-align: middle;
 }
 .fb-status { display: inline-flex; align-items: center; gap: var(--space-xs); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
 .fb-pos { color: var(--viz-pos); }
@@ -789,6 +791,8 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
 }
 @supports (animation-timeline: scroll()) {
   .topbar::before {
+    /* K7-02 lỗi 16: nền mặc định trong suốt; trang không cuộn được thì timeline không chạy, thanh trên phải ở dạng "đỉnh trang" */
+    opacity: 0;
     animation: topbar-glass linear both;
     animation-timeline: scroll(nearest block);
     animation-range: 0 48px;
@@ -807,6 +811,27 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
   .topbar::before { background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 [data-glass='off'] .topbar::before { background: var(--surface-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* ---------- Gợi ý cuộn ngang (K7-02 lỗi 24) ----------
+   Bảng, tab, ô lọc rộng hơn chỗ chứa thì mép phía còn nội dung mờ dần 24 px, mép đã tới cuối thì rõ hẳn.
+   Mờ theo vị trí cuộn bằng scroll() timeline của chính phần tử (không JS). Khung không cuộn thì timeline
+   không chạy, giá trị mặc định 0 px nên không mờ gì. Trình duyệt không hỗ trợ: không có gợi ý, vẫn cuộn được. */
+@property --hint-l { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --hint-r { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@supports (animation-timeline: scroll()) {
+  .scroll-hint-x {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--hint-l), #000 calc(100% - var(--hint-r)), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 var(--hint-l), #000 calc(100% - var(--hint-r)), transparent);
+    animation: hint-l linear both, hint-r linear both;
+    animation-timeline: scroll(self inline), scroll(self inline);
+    animation-range: 0 24px, calc(100% - 24px) 100%;
+  }
+}
+@keyframes hint-l { from { --hint-l: 0px; } to { --hint-l: 24px; } }
+@keyframes hint-r { from { --hint-r: 24px; } to { --hint-r: 0px; } }
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint-x { animation: none; --hint-l: 0px; --hint-r: 0px; }
+}
 
 .sidebar-overlay {
   display: none;

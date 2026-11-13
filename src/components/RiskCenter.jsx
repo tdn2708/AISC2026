@@ -10,7 +10,7 @@ import {
 import { Evidence, ConfidenceMeter, DismissModal, Fold } from './alerts/AlertParts';
 import { Pulse, PageEnter, MOTION, EASE, prefersReducedMotion } from './motion';
 import { useDecisions } from '../hooks/useDecisions';
-import { alertTitle, alertInWords, fmtInt, fmtPct, fmtDateTime, SEVERITY, SEVERITY_ORDER } from '../lib/format';
+import { alertTitle, alertInWords, upFirst, fmtInt, fmtPct, fmtDateTime, SEVERITY, SEVERITY_ORDER } from '../lib/format';
 
 /**
  * CẢNH BÁO
@@ -38,7 +38,7 @@ const AlertRow = ({ alert, status, active, onClick }) => {
           <SeverityBadge level={alert.severity} />
         </div>
         {alert.productName && <p className="mt-0.5 truncate text-xs text-ink-lo">{alert.productName}</p>}
-        <p className="mt-1.5 text-xs text-ink-mid">{alertInWords(alert)}</p>
+        <p className="mt-1.5 text-xs text-ink-mid">{upFirst(alertInWords(alert))}</p>
         <p className="mt-1.5 text-xs text-ink-lo">
           {status === 'ACCEPTED' ? (
             <span className="inline-flex items-center gap-1 text-ok"><Check size={12} aria-hidden="true" /> Đã chấp nhận</span>

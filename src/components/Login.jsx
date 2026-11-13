@@ -20,7 +20,7 @@ import LedgerSkeleton from './dashboard/LedgerSkeleton';
  * trang. Giảm chuyển động: tờ sổ tĩnh, đủ số ngay. Chờ số thì khung xương
  * cùng hình tờ sổ; không tải được thì hiện ba loại bằng chứng.
  */
-const DEMO = { email: 'admin@company.com', password: 'password123' };
+const DEMO = { email: 'demo@customerradar.vn', password: 'demo2026' };
 
 const PROOF = [
   { kind: 'verified', text: 'Có chứng từ: khớp đơn hàng hoặc sàn xác nhận đã mua' },

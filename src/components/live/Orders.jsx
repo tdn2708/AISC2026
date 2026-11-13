@@ -72,7 +72,7 @@ const Orders = ({ stats, sessionId, onChanged }) => {
         )}
       />
       {items.length ? (
-        <div className="paper"><div className="-mx-1 overflow-x-auto">
+        <div className="paper"><div className="-mx-1 scroll-hint-x overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr className="border-b border-line-soft text-xs text-ink-lo">

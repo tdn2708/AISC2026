@@ -43,7 +43,7 @@ const Signal = ({ s, tone = 'high' }) => {
 /** Điểm tin cậy: một con số lớn và một câu đánh giá, không vẽ đồng hồ */
 const HealthDial = ({ score = 0 }) => {
   const tone = score >= 75 ? 'text-ok' : score >= 50 ? 'text-high' : 'text-crit';
-  const label = score >= 75 ? 'Đáng tin cậy' : score >= 50 ? 'Cần chú ý' : 'Rủi ro cao';
+  const label = score >= 75 ? 'Đáng tin' : score >= 50 ? 'Cần chú ý' : 'Chưa đáng tin';
   return (
     <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
       <span className="tabular-nums text-metric font-semibold tracking-[-0.02em] text-ink-hi">{score}</span>

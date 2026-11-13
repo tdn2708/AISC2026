@@ -55,6 +55,34 @@ export const fmtDec = (n, digits = 1) => {
 export const fmtPct = (v, digits = 1) =>
   v == null || !Number.isFinite(v) ? '—' : `${(v * 100).toFixed(digits).replace('.', ',')}%`;
 
+/** Viết hoa chữ đầu khi một câu chữ thường (alertInWords) đứng riêng một dòng */
+export const upFirst = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+/**
+ * Tăng trên 100% thì nói bằng bội số cho dễ đọc: 12.75 -> "gần 14 lần" (x = 1 + rel = 13,75), thay cho "+1.275%".
+ * "khoảng" khi lệch không quá 0,1 lần, "gần" khi bội thật nhỏ hơn số nguyên gần nhất, "hơn" khi lớn hơn.
+ */
+export const timesWords = (rel) => {
+  const x = 1 + rel;
+  const n = Math.round(x);
+  const d = x - n;
+  const pre = Math.abs(d) <= 0.1 ? 'khoảng' : d < 0 ? 'gần' : 'hơn';
+  return `${pre} ${fmtInt(n)} lần`;
+};
+
+/**
+ * Mức tăng có dấu: đến 100% giữ phần trăm ("+42%"), trên 100% nói bội số ("tăng gần 14 lần").
+ */
+export const fmtGrowth = (rel, digits = 0) =>
+  rel != null && Number.isFinite(rel) && rel > 1 ? `tăng ${timesWords(rel)}` : fmtSignedPct(rel, digits);
+
+/**
+ * Tỉ lệ có luật "dưới 1% giữ 2 chữ số": 0.0011 -> "0,11%" (không để thành "0%"); từ 1% trở lên dùng `digits`.
+ * Số 0 đúng nghĩa vẫn hiện theo `digits` ("0%"), vì 0 thật khác với số nhỏ bị làm tròn mất.
+ */
+export const fmtRate = (v, digits = 1) =>
+  fmtPct(v, v != null && v > 0 && v < 0.01 ? 2 : digits);
+
 /** Chênh lệch tương đối có dấu: 0.42 -> "+42%" */
 export const fmtSignedPct = (rel, digits = 0) => {
   if (rel == null || !Number.isFinite(rel)) return '—';
@@ -144,7 +172,7 @@ export const alertInWords = (a) => {
   }
   if (st.baselineRate != null && st.currentRate != null) {
     // Tỉ lệ dưới 1% cần thêm một chữ số, nếu không 0,04% hiện thành "0,0%"
-    const p = (v) => fmtPct(v, v > 0 && v < 0.01 ? 2 : 1);
+    const p = (v) => fmtRate(v);
     return st.baselineRate > 0
       ? `tỉ lệ khiếu nại tăng từ ${p(st.baselineRate)} lên ${p(st.currentRate)}`
       : `mới xuất hiện, chiếm ${p(st.currentRate)} phản hồi`;

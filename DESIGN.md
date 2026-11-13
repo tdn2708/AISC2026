@@ -104,7 +104,7 @@ Mọi màu chuỗi đạt 3:1 trên bề mặt và nền trang ở cả hai ch�
 |---|---|
 | Họ chữ | Be Vietnam Pro 400, 500, 600, 700 (`--font-sans`, nạp từ Google Fonts ở đầu `index.css`). Một họ cho cả tiêu đề và thân. |
 | Số | `tabular-nums` cho mọi cột số, số đếm. `.font-mono` và `.data-num` cũ = chữ chính + tabular-nums, không phải font đơn cách. |
-| Font đơn cách | Chỉ `.font-code` (`--font-code`, 0,92em) cho chuỗi thống kê z, p, n trong "Số liệu kiểm định". |
+| Font đơn cách | Chỉ `.font-code` (`--font-code`, 1em để không dưới 13 px, K7-02) cho chuỗi thống kê z, p, n trong "Số liệu kiểm định". |
 | Dòng | thân 1,6; tiêu đề h1 đến h5 1,3, giãn chữ -0,015em, `text-wrap: balance`. |
 | Nhãn | viết thường, chỉ hoa chữ đầu câu, không giãn chữ (lớp `eyebrow`: 13px, 500, `--text-mid`). |
 | Cấm | `text-[...rem]`, `text-[...px]`, chữ dưới 13px. CSS thuần dùng `--fs-xs` 13, `--fs-sm` 14, `--fs-base` 16 (phải khớp thang dưới). |
@@ -179,7 +179,8 @@ API (import từ `src/components/motion`, `AnimatedNumber` từ `src/components/
 | Thành phần | Prop | Ghi chú |
 |---|---|---|
 | `LedgerRun` | `ledger, evidence?, mode='auto'\|'scroll', progress=0..1, duration=1600, title, showLink=true, play=true, onDone, className` | chữ ký. `ledger` nhận nguyên `/trust/health` hoặc dạng phẳng `{raw, spam, inauthentic, pendingNotCounted, pendingCounted, aged, counted}`; số cuối luôn bằng `countedForMetrics`. `play={false}` hiện ngay số cuối như giảm chuyển động. Chỉ `/dashboard` chạy, và chỉ lần đầu mỗi phiên trình duyệt (`sessionStorage` khóa `cr-ledger-run`); `/login` và `/trust` luôn `play={false}`. Hàm thuần `src/lib/ledgerRun.js`. |
-| `AnimatedNumber` | `value, from=0, decimals=0, signed, unit, unitClassName, className, duration=700, settle=true` | đếm khi vào khung nhìn, chốt nhẹ ở cuối |
+| `AnimatedNumber` | `value, from=0, decimals=0, signed, unit, unitClassName, className, duration=700, settle=true` | đếm khi vào khung nhìn, chốt nhẹ ở cuối; đếm bằng ghi textContent qua ref, không setState mỗi khung |
+| `.scroll-hint-x` (lớp CSS) | gắn cùng `overflow-x-auto` | khung cuộn ngang mờ 24 px ở mép còn nội dung, theo `scroll()` timeline, không JS; đã gắn cho `Tabs`, `Segmented` và các bảng |
 | `ChartReveal` | `as='div', threshold=0.3, className` | mở biểu đồ bằng `clip-path` từ trái, một lần, `--motion-long` |
 | `BarGrow` | `value 0..1, grow=true, start?, className` | chỉ phần tô, `scaleX`; rãnh do trang vẽ (`overflow-hidden`) |
 | `Pulse` | `trigger, as='div', className` | một nhịp nền `--accent-dim` mỗi khi `trigger` đổi; thay chấm trạng thái |

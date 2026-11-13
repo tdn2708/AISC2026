@@ -345,7 +345,7 @@ const DataSources = () => {
           {history.length === 0 ? (
             <EmptyState compact title="Chưa thu thập lần nào" description="Mỗi lần thu thập theo liên kết sẽ được ghi lại ở đây." />
           ) : (
-            <div className="paper"><div className="overflow-x-auto">
+            <div className="paper"><div className="scroll-hint-x overflow-x-auto">
               <table className="data-table min-w-[680px]">
                 <thead><tr><th className="pl-5">Nguồn</th><th>Trạng thái</th><th className="text-right">Bản ghi</th><th>Thời điểm</th><th className="pr-5" /></tr></thead>
                 <tbody>

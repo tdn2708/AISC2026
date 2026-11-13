@@ -242,14 +242,14 @@ export const LedgerRun = ({
             <>
               <Check size={16} strokeWidth={2.5} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />
               <span>
-                Phép trừ khớp: {fmtInt(run.raw)} trừ {fmtInt(run.removed)} đúng bằng {fmtInt(run.counted)}
-                {run.pendingCounted > 0 && `. ${fmtInt(run.pendingCounted)} phản hồi chờ duyệt vẫn được tính tạm theo trọng số`}
+                Phép trừ khớp: {fmtInt(run.raw)} trừ {fmtInt(run.removed)} đúng bằng {fmtInt(run.counted)}.
+                {run.pendingCounted > 0 && ` ${fmtInt(run.pendingCounted)} phản hồi chờ duyệt vẫn được tính tạm theo trọng số.`}
               </span>
             </>
           ) : (
             <>
               <TriangleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-              <span>Phép trừ lệch {fmtInt(Math.abs(run.diff))} phản hồi so với số được tính</span>
+              <span>Phép trừ lệch {fmtInt(Math.abs(run.diff))} phản hồi so với số được tính.</span>
             </>
           )}
         </p>

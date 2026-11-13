@@ -6,7 +6,7 @@ import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { Pulse, useReducedMotion, MOTION, EASE } from '../motion';
 import { ConfidenceMeter, DismissModal } from '../alerts/AlertParts';
 import { useDecisions } from '../../hooks/useDecisions';
-import { alertTitle, alertInWords } from '../../lib/format';
+import { alertTitle, alertInWords, upFirst } from '../../lib/format';
 
 /**
  * VIỆC HÔM NAY — một danh sách duy nhất cho câu hỏi "hôm nay tôi cần làm gì"
@@ -76,9 +76,6 @@ export const SEV = {
 const SOURCE = { alert: 'Cảnh báo', live: 'Livestream', orders: 'Đơn hàng', review: 'Duyệt phản hồi', data: 'Dữ liệu' };
 const ALERT_SEV = { Critical: 'critical', High: 'high', Medium: 'medium', Low: 'medium' };
 const PREVIEW = 6;
-
-/** Viết hoa chữ đầu khi lý do đứng riêng một dòng (alertInWords trả câu chữ thường để ghép giữa câu) */
-export const upFirst = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 /** Gộp cảnh báo chờ quyết và việc từ máy chủ thành một danh sách đã xếp */
 export const buildTodo = (alerts = [], items = [], isDecided = (a) => a.decision && a.decision !== 'PROPOSED') => {

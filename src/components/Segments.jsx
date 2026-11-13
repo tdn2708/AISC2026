@@ -128,7 +128,7 @@ const Segments = () => {
         ) : rows.length === 0 ? (
           <EmptyState compact title="Không có khách hàng khớp" description="Thử đổi khoảng thời gian hoặc từ khoá." />
         ) : (
-          <div className="paper mx-3 mb-3 overflow-x-auto">
+          <div className="paper mx-3 mb-3 scroll-hint-x overflow-x-auto">
             <table className="data-table min-w-[720px]">
               <thead>
                 <tr>

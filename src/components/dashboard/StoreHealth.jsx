@@ -4,7 +4,7 @@ import { RotateCw } from 'lucide-react';
 import { AnimatedNumber, EvidenceBar, EmptyState, Button } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { useInView, useReducedMotion } from '../motion';
-import { fmtInt, fmtPct, fmtSignedPct } from '../../lib/format';
+import { fmtInt, fmtPct, fmtSignedPct, timesWords } from '../../lib/format';
 import EvidenceDrawer from './EvidenceDrawer';
 
 /**
@@ -55,7 +55,7 @@ const Delta = ({ rel }) => {
     <span className="inline-flex flex-wrap items-center gap-x-1.5 text-sm">
       <span className={`inline-flex items-center gap-0.5 font-semibold ${tone}`}>
         <Icon size={15} aria-hidden="true" />
-        {j === 'flat' ? 'Không đổi' : `${rel > 0 ? 'Tăng' : 'Giảm'} ${fmtSignedPct(Math.abs(rel)).replace('+', '')}`}
+        {j === 'flat' ? 'Không đổi' : `${rel > 0 ? 'Tăng' : 'Giảm'} ${rel > 1 ? timesWords(rel) : fmtSignedPct(Math.abs(rel)).replace('+', '')}`}
       </span>
       <span className="text-ink-mid">so với tuần trước</span>
     </span>

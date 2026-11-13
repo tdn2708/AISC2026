@@ -1,6 +1,7 @@
 export { GlassPanel, PanelHeader, SeverityBadge, MethodHint } from './Glass';
 export { Button, IconButton } from './Button';
-export { TextField, TextArea, Select, fieldClass } from './Field';
+export { TextField, TextArea, Select } from './Field';
+export { fieldClass } from './fieldClass';
 export { Switch, Checkbox, RadioCards } from './Toggle';
 export { Chip, ChipGroup, Segmented, Tabs, SELECTED } from './Chips';
 export { Modal, Drawer, Backdrop } from './Overlay';

@@ -8,7 +8,7 @@ import FilterBar from './FilterBar';
 import Segments from './Segments';
 import Compare from './analytics/Compare';
 import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat, ChartTooltip, Skeleton } from './ui';
-import { buildQuery, fmtInt, fmtPct, fmtSignedPct, fmtDate } from '../lib/format';
+import { buildQuery, fmtInt, fmtPct, fmtGrowth, fmtDate } from '../lib/format';
 import { useDataVersion } from '../lib/dataVersion';
 import { AXIS_TICK } from '../lib/tokens';
 import { BarGrow, MOTION, EASE, STAGGER_STEP, useReducedMotion, PageEnter } from './motion';
@@ -245,7 +245,7 @@ const RootCauses = () => {
                 ) : (
                   <p className={`mt-0.5 inline-flex items-center gap-1 text-xs font-semibold ${up ? 'text-crit' : 'text-ok'}`}>
                     {up ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
-                    {fmtSignedPct(delta.rel)} <span className="font-normal text-ink-lo">so với {fmtInt(delta.prev)} ở tuần trước</span>
+                    {fmtGrowth(delta.rel)} <span className="font-normal text-ink-lo">so với {fmtInt(delta.prev)} ở tuần trước</span>
                   </p>
                 )}
               </div>

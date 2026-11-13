@@ -12,7 +12,7 @@ import { CheckCircle2, CircleAlert } from 'lucide-react';
  * không lặp lại nhãn nhóm ở đây; không tô hai màu cho một tiêu đề.
  */
 export const PageHeader = ({ title, accent, subtitle, actions, meta }) => (
-  <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4 animate-fade-up">
+  <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
     <div className="min-w-0">
       <h1 className="text-display leading-tight font-semibold tracking-[-0.02em] text-ink-hi">
         {accent ? `${title} ${accent}` : title}

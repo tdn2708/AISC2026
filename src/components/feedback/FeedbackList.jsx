@@ -17,7 +17,7 @@ const WIDTHS = {
 
 const FeedbackList = ({ items, showProduct = false, onSelect, dimmed = false }) => (
   <div className="paper mx-3 mb-3">
-  <div className={`overflow-x-auto transition-opacity duration-short ${dimmed ? 'opacity-60' : ''}`}>
+  <div className={`scroll-hint-x overflow-x-auto transition-opacity duration-short ${dimmed ? 'opacity-60' : ''}`}>
     <table className="fb-table">
       <colgroup>
         {(showProduct ? WIDTHS.withProduct : WIDTHS.plain).map((w, i) => <col key={i} style={{ width: w }} />)}
@@ -66,7 +66,7 @@ const FeedbackList = ({ items, showProduct = false, onSelect, dimmed = false }) 
                   : <span className="text-ink-lo" title="Không nêu vấn đề cụ thể" aria-label="Không nêu vấn đề cụ thể">{'—'}</span>}
               </td>
               <td className="fb-c-sent">
-                <span className="inline-flex items-center gap-2 text-sm text-ink-mid">
+                <span className="inline-flex items-center gap-2 text-sm whitespace-nowrap text-ink-mid">
                   <SentimentFace sentiment={f.sentiment} size={22} />
                   {s.label}
                 </span>

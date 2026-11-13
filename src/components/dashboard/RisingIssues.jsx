@@ -2,7 +2,7 @@ import React from 'react';
 import { TrendingUp, RotateCw } from 'lucide-react';
 import { GlassPanel, PanelHeader, SeverityBadge, EmptyState, Button } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
-import { alertTitle, fmtPct, fmtSignedPct, growthOf } from '../../lib/format';
+import { alertTitle, fmtPct, fmtGrowth, upFirst, growthOf } from '../../lib/format';
 
 /**
  * HORIZONTAL BAR — Top vấn đề tăng nhanh.
@@ -70,7 +70,7 @@ const RisingIssues = ({ alerts = [], loading, failed, onRetry }) => {
               <li
                 key={alert.id}
                 tabIndex={0}
-                title={`${title}: ${isNew ? 'mới xuất hiện' : fmtSignedPct(growth)}, từ ${fmtPct(st.baselineRate)} lên ${fmtPct(st.currentRate)}`}
+                title={`${title}: ${isNew ? 'mới xuất hiện' : fmtGrowth(growth)}, từ ${fmtPct(st.baselineRate)} lên ${fmtPct(st.currentRate)}`}
                 className="group rounded-ctrl outline-offset-4"
               >
                 <div className="flex items-baseline justify-between gap-3">
@@ -80,7 +80,7 @@ const RisingIssues = ({ alerts = [], loading, failed, onRetry }) => {
                   </p>
                   <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold tabular-nums text-ink-hi">
                     <TrendingUp size={14} className="text-ink-lo" aria-hidden="true" />
-                    {isNew ? 'Mới' : fmtSignedPct(growth)}
+                    {isNew ? 'Mới' : upFirst(fmtGrowth(growth))}
                   </span>
                 </div>
 
