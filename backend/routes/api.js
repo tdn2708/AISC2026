@@ -24,7 +24,8 @@ const wrap = (fn) => (req, res) => {
     const status = Number.isInteger(err.status) && err.status >= 400 && err.status < 500 ? err.status : 500;
     if (status === 500) console.error(`[API] ${req.method} ${req.path}:`, err.message);
     if (res.headersSent) return;
-    res.status(status).json({ error: err.message });
+    // Lỗi máy chủ: ghi chi tiết vào log, không trả nguyên thông báo (có thể lộ tên kho, đường dẫn, câu truy vấn)
+    res.status(status).json({ error: status === 500 ? 'Lỗi máy chủ, vui lòng thử lại sau.' : err.message });
   });
 };
 
@@ -1636,7 +1637,12 @@ router.post('/scrape', wrap(async (req, res) => {
 
 router.post('/seed', wrap(async (req, res) => {
   const { buildDataset } = require('../seed_realistic_data');
+const { seedRouteCheck } = require('../services/write_guard');
+
   const { feedbacks, orders } = buildDataset();
+  // Xóa sạch kho rồi nạp dữ liệu mô phỏng: mặc định tắt, chỉ chạy trên kho demo khi ALLOW_SEED_ROUTE=1
+  const guard = seedRouteCheck({ dbName: req.db.databaseName, workspace: req.workspace });
+  if (!guard.allowed) return res.status(guard.status).json({ error: guard.error });
 
   await req.db.collection('feedbacks').deleteMany({});
   await req.db.collection('transactions').deleteMany({});

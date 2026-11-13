@@ -39,6 +39,7 @@ function weightedComplaintRate(feedbacks, transactionCount) {
     (f) => isCountable(f) && RECONCILABLE_TIERS.includes(f.trust.tier)
   );
 
+  const countableCount = feedbacks.filter(isCountable).length;
   const complaintWeight = reconcilable
     .filter(isComplaint)
     .reduce((sum, f) => sum + f.trust.weight, 0);
@@ -64,7 +65,7 @@ function weightedComplaintRate(feedbacks, transactionCount) {
     denominator: transactionCount,
     denominatorLabel: 'Số giao dịch có chứng từ',
     // Độ phủ: bao nhiêu phần trăm phản hồi hợp lệ đối soát được giao dịch
-    coverage: feedbacks.length ? reconcilable.length / feedbacks.filter(isCountable).length : 0,
+    coverage: countableCount ? reconcilable.length / countableCount : 0,
     sampleSize: reconcilable.length
   };
 }

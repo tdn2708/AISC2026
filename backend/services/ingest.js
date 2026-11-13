@@ -69,7 +69,8 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
     const { rawCustomerId, ...publicFacts } = facts || {};
     return {
       source: review.source,
-      originalText: review.rawText,
+      // Che số điện thoại, email... như normalizer làm cho văn bản đưa vào mô hình: không lưu thông tin cá nhân
+      originalText: normalizer.maskPII(review.rawText).text,
       author: facts ? maskName(review.author) : review.author,
       customerId: facts ? pseudoCustomerId(facts.platform, rawCustomerId) : null,
       timestamp: review.timestamp,

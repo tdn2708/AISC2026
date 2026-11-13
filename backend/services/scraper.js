@@ -23,6 +23,7 @@ const puppeteer = require('puppeteer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { GEMINI_MODEL, LLM_TIMEOUT_MS } = require('./ai_analyzer');
 const { canonicalize, maskPII } = require('./normalizer');
+const { checkUrlSyntax, assertPublicUrl, browserScrapeEnabled, UnsafeUrlError } = require('./url_guard');
 
 /** Giới hạn tần suất: tối thiểu 5 giây giữa hai lần truy cập cùng tên miền */
 const MIN_INTERVAL_MS = 5000;
@@ -63,37 +64,13 @@ async function isAllowedByRobots(page, targetUrl) {
   }
 }
 
-/** Lỗi do đầu vào của người dùng — route trả 400 thay vì 500 */
-class InvalidUrlError extends Error {
-  constructor(message) {
-    super(message);
-    this.status = 400;
-  }
-}
-
 /**
- * Chỉ nhận http/https tới máy chủ công khai. Không kiểm tra thì trình duyệt
- * không giao diện sẽ mở cả `file:///...` hay `http://localhost:...` của chính
- * máy chủ, rồi gửi nội dung đó cho mô hình ngôn ngữ.
+ * Kiểm tra cú pháp đường dẫn (không cần mạng): chỉ http/https, cổng 80/443, không
+ * địa chỉ nội bộ. Việc phân giải tên miền và chặn IP nội bộ nằm ở `assertPublicUrl`
+ * (services/url_guard.js), được gọi ngay trước khi mở trang.
  */
 function validateTargetUrl(raw) {
-  let u;
-  try {
-    u = new URL(String(raw || '').trim());
-  } catch {
-    throw new InvalidUrlError('Đường dẫn không hợp lệ');
-  }
-  if (!['http:', 'https:'].includes(u.protocol)) {
-    throw new InvalidUrlError('Chỉ hỗ trợ đường dẫn http/https');
-  }
-  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
-  const privateHost =
-    host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') ||
-    host === '0.0.0.0' || host === '::1' || /^127\./.test(host) || /^10\./.test(host) ||
-    /^192\.168\./.test(host) || /^169\.254\./.test(host) || /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-    /^f[cd][0-9a-f]{2}:/.test(host) || /^fe80:/.test(host);
-  if (privateHost) throw new InvalidUrlError('Không thu thập từ địa chỉ nội bộ');
-  return u;
+  return checkUrlSyntax(raw);
 }
 
 /** Số sao hợp lệ 1–5, ngược lại null. `Number(null)` là 0 nên không được dùng thẳng. */
@@ -235,7 +212,8 @@ async function fetchTikiReviews(u, opts = {}) {
 }
 
 const scrapeShopeeReviews = async (productUrl) => {
-  const target = validateTargetUrl(productUrl);
+  // Cú pháp rồi phân giải tên miền: mọi địa chỉ trả về phải là địa chỉ công khai
+  const target = await assertPublicUrl(productUrl);
   const { hostname, href } = target;
   productUrl = href;
   await respectRateLimit(hostname);
@@ -249,6 +227,14 @@ const scrapeShopeeReviews = async (productUrl) => {
     }
   }
 
+  // Trình duyệt không giao diện tốn khoảng 300 MB RAM và mở được mọi trang: chỉ bật
+  // khi chủ máy chủ cho phép (Render 512 MB để tắt). Mặc định chỉ nhận đường dẫn Tiki.
+  if (!browserScrapeEnabled()) {
+    const err = new UnsafeUrlError('Máy chủ này chỉ thu thập đường dẫn sản phẩm Tiki. Trang khác cần bật trình duyệt thu thập (ALLOW_BROWSER_SCRAPE=1) và chỉ nên chạy trên máy cục bộ.');
+    err.status = 422;
+    throw err;
+  }
+
   let rawText = '';
   let browser = null;
 
@@ -259,6 +245,19 @@ const scrapeShopeeReviews = async (productUrl) => {
     });
 
     const page = await browser.newPage();
+    // Mọi yêu cầu của trang, kể cả chuyển hướng, cũng phải tới địa chỉ công khai
+    await page.setRequestInterception(true);
+    const checked = new Map();
+    page.on('request', (request) => {
+      const u = request.url();
+      if (/^(data|blob|about):/i.test(u)) return request.continue();
+      let verdict = checked.get(new URL(u).host);
+      if (!verdict) {
+        verdict = assertPublicUrl(u).then(() => true, () => false);
+        checked.set(new URL(u).host, verdict);
+      }
+      verdict.then((ok) => (ok ? request.continue() : request.abort('blockedbyclient'))).catch(() => request.abort());
+    });
     await page.setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     );
@@ -362,4 +361,4 @@ Trả về DUY NHẤT mảng JSON, không kèm giải thích:
   }
 };
 
-module.exports = { scrapeShopeeReviews, validateTargetUrl, parseRating, parseReviewDate, fetchTikiReviews, tikiProductIds };
+module.exports = { scrapeShopeeReviews, validateTargetUrl, assertPublicUrl, parseRating, parseReviewDate, fetchTikiReviews, tikiProductIds };

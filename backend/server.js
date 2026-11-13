@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const { MongoClient } = require('mongodb');
 const cors = require('cors');
+const { errorResponse } = require('./services/http_errors');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -154,12 +155,9 @@ async function startServer() {
     // Bắt lỗi cuối đường: không để một lỗi chưa xử lý làm sập tiến trình
     app.use((err, req, res, _next) => {
       // JSON hỏng (400) và thân quá lớn (413) là lỗi của request, không phải của máy chủ
-      const status = Number.isInteger(err.status) && err.status >= 400 && err.status < 600 ? err.status : 500;
+      // Lỗi 5xx: chi tiết chỉ ghi vào log, trả câu chung để không lộ tên kho, đường dẫn hay câu truy vấn
+      const { status, message } = errorResponse(err);
       if (status >= 500) console.error('[LỖI CHƯA XỬ LÝ]', err);
-      const message =
-        err.type === 'entity.parse.failed' ? 'Thân request không phải JSON hợp lệ'
-          : err.type === 'entity.too.large' ? 'Thân request vượt quá 2MB'
-            : err.message || 'Lỗi máy chủ';
       res.status(status).json({ error: message });
     });
 

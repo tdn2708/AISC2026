@@ -1797,6 +1797,115 @@ test('Sổ đối chiếu: phản hồi chờ duyệt còn trọng số được
 }
 
 // ==================================================================
+// K7-02 lỗi 9: chốt chặn đường dẫn thu thập (SSRF)
+// ==================================================================
+{
+  const guard = require('../services/url_guard');
+
+  test('Chốt chặn URL: chặn mọi dạng địa chỉ nội bộ, kể cả IPv6 ánh xạ', () => {
+    const blocked = [
+      '127.0.0.1', '10.1.2.3', '172.16.0.1', '172.31.255.254', '192.168.1.1', '169.254.169.254',
+      '100.100.100.200', '100.64.0.1', '0.0.0.0', '224.0.0.1',
+      '::', '::1', '::ffff:127.0.0.1', '::ffff:7f00:1', '::ffff:10.0.0.1', '::ffff:a9fe:a9fe',
+      'fc00::1', 'fd12:3456::1', 'fe80::1', 'ff02::1', '64:ff9b::7f00:1', '2002:7f00:1::1'
+    ];
+    for (const ip of blocked) assert.strictEqual(guard.isBlockedIp(ip), true, `${ip} phải bị chặn`);
+    for (const ip of ['8.8.8.8', '93.184.216.34', '172.32.0.1', '100.63.255.255', '2606:4700:4700::1111', '::ffff:8.8.8.8']) {
+      assert.strictEqual(guard.isBlockedIp(ip), false, `${ip} là địa chỉ công khai`);
+    }
+  });
+
+  test('Chốt chặn URL: URL viết thẳng IP nội bộ bị từ chối ở bước cú pháp', () => {
+    for (const u of [
+      'http://127.0.0.1/', 'http://[::ffff:127.0.0.1]/', 'http://[::]/', 'http://[::1]/', 'http://100.100.100.200/',
+      'http://169.254.169.254/latest/meta-data', 'http://2130706433/', 'http://0x7f.1/', 'http://localhost/', 'http://db.internal/'
+    ]) {
+      assert.throws(() => guard.checkUrlSyntax(u), (e) => e.status === 400, `${u} phải bị chặn`);
+    }
+  });
+
+  test('Chốt chặn URL: chỉ http/https, cổng 80 và 443, không kèm tài khoản', () => {
+    assert.throws(() => guard.checkUrlSyntax('file:///etc/passwd'), /http/);
+    assert.throws(() => guard.checkUrlSyntax('ftp://example.com/'), /http/);
+    assert.throws(() => guard.checkUrlSyntax('http://example.com:5000/'), /cổng/);
+    assert.throws(() => guard.checkUrlSyntax('http://example.com:8080/'), /cổng/);
+    assert.throws(() => guard.checkUrlSyntax('http://user:pw@example.com/'), /tài khoản/);
+    assert.ok(guard.checkUrlSyntax('https://tiki.vn/ao-p123.html'));
+    assert.ok(guard.checkUrlSyntax('http://example.com:80/x'));
+  });
+
+  test('Chốt chặn URL: trình duyệt thu thập mặc định tắt, chỉ bật khi ALLOW_BROWSER_SCRAPE=1', () => {
+    assert.strictEqual(guard.browserScrapeEnabled({}), false);
+    assert.strictEqual(guard.browserScrapeEnabled({ ALLOW_BROWSER_SCRAPE: '0' }), false);
+    assert.strictEqual(guard.browserScrapeEnabled({ ALLOW_BROWSER_SCRAPE: '1' }), true);
+  });
+}
+
+// ==================================================================
+// K7-02 lỗi 2: POST /api/seed mặc định tắt, chỉ chạy trên kho demo khi được bật
+// ==================================================================
+{
+  const { seedRouteCheck } = require('../services/write_guard');
+
+  test('Seed qua API: mặc định bị từ chối kể cả trên kho demo', () => {
+    const r = seedRouteCheck({ dbName: 'customer_radar', workspace: 'demo', env: {} });
+    assert.strictEqual(r.allowed, false);
+    assert.strictEqual(r.status, 403);
+  });
+
+  test('Seed qua API: bật biến môi trường nhưng sai kho thì vẫn từ chối', () => {
+    const env = { ALLOW_SEED_ROUTE: '1', MONGODB_DB: 'customer_radar' };
+    assert.strictEqual(seedRouteCheck({ dbName: 'customer_radar_real', workspace: 'real', env }).allowed, false);
+    assert.strictEqual(seedRouteCheck({ dbName: 'customer_radar', workspace: 'real', env }).allowed, false, 'kho thật không bao giờ được seed qua API');
+    assert.strictEqual(seedRouteCheck({ dbName: 'kho_khac', workspace: 'demo', env }).allowed, false);
+  });
+
+  test('Seed qua API: bật biến môi trường và đúng kho demo thì cho chạy', () => {
+    const env = { ALLOW_SEED_ROUTE: '1', MONGODB_DB: 'customer_radar_ui_test' };
+    assert.strictEqual(seedRouteCheck({ dbName: 'customer_radar_ui_test', workspace: 'demo', env }).allowed, true);
+    // MONGODB_DB không đặt thì kho demo mặc định là customer_radar
+    assert.strictEqual(seedRouteCheck({ dbName: 'customer_radar', workspace: 'demo', env: { ALLOW_SEED_ROUTE: '1' } }).allowed, true);
+  });
+
+  test('Seed qua API: chỉ giá trị "1" mới bật', () => {
+    assert.strictEqual(seedRouteCheck({ dbName: 'customer_radar', workspace: 'demo', env: { ALLOW_SEED_ROUTE: 'true' } }).allowed, false);
+  });
+}
+
+// ==================================================================
+// K7-02 lỗi 26: dọn backend (coverage chia 0, PII trong originalText, lỗi trả ra ngoài)
+// ==================================================================
+{
+  test('WCR: không có phản hồi nào được tính thì độ phủ là 0, không phải NaN', () => {
+    const items = [{ trust: { weight: 0, tier: 'P1' }, sentiment: 'Negative' }];
+    const r = metrics.weightedComplaintRate(items, 100);
+    assert.strictEqual(r.coverage, 0);
+    assert.ok(Number.isFinite(r.coverage));
+  });
+
+  test('Thu thập: số điện thoại và email trong originalText bị che như normalizer làm cho text', () => {
+    const { buildFeedbackDocs } = require('../services/ingest');
+    const raw = [{ source: 'Tiki', rawText: 'Giao chậm, ai cần liên hệ 0912 345 678 hoặc a.b@gmail.com nhé', author: 'Nguyễn Văn A', rating: 2, timestamp: new Date('2026-11-01'), platformFacts: { platform: 'Tiki', reviewId: 1, rawCustomerId: 5 } }];
+    const [doc] = buildFeedbackDocs(raw, [{}], { collectedVia: 'test' });
+    assert.ok(!/0912|gmail/.test(doc.originalText), doc.originalText);
+    assert.ok(doc.originalText.includes('[SĐT]') && doc.originalText.includes('[EMAIL]'));
+    assert.ok(doc.originalText.startsWith('Giao chậm'), 'phần còn lại của câu giữ nguyên');
+  });
+
+  test('Lỗi 5xx trả ra ngoài là câu chung, lỗi của request (4xx) giữ thông báo', () => {
+    const { errorResponse } = require('../services/http_errors');
+    const boom = errorResponse(new Error('MongoServerError: connect ECONNREFUSED cluster0.example.net:27017'));
+    assert.strictEqual(boom.status, 500);
+    assert.ok(!/Mongo|cluster0|ECONN/.test(boom.message), boom.message);
+    const bad = errorResponse(Object.assign(new Error('Thiếu trường url'), { status: 400 }));
+    assert.deepStrictEqual(bad, { status: 400, message: 'Thiếu trường url' });
+    assert.strictEqual(errorResponse(Object.assign(new Error('x'), { type: 'entity.too.large', status: 413 })).message, 'Thân request vượt quá 2MB');
+    assert.strictEqual(errorResponse(Object.assign(new Error('x'), { type: 'entity.parse.failed', status: 400 })).message, 'Thân request không phải JSON hợp lệ');
+    assert.strictEqual(errorResponse(Object.assign(new Error('chi tiết nội bộ'), { status: 503 })).message, 'Lỗi máy chủ, vui lòng thử lại sau.');
+  });
+}
+
+// ==================================================================
 // Test bất đồng bộ (cần await): chạy lần lượt sau các test đồng bộ
 // ==================================================================
 const asyncTests = [];
@@ -1899,6 +2008,25 @@ testAsync('Live: nối lại phiên mô phỏng đã quá trần thì dừng nga
   assert.strictEqual(r.connector, null, 'không được bật simulator');
   assert.strictEqual(hub.runtimeFor(session._id, 'demo'), null, 'không còn runtime chạy nền');
 });
+
+{
+  const guard = require('../services/url_guard');
+  const publicLookup = async () => [{ address: '93.184.216.34', family: 4 }];
+
+  testAsync('Chốt chặn URL: tên miền trỏ về địa chỉ nội bộ bị chặn sau khi phân giải', async () => {
+    const toLoopback = async () => [{ address: '127.0.0.1', family: 4 }];
+    const mixed = async () => [{ address: '93.184.216.34', family: 4 }, { address: '10.0.0.5', family: 4 }];
+    const mappedV6 = async () => [{ address: '::ffff:127.0.0.1', family: 6 }];
+    for (const lookup of [toLoopback, mixed, mappedV6]) {
+      await assert.rejects(() => guard.assertPublicUrl('https://evil.example.com/', { lookup }), (e) => e.status === 400);
+    }
+    const failing = async () => { throw new Error('ENOTFOUND'); };
+    await assert.rejects(() => guard.assertPublicUrl('https://khong-ton-tai.example/', { lookup: failing }), /phân giải/);
+    const u = await guard.assertPublicUrl('https://tiki.vn/ao-p123.html', { lookup: publicLookup });
+    assert.strictEqual(u.hostname, 'tiki.vn');
+  });
+
+}
 
 (async () => {
   for (const t of asyncTests) {
