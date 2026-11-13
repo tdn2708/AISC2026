@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import FilterBar from '../FilterBar';
@@ -112,8 +112,12 @@ const PainRow = ({ p, negatives, onOpen }) => {
   );
 };
 
+const foldVi = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').toLowerCase().trim();
+
 const PainPoints = () => {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const wanted = foldVi(params.get('group')); // từ "Việc gấp nhất": chọn sẵn mảng khớp tên sản phẩm của cảnh báo
   const dataVersion = useDataVersion();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -144,7 +148,8 @@ const PainPoints = () => {
     const list = [...data.groups].sort((a, b) => (b.painPoints.length > 0) - (a.painPoints.length > 0) || b.negatives - a.negatives);
     return data.shop?.painPoints?.length ? [{ ...data.shop, label: 'Chuyện chung nhiều mảng' }, ...list] : list;
   }, [data]);
-  const current = groups.find((g) => g.key === selected) || groups[0] || null;
+  const fromLink = wanted ? groups.find((g) => g.scope !== 'shop' && (foldVi(g.label).includes(wanted) || wanted.includes(foldVi(g.label)))) : null;
+  const current = groups.find((g) => g.key === selected) || fromLink || groups[0] || null;
   const total = useMemo(() => groups.reduce((s, g) => s + (g.scope === 'shop' ? 0 : g.painPoints.length), 0), [groups]);
   const maxNeg = useMemo(() => Math.max(0, ...groups.filter((g) => g.scope !== 'shop').map((g) => g.negatives)), [groups]);
 

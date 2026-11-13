@@ -23,6 +23,13 @@ import { upFirst } from '../../lib/format';
 
 const SOURCE = { alert: 'Cảnh báo', live: 'Livestream', orders: 'Đơn hàng', review: 'Duyệt phản hồi', data: 'Dữ liệu' };
 
+/** Mã cảnh báo có dạng Nhóm|Nguyên nhân|Sản phẩm|Khu vực|ngày; lấy tên sản phẩm (nếu có) để mở đúng mảng ở tab điểm đau */
+const painLink = (alertId) => {
+  const product = String(alertId || '').split('|')[2];
+  const named = product && !/^(all|tất cả|—|-)$/i.test(product.trim());
+  return `/analytics?tab=pain${named ? `&group=${encodeURIComponent(product.trim())}` : ''}`;
+};
+
 const scrollToToday = () =>
   document.getElementById('today')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
 
@@ -60,6 +67,7 @@ const Row = ({ t, state, onAccept, onDismiss }) => {
                 </>
               )}
               <Button size="sm" variant={step ? 'ghost' : strong ? 'primary' : 'secondary'} onClick={() => navigate(`/risk?alert=${encodeURIComponent(alert.id)}`)}>Xem bằng chứng</Button>
+              <Button size="sm" variant="ghost" as={Link} to={painLink(alert.id)}>Khách đang than chuyện gì</Button>
             </>
           )
         ) : (
