@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { startTransition, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -166,7 +166,7 @@ const Heatmap = ({ rows: rowDims, cols: colDims, cells, sel, onPick }) => {
   const max = Math.max(1, ...cells.values());
   if (!rowDims.length || !colDims.length) return <p className="py-8 text-center text-sm text-ink-lo">Không có phản hồi tiêu cực trong phạm vi này</p>;
   return (
-    <div className="paper overflow-x-auto">
+    <div className="paper scroll-hint-x overflow-x-auto">
       <table className="w-full min-w-[520px] border-separate border-spacing-1 text-sm">
         <thead>
           <tr>
@@ -236,7 +236,7 @@ const ProductTable = ({ groups, names, selected, onPick }) => {
     </th>
   );
   return (
-    <div className="paper overflow-x-auto px-3">
+    <div className="paper scroll-hint-x overflow-x-auto px-3">
       <table className="w-full min-w-[560px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-line">
@@ -304,7 +304,7 @@ const Insights = () => {
   useEffect(() => {
     let alive = true;
     setError(false);
-    axios.get('/bi/cube').then((r) => alive && setCube(r.data)).catch(() => alive && setError(true));
+    axios.get('/bi/cube').then((r) => alive && startTransition(() => setCube(r.data))).catch(() => alive && setError(true));
     return () => { alive = false; };
   }, [version]);
 
@@ -324,8 +324,12 @@ const Insights = () => {
     setParams(next, { replace: true });
   };
 
+  // M1 (K4-03): đổi bộ lọc nằm trong URL query, không đổi pathname nên PageEnter không chạy lại
+  const [entered, onEntered] = usePageEntered();
+
+  // K7-02 lỗi 6: cube về sớm thì vẫn chờ màn vào trang (M1) xong mới cắt và dựng, để việc nặng không chặn animation vào trang
   const view = useMemo(() => {
-    if (!cube) return null;
+    if (!cube || !entered) return null;
     const { rows, dicts, asOf } = cube;
     const srcIdx = pick.src != null ? dicts.source.indexOf(pick.src) : null;
     const catIdx = pick.cat != null ? dicts.category.findIndex((c) => c.key === pick.cat) : null;
@@ -376,10 +380,20 @@ const Insights = () => {
       bySource, byCategory, byCause, cells, heatCats, heatSrcs, byProduct, ratings,
       empty: all.length === 0
     };
-  }, [cube, period, sentKey, pick.src, pick.cat, pick.prod]);
+  }, [cube, entered, period, sentKey, pick.src, pick.cat, pick.prod]);
 
-  // M1 (K4-03): đổi bộ lọc nằm trong URL query, không đổi pathname nên PageEnter không chạy lại
-  const [entered, onEntered] = usePageEntered();
+  // K7-02 lỗi 6: khối dưới màn đầu (bản đồ nhiệt, số sao, bảng sản phẩm) gắn sau khung hình đầu,
+  // để màn vào trang (M1) và bốn số KPI chạy được; một khi đã gắn thì giữ nguyên khi đổi lọc.
+  const [late, setLate] = useState(false);
+  const hasView = Boolean(view);
+  useEffect(() => {
+    if (!hasView || late) return undefined;
+    let t;
+    const raf = requestAnimationFrame(() => {
+      t = setTimeout(() => startTransition(() => setLate(true)), 0);
+    });
+    return () => { cancelAnimationFrame(raf); clearTimeout(t); };
+  }, [hasView, late]);
 
   const chips = [
     pick.src && { k: 'src', label: `Kênh: ${pick.src}` },
@@ -530,6 +544,8 @@ const Insights = () => {
               )}
             </GlassPanel>
 
+            {late ? (
+            <>
             <div className="col-span-12 flex min-w-0 flex-col gap-6 xl:col-span-7">
             <GlassPanel tone="strong" className="p-6">
               <PanelHeader
@@ -569,6 +585,13 @@ const Insights = () => {
               />
               <ProductTable groups={view.byProduct} names={view.dicts.product} selected={pick.prod} onPick={(k) => setParam({ prod: k })} />
             </GlassPanel>
+            </>
+            ) : (
+              <>
+                <Skeleton as="div" className="col-span-12 h-96 rounded-surf bg-raised xl:col-span-7" />
+                <Skeleton as="div" className="col-span-12 h-96 rounded-surf bg-raised" />
+              </>
+            )}
 
           </div>
 
