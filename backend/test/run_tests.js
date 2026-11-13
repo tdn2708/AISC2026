@@ -1626,6 +1626,177 @@ test('Sổ đối chiếu: phản hồi chờ duyệt còn trọng số được
 });
 
 // ==================================================================
+// K7-02 lỗi 1: mẫu số giao dịch cùng phạm vi lọc với phản hồi
+// ==================================================================
+{
+  const { scopeTransactions } = require('../services/analysis_context');
+  const DAY = 86400000;
+  const NOW = new Date('2026-11-10T05:00:00Z');
+  const at = (d) => new Date(NOW.getTime() - d * DAY);
+  // 100 giao dịch rải đều 20 ngày (5 giao dịch mỗi ngày), hai sản phẩm luân phiên
+  const txns = [];
+  for (let d = 0; d < 20; d += 1) {
+    for (let k = 0; k < 5; k += 1) {
+      txns.push({ orderId: `o${d}-${k}`, productName: k % 2 ? 'Áo A' : 'Giày B', region: 'HCM', deliveredAt: at(d + 0.5 + 0.05 * k), orderedAt: at(d + 2) });
+    }
+  }
+  const complaint = (d, product, w = 1) => ({
+    timestamp: at(d).toISOString(), sentiment: 'Negative', productName: product, source: 'Tiki',
+    trust: { weight: w, tier: 'P1' }
+  });
+
+  test('WCR: lọc 7 ngày thì mẫu số là giao dịch của 7 ngày, không phải toàn kỳ', () => {
+    const scoped = scopeTransactions(txns, { time: 'This Week' }, NOW);
+    assert.ok(scoped.length < txns.length, 'mẫu số 7 ngày phải nhỏ hơn toàn kỳ');
+    assert.strictEqual(scoped.length, 35, '7 ngày x 5 giao dịch');
+    const items = [complaint(1, 'Áo A'), complaint(2, 'Áo A')];
+    const cards = metrics.buildMetricCards(items, scoped.length, NOW);
+    assert.strictEqual(cards.weightedComplaintRate.denominator, 35);
+    near(cards.weightedComplaintRate.value, 2 / 35, 1e-9, 'WCR 7 ngày');
+  });
+
+  test('WCR: lọc sản phẩm thì mẫu số chỉ đếm giao dịch của sản phẩm đó', () => {
+    const scoped = scopeTransactions(txns, { product: 'Áo A' }, NOW);
+    assert.strictEqual(scoped.length, 40, 'Áo A: 2 giao dịch mỗi ngày x 20 ngày');
+    assert.ok(scoped.every((t) => t.productName === 'Áo A'));
+  });
+
+  test('WCR: toàn kỳ và không có bộ lọc thì giữ nguyên toàn bộ giao dịch', () => {
+    assert.strictEqual(scopeTransactions(txns, {}, NOW).length, txns.length);
+    assert.strictEqual(scopeTransactions(txns, { time: 'All', source: 'All', product: 'All' }, NOW).length, txns.length);
+  });
+
+  test('WCR: bộ lọc kênh không có trường tương ứng ở giao dịch thì không làm mất mẫu số', () => {
+    assert.strictEqual(scopeTransactions(txns, { source: 'Tiki' }, NOW).length, txns.length);
+  });
+
+  test('So sánh hai kỳ: mẫu số mỗi kỳ là giao dịch trong đúng kỳ đó, không chia đôi tổng', () => {
+    // Kỳ này 5 giao dịch/ngày, kỳ trước chỉ 1 giao dịch/ngày
+    const t2 = [];
+    for (let d = 0; d < 14; d += 1) {
+      const n = d < 7 ? 5 : 1;
+      for (let k = 0; k < n; k += 1) t2.push({ orderId: `p${d}-${k}`, productName: 'Áo A', deliveredAt: at(d + 0.5 + 0.01 * k) });
+    }
+    const items = [];
+    for (let i = 0; i < 7; i += 1) items.push(complaint(0.5 + i * 0.5, 'Áo A'));    // 7 khiếu nại kỳ này
+    for (let i = 0; i < 7; i += 1) items.push(complaint(7.5 + i * 0.5, 'Áo A'));    // 7 khiếu nại kỳ trước
+    const cmp = metrics.periodComparison(items, t2, NOW);
+    near(cmp.current.wcr, 7 / 35, 1e-9, 'WCR kỳ này');
+    near(cmp.previous.wcr, 7 / 7, 1e-9, 'WCR kỳ trước');
+    assert.ok(cmp.deltas.wcr.rel < 0, 'kỳ này ít khiếu nại trên đơn hơn kỳ trước');
+    assert.strictEqual(cmp.approximation, null, 'không còn là xấp xỉ khi có danh sách giao dịch');
+  });
+
+  test('So sánh hai kỳ: dạng số cũ vẫn chạy (ước lượng chia đôi)', () => {
+    const cmp = metrics.periodComparison([complaint(1, 'Áo A')], 100, NOW);
+    assert.ok(cmp.approximation, 'phải ghi rõ đây là ước lượng');
+  });
+
+  test('Cảnh báo: WCR của cảnh báo dùng giao dịch trong cửa sổ hiện tại', () => {
+    const items = [];
+    for (let i = 0; i < 12; i += 1) {
+      items.push({ _id: `c${i}`, timestamp: at(0.2 + i * 0.3).toISOString(), sentiment: 'Negative', category: 'Delivery', subCategory: 'Late', productName: 'Áo A', source: 'Tiki', author: `u${i}`, trust: { weight: 1, tier: 'P1', canTriggerHighAlert: true } });
+    }
+    for (let i = 0; i < 40; i += 1) {
+      items.push({ _id: `g${i}`, timestamp: at(0.1 + i * 0.1).toISOString(), sentiment: 'Positive', category: 'Product', productName: 'Áo A', source: 'Tiki', author: `v${i}`, trust: { weight: 1, tier: 'P1', canTriggerHighAlert: true } });
+    }
+    for (let i = 0; i < 60; i += 1) {
+      items.push({ _id: `b${i}`, timestamp: at(8 + i * 0.3).toISOString(), sentiment: i % 20 === 0 ? 'Negative' : 'Positive', category: i % 20 === 0 ? 'Delivery' : 'Product', subCategory: 'Late', productName: 'Áo A', source: 'Tiki', author: `w${i}`, trust: { weight: 1, tier: 'P1', canTriggerHighAlert: true } });
+    }
+    const withAll = alertEngine.detectAlerts(items, { transactionCount: 74403, transactions: txns, now: NOW });
+    const noTxn = alertEngine.detectAlerts(items, { transactionCount: 74403, now: NOW });
+    const a = withAll.alerts.find((x) => x.category === 'Delivery');
+    const b = noTxn.alerts.find((x) => x.category === 'Delivery');
+    assert.ok(a && b, 'cả hai lần chạy đều phải có cảnh báo giao hàng');
+    assert.ok(a.wcr > b.wcr * 100, `WCR cảnh báo phải dùng mẫu số cửa sổ (${a.wcr}) chứ không phải toàn kho (${b.wcr})`);
+  });
+}
+
+// ==================================================================
+// K7-02 lỗi 7: quyết định còn hiệu lực qua ngày
+// ==================================================================
+{
+  const { alertScope, findDecision, DECISION_WINDOW_DAYS } = require('../services/decision_match');
+  const NOW = new Date('2026-12-10T00:30:00Z').getTime();
+  const hours = (h) => new Date(NOW - h * 3600000);
+
+  test('Quyết định: phạm vi cảnh báo là mã bỏ phần ngày ở cuối', () => {
+    assert.strictEqual(alertScope('Delivery|Late|Áo A|*|2026-12-09'), 'Delivery|Late|Áo A|*');
+    assert.strictEqual(alertScope('drift|Delivery|2026-12-09'), 'drift|Delivery');
+    assert.strictEqual(alertScope('Delivery|Late|*|*'), 'Delivery|Late|*|*', 'mã không có ngày thì giữ nguyên');
+  });
+
+  test('Quyết định chấp nhận hôm trước vẫn khớp cảnh báo cùng phạm vi sang ngày mới', () => {
+    const log = [{ alertId: 'Delivery|Late|Áo A|*|2026-12-09', decision: 'ACCEPTED', at: hours(2) }];
+    const d = findDecision('Delivery|Late|Áo A|*|2026-12-10', log, NOW);
+    assert.ok(d && d.decision === 'ACCEPTED');
+  });
+
+  test('Quyết định không khớp cảnh báo khác sản phẩm hoặc khác nguyên nhân', () => {
+    const log = [{ alertId: 'Delivery|Late|Áo A|*|2026-12-09', decision: 'DISMISSED', at: hours(2) }];
+    assert.strictEqual(findDecision('Delivery|Late|Giày B|*|2026-12-10', log, NOW), undefined);
+    assert.strictEqual(findDecision('Delivery|Damaged|Áo A|*|2026-12-10', log, NOW), undefined);
+  });
+
+  test('Quyết định hết hiệu lực sau cửa sổ theo dõi lại (7 ngày)', () => {
+    assert.strictEqual(DECISION_WINDOW_DAYS, 7);
+    const log = [{ alertId: 'Delivery|Late|Áo A|*|2026-11-30', decision: 'ACCEPTED', at: hours(24 * 8) }];
+    assert.strictEqual(findDecision('Delivery|Late|Áo A|*|2026-12-10', log, NOW), undefined);
+    const fresh = [{ alertId: 'Delivery|Late|Áo A|*|2026-12-04', decision: 'ACCEPTED', at: hours(24 * 6) }];
+    assert.ok(findDecision('Delivery|Late|Áo A|*|2026-12-10', fresh, NOW));
+  });
+
+  test('Quyết định cùng mã đúng ngày luôn khớp, nhiều quyết định thì lấy cái mới nhất', () => {
+    const log = [
+      { alertId: 'Delivery|Late|Áo A|*|2026-12-09', decision: 'DISMISSED', at: hours(30) },
+      { alertId: 'Delivery|Late|Áo A|*|2026-12-10', decision: 'ACCEPTED', at: hours(1) }
+    ];
+    assert.strictEqual(findDecision('Delivery|Late|Áo A|*|2026-12-10', log, NOW).decision, 'ACCEPTED');
+  });
+}
+
+// ==================================================================
+// K7-02 lỗi 8: "Hôm nay" và "Tuỳ chọn" theo giờ Việt Nam, bất kể múi giờ máy chủ
+// ==================================================================
+{
+  const { applyFilters, timeBounds } = require('../services/analysis_context');
+
+  test('Hôm nay bắt đầu 00:00 giờ Việt Nam (17:00 UTC hôm trước)', () => {
+    // 03:00 sáng 11/11 giờ Việt Nam = 20:00 UTC ngày 10/11
+    const b = timeBounds('Today', new Date('2026-11-10T20:00:00Z'));
+    assert.strictEqual(new Date(b.start).toISOString(), '2026-11-10T17:00:00.000Z');
+    // 12:00 trưa 11/11 giờ Việt Nam
+    const b2 = timeBounds('Today', new Date('2026-11-11T05:00:00Z'));
+    assert.strictEqual(new Date(b2.start).toISOString(), '2026-11-10T17:00:00.000Z');
+  });
+
+  test('Hôm nay: phản hồi lúc 02:00 giờ Việt Nam có trong bộ lọc, phản hồi 23:00 hôm trước thì không', () => {
+    const items = [
+      { _id: 'a', timestamp: '2026-11-10T19:00:00Z' }, // 02:00 ngày 11/11 VN
+      { _id: 'b', timestamp: '2026-11-10T16:00:00Z' }  // 23:00 ngày 10/11 VN
+    ];
+    const out = applyFilters(items, { time: 'Today' }, new Date('2026-11-10T20:00:00Z'));
+    assert.deepStrictEqual(out.map((f) => f._id), ['a']);
+  });
+
+  test('Tuỳ chọn: ngày tính theo giờ Việt Nam, đủ từ 00:00 đến 23:59:59', () => {
+    const b = timeBounds('Custom:2026-11-01:2026-11-05', new Date('2026-11-10T00:00:00Z'));
+    assert.strictEqual(new Date(b.start).toISOString(), '2026-10-31T17:00:00.000Z');
+    assert.strictEqual(new Date(b.end).toISOString(), '2026-11-05T16:59:59.999Z');
+  });
+
+  test('Tuỳ chọn: ngày sai định dạng thì bỏ qua bộ lọc', () => {
+    assert.strictEqual(timeBounds('Custom:abc:def', new Date()), null);
+  });
+
+  test('Nhãn ngày của biểu đồ xu hướng theo giờ Việt Nam', () => {
+    // Ô cuối có tâm vào 03:00 sáng 10/11 giờ Việt Nam, nhưng vẫn là 09/11 theo UTC
+    const s = metrics.weightedTimeSeries([], 14, new Date('2026-11-10T20:00:00Z'));
+    assert.strictEqual(s[13].name, '10/11');
+  });
+}
+
+// ==================================================================
 // Test bất đồng bộ (cần await): chạy lần lượt sau các test đồng bộ
 // ==================================================================
 const asyncTests = [];

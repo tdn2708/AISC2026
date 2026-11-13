@@ -474,7 +474,7 @@ function suggestedQuestions(ctx) {
   const alertEngine = require('./alert_engine');
 
   try {
-    const result = alertEngine.detectAlerts(ctx.items, { transactionCount: ctx.transactionCount, now: ctx.asOf || undefined });
+    const result = alertEngine.detectAlerts(ctx.items, { transactionCount: ctx.transactionCount, transactions: ctx.transactions, now: ctx.asOf || undefined });
     if (result.alerts.length > 0) {
       const top = result.alerts[0];
       suggestions.push(`Vì sao ${top.categoryLabel}${top.causeLabel ? ' - ' + top.causeLabel : ''} lại bị cảnh báo?`);

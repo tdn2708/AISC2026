@@ -170,6 +170,21 @@ function detectAlerts(feedbacks, options = {}) {
 
   const candidates = [];
 
+  const txnWindow = Array.isArray(options.transactions)
+    ? (combo) => {
+        const from = now.getTime() - windowDays * 86400000;
+        let n = 0;
+        for (const t of options.transactions) {
+          const ms = new Date(t.deliveredAt || t.orderedAt).getTime();
+          if (!(ms >= from && ms <= now.getTime())) continue;
+          if (combo.product && t.productName !== combo.product) continue;
+          if (combo.region && t.region !== combo.region) continue;
+          n += 1;
+        }
+        return n;
+      }
+    : null;
+
   for (const combo of combos) {
     const curMatch = currentValid.filter((f) => matchesCombo(f, combo));
     const baseMatch = baselineValid.filter((f) => matchesCombo(f, combo));
@@ -201,8 +216,12 @@ function detectAlerts(feedbacks, options = {}) {
     const p5Only = evidence.length > 0 && nonP5Evidence.length === 0;
 
     const weightedComplaints = evidence.reduce((s, f) => s + f.trust.weight, 0);
-    const wcr = options.transactionCount
-      ? weightedComplaints / options.transactionCount
+    // Mẫu số WCR: có danh sách giao dịch thì chỉ đếm giao dịch trong cửa sổ hiện tại
+    // và cùng sản phẩm/vùng với tổ hợp đang xét; không có giao dịch khớp thì dùng
+    // phản hồi hợp lệ cùng cửa sổ (cách dự phòng). Chỉ có con số tổng thì giữ như cũ.
+    const txnDenominator = txnWindow ? txnWindow(combo) : options.transactionCount || 0;
+    const wcr = txnDenominator
+      ? weightedComplaints / txnDenominator
       : n1 > 0
         ? weightedComplaints / n1
         : 0;

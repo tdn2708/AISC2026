@@ -328,62 +328,109 @@ function patchServing(db, fn) {
   }
 }
 
+/** `?time=a&time=b` cho ra mảng; `time.startsWith` trên mảng từng ném TypeError */
+const oneParam = (v) => {
+  const x = Array.isArray(v) ? v[0] : v;
+  return x == null ? undefined : String(x);
+};
+
+/**
+ * "Ngày" của cửa hàng tính theo giờ Việt Nam (UTC+7, không có giờ mùa hè),
+ * không theo múi giờ của máy chủ: Render chạy UTC nên "Hôm nay" từng bắt đầu
+ * lúc 07:00 sáng giờ Việt Nam.
+ */
+const VN_OFFSET_MS = 7 * 3600000;
+const DAY_MS = 86400000;
+/** 00:00 giờ Việt Nam của ngày chứa mốc `ms`, tính bằng mili giây UTC */
+const vnDayStart = (ms) => Math.floor((ms + VN_OFFSET_MS) / DAY_MS) * DAY_MS - VN_OFFSET_MS;
+
+/** Một ngày do người dùng chọn (YYYY-MM-DD hoặc chuỗi ngày bất kỳ) thành mốc 00:00 giờ Việt Nam */
+function vnDayFromInput(text) {
+  const m = /^(d{4})-(d{2})-(d{2})$/.exec(String(text).trim());
+  if (m) {
+    const utc = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return Number.isNaN(utc) ? NaN : utc - VN_OFFSET_MS;
+  }
+  const ms = new Date(text).getTime();
+  return Number.isNaN(ms) ? NaN : vnDayStart(ms);
+}
+
+/** Mốc bắt đầu/kết thúc của bộ lọc thời gian (mili giây); null nếu không giới hạn */
+function timeBounds(time, nowRef = null) {
+  if (!time || time === 'All') return null;
+  const now = nowRef ? new Date(nowRef) : new Date();
+  let start = null;
+  let end = null;
+
+  if (time.startsWith('Custom:')) {
+    const parts = time.split(':');
+    if (parts.length === 3) {
+      start = vnDayFromInput(parts[1]);
+      const endDay = vnDayFromInput(parts[2]);
+      end = endDay + DAY_MS - 1;
+      // Ngày sai định dạng: bỏ qua bộ lọc thay vì so sánh với NaN
+      if (Number.isNaN(start) || Number.isNaN(end)) {
+        start = null;
+        end = null;
+      }
+    }
+  } else if (time === 'Today') {
+    start = vnDayStart(now.getTime());
+  } else if (time === 'This Week') {
+    start = now.getTime() - 7 * DAY_MS;
+  } else if (time === 'This Month') {
+    start = now.getTime() - 30 * DAY_MS;
+  }
+  return start != null ? { start, end: end != null ? end : null } : null;
+}
+
 /** Bộ lọc dùng chung cho mọi endpoint (thời gian / nguồn / sản phẩm) */
 function applyFilters(items, query = {}, nowRef = null) {
-  // `?time=a&time=b` cho ra mảng; `time.startsWith` trên mảng từng ném TypeError
-  const one = (v) => {
-    const x = Array.isArray(v) ? v[0] : v;
-    return x == null ? undefined : String(x);
-  };
   const q = query || {};
-  const source = one(q.source);
-  const time = one(q.time);
-  const product = one(q.product);
-  const region = one(q.region);
+  const source = oneParam(q.source);
+  const product = oneParam(q.product);
+  const region = oneParam(q.region);
   let out = items;
 
   if (source && source !== 'All') out = out.filter((f) => f.source === source);
   if (product && product !== 'All') out = out.filter((f) => f.productName === product);
   if (region && region !== 'All') out = out.filter((f) => f.region === region);
 
-  if (time && time !== 'All') {
-    const now = nowRef ? new Date(nowRef) : new Date();
-    let start = null;
-    let end = null;
-
-    if (time.startsWith('Custom:')) {
-      const parts = time.split(':');
-      if (parts.length === 3) {
-        start = new Date(parts[1]);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(parts[2]);
-        end.setHours(23, 59, 59, 999);
-        // Ngày sai định dạng: bỏ qua bộ lọc thay vì so sánh với NaN
-        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-          start = null;
-          end = null;
-        }
-      }
-    } else if (time === 'Today') {
-      start = new Date(now);
-      start.setHours(0, 0, 0, 0);
-    } else if (time === 'This Week') {
-      start = new Date(now.getTime() - 7 * 86400000);
-    } else if (time === 'This Month') {
-      start = new Date(now.getTime() - 30 * 86400000);
-    }
-
-    if (start) {
-      out = out.filter((f) => {
-        const t = new Date(f.timestamp).getTime();
-        if (t < start.getTime()) return false;
-        if (end && t > end.getTime()) return false;
-        return true;
-      });
-    }
+  const b = timeBounds(oneParam(q.time), nowRef);
+  if (b) {
+    out = out.filter((f) => {
+      const t = new Date(f.timestamp).getTime();
+      if (t < b.start) return false;
+      if (b.end != null && t > b.end) return false;
+      return true;
+    });
   }
 
   return out;
 }
 
-module.exports = { getContext, invalidate, isRefreshing, patchServing, applyFilters, normalizeLabels, ctxNow, applyHumanLabels, applyReviewLabel };
+/**
+ * Giao dịch CÙNG PHẠM VI LỌC với phản hồi: làm mẫu số của tỉ lệ khiếu nại trên
+ * đơn hàng. Cùng khoảng thời gian (theo ngày giao, không có thì ngày đặt), cùng
+ * sản phẩm, cùng vùng. Giao dịch không có trường kênh nên bộ lọc kênh không
+ * thu hẹp mẫu số (WCR vốn chỉ tính trên kênh đối soát được).
+ */
+function scopeTransactions(transactions, query = {}, nowRef = null) {
+  const q = query || {};
+  const product = oneParam(q.product);
+  const region = oneParam(q.region);
+  let out = transactions || [];
+  if (product && product !== 'All') out = out.filter((t) => t.productName === product);
+  if (region && region !== 'All') out = out.filter((t) => t.region === region);
+  const b = timeBounds(oneParam(q.time), nowRef);
+  if (b) {
+    out = out.filter((t) => {
+      const ms = new Date(t.deliveredAt || t.orderedAt).getTime();
+      if (!Number.isFinite(ms) || ms < b.start) return false;
+      return b.end == null || ms <= b.end;
+    });
+  }
+  return out;
+}
+
+module.exports = { getContext, invalidate, isRefreshing, patchServing, applyFilters, scopeTransactions, timeBounds, normalizeLabels, ctxNow, applyHumanLabels, applyReviewLabel };

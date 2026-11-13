@@ -21,7 +21,7 @@ const alertEngine = require('./alert_engine');
 const taxonomy = require('./taxonomy');
 const playbook = require('./playbook');
 const retrieval = require('./retrieval');
-const { applyFilters, ctxNow } = require('./analysis_context');
+const { applyFilters, scopeTransactions, ctxNow } = require('./analysis_context');
 
 const pct = (n) => `${(n * 100).toFixed(1).replace('.', ',')}%`;
 const num = (n) => new Intl.NumberFormat('vi-VN').format(n);
@@ -37,7 +37,7 @@ const TOOLS = {
     description: 'Chỉ số tổng quan: số phản hồi, WCR, tỉ trọng tiêu cực, sức khỏe dữ liệu',
     run(ctx, args = {}) {
       const items = applyFilters(ctx.items, args.filters || {}, ctx.asOf);
-      const cards = metrics.buildMetricCards(items, ctx.transactionCount, ctxNow(ctx));
+      const cards = metrics.buildMetricCards(items, scopeTransactions(ctx.transactions, args.filters || {}, ctx.asOf).length, ctxNow(ctx));
       const valid = items.filter(metrics.isCountable);
 
       const facts = [
@@ -126,6 +126,7 @@ const TOOLS = {
 
       const result = alertEngine.detectAlerts(items, {
         transactionCount: ctx.transactionCount,
+        transactions: scopeTransactions(ctx.transactions, scopeFilters, ctx.asOf),
         windowDays,
         now: ctx.asOf || undefined
       });
@@ -172,7 +173,11 @@ const TOOLS = {
     description: 'Các hành động được đề xuất cho cảnh báo đang mở, kèm yêu cầu phê duyệt',
     run(ctx, args = {}) {
       const items = applyFilters(ctx.items, args.filters || {}, ctx.asOf);
-      const result = alertEngine.detectAlerts(items, { transactionCount: ctx.transactionCount, now: ctx.asOf || undefined });
+      const result = alertEngine.detectAlerts(items, {
+        transactionCount: ctx.transactionCount,
+        transactions: scopeTransactions(ctx.transactions, { ...(args.filters || {}), time: undefined }, ctx.asOf),
+        now: ctx.asOf || undefined
+      });
 
       const facts = [];
       for (const a of result.alerts.slice(0, 3)) {

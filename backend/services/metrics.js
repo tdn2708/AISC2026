@@ -144,9 +144,10 @@ function weightedTimeSeries(feedbacks, buckets = 14, now = new Date(), spanDays 
   const bucketMs = (nowMs - startMs) / buckets;
 
   const series = Array.from({ length: buckets }, (_, i) => {
-    const center = new Date(startMs + (i + 0.5) * bucketMs);
+    // Nhãn ngày theo giờ Việt Nam (UTC+7), không theo múi giờ máy chủ
+    const center = new Date(startMs + (i + 0.5) * bucketMs + 7 * 3600000);
     return {
-      name: `${String(center.getDate()).padStart(2, '0')}/${String(center.getMonth() + 1).padStart(2, '0')}`,
+      name: `${String(center.getUTCDate()).padStart(2, '0')}/${String(center.getUTCMonth() + 1).padStart(2, '0')}`,
       complaints: 0,
       satisfaction: 0,
       weightedComplaints: 0,
@@ -240,7 +241,7 @@ function buildMetricCards(feedbacks, transactionCount, now = new Date()) {
  * đọc ra là "không đổi", còn null đọc ra là "không biết" — hai điều
  * hoàn toàn khác nhau.
  */
-function periodComparison(feedbacks, transactionCount, now = new Date(), windowDays = 7) {
+function periodComparison(feedbacks, transactions, now = new Date(), windowDays = 7) {
   const nowMs = new Date(now).getTime();
   const span = windowDays * 86400000;
 
@@ -252,13 +253,25 @@ function periodComparison(feedbacks, transactionCount, now = new Date(), windowD
   const cur = feedbacks.filter((f) => inWindow(f, nowMs - span, nowMs + 1));
   const prev = feedbacks.filter((f) => inWindow(f, nowMs - 2 * span, nowMs - span));
 
-  // Mẫu số giao dịch được chia đều cho hai kỳ. Đây là một xấp xỉ, và nó
-  // được ghi rõ ở trường `approximation` để không ai hiểu nhầm là số đo.
-  const txnPerWindow = transactionCount ? Math.round(transactionCount / 2) : 0;
+  // `transactions` là DANH SÁCH giao dịch cùng phạm vi lọc: mỗi kỳ đếm giao dịch
+  // nằm đúng trong kỳ đó (theo ngày giao, không có thì ngày đặt). Truyền một con
+  // số (cách cũ) thì chỉ còn cách chia đều cho hai kỳ, và ghi rõ là xấp xỉ.
+  const txnList = Array.isArray(transactions) ? transactions : null;
+  const transactionCount = txnList ? txnList.length : Number(transactions) || 0;
+  const countIn = (from, to) => {
+    let n = 0;
+    for (const t of txnList) {
+      const ms = new Date(t.deliveredAt || t.orderedAt).getTime();
+      if (ms >= from && ms < to) n += 1;
+    }
+    return n;
+  };
+  const txnCur = txnList ? countIn(nowMs - span, nowMs + 1) : (transactionCount ? Math.round(transactionCount / 2) : 0);
+  const txnPrev = txnList ? countIn(nowMs - 2 * span, nowMs - span) : txnCur;
 
-  const build = (list) => {
+  const build = (list, txn) => {
     const countable = list.filter(isCountable);
-    const wcr = weightedComplaintRate(list, txnPerWindow);
+    const wcr = weightedComplaintRate(list, txn);
     const son = shareOfNegative(list);
     return {
       sample: list.length,
@@ -268,8 +281,8 @@ function periodComparison(feedbacks, transactionCount, now = new Date(), windowD
     };
   };
 
-  const c = build(cur);
-  const p = build(prev);
+  const c = build(cur, txnCur);
+  const p = build(prev, txnPrev);
 
   /** Chênh lệch tương đối. Không có kỳ trước hoặc kỳ trước bằng 0 thì không tính được. */
   const rel = (a, b) => (a == null || b == null || b === 0 ? null : (a - b) / b);
@@ -286,7 +299,7 @@ function periodComparison(feedbacks, transactionCount, now = new Date(), windowD
       wcr: { rel: rel(c.wcr, p.wcr), lowerIsBetter: true },
       shareOfNegative: { rel: rel(c.shareOfNegative, p.shareOfNegative), lowerIsBetter: true }
     },
-    approximation: transactionCount
+    approximation: transactionCount && !txnList
       ? 'Mẫu số giao dịch được chia đều cho hai kỳ, nên tỉ lệ khiếu nại ở đây là ước lượng.'
       : null
   };

@@ -3,7 +3,8 @@ const router = express.Router();
 
 const { scrapeShopeeReviews } = require('../services/scraper');
 const { generateRiskAlertsBatch, classifyByRulesFallback } = require('../services/ai_analyzer');
-const { getContext, invalidate, isRefreshing, patchServing, applyFilters, ctxNow, applyHumanLabels, applyReviewLabel } = require('../services/analysis_context');
+const { findDecision } = require('../services/decision_match');
+const { getContext, invalidate, isRefreshing, patchServing, applyFilters, scopeTransactions, ctxNow, applyHumanLabels, applyReviewLabel } = require('../services/analysis_context');
 const trustLayer = require('../services/trust_layer');
 const alertEngine = require('../services/alert_engine');
 const metrics = require('../services/metrics');
@@ -74,7 +75,13 @@ const filterKey = (q = {}) => ['source', 'time', 'product', 'region'].map((k) =>
 function detectAlertsCached(ctx, query, opts = {}) {
   const key = `detect|${ctx.dbName}|${ctx.computedAt}|${filterKey(query)}|${JSON.stringify(opts)}`;
   return memo(key, () =>
-    alertEngine.detectAlerts(applyFilters(ctx.items, query, ctx.asOf), { transactionCount: ctx.transactionCount, now: ctx.asOf || undefined, ...opts })
+    alertEngine.detectAlerts(applyFilters(ctx.items, query, ctx.asOf), {
+      transactionCount: ctx.transactionCount,
+      // mẫu số WCR: giao dịch cùng phạm vi lọc, đếm trong đúng cửa sổ của từng cảnh báo
+      transactions: scopeTransactions(ctx.transactions, { ...query, time: undefined }, ctx.asOf),
+      now: ctx.asOf || undefined,
+      ...opts
+    })
   );
 }
 
@@ -284,13 +291,15 @@ router.get('/stats', wrap(async (req, res) => {
   };
   const items = applyFilters(ctx.items, req.query, ctx.asOf);
 
-  const cards = metrics.buildMetricCards(items, ctx.transactionCount, ctxNow(ctx));
+  // Mẫu số WCR: giao dịch CÙNG phạm vi lọc (thời gian, sản phẩm, vùng) với phản hồi
+  const scopedTxns = scopeTransactions(ctx.transactions, req.query, ctx.asOf);
+  const cards = metrics.buildMetricCards(items, scopedTxns.length, ctxNow(ctx));
 
   res.json({
     ...cards,
     // So sánh hai kỳ liền nhau, để thẻ chỉ số nói được "đang tốt lên hay
     // xấu đi" thay vì chỉ đưa ra một con số trần trụi.
-    comparison: metrics.periodComparison(items, ctx.transactionCount, ctxNow(ctx)),
+    comparison: metrics.periodComparison(items, scopedTxns, ctxNow(ctx)),
     dataHealthScore: ctx.funnel.dataHealthScore,
     // Thành phần bằng chứng của từng thẻ: đối soát được / người duyệt / suy luận
     evidence: metrics.buildEvidence(items, ctxNow(ctx)),
@@ -535,9 +544,10 @@ router.get('/nav/status', wrap(async (req, res) => {
 
   // Huy hiệu trên thanh bên đếm việc CẦN QUYẾT, khớp với mục "Đang chờ"
   // của trang Cảnh báo — cảnh báo đã chấp nhận/bỏ qua không còn là việc chờ
-  const decisions = await req.db.collection('recommendation_log').find({}, { projection: { alertId: 1 } }).toArray();
-  const decided = new Set(decisions.map((d) => d.alertId));
-  const pending = alerts.filter((a) => !decided.has(a.id));
+  const decisions = await req.db.collection('recommendation_log').find({}, { projection: { alertId: 1, at: 1 } }).toArray();
+  // Khớp theo phạm vi cảnh báo trong cửa sổ theo dõi lại, để quyết định không mất khi sang ngày mới
+  const nowMs = Date.now();
+  const pending = alerts.filter((a) => !findDecision(a.id, decisions, nowMs));
 
   res.json({
     openAlerts: pending.length,
@@ -690,7 +700,7 @@ router.get('/trust/impact', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const items = applyFilters(ctx.items, req.query, ctx.asOf);
   const impact = alertEngine.trustLayerImpact(items, {
-    transactionCount: ctx.transactionCount
+    transactionCount: scopeTransactions(ctx.transactions, req.query, ctx.asOf).length
   });
 
   // WCR hai kịch bản nay do chính trustLayerImpact tính, để route và các
@@ -1180,7 +1190,7 @@ router.get('/recommendations', wrap(async (req, res) => {
   const result = detectAlertsCached(ctx, req.query);
 
   const decisions = await req.db.collection('recommendation_log').find({}).toArray();
-  const decisionMap = new Map(decisions.map((d) => [d.alertId, d]));
+  const nowMs = Date.now();
 
   const built = buildRecommendationsCached(ctx, req.query, {}, result, decisions);
   const alertById = new Map(result.alerts.map((a) => [a.id, a]));
@@ -1193,7 +1203,7 @@ router.get('/recommendations', wrap(async (req, res) => {
     bundles: built.bundles,
     recommendations: built.recommendations.map((rec) => {
       const a = alertById.get(rec.alertId);
-      const decision = decisionMap.get(rec.alertId);
+      const decision = findDecision(rec.alertId, decisions, nowMs);
       return {
         ...rec,
         summary: playbook.summarize(a),
