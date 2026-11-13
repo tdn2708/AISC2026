@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { Drawer, Button, EvidenceBar, EvidenceLegend } from '../ui';
-import { fmtInt, fmtPct, fmtDate, LABELLER_LABEL } from '../../lib/format';
+import { fmtInt, fmtPct, fmtDate, LABELLER_LABEL, spanWords } from '../../lib/format';
 
 /**
  * NGĂN KÉO "VÌ SAO TIN ĐƯỢC?"
@@ -59,17 +59,19 @@ const METRICS = {
   velocity: {
     title: 'Tốc độ tăng phản hồi tiêu cực',
     mixKey: 'recentComplaints',
-    scope: 'phản hồi tiêu cực trong 7 ngày gần nhất',
+    scope: 'phản hồi tiêu cực trong kỳ gần nhất',
     formula: (s) => {
       const v = s?.negativeVelocity;
-      return `Số phản hồi tiêu cực mỗi ngày trong 7 ngày gần nhất (${nf2(v?.ratePerDayCurrent)}/ngày) so với 21 ngày trước đó (${nf2(v?.ratePerDayBaseline)}/ngày).`;
+      const w = v?.windowDays || 7;
+      const b = v?.baselineDays || 28;
+      return `Số phản hồi tiêu cực mỗi ngày trong ${spanWords(w)} gần nhất (${nf2(v?.ratePerDayCurrent)}/ngày) so với ${spanWords(b - w)} trước đó (${nf2(v?.ratePerDayBaseline)}/ngày). Độ dài kỳ chọn theo lượng dữ liệu của kho: kho ít phản hồi thì kỳ dài hơn để đủ câu mà so.`;
     },
     stats: (s) => {
       const v = s?.negativeVelocity;
       return [
-        ['Tiêu cực mỗi ngày, 7 ngày qua', nf2(v?.ratePerDayCurrent)],
+        [`Tiêu cực mỗi ngày, ${spanWords(v?.windowDays || 7)} qua`, nf2(v?.ratePerDayCurrent)],
         ['Tiêu cực mỗi ngày, nền', nf2(v?.ratePerDayBaseline)],
-        ['Cỡ mẫu 7 ngày / nền', `${fmtInt(v?.windowSample)} / ${fmtInt(v?.baselineSample)}`]
+        [`Cỡ mẫu ${spanWords(v?.windowDays || 7)} / nền`, `${fmtInt(v?.windowSample)} / ${fmtInt(v?.baselineSample)}`]
       ];
     }
   },

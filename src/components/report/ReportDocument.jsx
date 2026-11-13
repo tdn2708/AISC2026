@@ -209,8 +209,8 @@ function buildBlocks(model) {
           <tr>
             <th style={{ width: '36%' }}>Chỉ số</th>
             <th className="num">Toàn kỳ</th>
-            <th className="num">7 ngày gần nhất</th>
-            <th className="num">7 ngày trước đó</th>
+            <th className="num">{model.windowLabel} gần nhất</th>
+            <th className="num">{model.windowLabel} trước đó</th>
             <th className="num">Thay đổi</th>
           </tr>
         </thead>

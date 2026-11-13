@@ -14,6 +14,8 @@
 
 const { runTrustLayer } = require('./trust_layer');
 const taxonomy = require('./taxonomy');
+const { analysisCadence } = require('./cadence');
+const { findPainPoints } = require('./pain_points');
 
 /** Chuẩn hóa nhãn danh mục/nguyên nhân về taxonomy hiện hành */
 function normalizeLabels(fb) {
@@ -96,7 +98,9 @@ function computeContext(input) {
   let dataAsOf = null;
   let ingestedAt = null;
   if (anchorToData && feedbacks.length) {
-    dataAsOf = new Date(feedbacks[0].timestamp);
+    // Mốc dữ liệu: phản hồi mới nhất CÓ ngày thật (dòng nạp không ngày mang ngày nạp)
+    const dated = feedbacks.find((f) => !f.timeInferred) || feedbacks[0];
+    dataAsOf = new Date(dated.timestamp);
     if (Number.isNaN(dataAsOf.getTime())) dataAsOf = null;
     ingestedAt = feedbacks.reduce((max, f) => {
       const t = f.collectedAt ? new Date(f.collectedAt).getTime() : 0;
@@ -124,7 +128,26 @@ function computeContext(input) {
     }
   }
 
+  // Nhịp phân tích (cửa sổ theo mật độ dữ liệu) và điểm đau của cả kho (không
+  // lọc) tính luôn ở đây, trong worker: tách cụm từ cả kho mất vài giây, chạy
+  // ở luồng chính thì chặn mọi request lần đầu mở trang Tổng quan.
+  const anchor = dataAsOf || new Date();
+  const cadence = analysisCadence(result.items, anchor);
+  let pain = null;
+  try {
+    pain = findPainPoints(result.items, { now: anchor, trendDays: cadence.windowDays });
+    // `members` (để dựng hồ sơ) là thuộc tính ẩn, không qua được postMessage: gửi kèm
+    // mã các phản hồi thành viên, luồng chính ghép lại (analysis_context.attachPainMembers)
+    for (const g of [...pain.groups, ...(pain.shop ? [pain.shop] : [])]) {
+      for (const p of g.painPoints) p.memberIds = (p.members || []).map((f) => String(f._id));
+    }
+  } catch (e) {
+    pain = null;
+  }
+
   return {
+    cadence,
+    pain,
     items: result.items,
     clusters: result.clusters,
     bursts: result.bursts,

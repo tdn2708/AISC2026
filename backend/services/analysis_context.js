@@ -15,6 +15,7 @@ const path = require('path');
 const { DEFAULT_HALF_LIFE_DAYS } = require('./trust_layer');
 const { computeContext, normalizeLabels, applyHumanLabels, applyReviewLabel } = require('./context_compute');
 const visobert = require('./visobert_client');
+const { analysisCadence, DEFAULT_CADENCE } = require('./cadence');
 
 /**
  * CHIẾN LƯỢC BỘ ĐỆM
@@ -63,6 +64,24 @@ const REAL_HALF_LIFE_DAYS = Number(process.env.REAL_HALF_LIFE_DAYS) || 180;
 
 /** "Bây giờ" của một ngữ cảnh: mốc dữ liệu với kho thật, giờ thật với kho mô phỏng */
 const ctxNow = (ctx) => (ctx && ctx.asOf ? new Date(ctx.asOf) : new Date());
+/** Nhịp phân tích của kho (services/cadence.js): cửa sổ gần đây và nền, chọn theo mật độ dữ liệu */
+const cadenceOf = (ctx) => (ctx && ctx.cadence) || DEFAULT_CADENCE;
+
+/** Ghép lại danh sách phản hồi thành viên của từng điểm đau (worker chỉ gửi mã) */
+function attachPainMembers(pain, items) {
+  if (!pain) return null;
+  const byId = new Map(items.map((f) => [String(f._id), f]));
+  for (const g of [...(pain.groups || []), ...(pain.shop ? [pain.shop] : [])]) {
+    for (const p of g.painPoints || []) {
+      // Tính ngay trong luồng chính (CONTEXT_WORKER=0): đã có sẵn danh sách thành viên
+      if (Object.getOwnPropertyDescriptor(p, 'members')) { delete p.memberIds; continue; }
+      const list = (p.memberIds || []).map((id) => byId.get(id)).filter(Boolean);
+      delete p.memberIds;
+      Object.defineProperty(p, 'members', { value: list, enumerable: false, configurable: true });
+    }
+  }
+  return pain;
+}
 // Chỉ các trường giao dịch thật sự được dùng (đối soát, doanh thu rủi ro, vùng)
 const TXN_PROJECTION = { _id: 0, orderId: 1, productName: 1, region: 1, orderedAt: 1, deliveredAt: 1, amount: 1 };
 
@@ -281,6 +300,10 @@ async function doFetch(db, gen, onlyIfChanged) {
     asOf: computed.asOf,
     halfLifeDays,
     ingestedAt: computed.ingestedAt,
+    // Một cửa sổ chung cho cảnh báo, so sánh kỳ, tốc độ tiêu cực, xu hướng
+    cadence: computed.cadence || analysisCadence(computed.items, computed.asOf ? new Date(computed.asOf) : new Date()),
+    // Điểm đau cả kho, không lọc (tính trong worker); có bộ lọc thì routes tự tính
+    painDefault: attachPainMembers(computed.pain, computed.items),
     replay: Boolean(upcoming)
   };
   console.log(`[CONTEXT] ${db.databaseName}: ${computed.items.length} phản hồi, đọc ${fetchMs} ms, tính ${Date.now() - t1} ms`);
@@ -399,6 +422,8 @@ function applyFilters(items, query = {}, nowRef = null) {
   const b = timeBounds(oneParam(q.time), nowRef);
   if (b) {
     out = out.filter((f) => {
+      // Dòng nạp không có ngày không thuộc khoảng thời gian nào
+      if (f.timeInferred) return false;
       const t = new Date(f.timestamp).getTime();
       if (t < b.start) return false;
       if (b.end != null && t > b.end) return false;
@@ -433,4 +458,4 @@ function scopeTransactions(transactions, query = {}, nowRef = null) {
   return out;
 }
 
-module.exports = { getContext, invalidate, isRefreshing, patchServing, applyFilters, scopeTransactions, timeBounds, normalizeLabels, ctxNow, applyHumanLabels, applyReviewLabel };
+module.exports = { getContext, invalidate, isRefreshing, patchServing, applyFilters, scopeTransactions, timeBounds, normalizeLabels, ctxNow, cadenceOf, applyHumanLabels, applyReviewLabel };

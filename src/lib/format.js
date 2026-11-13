@@ -56,6 +56,25 @@ export const fmtPct = (v, digits = 1) =>
   v == null || !Number.isFinite(v) ? '—' : `${(v * 100).toFixed(digits).replace('.', ',')}%`;
 
 /** Viết hoa chữ đầu khi một câu chữ thường (alertInWords) đứng riêng một dòng */
+/**
+ * Khoảng ngày bằng chữ, khớp backend services/cadence.js spanWords: dưới 60 ngày
+ * đếm ngày, từ 60 ngày đếm tháng ("6 tháng"). Dùng cho cửa sổ theo nhịp của kho.
+ */
+export const spanWords = (days) => {
+  const d = Math.round(Number(days) || 0);
+  return d < 60 ? `${d} ngày` : `${Math.round(d / 30)} tháng`;
+};
+
+/** Nhịp phân tích của kho từ /stats (cadence); thiếu thì 7 so với 28 ngày như cũ */
+export const cadenceWords = (c) => ({
+  windowDays: c?.windowDays || 7,
+  baselineDays: c?.baselineDays || 28,
+  win: spanWords(c?.windowDays || 7),
+  base: spanWords(c?.baselineDays || 28),
+  // "tuần trước" chỉ đúng khi cửa sổ là 7 ngày
+  prev: (c?.windowDays || 7) === 7 ? 'tuần trước' : `${spanWords(c.windowDays)} liền trước`
+});
+
 export const upFirst = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 /**

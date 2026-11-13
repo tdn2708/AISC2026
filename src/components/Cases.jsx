@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 import { ArrowLeft, Copy, Check, Download, Save } from 'lucide-react';
 import { PageHeader, GlassPanel, EmptyState, Button, Badge, Stat, Skeleton, Toast, ChartTooltip, Checkbox, TextField, fieldClass } from './ui';
 import ReplyDraft from './feedback/ReplyDraft';
-import { fmtInt, fmtPct, fmtDate } from '../lib/format';
+import { fmtInt, fmtPct, fmtDate, spanWords } from '../lib/format';
 import { AXIS_TICK } from '../lib/tokens';
 import { PageEnter } from './motion';
 
@@ -71,15 +71,19 @@ const downloadCsv = (rows, name) => {
 };
 
 const WeekTip = ({ active, payload }) => (active && payload?.length ? (
-  <ChartTooltip title={`Tuần từ ${fmtDate(payload[0].payload.start)}`}>
+  <ChartTooltip title={`${payload[0].payload.days > 7 ? 'Kỳ' : 'Tuần'} từ ${fmtDate(payload[0].payload.start)}`}>
     <p><span className="font-semibold text-ink-hi">{fmtInt(payload[0].value)}</span> phản hồi</p>
   </ChartTooltip>
 ) : null);
 
+/** Kỳ của biểu đồ hồ sơ: kho dày theo tuần, kho thưa theo kỳ dài hơn (backend case_file weekStep) */
+const periodTitle = (step = 7) => (step <= 7 ? 'Theo tuần, 12 tuần gần nhất' : `Mỗi kỳ ${step} ngày, ${spanWords(step * 12)} gần nhất`);
+const periodSpan = (step = 7) => (step <= 7 ? '12 tuần' : spanWords(step * 12));
+
 const effectWords = (e) => {
   if (!e) return null;
   if (e.status === 'pending') return `Còn ${fmtInt(e.daysLeft)} ngày nữa mới đo lại được.`;
-  if (!e.enough) return `Chưa đủ phản hồi để so (7 ngày trước ${fmtInt(e.before.n)}, 7 ngày sau ${fmtInt(e.after.n)}; cần ít nhất 30 mỗi bên).`;
+  if (!e.enough) return `Chưa đủ phản hồi để so (${spanWords(e.beforeDays || 7)} trước ${fmtInt(e.before.n)}, từ lúc mở tới nay ${fmtInt(e.after.n)}; cần ít nhất 30 mỗi bên). Kho ít phản hồi mới thì phải chờ lâu hơn.`;
   const dir = e.change < 0 ? 'giảm' : e.change > 0 ? 'tăng' : 'không đổi';
   return `Tỉ lệ câu nhắc chuyện này ${dir}: ${fmtPct(e.before.rate, 1)} trước, ${fmtPct(e.after.rate, 1)} sau. Đây là so trước và sau, chưa chứng minh nhờ việc đã làm.`;
 };
@@ -170,7 +174,7 @@ const CaseFile = ({ caseKey, filterQuery }) => {
   const s = file?.steps;
   const comp = s?.ready.compensation;
   const voucherCost = comp?.available ? (comp.orderValue * voucher) / 100 : 0;
-  const weeks = useMemo(() => (s ? s.scope.weeks.map((w) => ({ ...w, name: fmtDate(w.start).slice(0, 5) })) : []), [s]);
+  const weeks = useMemo(() => (s ? s.scope.weeks.map((w) => ({ ...w, name: w.days >= 31 ? fmtDate(w.start).slice(3) : fmtDate(w.start).slice(0, 5) })) : []), [s]);
   const anyWeek = weeks.some((w) => w.count > 0);
 
   const setTask = (i, patch) => setTasks((list) => list.map((t, j) => (j === i ? { ...t, ...patch } : t)));
@@ -268,7 +272,7 @@ const CaseFile = ({ caseKey, filterQuery }) => {
               </p>
             </div>
             <div className="min-w-0">
-              <h3 className="mb-2 text-sm font-semibold text-ink-hi">Theo tuần, 12 tuần gần nhất</h3>
+              <h3 className="mb-2 text-sm font-semibold text-ink-hi">{periodTitle(s.scope.weekStep)}</h3>
               {anyWeek ? (
                 <div className="h-[180px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -282,7 +286,7 @@ const CaseFile = ({ caseKey, filterQuery }) => {
                 </div>
               ) : (
                 <p className="paper px-3 py-3 text-sm leading-relaxed text-ink-mid">
-                  12 tuần gần nhất không có phản hồi nào nhắc chuyện này. Lần gần nhất: {fmtDate(s.scope.lastSeen)}.
+                  {periodSpan(s.scope.weekStep)} gần nhất không có phản hồi nào nhắc chuyện này. Lần gần nhất: {fmtDate(s.scope.lastSeen)}.
                 </p>
               )}
             </div>

@@ -4,7 +4,7 @@ import { RotateCw } from 'lucide-react';
 import { AnimatedNumber, EvidenceBar, EmptyState, Button } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { useInView, useReducedMotion } from '../motion';
-import { fmtInt, fmtPct, fmtSignedPct, timesWords } from '../../lib/format';
+import { fmtInt, fmtPct, fmtSignedPct, timesWords, cadenceWords, upFirst } from '../../lib/format';
 import EvidenceDrawer from './EvidenceDrawer';
 
 /**
@@ -46,9 +46,9 @@ const judge = (rel, lowerIsBetter = true) => {
   return rel > 0 === !lowerIsBetter ? 'good' : 'bad';
 };
 
-const Delta = ({ rel }) => {
+const Delta = ({ rel, prev = 'tuần trước' }) => {
   const j = judge(rel);
-  if (j === 'none') return <span className="text-sm text-ink-mid">Chưa đủ dữ liệu tuần trước để so</span>;
+  if (j === 'none') return <span className="text-sm text-ink-mid">Chưa đủ dữ liệu {prev} để so</span>;
   const Icon = j === 'flat' ? Minus : rel > 0 ? ArrowUpRight : ArrowDownRight;
   const tone = { good: 'text-ok', bad: 'text-crit', flat: 'text-ink-mid' }[j];
   return (
@@ -57,7 +57,7 @@ const Delta = ({ rel }) => {
         <Icon size={15} aria-hidden="true" />
         {j === 'flat' ? 'Không đổi' : `${rel > 0 ? 'Tăng' : 'Giảm'} ${rel > 1 ? timesWords(rel) : fmtSignedPct(Math.abs(rel)).replace('+', '')}`}
       </span>
-      <span className="text-ink-mid">so với tuần trước</span>
+      <span className="text-ink-mid">so với {prev}</span>
     </span>
   );
 };
@@ -155,6 +155,8 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry, countStart =
   const son = stats?.shareOfNegative;
   const v = stats?.negativeVelocity?.velocity;
   const health = stats?.dataHealthScore;
+  // Kỳ so sánh theo nhịp của kho: kho dày 7 ngày, kho thưa giãn ra ("6 tháng")
+  const cw = cadenceWords(stats?.cadence);
 
   const wcrRel = cmp?.deltas?.wcr?.rel;
   const sonRel = cmp?.deltas?.shareOfNegative?.rel;
@@ -174,8 +176,8 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry, countStart =
         <Metric
           label="Khiếu nại trên đơn hàng"
           bad={judge(wcrRel) === 'bad'}
-          sub={wcr?.available && <Delta rel={wcrRel} />}
-          note={wcr?.available && (hasPrev ? `7 ngày qua ${fmtPct(cmp?.current?.wcr, 2)}, tuần trước ${fmtPct(cmp?.previous?.wcr, 2)}` : `Trên ${fmtInt(wcr.denominator)} đơn hàng`)}
+          sub={wcr?.available && <Delta rel={wcrRel} prev={cw.prev} />}
+          note={wcr?.available && (hasPrev ? `${upFirst(cw.win)} qua ${fmtPct(cmp?.current?.wcr, 2)}, ${cw.prev} ${fmtPct(cmp?.previous?.wcr, 2)}` : `Trên ${fmtInt(wcr.denominator)} đơn hàng`)}
           onOpen={() => setOpen('wcr')}
         >
           {wcr?.available ? <Counted on={turn >= 1} value={wcr.value * 100} decimals={2} unit="%" /> : <span className="text-heading font-medium text-ink-mid">Chưa nối dữ liệu đơn hàng</span>}
@@ -183,8 +185,8 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry, countStart =
         <Metric
           label="Khách không hài lòng"
           bad={judge(sonRel) === 'bad'}
-          sub={son?.available && <Delta rel={sonRel} />}
-          note={velocity && <>Phản hồi tiêu cực 7 ngày gần đây <span className={`font-semibold ${velocity[0]}`}>{velocity[1]}</span></>}
+          sub={son?.available && <Delta rel={sonRel} prev={cw.prev} />}
+          note={velocity && <>Phản hồi tiêu cực {cw.win} gần đây <span className={`font-semibold ${velocity[0]}`}>{velocity[1]}</span></>}
           extra={son?.available && <Sparkline points={spark} />}
           onOpen={() => setOpen('negative')}
         >

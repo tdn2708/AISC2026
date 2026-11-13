@@ -25,6 +25,13 @@ function dedupKey(doc) {
     ? doc.timestamp.toISOString().slice(0, 10)
     : '';
   const text = normalizer.canonicalize(doc.originalText).toLowerCase().replace(/\s+/g, ' ').trim();
+  if (doc.collectedVia === 'import') {
+    // File shop nạp: tên đã che dễ trùng ("Nguyễn Văn An" và "Nguyễn Văn Anh" đều là
+    // "Nguyễn V. A."), nên dùng mã khách ẩn danh nếu có; dòng không có ngày mang
+    // chung ngày nạp nên thêm vị trí dòng trong file (nạp lại đúng file vẫn bỏ trùng).
+    // Không thế thì hai khách khác nhau cùng viết "hàng tốt" bị gộp làm một.
+    return sha1([doc.source, doc.productName, doc.customerId || doc.author, day, text, doc.importRef || '', 'import'].join('\u0001'));
+  }
   return sha1([doc.source, doc.productName, doc.author, day, text].join('\u0001'));
 }
 
@@ -74,6 +81,9 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
       author: facts ? maskName(review.author) : review.author,
       customerId: facts ? pseudoCustomerId(facts.platform, rawCustomerId) : null,
       timestamp: review.timestamp,
+      // Dòng nạp từ file không có ngày: timestamp là ngày nạp, không dùng cho phép so thời gian
+      ...(review.timeInferred ? { timeInferred: true } : {}),
+      ...(review.importRef ? { importRef: review.importRef } : {}),
       productName: review.productName || meta.fallbackProduct || 'Sản phẩm chưa xác định',
       // Mảng hàng: danh mục của sàn hoặc cột danh mục trong file shop nạp lên (product_group.js)
       productCategory: review.productCategory || meta.productCategory || null,

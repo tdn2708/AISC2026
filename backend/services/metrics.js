@@ -14,11 +14,21 @@
  *   - Mỗi thẻ chỉ số đều ghi rõ MẪU SỐ và ĐỘ PHỦ đang được dùng.
  */
 
+const { spanWords } = require('./cadence');
+
 const RECONCILABLE_TIERS = ['P1', 'P2'];
 
 function isComplaint(fb) {
   return fb.sentiment === 'Negative';
 }
+
+/**
+ * Mốc thời gian dùng cho mọi phép "gần đây so với trước đó". Dòng nạp từ file
+ * không có ngày (`timeInferred`) mang ngày nạp chỉ để lưu: cho vào cửa sổ thời
+ * gian thì cả file dồn vào một ngày, tạo đột biến giả. Trả NaN để mọi phép so
+ * sánh khoảng thời gian tự loại dòng đó (vẫn được tính ở tổng số, nhóm vấn đề).
+ */
+const timeOf = (f) => (f && f.timeInferred ? NaN : new Date(f.timestamp).getTime());
 
 /** Phản hồi có được tính vào chỉ số hay không (đã qua Trust Layer) */
 function isCountable(fb) {
@@ -106,11 +116,11 @@ function negativeVelocity(feedbacks, windowDays = 7, baselineDays = 28, now = ne
   const baselineStart = nowMs - baselineDays * 86400000;
 
   const inWindow = (f) => {
-    const t = new Date(f.timestamp).getTime();
+    const t = timeOf(f);
     return t >= windowStart && t <= nowMs;
   };
   const inBaseline = (f) => {
-    const t = new Date(f.timestamp).getTime();
+    const t = timeOf(f);
     return t >= baselineStart && t < windowStart;
   };
 
@@ -144,11 +154,17 @@ function weightedTimeSeries(feedbacks, buckets = 14, now = new Date(), spanDays 
   const startMs = nowMs - spanDays * 86400000;
   const bucketMs = (nowMs - startMs) / buckets;
 
+  const bucketDays = bucketMs / 86400000;
   const series = Array.from({ length: buckets }, (_, i) => {
-    // Nhãn ngày theo giờ Việt Nam (UTC+7), không theo múi giờ máy chủ
+    // Nhãn theo giờ Việt Nam (UTC+7), không theo múi giờ máy chủ. Ô dài hơn
+    // một tháng (kho thưa, nhịp giãn ra) ghi tháng/năm để nhãn không trùng nhau.
     const center = new Date(startMs + (i + 0.5) * bucketMs + 7 * 3600000);
+    const dd = String(center.getUTCDate()).padStart(2, '0');
+    const mm = String(center.getUTCMonth() + 1).padStart(2, '0');
     return {
-      name: `${String(center.getUTCDate()).padStart(2, '0')}/${String(center.getUTCMonth() + 1).padStart(2, '0')}`,
+      name: bucketDays >= 31 ? `${mm}/${center.getUTCFullYear()}` : `${dd}/${mm}`,
+      start: new Date(startMs + i * bucketMs).toISOString(),
+      days: Number(bucketDays.toFixed(2)),
       complaints: 0,
       satisfaction: 0,
       weightedComplaints: 0,
@@ -158,8 +174,8 @@ function weightedTimeSeries(feedbacks, buckets = 14, now = new Date(), spanDays 
   });
 
   for (const f of feedbacks) {
-    const t = new Date(f.timestamp).getTime();
-    if (t < startMs || t > nowMs) continue;
+    const t = timeOf(f);
+    if (!(t >= startMs && t <= nowMs)) continue;
     let idx = Math.floor((t - startMs) / bucketMs);
     if (idx >= buckets) idx = buckets - 1;
     if (idx < 0) idx = 0;
@@ -188,11 +204,14 @@ function weightedTimeSeries(feedbacks, buckets = 14, now = new Date(), spanDays 
  * đây chính là biểu hiện của tư duy dữ liệu chín: người đọc luôn biết
  * con số đang được tính trên cái gì.
  */
-function buildMetricCards(feedbacks, transactionCount, now = new Date()) {
+function buildMetricCards(feedbacks, transactionCount, now = new Date(), cadence = null) {
+  // Cửa sổ theo nhịp của kho (services/cadence.js); không truyền thì 7 so với 28 ngày như cũ
+  const winDays = cadence?.windowDays || 7;
+  const baseDays = cadence?.baselineDays || 28;
   const countable = feedbacks.filter(isCountable);
   const wcr = weightedComplaintRate(feedbacks, transactionCount);
   const son = shareOfNegative(feedbacks);
-  const vel = negativeVelocity(feedbacks, 7, 28, now);
+  const vel = negativeVelocity(feedbacks, winDays, baseDays, now);
 
   const excluded = feedbacks.length - countable.length;
 
@@ -219,7 +238,9 @@ function buildMetricCards(feedbacks, transactionCount, now = new Date()) {
     negativeVelocity: {
       ...vel,
       display: `${vel.velocity >= 0 ? '+' : ''}${(vel.velocity * 100).toFixed(0)}%`,
-      label: 'Tốc độ tăng phản hồi tiêu cực (7 ngày so với nền 28 ngày)'
+      windowDays: winDays,
+      baselineDays: baseDays,
+      label: `Tốc độ tăng phản hồi tiêu cực (${spanWords(winDays)} so với nền ${spanWords(baseDays)})`
     }
   };
 }
@@ -247,7 +268,7 @@ function periodComparison(feedbacks, transactions, now = new Date(), windowDays 
   const span = windowDays * 86400000;
 
   const inWindow = (f, from, to) => {
-    const t = new Date(f.timestamp).getTime();
+    const t = timeOf(f);
     return t >= from && t < to;
   };
 
@@ -290,7 +311,7 @@ function periodComparison(feedbacks, transactions, now = new Date(), windowDays 
 
   return {
     windowDays,
-    label: `${windowDays} ngày gần nhất so với ${windowDays} ngày liền trước`,
+    label: `${spanWords(windowDays)} gần nhất so với ${spanWords(windowDays)} liền trước`,
     current: c,
     previous: p,
     // `lowerIsBetter` để giao diện biết chiều nào nên tô xanh. Với khiếu
@@ -336,12 +357,13 @@ function evidenceMix(items) {
 }
 
 /** Bằng chứng cho các thẻ trên trang Tổng quan, kèm vài phản hồi gốc để đọc thử */
-function buildEvidence(items, now = new Date(), sampleSize = 5) {
+function buildEvidence(items, now = new Date(), sampleSize = 5, windowDays = 7) {
   const nowMs = new Date(now).getTime();
-  const weekAgo = nowMs - 7 * 86400000;
+  // Cửa sổ "gần đây" của thẻ tốc độ tiêu cực: theo nhịp của kho
+  const weekAgo = nowMs - windowDays * 86400000;
   const complaints = items.filter((f) => isCountable(f) && isComplaint(f));
   const recentComplaints = complaints.filter((f) => {
-    const t = new Date(f.timestamp).getTime();
+    const t = timeOf(f);
     return t >= weekAgo && t <= nowMs;
   });
   const samples = [...complaints]
@@ -391,6 +413,7 @@ function ledgerSplit(items = []) {
 }
 
 module.exports = {
+  timeOf,
   ledgerSplit,
   evidenceMix,
   buildEvidence,

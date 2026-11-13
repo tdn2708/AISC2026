@@ -283,7 +283,9 @@ function detectNearDuplicateClusters(items, config = DUPLICATE_CONFIG) {
     const vector = termVector(it._normalized);
     return {
       idx,
-      time: new Date(it.timestamp || Date.now()).getTime(),
+      // Dòng nạp không có ngày (timeInferred) đi nhánh "không có thời gian": so với mọi
+      // phản hồi, không coi là cùng 48 giờ với mọi phản hồi gần ngày nạp
+      time: it.timeInferred ? NaN : new Date(it.timestamp || Date.now()).getTime(),
       hash: simHash(it._normalized),
       vector,
       norm: vectorNorm(vector),
@@ -357,7 +359,11 @@ function detectNearDuplicateClusters(items, config = DUPLICATE_CONFIG) {
 
     if (members.length < config.minClusterSize) continue;
 
-    const times = members.map((m) => prepared[m].time);
+    // Chỉ thành viên có giờ thật mới đo được độ dày theo thời gian. Không đủ hai
+    // thành viên có giờ (dòng nạp không ngày, ngày hỏng) thì không kết luận được
+    // là "chiến dịch cùng lúc": NaN lọt qua mọi phép so và ghi cụm với ngày hỏng.
+    const times = members.map((m) => prepared[m].time).filter(Number.isFinite);
+    if (times.length < Math.min(2, config.minClusterSize)) continue;
     const spanMs = Math.max(...times) - Math.min(...times);
 
     // Ràng buộc trên TOÀN CỤM, không chỉ so với phần tử hạt giống: một
@@ -399,6 +405,8 @@ const BURST_Z_THRESHOLD = 3;
 function detectBursts(items) {
   const byProduct = new Map();
   items.forEach((it, idx) => {
+    // Dòng nạp không có ngày mang chung ngày nạp: không phải bùng phát thật
+    if (it.timeInferred) return;
     const key = it.productName || 'unknown';
     if (!byProduct.has(key)) byProduct.set(key, []);
     byProduct.get(key).push({ idx, time: new Date(it.timestamp || Date.now()).getTime(), item: it });

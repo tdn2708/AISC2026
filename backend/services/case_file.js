@@ -23,7 +23,7 @@ const { shownName } = require('./ingest');
 const DAY = 86400000;
 
 /** Tên tiếng Việt của chỗ trống trong mẫu việc (khi việc bị loại vì thiếu số) */
-const SLOT_WORDS = { ...SLOTS, topShare: 'tỉ trọng sản phẩm', topBaselineShare: 'tỉ lệ nền theo khu vực', affected: 'số khách', evidenceCount: 'số phản hồi', windowDays: 'số ngày', revenue: 'giá trị đơn hàng', currentRate: 'tỉ lệ hiện tại', baselineRate: 'tỉ lệ nền 28 ngày' };
+const SLOT_WORDS = { ...SLOTS, topShare: 'tỉ trọng sản phẩm', topBaselineShare: 'tỉ lệ nền theo khu vực', affected: 'số khách', evidenceCount: 'số phản hồi', windowDays: 'số ngày', revenue: 'giá trị đơn hàng', currentRate: 'tỉ lệ hiện tại', baselineRate: 'tỉ lệ nền' };
 const WEEKS = 12;
 
 const pct = (x) => {
@@ -49,11 +49,12 @@ function countBy(list, fn) {
 }
 
 /** Đếm theo tuần (12 tuần gần nhất, tính lùi từ mốc `now`) */
-function weekly(list, nowMs) {
-  const weeks = Array.from({ length: WEEKS }, (_, i) => ({ start: new Date(nowMs - (WEEKS - i) * 7 * DAY).toISOString(), count: 0 }));
+/** Đếm theo kỳ `step` ngày (kho dày: tuần; kho thưa: kỳ dài hơn theo nhịp của kho), 12 kỳ gần nhất */
+function weekly(list, nowMs, step = 7) {
+  const weeks = Array.from({ length: WEEKS }, (_, i) => ({ start: new Date(nowMs - (WEEKS - i) * step * DAY).toISOString(), days: step, count: 0 }));
   for (const f of list) {
     const age = nowMs - new Date(f.timestamp).getTime();
-    const idx = WEEKS - 1 - Math.floor(age / (7 * DAY));
+    const idx = WEEKS - 1 - Math.floor(age / (step * DAY));
     if (idx >= 0 && idx < WEEKS && age >= 0) weeks[idx].count += 1;
   }
   return weeks;
@@ -103,7 +104,9 @@ function buildCaseFile(point, group, ctx) {
     sources,
     regions: regions.slice(0, 6),
     orders: { withOrder: withOrder.length, matched: matchedTx.length, value: orderValue },
-    weeks: weekly(members, nowMs),
+    // Kỳ của biểu đồ theo nhịp kho: kho dày 7 ngày, kho thưa trải đủ độ dài nền
+    weekStep: Math.max(7, Math.ceil((ctx.cadence?.trendSpanDays || 0) / WEEKS)),
+    weeks: weekly(members, nowMs, Math.max(7, Math.ceil((ctx.cadence?.trendSpanDays || 0) / WEEKS))),
     // Toàn bộ phản hồi của điểm đau (để trả lời, tải về): đã che PII lúc nạp
     feedbacks: members
       .slice()
@@ -258,7 +261,7 @@ function buildCaseFile(point, group, ctx) {
  * @param {Array} items phản hồi của ngữ cảnh (chưa lọc)
  * @param {{ groupKey: string, phraseKeys: string[], createdAt: Date }} c hồ sơ đã lưu
  */
-function caseEffect(items, c, now, windowDays = 7) {
+function caseEffect(items, c, now, windowDays = 7, beforeDays = windowDays) {
   const countable = items.filter(metrics.isCountable);
   const groupOf = buildGrouper(countable);
   const keys = new Set(c.phraseKeys || []);
@@ -268,14 +271,18 @@ function caseEffect(items, c, now, windowDays = 7) {
   const hit = (f) => f.sentiment === 'Negative' && [...gramsOf(f).keys()].some((k) => keys.has(k) || (fold(k) === k && folded.has(k)));
   const at = new Date(c.createdAt).getTime();
   const nowMs = new Date(now).getTime();
-  const span = windowDays * DAY;
+  // Nền "trước" dài ít nhất bằng nhịp của kho: kho thưa (đánh giá cách nhau hàng
+  // tuần) mà chỉ lấy 7 ngày thì nền rỗng. `now` là đồng hồ thật: số ngày đã trôi
+  // của shop không phụ thuộc đánh giá mới nhất cũ hay mới.
+  const beforeSpan = Math.max(windowDays, beforeDays || windowDays) * DAY;
   const win = (from, to) => {
     const list = scope.filter((f) => { const t = new Date(f.timestamp).getTime(); return t >= from && t < to; });
     const hits = list.filter(hit).length;
     return { n: list.length, hits, rate: list.length ? hits / list.length : null };
   };
-  const before = win(at - span, at);
-  const after = win(at, Math.min(at + span, nowMs));
+  const before = win(at - beforeSpan, at);
+  // Kho thưa: phần "sau" gom tiếp phản hồi mới tới hết độ dài nền, để đủ câu mà so
+  const after = win(at, Math.max(at, Math.min(at + beforeSpan, nowMs)));
   const elapsed = Math.max(0, (nowMs - at) / DAY);
   return {
     status: elapsed >= windowDays ? 'done' : 'pending',
@@ -283,6 +290,7 @@ function caseEffect(items, c, now, windowDays = 7) {
     before,
     after,
     change: before.rate != null && after.rate != null ? after.rate - before.rate : null,
+    beforeDays: Math.round(beforeSpan / DAY),
     enough: before.n >= 30 && after.n >= 30
   };
 }

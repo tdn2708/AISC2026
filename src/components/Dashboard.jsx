@@ -194,7 +194,7 @@ const Dashboard = () => {
             <SentimentShare data={sentiments} loading={loading && !stats} failed={failed} onRetry={reload} />
           </section>
           <section aria-label="Vấn đề đang tăng nhanh" className="reveal col-span-12 md:col-span-6 xl:col-span-6 xl:[&:has(+section:empty)]:col-span-12">
-            <RisingIssues alerts={alerts} loading={loading && !stats} failed={failed} onRetry={reload} />
+            <RisingIssues alerts={alerts} cadence={stats?.cadence} loading={loading && !stats} failed={failed} onRetry={reload} />
           </section>
           <section aria-label="Livestream" className="reveal col-span-12 xl:col-span-6 [&>div]:mt-0">
             <LiveDigest />

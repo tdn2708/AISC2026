@@ -2,7 +2,7 @@ import React from 'react';
 import { TrendingUp, RotateCw } from 'lucide-react';
 import { GlassPanel, PanelHeader, SeverityBadge, EmptyState, Button } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
-import { alertTitle, fmtPct, fmtGrowth, upFirst, growthOf } from '../../lib/format';
+import { alertTitle, fmtPct, fmtGrowth, upFirst, growthOf, spanWords } from '../../lib/format';
 
 /**
  * HORIZONTAL BAR — Top vấn đề tăng nhanh.
@@ -14,7 +14,10 @@ import { alertTitle, fmtPct, fmtGrowth, upFirst, growthOf } from '../../lib/form
 
 const MAX_ROWS = 5;
 
-const RisingIssues = ({ alerts = [], loading, failed, onRetry }) => {
+const RisingIssues = ({ alerts = [], cadence = null, loading, failed, onRetry }) => {
+  // Kỳ so sánh: của cảnh báo nếu có, không thì nhịp của kho (/stats cadence)
+  const winDays = alerts[0]?.windowDays || cadence?.windowDays || 7;
+  const baseDays = alerts[0]?.baselineDays || cadence?.baselineDays || 28;
   const spikes = alerts
     .map((a) => ({ alert: a, growth: growthOf(a) }))
     .filter((r) => r.growth != null && r.growth > 0)
@@ -28,7 +31,7 @@ const RisingIssues = ({ alerts = [], loading, failed, onRetry }) => {
     <GlassPanel className="flex h-full flex-col p-6">
       <PanelHeader
         title="Vấn đề đang tăng nhanh"
-        subtitle="Mức tăng tỉ lệ khiếu nại so với 28 ngày trước đó"
+        subtitle={`Mức tăng tỉ lệ khiếu nại ${spanWords(winDays)} gần nhất so với ${spanWords(baseDays)} trước đó`}
         right={
           spikes.length > MAX_ROWS && (
             <span className="text-xs text-ink-lo">

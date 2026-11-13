@@ -4,7 +4,7 @@ import { RotateCw } from 'lucide-react';
 import { GlassPanel, PanelHeader, Segmented, ChartTooltip, EmptyState, Button } from '../ui';
 import { Skeleton } from '../ui/Skeleton';
 import { ChartReveal } from '../motion';
-import { fmtInt } from '../../lib/format';
+import { fmtInt, spanWords } from '../../lib/format';
 import { AXIS_TICK, CHART_FONT } from '../../lib/tokens';
 
 /**
@@ -37,6 +37,15 @@ const TrendTooltip = ({ active, payload, label }) => {
       ))}
     </ChartTooltip>
   );
+};
+
+/** Ô và khung của biểu đồ lấy từ chính dữ liệu (/trend trả `days` mỗi ô): kho thưa ô dài hơn */
+const trendSubtitle = (data) => {
+  const step = data[0]?.days;
+  if (!step) return 'Số phản hồi theo thời gian';
+  const span = step * data.length;
+  const each = step < 1.5 ? 'mỗi ngày' : `mỗi ${Math.round(step)} ngày`;
+  return `Số phản hồi ${each}, ${spanWords(span)} tính tới mốc dữ liệu`;
 };
 
 const SentimentTrendChart = ({ data = [], loading, failed, onRetry }) => {
@@ -75,7 +84,7 @@ const SentimentTrendChart = ({ data = [], loading, failed, onRetry }) => {
     <GlassPanel className="p-6">
       <PanelHeader
         title="Cảm xúc theo thời gian"
-        subtitle="Số phản hồi mỗi 2 ngày, 28 ngày gần nhất"
+        subtitle={trendSubtitle(data)}
         right={toggle}
       />
 
@@ -98,7 +107,8 @@ const SentimentTrendChart = ({ data = [], loading, failed, onRetry }) => {
       ) : view === 'chart' ? (
         <ChartReveal className="h-[280px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 26, right: 12, left: -4, bottom: 0 }}>
+            {/* Nhãn tháng/năm (kho thưa) dài hơn nhãn ngày: chừa lề phải để nhãn cuối không bị cắt */}
+            <LineChart data={data} margin={{ top: 26, right: (data[0]?.name?.length || 0) > 5 ? 26 : 12, left: -4, bottom: 0 }}>
               <CartesianGrid stroke="var(--viz-grid)" vertical={false} />
               <XAxis dataKey="name" tick={AXIS_TICK} axisLine={{ stroke: 'var(--border)' }} tickLine={false} dy={6} minTickGap={16} />
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} width={44} allowDecimals={false} tickFormatter={fmtInt} />

@@ -58,9 +58,22 @@ function fold(s) {
  * "khong", "chua", "bi" được đứng đầu: "không kết nối", "bị lệch" là chuyện thật.
  */
 const EDGE_STOP = new Set(('a ah a ạ ai anh ba bao ban bay ben bi biet bon ca cac cai cam cho chi chiec chu chua co con cu cua cung da dang day de den deu di do dung duoc em gi gio gium giup ha hai hay het hoac hoi hon hu khi khien kho khong ko kia la lai lam len luc luon ma may minh moi mot muon nao nay neu nen nhe nha nhi nhieu nhu nhung nua nam o oi ok qua ra rang rat roi sao se so sp san pham shop ta tai thay the them thi thoi thuc toi tot trong tren tu tuy va vao vay ve vi voi vua xai xong xin').split(' '));
-const START_OK = new Set(['khong', 'chua', 'bi']);
+const START_OK = new Set(['khong', 'chua', 'bi', 'không', 'chưa', 'bị']);
 /** Từ hư mà cả cụm chỉ toàn những từ này thì bỏ (thêm vài từ chung chung) */
 const ALL_STOP = new Set([...EDGE_STOP, 'hang', 'mua', 'nhan', 'giao', 'dung', 'su', 'cam', 'on']);
+
+/**
+ * Cùng danh sách, dạng CÓ DẤU. Chữ có dấu chỉ so với danh sách này: bỏ dấu rồi so
+ * thì chữ có nghĩa trùng dạng với từ hư và bị bỏ oan ("ố" thành "o" như "ở", "bàn"
+ * thành "ban" như "bạn", "máy" thành "may" như "mấy", "đèn" thành "den" như "đến"),
+ * nên "ố vàng", "bàn phím ...", "máy ..." không bao giờ đứng đầu cụm. Chữ gõ không
+ * dấu vẫn so với danh sách bỏ dấu ở trên (không biết người gõ định chữ nào).
+ */
+const EDGE_STOP_VI = new Set(('à ạ á ah ai anh ba bao bạn bây bên bị biết bốn cả các cái cảm cho chỉ chiếc chứ chưa có còn cứ của cũng đã đang đây để đề đến đều đi đó dùng được em gì giờ giùm giúp hả hai hay hết hoặc hỏi hơi hơn hử khi khiến khó không kia là lại làm lên lúc luôn mà mấy mình mỗi mới một muốn nào này nếu nên nhé nha nhà nhỉ nhiều như nhưng nữa năm ở ơi quá ra rằng rất rồi sao sẽ số sản phẩm ta tại thấy thế thêm thì thôi thực tôi tốt trong trên từ tuy và vào vậy về vì với vừa xài xong xin').split(' '));
+const ALL_STOP_VI = new Set([...EDGE_STOP_VI, 'hàng', 'mua', 'nhận', 'giao', 'dùng', 'sự', 'cảm', 'ơn']);
+const hasMarks = (w) => fold(w) !== w;
+/** Từ hư? Chữ có dấu so danh sách có dấu; chữ không dấu so danh sách bỏ dấu */
+const isStop = (word, folded, accentedSet, foldedSet) => (hasMarks(word) ? accentedSet.has(word) : foldedSet.has(folded));
 
 // Kết quả tách cụm cho từng phản hồi: tính một lần, dùng lại giữa các bộ lọc.
 // Khóa là chính đối tượng phản hồi, nên ngữ cảnh mới (đối tượng mới) tự bỏ bộ nhớ cũ.
@@ -79,15 +92,17 @@ function gramsOf(f) {
   for (const seg of segments) {
     const words = seg.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
     if (words.length < 2) continue;
-    const folded = words.map(fold);
+    const lower = words.map((w) => w.toLowerCase());
+    const folded = lower.map(fold);
+    const edge = (j) => isStop(lower[j], folded[j], EDGE_STOP_VI, EDGE_STOP);
     for (let i = 0; i < words.length; i += 1) {
-      if (EDGE_STOP.has(folded[i]) && !START_OK.has(folded[i])) continue;
+      if (edge(i) && !START_OK.has(lower[i])) continue;
       if (/^\d+$/.test(folded[i])) continue;
       for (let n = 2; n <= MAX_N && i + n <= words.length; n += 1) {
         const last = folded[i + n - 1];
-        if (EDGE_STOP.has(last) || /^\d+$/.test(last)) continue;
+        if (edge(i + n - 1) || /^\d+$/.test(last)) continue;
         const slice = folded.slice(i, i + n);
-        if (slice.every((w) => ALL_STOP.has(w))) continue;
+        if (slice.every((w, j) => isStop(lower[i + j], w, ALL_STOP_VI, ALL_STOP))) continue;
         // Khóa giữ DẤU: bỏ hết dấu thì 'nhận tín' (tín hiệu) trùng 'nhắn tin'. Cụm gõ
         // hoàn toàn không dấu giữ dạng bỏ dấu, rồi được quy về dạng có dấu phổ biến nhất (gramsWithAlias)
         const surface = words.slice(i, i + n).join(' ').toLowerCase();
@@ -132,6 +147,8 @@ function gramsWithAlias(items) {
 const isNegative = (f) => f.sentiment === 'Negative';
 const customerOf = (f) => String(f.customerId || f.author || f._id);
 const dayOf = (f) => {
+  // Dòng nạp không có ngày: không biết ngày nào (không gộp chung vào ngày nạp)
+  if (f.timeInferred) return null;
   const t = new Date(f.timestamp).getTime();
   return Number.isFinite(t) ? Math.floor(t / DAY) : null;
 };
@@ -173,7 +190,8 @@ function exampleOf(f) {
  * Tóm tắt một tập phản hồi: khách, ngày, sản phẩm, nhóm vấn đề chiếm đa số,
  * xu hướng 4 tuần gần nhất so với 4 tuần trước đó.
  */
-function summarize(list, nowMs) {
+function summarize(list, nowMs, trendDays = 28) {
+  const T = trendDays * DAY;
   const customers = new Set();
   const days = new Set();
   const products = new Map();
@@ -185,7 +203,9 @@ function summarize(list, nowMs) {
   let recent = 0;
   let previous = 0;
   let verified = 0;
+  let unlabelled = 0;
   for (const f of list) {
+    if (!f.category || f.category === 'Other') unlabelled += 1;
     customers.add(customerOf(f));
     const d = dayOf(f);
     if (d != null) days.add(d);
@@ -197,13 +217,13 @@ function summarize(list, nowMs) {
       causes.set(k, (causes.get(k) || 0) + 1);
     }
     if (['P1', 'P2'].includes(f.trust?.tier)) verified += 1;
-    const t = new Date(f.timestamp).getTime();
+    const t = f.timeInferred ? NaN : new Date(f.timestamp).getTime();
     if (Number.isFinite(t)) {
       if (t < first) first = t;
       if (t > last) last = t;
       const age = nowMs - t;
-      if (age >= 0 && age < 28 * DAY) recent += 1;
-      else if (age >= 28 * DAY && age < 56 * DAY) previous += 1;
+      if (age >= 0 && age < T) recent += 1;
+      else if (age >= T && age < 2 * T) previous += 1;
     }
   }
   const top = mostCommon(causes);
@@ -217,12 +237,14 @@ function summarize(list, nowMs) {
     verified,
     firstSeen: Number.isFinite(first) ? new Date(first).toISOString() : null,
     lastSeen: Number.isFinite(last) ? new Date(last).toISOString() : null,
-    trend: { recent, previous },
+    trend: { recent, previous, days: trendDays },
     category: category || null,
     categoryLabel: category ? taxonomy.categoryLabel(category) : null,
     cause: cause || null,
     causeLabel: category && cause ? taxonomy.causeLabel(category, cause) : null,
     causeShare: list.length ? topCount / list.length : 0,
+    // Tỉ lệ câu chưa phân loại được (nhãn Khác): cao thì không đo được độ tập trung nguyên nhân
+    unlabelledShare: list.length ? unlabelled / list.length : 0,
     owner: category ? taxonomy.categoryOwner(category) : null,
     products: [...products.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, n]) => ({ name, count: n })),
     sources: [...sources.entries()].sort((a, b) => b[1] - a[1]).map(([name, n]) => ({ name, count: n }))
@@ -251,6 +273,8 @@ const painKey = (groupKey, phraseKey) => `${groupKey}::${phraseKey}`;
  */
 function findPainPoints(items, opts = {}) {
   const nowMs = opts.now != null ? new Date(opts.now).getTime() : Date.now();
+  // Độ dài kỳ so xu hướng (kỳ gần nhất so với kỳ liền trước): theo nhịp của kho
+  const trendDays = Math.max(28, Number(opts.trendDays) || 28);
   const countable = items.filter(metrics.isCountable);
   const groupOf = buildGrouper(countable);
 
@@ -354,7 +378,9 @@ function findPainPoints(items, opts = {}) {
       if ((zA != null && zA < Z_SIDE) || (zB != null && zB < Z_SIDE)) continue;
       const customers = new Set(docs.map(customerOf));
       const days = new Set(docs.map(dayOf).filter((d) => d != null));
-      if (customers.size < MIN_CUSTOMERS || days.size < MIN_DAYS) continue;
+      // Dòng không có ngày không chứng minh được là dồn vào một ngày: mỗi dòng tính như một ngày chưa biết
+      const undated = docs.filter((f) => f.timeInferred).length;
+      if (customers.size < MIN_CUSTOMERS || days.size + undated < MIN_DAYS) continue;
       candidates.push({ key: k, label: mostCommon(surfaces.get(k)), docs, y1, y0, yA, yB, z, zA, zB, lift, spread: sp, len: k.split(' ').length });
     }
     // Mạnh trước; cùng độ mạnh thì cụm dài trước (nghĩa trọn hơn)
@@ -400,11 +426,20 @@ function findPainPoints(items, opts = {}) {
 
     const covered = new Set();
     const painPoints = [];
+    const groupUnlabelled = n1 ? g.negatives.filter((f) => !f.category || f.category === 'Other').length / n1 : 0;
     for (const p of chosen) {
       const list = [...p.docSet];
-      const s = summarize(list, nowMs);
-      // Cả shop: phải dồn vào MỘT nguyên nhân (giao chậm, shop im lặng...)
-      if (s.causeShare < (mode === 'shop' ? SHOP_CAUSE_SHARE : GROUP_CAUSE_SHARE)) continue;
+      const s = summarize(list, nowMs, trendDays);
+      // Cả shop: phải dồn vào MỘT nguyên nhân (giao chậm, shop im lặng...).
+      // Một mảng: quá nửa câu chưa được phân loại (nhãn "Khác", thường do lớp luật khi
+      // hết hạn mức mô hình) thì không đo được độ tập trung nguyên nhân; vẫn giữ điểm
+      // đau và ghi "chưa rõ nguyên nhân" thay vì bỏ đi chuyện khách lặp lại rõ nhất.
+      // Chỉ khi CẢ mảng chủ yếu chưa phân loại (bộ gán nhãn không đọc ra), không phải
+      // vì riêng cụm này nhiều câu "Khác" (mảng đã gán nhãn tốt thì cụm đó là cụm yếu)
+      const unlabelled = s.unlabelledShare >= 0.5 && groupUnlabelled >= 0.5;
+      if (mode === 'shop' || !unlabelled) {
+        if (s.causeShare < (mode === 'shop' ? SHOP_CAUSE_SHARE : GROUP_CAUSE_SHARE)) continue;
+      }
       for (const d of list) covered.add(d);
       const point = {
         key: painKey(g.key, p.key),

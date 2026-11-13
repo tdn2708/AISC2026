@@ -21,7 +21,7 @@ import { upFirst } from '../../lib/format';
  * không tô). Màn mở đầu của trang vẫn là phép trừ ở sổ đối chiếu.
  */
 
-const SOURCE = { alert: 'Cảnh báo', live: 'Livestream', orders: 'Đơn hàng', review: 'Duyệt phản hồi', data: 'Dữ liệu' };
+const SOURCE = { alert: 'Cảnh báo', pain: 'Điểm đau', live: 'Livestream', orders: 'Đơn hàng', review: 'Duyệt phản hồi', data: 'Dữ liệu' };
 
 /** Mã cảnh báo có dạng Nhóm|Nguyên nhân|Sản phẩm|Khu vực|ngày; lấy tên sản phẩm (nếu có) để mở đúng mảng ở tab điểm đau */
 const painLink = (alertId) => {

@@ -2400,6 +2400,126 @@ testAsync('Live: nối lại phiên mô phỏng đã quá trần thì dừng nga
   });
 }
 
+// ------------------------------------------------------------------
+// Nhịp phân tích theo mật độ dữ liệu (services/cadence.js)
+// ------------------------------------------------------------------
+{
+  const cadence = require('../services/cadence');
+  const DAY = 86400000;
+  const NOW = Date.UTC(2026, 10, 1);
+  const mk = (ageDays) => ({ timestamp: new Date(NOW - ageDays * DAY).toISOString(), trust: { weight: 1 } });
+
+  test('Nhịp: kho dày giữ đúng 7 ngày so với 28 ngày như cũ', () => {
+    const items = Array.from({ length: 2800 }, (_, i) => mk((i % 56) + 0.5));
+    const c = cadence.analysisCadence(items, NOW);
+    assert.strictEqual(c.windowDays, 7);
+    assert.strictEqual(c.baselineDays, 28);
+    assert.strictEqual(c.trendSpanDays, 28);
+    assert.strictEqual(c.adaptive, false);
+  });
+
+  test('Nhịp: kho thưa trải nhiều năm tự giãn cửa sổ cho đủ câu', () => {
+    // Mỗi tuần một câu, 4 năm: 7 ngày chỉ có 1 câu
+    const items = Array.from({ length: 208 }, (_, i) => mk(i * 7 + 1));
+    const c = cadence.analysisCadence(items, NOW);
+    assert.ok(c.windowDays > 7, 'phải giãn ra');
+    assert.ok(c.windowSample >= cadence.MIN_WINDOW || c.windowDays === cadence.LADDER[cadence.LADDER.length - 1]);
+    assert.strictEqual(c.baselineDays, c.windowDays * cadence.BASE_RATIO);
+  });
+
+  test('Nhịp: kho rỗng hoặc toàn câu không được tính vẫn trả 7 ngày, không lỗi', () => {
+    assert.strictEqual(cadence.analysisCadence([], NOW).windowDays, 7);
+    assert.strictEqual(cadence.analysisCadence([{ timestamp: 'x', trust: { weight: 0 } }], NOW).windowDays, 7);
+    assert.strictEqual(cadence.analysisCadence([mk(1), mk(2)], NOW).windowDays, 7);
+  });
+
+  test('Nhịp: phản hồi ở tương lai không được đếm', () => {
+    const items = Array.from({ length: 500 }, () => mk(-3));
+    assert.strictEqual(cadence.analysisCadence(items, NOW).windowSample, 0);
+  });
+
+  test('Nhịp: khoảng ngày bằng chữ', () => {
+    assert.strictEqual(cadence.spanWords(7), '7 ngày');
+    assert.strictEqual(cadence.spanWords(180), '6 tháng');
+    assert.strictEqual(cadence.spanWords(720), '24 tháng');
+  });
+
+  test('Xu hướng: ô dài hơn một tháng ghi tháng/năm, không trùng nhãn', () => {
+    const m = require('../services/metrics');
+    const s = m.weightedTimeSeries([], 14, new Date(NOW), 720);
+    assert.strictEqual(new Set(s.map((x) => x.name)).size, 14);
+    assert.ok(/^\d{2}\/\d{4}$/.test(s[0].name));
+    assert.ok(s[0].days > 31);
+    const d = m.weightedTimeSeries([], 14, new Date(NOW), 28);
+    assert.ok(/^\d{2}\/\d{2}$/.test(d[0].name));
+  });
+
+  test('Hồ sơ: số ngày đã trôi tính theo đồng hồ thật, nền trước theo nhịp kho', () => {
+    const caseFile = require('../services/case_file');
+    // Kho thưa: đánh giá mới nhất cách lúc mở hồ sơ 9 ngày
+    const items = Array.from({ length: 60 }, (_, i) => ({ ...mk(9 + i * 3), sentiment: 'Negative', text: 'bị lỗi', productCategory: 'x' }));
+    const c = { groupKey: 'shop', phraseKeys: ['bị lỗi'], createdAt: new Date(NOW - 10 * DAY) };
+    const e = caseFile.caseEffect(items, c, new Date(NOW), 7, 180);
+    assert.strictEqual(e.status, 'done');
+    assert.ok(e.before.n > 0, 'nền trước phải có câu');
+    assert.strictEqual(e.beforeDays, 180);
+  });
+}
+
+// ------------------------------------------------------------------
+// Dữ liệu mới bất kỳ: chữ có dấu, dòng không ngày, gán nhãn bằng luật
+// ------------------------------------------------------------------
+{
+  const pain = require('../services/pain_points');
+  const ai = require('../services/ai_analyzer');
+  const alertEngine = require('../services/alert_engine');
+  const m = require('../services/metrics');
+
+  test('Điểm đau: chữ có dấu không bị coi là từ hư vì trùng dạng bỏ dấu (ố/ở, bàn/bạn, máy/mấy)', () => {
+    const keys = (t) => [...pain.gramsOf({ originalText: t }).keys()];
+    assert.ok(keys('ốp bị ố vàng').includes('ố vàng'));
+    assert.ok(keys('bàn phím bị liệt').includes('bàn phím'));
+    assert.ok(keys('máy kêu to quá').includes('máy kêu'));
+    // từ hư có dấu vẫn bị chặn ở mép cụm
+    assert.ok(!keys('giao hàng đến chậm').some((k) => k.startsWith('đến ')));
+    // gõ không dấu: vẫn so danh sách bỏ dấu
+    assert.ok(!keys('o day giao cham').includes('o day'));
+  });
+
+  test('Lớp luật: câu không có từ khóa dùng số sao; 1 đến 2 sao thắng từ khen yếu', () => {
+    assert.strictEqual(ai.classifyByRulesFallback('ốp bị ố vàng', 1).sentiment, 'Negative');
+    assert.strictEqual(ai.classifyByRulesFallback('nem xep lun nhanh', 2).sentiment, 'Negative');
+    assert.strictEqual(ai.classifyByRulesFallback('dày dặn', 5).sentiment, 'Positive');
+    // câu chê kèm 5 sao vẫn là chê
+    assert.strictEqual(ai.classifyByRulesFallback('giao hàng chậm quá', 5).sentiment, 'Negative');
+    // không có số sao: như cũ
+    assert.strictEqual(ai.classifyByRulesFallback('ốp bị ố vàng').sentiment, 'Neutral');
+  });
+
+  test('Dòng nạp không có ngày không tạo đột biến và không vào biểu đồ thời gian', () => {
+    const NOW = Date.UTC(2026, 10, 1);
+    const base = (i, extra) => ({ _id: String(i), timestamp: new Date(NOW - (i % 50) * 86400000).toISOString(), trust: { weight: 1, canTriggerHighAlert: true }, category: 'Other', sentiment: 'Positive', ...extra });
+    const items = Array.from({ length: 600 }, (_, i) => base(i));
+    // 80 khiếu nại không ngày, mang ngày nạp = NOW
+    for (let i = 0; i < 80; i++) items.push(base(1000 + i, { timestamp: new Date(NOW).toISOString(), timeInferred: true, category: 'ProductQuality', subCategory: 'TechnicalDefect', sentiment: 'Negative', author: 'k' + i }));
+    const r = alertEngine.detectAlerts(items, { now: new Date(NOW) });
+    assert.strictEqual(r.alerts.length, 0, 'không được báo đột biến từ dòng không ngày');
+    const series = m.weightedTimeSeries(items, 14, new Date(NOW), 28);
+    assert.strictEqual(series.reduce((s, x) => s + x.complaints, 0), 0);
+  });
+
+  test('Nạp file: khóa chống trùng phân biệt hai khách cùng câu, nạp lại cùng dòng thì trùng', () => {
+    const { dedupKey } = require('../services/ingest');
+    const d = (o) => ({ source: 'Khác', productName: 'X', author: 'Nguyễn V. A.', timestamp: new Date(Date.UTC(2026, 0, 1)), originalText: 'hàng tốt', collectedVia: 'import', ...o });
+    assert.notStrictEqual(dedupKey(d({ customerId: 'c1' })), dedupKey(d({ customerId: 'c2' })));
+    assert.notStrictEqual(dedupKey(d({ importRef: 'f#1' })), dedupKey(d({ importRef: 'f#2' })));
+    assert.strictEqual(dedupKey(d({ importRef: 'f#1' })), dedupKey(d({ importRef: 'f#1' })));
+    // nguồn khác (thu thập sàn) giữ nguyên khóa cũ
+    const old = { source: 'Tiki', productName: 'X', author: 'A', timestamp: new Date(Date.UTC(2026, 0, 1)), originalText: 'ok' };
+    assert.strictEqual(dedupKey(old), dedupKey({ ...old, customerId: 'zz' }));
+  });
+}
+
 (async () => {
   for (const t of asyncTests) {
     try {

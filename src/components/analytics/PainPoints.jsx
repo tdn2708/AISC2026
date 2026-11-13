@@ -4,7 +4,7 @@ import axios from 'axios';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import FilterBar from '../FilterBar';
 import { GlassPanel, PanelHeader, EmptyState, Button, Badge, Skeleton } from '../ui';
-import { buildQuery, fmtInt, fmtPct, fmtDate } from '../../lib/format';
+import { buildQuery, fmtInt, fmtPct, fmtDate, spanWords } from '../../lib/format';
 import { readStorage, writeStorage } from '../../lib/storage';
 import { useDataVersion } from '../../lib/dataVersion';
 import { BarGrow, STAGGER_STEP, useReducedMotion } from '../motion';
@@ -19,13 +19,14 @@ import { BarGrow, STAGGER_STEP, useReducedMotion } from '../motion';
  * Mỗi điểm đau mở được một hồ sơ xử lý (/cases).
  */
 
-/** Xu hướng 4 tuần gần nhất so với 4 tuần trước, bằng chữ */
-const trendWords = ({ recent, previous }) => {
+/** Xu hướng kỳ gần nhất so với kỳ liền trước, bằng chữ. Độ dài kỳ theo nhịp của kho (`days`, kho dày 28 ngày) */
+const trendWords = ({ recent, previous, days = 28 }) => {
   if (recent + previous < 3) return null;
-  if (previous === 0) return `${fmtInt(recent)} câu trong 4 tuần gần nhất, 4 tuần trước không có`;
+  const k = days === 28 ? '4 tuần' : spanWords(days);
+  if (previous === 0) return `${fmtInt(recent)} câu trong ${k} gần nhất, ${k} trước không có`;
   const rel = (recent - previous) / previous;
-  if (Math.abs(rel) < 0.1) return `4 tuần gần nhất ${fmtInt(recent)} câu, gần bằng 4 tuần trước`;
-  return `4 tuần gần nhất ${fmtInt(recent)} câu, ${rel > 0 ? 'nhiều' : 'ít'} hơn 4 tuần trước (${fmtInt(previous)})`;
+  if (Math.abs(rel) < 0.1) return `${k} gần nhất ${fmtInt(recent)} câu, gần bằng ${k} trước`;
+  return `${k} gần nhất ${fmtInt(recent)} câu, ${rel > 0 ? 'nhiều' : 'ít'} hơn ${k} trước (${fmtInt(previous)})`;
 };
 
 const GroupRow = ({ g, active, max, onClick, index }) => {

@@ -19,10 +19,11 @@
 const metrics = require('./metrics');
 const { shownName } = require('./ingest');
 const alertEngine = require('./alert_engine');
+const { spanWords } = require('./cadence');
 const taxonomy = require('./taxonomy');
 const playbook = require('./playbook');
 const retrieval = require('./retrieval');
-const { applyFilters, scopeTransactions, ctxNow } = require('./analysis_context');
+const { applyFilters, scopeTransactions, ctxNow, cadenceOf } = require('./analysis_context');
 
 const pct = (n) => `${(n * 100).toFixed(1).replace('.', ',')}%`;
 const num = (n) => new Intl.NumberFormat('vi-VN').format(n);
@@ -38,7 +39,7 @@ const TOOLS = {
     description: 'Chỉ số tổng quan: số phản hồi, WCR, tỉ trọng tiêu cực, sức khỏe dữ liệu',
     run(ctx, args = {}) {
       const items = applyFilters(ctx.items, args.filters || {}, ctx.asOf);
-      const cards = metrics.buildMetricCards(items, scopeTransactions(ctx.transactions, args.filters || {}, ctx.asOf).length, ctxNow(ctx));
+      const cards = metrics.buildMetricCards(items, scopeTransactions(ctx.transactions, args.filters || {}, ctx.asOf).length, ctxNow(ctx), cadenceOf(ctx));
       const valid = items.filter(metrics.isCountable);
 
       const facts = [
@@ -61,7 +62,7 @@ const TOOLS = {
       }
 
       facts.push(`Tỉ trọng phản hồi tiêu cực: ${cards.shareOfNegative.display} (mẫu số: tổng phản hồi hợp lệ theo trọng số)`);
-      facts.push(`Tốc độ tăng phản hồi tiêu cực 7 ngày so với nền 28 ngày: ${cards.negativeVelocity.display}`);
+      facts.push(`${cards.negativeVelocity.label}: ${cards.negativeVelocity.display}`);
 
       return { title: 'Chỉ số tổng quan', facts };
     }
@@ -123,18 +124,20 @@ const TOOLS = {
       const items = applyFilters(ctx.items, scopeFilters, ctx.asOf);
 
       const windowDays =
-        time === 'Today' ? 1 : time === 'This Week' ? 7 : time === 'This Month' ? 30 : undefined;
+        time === 'Today' ? 1 : time === 'This Week' ? 7 : time === 'This Month' ? 30 : cadenceOf(ctx).windowDays;
+      const baselineDays = time ? undefined : cadenceOf(ctx).baselineDays;
 
       const result = alertEngine.detectAlerts(items, {
         transactionCount: ctx.transactionCount,
         transactions: scopeTransactions(ctx.transactions, scopeFilters, ctx.asOf),
         windowDays,
+        baselineDays,
         now: ctx.asOf || undefined
       });
 
       const facts = [
         `Số cảnh báo đang mở: ${result.alerts.length}`,
-        `Cửa sổ hiện tại ${result.alerts[0] ? result.alerts[0].windowDays : windowDays || 7} ngày, so với đường nền 28 ngày trên toàn bộ lịch sử`,
+        `Cửa sổ hiện tại ${spanWords(windowDays)}, so với đường nền ${spanWords(baselineDays || 28)} (cửa sổ chọn theo mật độ dữ liệu của kho)`,
         `Đã kiểm định ${result.diagnostics.combosTested} tổ hợp, ${result.diagnostics.survivedFdr} vượt qua hiệu chỉnh đa kiểm định Benjamini-Hochberg (FDR ${result.diagnostics.fdrLevel})`
       ];
 
@@ -177,6 +180,8 @@ const TOOLS = {
       const result = alertEngine.detectAlerts(items, {
         transactionCount: ctx.transactionCount,
         transactions: scopeTransactions(ctx.transactions, { ...(args.filters || {}), time: undefined }, ctx.asOf),
+        windowDays: cadenceOf(ctx).windowDays,
+        baselineDays: cadenceOf(ctx).baselineDays,
         now: ctx.asOf || undefined
       });
 
@@ -267,7 +272,7 @@ const TOOLS = {
     description: 'Chuỗi thời gian số khiếu nại và phản hồi tích cực',
     run(ctx, args = {}) {
       const items = applyFilters(ctx.items, args.filters || {}, ctx.asOf);
-      const series = metrics.weightedTimeSeries(items, 14, ctxNow(ctx), args.spanDays || 28);
+      const series = metrics.weightedTimeSeries(items, 14, ctxNow(ctx), args.spanDays || cadenceOf(ctx).trendSpanDays || 28);
 
       const nonEmpty = series.filter((s) => s.total > 0);
       if (!nonEmpty.length) return { title: 'Diễn biến theo thời gian', facts: ['Không có dữ liệu trong khoảng thời gian này.'] };

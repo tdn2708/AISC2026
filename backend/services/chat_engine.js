@@ -474,7 +474,7 @@ function suggestedQuestions(ctx) {
   const alertEngine = require('./alert_engine');
 
   try {
-    const result = alertEngine.detectAlerts(ctx.items, { transactionCount: ctx.transactionCount, transactions: ctx.transactions, now: ctx.asOf || undefined });
+    const result = alertEngine.detectAlerts(ctx.items, { transactionCount: ctx.transactionCount, transactions: ctx.transactions, now: ctx.asOf || undefined, windowDays: ctx.cadence?.windowDays, baselineDays: ctx.cadence?.baselineDays });
     if (result.alerts.length > 0) {
       const top = result.alerts[0];
       suggestions.push(`Vì sao ${require('./wording').issueTitle(top.categoryLabel, top.causeLabel)} lại bị cảnh báo?`);

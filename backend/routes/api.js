@@ -4,7 +4,8 @@ const router = express.Router();
 const { scrapeShopeeReviews } = require('../services/scraper');
 const { generateRiskAlertsBatch, classifyByRulesFallback } = require('../services/ai_analyzer');
 const { findDecision } = require('../services/decision_match');
-const { getContext, invalidate, isRefreshing, patchServing, applyFilters, scopeTransactions, ctxNow, applyHumanLabels, applyReviewLabel } = require('../services/analysis_context');
+const { getContext, invalidate, isRefreshing, patchServing, applyFilters, scopeTransactions, ctxNow, cadenceOf, timeBounds, applyHumanLabels, applyReviewLabel } = require('../services/analysis_context');
+const { spanWords: spanWordsOf } = require('../services/cadence');
 const trustLayer = require('../services/trust_layer');
 const alertEngine = require('../services/alert_engine');
 const metrics = require('../services/metrics');
@@ -81,7 +82,10 @@ function detectAlertsCached(ctx, query, opts = {}) {
       // mẫu số WCR: giao dịch cùng phạm vi lọc, đếm trong đúng cửa sổ của từng cảnh báo
       transactions: scopeTransactions(ctx.transactions, { ...query, time: undefined }, ctx.asOf),
       now: ctx.asOf || undefined,
-      ...opts
+      ...opts,
+      // Cửa sổ theo nhịp của kho (services/cadence.js), trừ khi gọi chỉ định rõ
+      windowDays: opts.windowDays ?? cadenceOf(ctx).windowDays,
+      baselineDays: opts.baselineDays ?? cadenceOf(ctx).baselineDays
     })
   );
 }
@@ -213,14 +217,12 @@ router.get('/feedbacks', wrap(async (req, res) => {
   }
 
   if (req.query.view === 'negative') {
-    let latest = 0;
-    for (const f of items) {
-      const t = new Date(f.timestamp).getTime();
-      if (t > latest) latest = t;
-    }
+    // Mốc và nhịp CỦA CẢ KHO (không phải phản hồi mới nhất trong phạm vi lọc), để
+    // "kỳ gần nhất" ở trang Phân tích trùng với trang Tổng quan khi lọc một sản phẩm
     return res.json({
       total: items.length,
-      anchor: latest ? new Date(latest).toISOString() : null,
+      anchor: ctxNow(ctx).toISOString(),
+      cadence: cadenceOf(ctx),
       items: items.filter((f) => f.sentiment === 'Negative').map(slimItem)
     });
   }
@@ -294,16 +296,19 @@ router.get('/stats', wrap(async (req, res) => {
 
   // Mẫu số WCR: giao dịch CÙNG phạm vi lọc (thời gian, sản phẩm, vùng) với phản hồi
   const scopedTxns = scopeTransactions(ctx.transactions, req.query, ctx.asOf);
-  const cards = metrics.buildMetricCards(items, scopedTxns.length, ctxNow(ctx));
+  const cadence = cadenceOf(ctx);
+  const cards = metrics.buildMetricCards(items, scopedTxns.length, ctxNow(ctx), cadence);
 
   res.json({
     ...cards,
     // So sánh hai kỳ liền nhau, để thẻ chỉ số nói được "đang tốt lên hay
     // xấu đi" thay vì chỉ đưa ra một con số trần trụi.
-    comparison: metrics.periodComparison(items, scopedTxns, ctxNow(ctx)),
+    comparison: metrics.periodComparison(items, scopedTxns, ctxNow(ctx), cadence.windowDays),
+    // Nhịp phân tích của kho: giao diện ghi đúng "6 tháng gần nhất" thay vì viết cứng "7 ngày"
+    cadence,
     dataHealthScore: ctx.funnel.dataHealthScore,
     // Thành phần bằng chứng của từng thẻ: đối soát được / người duyệt / suy luận
-    evidence: metrics.buildEvidence(items, ctxNow(ctx)),
+    evidence: metrics.buildEvidence(items, ctxNow(ctx), 5, cadence.windowDays),
     healthComponents: ctx.funnel.components,
     // Giữ các khóa cũ để giao diện chưa nâng cấp không vỡ
     totalComplaints: items.filter((f) => metrics.isCountable(f) && metrics.isComplaint(f)).length,
@@ -420,9 +425,21 @@ router.get('/trend', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const items = applyFilters(ctx.items, req.query, ctx.asOf);
   // Có trần: ?buckets=1e9 từng bắt máy chủ cấp phát một tỉ ô thời gian
-  const spanDays = clampInt(req.query.spanDays, 28, 1, 3650);
-  const buckets = clampInt(req.query.buckets, 14, 1, 366);
-  res.json(metrics.weightedTimeSeries(items, buckets, ctxNow(ctx), spanDays));
+  // Khung biểu đồ: có bộ lọc thời gian thì đúng khoảng lọc; không thì theo nhịp
+  // của kho (kho dày 28 ngày, kho thưa giãn ra để biểu đồ không trống)
+  const cad = cadenceOf(ctx);
+  const b = timeBounds(Array.isArray(req.query.time) ? req.query.time[0] : req.query.time, ctxNow(ctx));
+  let end = ctxNow(ctx);
+  let defSpan = cad.trendSpanDays || 28;
+  if (b) {
+    const endMs = b.end != null ? Math.min(b.end, end.getTime()) : end.getTime();
+    end = new Date(endMs);
+    defSpan = Math.max(1, Math.ceil((endMs - b.start) / 86400000));
+  }
+  const spanDays = clampInt(req.query.spanDays, defSpan, 1, 3650);
+  // Mỗi ô ít nhất một ngày, để nhãn ngày không trùng nhau
+  const buckets = Math.min(clampInt(req.query.buckets, cad.trendBuckets || 14, 1, 366), spanDays);
+  res.json(metrics.weightedTimeSeries(items, buckets, end, spanDays));
 }));
 
 /**
@@ -638,6 +655,35 @@ router.get('/inbox', wrap(async (req, res) => {
       why: 'Hai mô hình bất đồng, thường là câu mỉa mai. Nhãn của người sẽ thay nhãn máy ngay.',
       actions: [{ label: 'Duyệt nhãn', to: '/trust?tab=audit' }]
     });
+  }
+
+  // ---------- Điểm đau chưa có hồ sơ ----------
+  // Chuyện khách lặp lại (services/pain_points.js) là việc làm được ngay cả khi
+  // không có đột biến nào: kho thật lấy từ sàn thường không có cảnh báo mà vẫn có
+  // hàng chục khách than cùng một lỗi. Đưa tối đa 3 chuyện nhiều khách nhất chưa
+  // có hồ sơ đang mở; đang tăng (kỳ gần nhất hơn hẳn kỳ trước) thì mức gấp.
+  try {
+    const pain = painPointsFor(ctx, {});
+    const open = new Set((await req.db.collection('cases').find({ status: 'open' }, { projection: { key: 1 } }).toArray()).map((c) => c.key));
+    const list = [...pain.groups, ...(pain.shop ? [pain.shop] : [])]
+      .flatMap((g) => g.painPoints.map((p) => ({ g, p })))
+      .filter(({ p }) => !open.has(p.key))
+      .sort((a, b) => b.p.customers - a.p.customers || b.p.weight - a.p.weight)
+      .slice(0, 3);
+    const span = spanWordsOf(cadenceOf(ctx).windowDays);
+    for (const { g, p } of list) {
+      const { recent = 0, previous = 0 } = p.trend || {};
+      const rising = recent >= 3 && recent >= previous * 1.5 + 1;
+      const where = g.scope === 'shop' ? 'nhiều mảng hàng' : g.label;
+      items.push({
+        id: `pain|${p.key}`, source: 'pain', severity: rising ? 'high' : 'medium', score: p.customers,
+        title: `${p.customers.toLocaleString('vi-VN')} khách than "${p.phrase}" ở ${where}`,
+        why: `${p.causeLabel ? `Phần lớn là ${p.causeLabel.toLowerCase()}. ` : ''}${rising ? `Đang tăng: ${recent} câu trong ${span} gần nhất, kỳ trước ${previous}. ` : ''}Chưa có hồ sơ xử lý.`,
+        actions: [{ label: 'Mở hồ sơ', to: `/cases?key=${encodeURIComponent(p.key)}` }]
+      });
+    }
+  } catch (e) {
+    console.warn('[INBOX] Bỏ qua phần điểm đau:', e.message);
   }
 
   // ---------- Độ tươi của dữ liệu thật ----------
@@ -1261,7 +1307,7 @@ router.get('/decisions', wrap(async (req, res) => {
         productName: d.snapshot?.productName ?? a?.productName ?? (product && product !== '*' ? product : null),
         severity: d.snapshot?.severity ?? a?.severity ?? null,
         // Tỉ lệ khiếu nại đúng phạm vi cảnh báo, 7 ngày trước và sau khi chấp nhận
-        effect: insights.decisionEffect(ctx.items, d, ctxNow(ctx))
+        effect: insights.decisionEffect(ctx.items, d, new Date(), 7, cadenceOf(ctx).windowDays)
       };
     })
   });
@@ -1655,8 +1701,10 @@ function painPointsFor(ctx, query) {
   const key = `${ctx.dbName}|${ctx.computedAt}|${JSON.stringify(filters)}`;
   const hit = painMemo.get(key);
   if (hit) return hit;
+  // Không lọc gì: dùng bản worker đã tính sẵn cùng ngữ cảnh
+  if (ctx.painDefault && !Object.values(filters).some((v) => v && v !== 'All')) return ctx.painDefault;
   const items = applyFilters(ctx.items, filters, ctx.asOf);
-  const result = painPoints.findPainPoints(items, { now: ctxNow(ctx) });
+  const result = painPoints.findPainPoints(items, { now: ctxNow(ctx), trendDays: cadenceOf(ctx).windowDays });
   painMemo.set(key, result);
   if (painMemo.size > 12) painMemo.delete(painMemo.keys().next().value);
   return result;
@@ -1678,7 +1726,7 @@ router.get('/cases/preview', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const { group, point } = findPoint(painPointsFor(ctx, req.query), req.query.key);
   if (!point) return res.status(404).json({ error: 'Không còn điểm đau này với bộ lọc hiện tại' });
-  res.json(caseFile.buildCaseFile(point, group, { items: ctx.items, transactions: ctx.transactions, now: ctxNow(ctx) }));
+  res.json(caseFile.buildCaseFile(point, group, { items: ctx.items, transactions: ctx.transactions, now: ctxNow(ctx), cadence: cadenceOf(ctx) }));
 }));
 
 const clipText = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : null);
@@ -1696,9 +1744,10 @@ const cleanTasks = (tasks) => (Array.isArray(tasks) ? tasks.slice(0, 20) : []).m
 router.get('/cases', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const list = await req.db.collection('cases').find({}).sort({ createdAt: -1 }).limit(50).toArray();
-  const now = ctxNow(ctx);
+  // Đồng hồ thật cho số ngày đã trôi; nền trước theo nhịp của kho
+  const now = new Date();
   res.json({
-    cases: list.map((c) => ({ ...c, _id: String(c._id), effect: caseFile.caseEffect(ctx.items, c, now) })),
+    cases: list.map((c) => ({ ...c, _id: String(c._id), effect: caseFile.caseEffect(ctx.items, c, now, 7, cadenceOf(ctx).windowDays) })),
     asOf: ctx.asOf || null
   });
 }));
@@ -1783,13 +1832,20 @@ router.post('/import/feedbacks', wrap(async (req, res) => {
       orderId: typeof r?.orderId === 'string' && r.orderId.trim() ? r.orderId.trim().slice(0, 60) : null,
       productName: typeof r?.product === 'string' && r.product.trim() ? r.product.trim().slice(0, 200) : null,
       productCategory: typeof r?.category === 'string' && r.category.trim() ? r.category.trim().slice(0, 80) : null,
-      timestamp: ts && !Number.isNaN(ts.getTime()) && ts.getTime() <= Date.now() + 86400000 ? ts : new Date()
+      timestamp: ts && !Number.isNaN(ts.getTime()) && ts.getTime() <= Date.now() + 86400000 ? ts : new Date(),
+      timeInferred: !(ts && !Number.isNaN(ts.getTime()) && ts.getTime() <= Date.now() + 86400000),
+      // Mã khách ẩn danh: băm tên/mã khách trong file kèm muối bí mật (không có muối thì null)
+      customerId: customer ? pseudoCustomerId('import', customer) : null
     });
+    const last = raw[raw.length - 1];
+    // Dòng không có ngày mang chung ngày nạp: nhớ vị trí trong file để khóa chống
+    // trùng phân biệt được hai khách khác nhau cùng viết một câu
+    if (last.timeInferred) last.importRef = `${fileName || 'file'}#${r?.row ?? i}`;
   });
   if (!raw.length) return res.json({ inserted: 0, duplicates: 0, skipped });
 
   // Bỏ dòng đã nạp TRƯỚC khi gán nhãn: nạp lại cả file không tốn thêm lượt gọi mô hình
-  const keyOf = (r) => dedupKey({ source: r.source, productName: r.productName || 'Sản phẩm chưa ghi tên', author: r.author, timestamp: r.timestamp, originalText: normalizer.maskPII(r.rawText).text });
+  const keyOf = (r) => dedupKey({ source: r.source, productName: r.productName || 'Sản phẩm chưa ghi tên', author: r.author, customerId: r.customerId, importRef: r.importRef, collectedVia: 'import', timestamp: r.timestamp, originalText: normalizer.maskPII(r.rawText).text });
   const keys = raw.map(keyOf);
   const seen = new Set((await req.db.collection('feedbacks').find({ dedupKey: { $in: keys } }, { projection: { dedupKey: 1 } }).toArray()).map((d) => d.dedupKey));
   const fresh = raw.filter((r, i) => !seen.has(keys[i]));
@@ -1798,9 +1854,8 @@ router.post('/import/feedbacks', wrap(async (req, res) => {
 
   const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating })));
   const docs = buildFeedbackDocs(raw, ai, { collectedVia: 'import', sourceUrl: fileName ? `file:${fileName}` : null, fallbackProduct: 'Sản phẩm chưa ghi tên' });
-  // Mã khách ẩn danh: băm tên/mã khách trong file kèm muối bí mật (không có muối thì không lưu)
   docs.forEach((d, i) => {
-    d.customerId = raw[i].customerKey ? pseudoCustomerId('import', raw[i].customerKey) : null;
+    d.customerId = raw[i].customerId;
   });
   const { inserted, duplicates } = await saveFeedbacks(req.db, docs);
   if (inserted > 0) {

@@ -116,13 +116,12 @@ function auditSummary(allLabels) {
  * Đây là so sánh trước / sau, không phải thí nghiệm có đối chứng: con số
  * cho biết tình hình có cải thiện không, chưa chứng minh nhờ kế hoạch.
  */
-function decisionEffect(items, decision, now, windowDays = 7) {
+function decisionEffect(items, decision, now, windowDays = 7, beforeDays = windowDays) {
   if (decision.decision !== 'ACCEPTED' || !decision.at) return null;
   const [cat, cause, product] = String(decision.alertId).split('|');
   if (!cat) return null;
   const at = new Date(decision.at).getTime();
   const nowMs = new Date(now).getTime();
-  const span = windowDays * DAY;
   const scope = items.filter((f) => metrics.isCountable(f) && (!product || product === '*' || f.productName === product));
   const isHit = (f) => f.category === cat && (!cause || cause === '*' || f.subCategory === cause);
 
@@ -135,8 +134,10 @@ function decisionEffect(items, decision, now, windowDays = 7) {
     return { n: list.length, hits, rate: list.length ? hits / list.length : null };
   };
 
-  const before = windowStats(at - span, at);
-  const afterEnd = Math.min(at + span, nowMs);
+  // Nền trước dài ít nhất bằng nhịp của kho (kho thưa); `now` là đồng hồ thật
+  const beforeSpan = Math.max(windowDays, beforeDays || windowDays) * DAY;
+  const before = windowStats(at - beforeSpan, at);
+  const afterEnd = Math.max(at, Math.min(at + beforeSpan, nowMs));
   const after = windowStats(at, afterEnd);
   const daysElapsed = Math.max(0, (nowMs - at) / DAY);
   const status = daysElapsed >= windowDays ? 'done' : 'pending';
@@ -145,7 +146,9 @@ function decisionEffect(items, decision, now, windowDays = 7) {
     daysLeft: status === 'pending' ? Math.ceil(windowDays - daysElapsed) : 0,
     before,
     after,
-    change: before.rate != null && after.rate != null ? after.rate - before.rate : null
+    change: before.rate != null && after.rate != null ? after.rate - before.rate : null,
+    beforeDays: Math.round(beforeSpan / DAY),
+    enough: before.n >= 30 && after.n >= 30
   };
 }
 

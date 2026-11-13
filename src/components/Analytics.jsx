@@ -9,7 +9,7 @@ import Segments from './Segments';
 import Compare from './analytics/Compare';
 import PainPoints from './analytics/PainPoints';
 import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat, ChartTooltip, Skeleton } from './ui';
-import { buildQuery, fmtInt, fmtPct, fmtGrowth, fmtDate } from '../lib/format';
+import { buildQuery, fmtInt, fmtPct, fmtGrowth, fmtDate, upFirst, spanWords, cadenceWords } from '../lib/format';
 import { useDataVersion } from '../lib/dataVersion';
 import { AXIS_TICK } from '../lib/tokens';
 import { BarGrow, MOTION, EASE, STAGGER_STEP, useReducedMotion, PageEnter } from './motion';
@@ -24,7 +24,8 @@ import { BarGrow, MOTION, EASE, STAGGER_STEP, useReducedMotion, PageEnter } from
  * đều đếm được bằng tay nếu muốn kiểm tra.
  */
 
-const DAYS = 28;
+/** Biểu đồ diễn biến: kho dày 28 ô một ngày; kho thưa (nhịp giãn) 14 ô dài hơn */
+const MAX_POINTS = 28;
 const AXIS = AXIS_TICK;
 
 const dayKey = (d) => d.toISOString().slice(0, 10);
@@ -43,8 +44,26 @@ const anchorOf = (items) => {
   return latest && latest < Date.now() ? latest : Date.now();
 };
 
+/** Đếm khiếu nại theo ô thời gian trong `spanDays` ngày tính tới mốc (mỗi ô `step` ngày) */
+const bucketSeries = (items, anchor, spanDays, step) => {
+  const n = Math.ceil(spanDays / step);
+  const end = anchor;
+  const start = end - n * step * 86400000;
+  const out = Array.from({ length: n }, (_, i) => {
+    const c = new Date(start + (i + 0.5) * step * 86400000);
+    const mm = String(c.getMonth() + 1).padStart(2, '0');
+    return { name: step >= 31 ? `${mm}/${c.getFullYear()}` : `${String(c.getDate()).padStart(2, '0')}/${mm}`, value: 0 };
+  });
+  for (const f of items) {
+    const t = new Date(f.timestamp).getTime();
+    if (!(t > start && t <= end)) continue;
+    out[Math.min(n - 1, Math.floor((t - start) / (step * 86400000)))].value += 1;
+  }
+  return out;
+};
+
 /** Đếm khiếu nại theo ngày trong 28 ngày tính tới mốc */
-const dailySeries = (items, anchor) => {
+const dailySeries = (items, anchor, DAYS = 28) => {
   const now = new Date(anchor);
   const days = Array.from({ length: DAYS }, (_, i) => {
     const d = new Date(now);
@@ -62,10 +81,10 @@ const dailySeries = (items, anchor) => {
   return days;
 };
 
-/** So 7 ngày gần nhất với 7 ngày liền trước */
-const weekDelta = (items, anchor) => {
+/** So kỳ gần nhất (theo nhịp của kho, kho dày là 7 ngày) với kỳ liền trước */
+const weekDelta = (items, anchor, windowDays = 7) => {
   const now = anchor;
-  const W = 7 * 86400000;
+  const W = windowDays * 86400000;
   let cur = 0;
   let prev = 0;
   for (const f of items) {
@@ -114,7 +133,7 @@ const RankBar = ({ label, count, max, total, active, onClick, tone = 'bg-neg', i
 
 const TrendTip = ({ active, payload, label }) =>
   active && payload?.length ? (
-    <ChartTooltip title={`Ngày ${label}`}>
+    <ChartTooltip title={`Kỳ ${label}`}>
       <p><span className="font-semibold text-ink-hi">{fmtInt(payload[0].value)}</span> khiếu nại</p>
     </ChartTooltip>
   ) : null;
@@ -123,6 +142,7 @@ const RootCauses = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [anchorAt, setAnchorAt] = useState(null);
+  const [cadence, setCadence] = useState(null);
   const dataVersion = useDataVersion();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -154,6 +174,7 @@ const RootCauses = () => {
         // trang này chỉ phân tích khiếu nại, không cần tải cả kho
         setItems(Array.isArray(r.data?.items) ? r.data.items : []);
         setAnchorAt(r.data?.anchor ? new Date(r.data.anchor).getTime() : null);
+        setCadence(r.data?.cadence || null);
         setError(null);
       })
       .catch(() => setError('Không tải được dữ liệu phân tích. Tải lại trang, hoặc kiểm tra mạng.'))
@@ -168,8 +189,12 @@ const RootCauses = () => {
   const causes = useMemo(() => groupCount(scoped, (f) => f.subCategory, (f) => f.causeLabel || f.subCategory), [scoped]);
   const products = useMemo(() => groupCount(scoped, (f) => f.productName, (f) => f.productName).slice(0, 5), [scoped]);
   const anchor = useMemo(() => (anchorAt && anchorAt < Date.now() ? anchorAt : anchorOf(items)), [anchorAt, items]);
-  const series = useMemo(() => dailySeries(scoped, anchor), [scoped, anchor]);
-  const delta = useMemo(() => weekDelta(scoped, anchor), [scoped, anchor]);
+  const cw = cadenceWords(cadence);
+  // Khung biểu đồ: kho dày 28 ngày từng ngày; kho thưa trải hết độ dài nền, 14 ô
+  const spanDays = cadence?.adaptive ? cadence.trendSpanDays : MAX_POINTS;
+  const step = cadence?.adaptive ? Math.ceil(spanDays / 14) : 1;
+  const series = useMemo(() => (step === 1 ? dailySeries(scoped, anchor, spanDays) : bucketSeries(scoped, anchor, spanDays, step)), [scoped, anchor, spanDays, step]);
+  const delta = useMemo(() => weekDelta(scoped, anchor, cw.windowDays), [scoped, anchor, cw.windowDays]);
   const samples = useMemo(
     () => [...scoped].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 4),
     [scoped]
@@ -239,14 +264,14 @@ const RootCauses = () => {
               <Stat label="Khiếu nại" value={fmtInt(current.count)} />
               <Stat label="Tỉ trọng trong mọi khiếu nại" value={fmtPct(current.count / complaints.length, 1)} />
               <div className="min-w-0 border-t border-line pt-3">
-                <p className="text-sm text-ink-mid">7 ngày gần nhất</p>
+                <p className="text-sm text-ink-mid">{upFirst(cw.win)} gần nhất</p>
                 <p className="mt-1 text-metric font-semibold tracking-tight text-ink-hi tabular-nums">{fmtInt(delta.cur)}</p>
                 {delta.rel == null ? (
-                  <p className="mt-0.5 text-xs text-ink-lo">Chưa đủ dữ liệu tuần trước để so</p>
+                  <p className="mt-0.5 text-xs text-ink-lo">Chưa đủ dữ liệu {cw.prev} để so</p>
                 ) : (
                   <p className={`mt-0.5 inline-flex items-center gap-1 text-xs font-semibold ${up ? 'text-crit' : 'text-ok'}`}>
                     {up ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
-                    {fmtGrowth(delta.rel)} <span className="font-normal text-ink-lo">so với {fmtInt(delta.prev)} ở tuần trước</span>
+                    {fmtGrowth(delta.rel)} <span className="font-normal text-ink-lo">so với {fmtInt(delta.prev)} ở {cw.prev}</span>
                   </p>
                 )}
               </div>
@@ -268,7 +293,7 @@ const RootCauses = () => {
             </GlassPanel>
 
             <GlassPanel tone="strong" className="p-5">
-              <PanelHeader title={`Khiếu nại mỗi ngày, ${DAYS} ngày gần nhất`} />
+              <PanelHeader title={step === 1 ? `Khiếu nại mỗi ngày, ${spanDays} ngày gần nhất` : `Khiếu nại mỗi ${step} ngày, ${spanWords(spanDays)} gần nhất`} />
               <div className="h-[230px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={series} margin={{ top: 6, right: 6, left: -6, bottom: 0 }}>

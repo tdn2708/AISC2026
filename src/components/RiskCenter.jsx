@@ -246,7 +246,7 @@ const Effect = ({ e }) => {
   if (e.status === 'pending') {
     return <span className="text-ink-lo">Còn {e.daysLeft} ngày nữa mới đủ 7 ngày để đo</span>;
   }
-  if (e.change == null) return <span className="text-ink-lo">Chưa đủ phản hồi để so</span>;
+  if (e.change == null || e.enough === false) return <span className="text-ink-lo">Chưa đủ phản hồi để so (trước {fmtInt(e.before?.n)}, sau {fmtInt(e.after?.n)})</span>;
   const better = e.change < -0.0005;
   const worse = e.change > 0.0005;
   const Icon = better ? ArrowDownRight : worse ? ArrowUpRight : Minus;
@@ -288,7 +288,7 @@ const DecisionLog = () => {
   return (
     <GlassPanel tone="strong" className="overflow-hidden">
       <p className="border-b border-line-soft px-5 py-3 text-xs leading-relaxed text-ink-lo">
-        Hiệu quả là tỉ lệ khiếu nại đúng vấn đề đó trong 7 ngày trước và 7 ngày sau khi chấp nhận. Đây là so sánh trước và sau,
+        Hiệu quả là tỉ lệ khiếu nại đúng vấn đề đó trước và sau khi chấp nhận (sau: 7 ngày; trước: cùng độ dài, kho ít phản hồi thì lấy dài hơn để đủ câu, cần ít nhất 30 phản hồi mỗi bên). Đây là so sánh trước và sau,
         chưa loại trừ các yếu tố khác như mùa vụ hay khuyến mãi.
       </p>
       <div className="paper mx-3 mb-3"><div className="table-responsive">

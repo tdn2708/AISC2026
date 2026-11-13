@@ -16,7 +16,7 @@
 
 const stats = require('./statistics');
 const taxonomy = require('./taxonomy');
-const { isCountable, isComplaint } = require('./metrics');
+const { isCountable, isComplaint, timeOf } = require('./metrics');
 
 const DEFAULT_WINDOW_DAYS = 7;
 const DEFAULT_BASELINE_DAYS = 28;
@@ -32,7 +32,7 @@ function splitWindows(feedbacks, now, windowDays, baselineDays) {
   const current = [];
   const baseline = [];
   for (const f of feedbacks) {
-    const t = new Date(f.timestamp).getTime();
+    const t = timeOf(f);
     if (t > nowMs) continue;
     if (t >= windowStart) current.push(f);
     else if (t >= baselineStart) baseline.push(f);
@@ -394,8 +394,8 @@ function detectSustainedDrift(feedbacks, options = {}) {
   const byCategory = new Map();
   for (const f of feedbacks) {
     if (!isCountable(f)) continue;
-    const t = new Date(f.timestamp).getTime();
-    if (t < startMs || t > nowMs) continue;
+    const t = timeOf(f);
+    if (!(t >= startMs && t <= nowMs)) continue;
     const idx = bucketOf(t);
     const w = baseWeight(f);
     const cat = taxonomy.normalizeCategory(f.category);

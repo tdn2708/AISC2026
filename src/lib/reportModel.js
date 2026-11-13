@@ -280,6 +280,8 @@ export function buildReportModel({ data, filters = {}, workspaceLabel, generated
     findings,
     kpis,
     comparisonLabel: cmp?.label || null,
+    // Độ dài kỳ so sánh theo nhịp của kho (/stats cadence): kho dày 7 ngày, kho thưa dài hơn
+    windowLabel: stats.cadence?.windowLabel || '7 ngày',
     approximation: cmp?.approximation || null,
     titles,
     trend: { series, peak, peakLabel: recs[0]?.alert?.causeLabel || recs[0]?.alert?.categoryLabel || null },

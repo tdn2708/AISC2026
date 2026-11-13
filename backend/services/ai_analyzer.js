@@ -124,7 +124,7 @@ function taxonomyPrompt() {
  * Ở đây thay bằng phân loại theo luật từ khóa — kém chính xác hơn mô
  * hình, nhưng mọi nhãn đều truy vết được về từ khóa đã khớp.
  */
-function classifyByRulesFallback(text) {
+function classifyByRulesFallback(text, rating = null) {
   const norm = normalize(text);
   const matches = taxonomy.classifyByRules(norm.normalized);
 
@@ -142,6 +142,17 @@ function classifyByRulesFallback(text) {
   let sentiment = 'Neutral';
   if (matches.length > 0 || NEGATIVE_MARKERS.test(normText) || NEGATED_POSITIVE.test(normText)) sentiment = 'Negative';
   if (POSITIVE_MARKERS.test(normText) && matches.length === 0 && !NEGATED_POSITIVE.test(normText)) sentiment = 'Positive';
+  // Câu không có từ khóa nào ("ốp bị ố vàng", "nệm xẹp lún") mà khách cho 1 đến 2
+  // sao thì vẫn là lời chê; 4 đến 5 sao là lời khen. Chỉ lấp chỗ Trung tính: từ
+  // khóa trong câu vẫn thắng số sao (câu chê kèm 5 sao vẫn là chê). Lớp luật chạy
+  // khi hết hạn mức mô hình, nên file nạp lớn không bị xếp hết vào Trung tính.
+  const stars = Number(rating);
+  if (Number.isFinite(stars) && rating != null) {
+    if (sentiment === 'Neutral' && stars >= 4) sentiment = 'Positive';
+    // 1 đến 2 sao: từ khen lớp luật bắt được thường là chữ yếu ("nhanh" trong "xẹp lún
+    // nhanh quá"), nên số sao thắng. Chiều ngược lại thì không: câu chê kèm 5 sao vẫn là chê.
+    else if (stars <= 2 && sentiment !== 'Negative') sentiment = 'Negative';
+  }
 
   const top = matches[0];
   return {
@@ -288,7 +299,7 @@ function rateLimitDelayMs(error) {
 async function analyzeChunkWithLLM(items) {
   const reviewsArray = items.map((r) => r.text);
   if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) {
-    return reviewsArray.map((text) => classifyByRulesFallback(text));
+    return items.map((r) => classifyByRulesFallback(r.text, r.rating));
   }
 
   // Che PII TRƯỚC khi văn bản rời khỏi tiến trình. Bản cũ gửi nguyên văn
@@ -389,7 +400,7 @@ ${JSON.stringify(maskedReviews)}`;
     }
   }
   // Lớp luật, KHÔNG phải nhãn ngẫu nhiên
-  return reviewsArray.map((text) => classifyByRulesFallback(text));
+  return items.map((r) => classifyByRulesFallback(r.text, r.rating));
 }
 
 /**
