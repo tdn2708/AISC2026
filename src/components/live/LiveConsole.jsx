@@ -1,10 +1,10 @@
-import React, { memo, useDeferredValue, useEffect, useState } from 'react';
+import React, { memo, useDeferredValue, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { ArrowLeft, Square, RotateCw, Package, MessageSquarePlus, Download, ChevronDown } from 'lucide-react';
-import { Button, Badge, Drawer, EmptyState, GlassPanel, Tabs, Modal, Popover, MenuItem, SELECTED, Skeleton } from '../ui';
+import { Button, Badge, Drawer, EmptyState, Tabs, Modal, Popover, MenuItem, SELECTED, Skeleton } from '../ui';
 import { fmtInt, fmtPct } from '../../lib/format';
 import useLiveSession, { liveUrl } from '../../hooks/useLiveSession';
-import { StatusPill, PLATFORM_LABEL, duration } from './shared';
+import { StatusPill, PLATFORM_LABEL, durationMs } from './shared';
 import QueueRaw from './Queue';
 import Feed from './Feed';
 import OrdersRaw from './Orders';
@@ -38,13 +38,19 @@ const Products = memo(ProductsRaw, slice((s) => s?.products));
 const ActionCoach = memo(ActionCoachRaw, slice((s) => s?.actions, (s) => s?.totals, (s) => s?.products));
 
 /** Đồng hồ thời lượng phiên: tự đếm từng giây, không kéo cả bảng điều khiển vẽ lại */
-const Elapsed = ({ session }) => {
+// K7-02 lỗi 25: dùng session.liveMs của máy chủ (thời lượng live KHÔNG tính lúc bị ngắt); thiếu hoặc null thì ẩn câu, không đoán từ startedAt
+const Elapsed = ({ session, live }) => {
   const [, setTick] = useState(0);
+  const base = useRef({ ms: null, at: 0 });
+  if (base.current.ms !== session.liveMs) base.current = { ms: session.liveMs, at: Date.now() };
   useEffect(() => {
+    if (!live) return undefined;
     const t = setInterval(() => setTick((x) => x + 1), 1000);
     return () => clearInterval(t);
-  }, []);
-  return session.startedAt ? `, đã live ${duration(session.startedAt, session.endedAt)}` : null;
+  }, [live]);
+  if (session.liveMs == null || !Number.isFinite(session.liveMs)) return null;
+  const extra = live ? Date.now() - base.current.at : 0;
+  return `, đã live ${durationMs(session.liveMs + extra)}`;
 };
 
 const Kpi = ({ label, value, sub, tone }) => (
@@ -161,7 +167,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
           </div>
           <p className="mt-1 text-sm text-ink-mid">
             {PLATFORM_LABEL[session.platform]}{session.target && session.platform !== 'simulator' ? `, @${String(session.target).replace(/^@/, '')}` : ''}
-            <Elapsed session={session} />
+            <Elapsed session={session} live={live} />
             {connection === 'reconnecting' && live && <span className="text-high">, đang nối lại luồng dữ liệu</span>}
           </p>
           {session.error && <p role="alert" className="mt-1.5 text-sm text-crit">{session.error}</p>}
@@ -198,7 +204,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
 
       {/* Sản phẩm đang giới thiệu */}
       {products.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 scroll-hint-x overflow-x-auto pb-1">
           <span className="shrink-0 text-xs text-ink-lo">Đang giới thiệu</span>
           {products.map((p) => {
             const active = p.id === (stats.currentProductId || session.currentProductId);

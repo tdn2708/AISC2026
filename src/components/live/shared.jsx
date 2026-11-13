@@ -56,7 +56,13 @@ export const clock = (ts) => {
 
 export const duration = (from, to) => {
   if (!from) return '—';
-  const s = Math.max(0, Math.round(((to ? new Date(to) : new Date()) - new Date(from)) / 1000));
+  return durationMs((to ? new Date(to) : new Date()) - new Date(from));
+};
+
+/** Thời lượng từ số mili giây (không biết thì "—") */
+export const durationMs = (ms) => {
+  if (ms == null || !Number.isFinite(ms)) return '—';
+  const s = Math.max(0, Math.round(ms / 1000));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;

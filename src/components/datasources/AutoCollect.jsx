@@ -18,6 +18,9 @@ import { reportRefreshing } from '../../lib/dataVersion';
 
 const REAL = { headers: { 'X-Workspace': 'real' } };
 
+// K7-02 lỗi 25: máy chủ có thể ghi tên biến môi trường trong ngoặc, "(AUTO_COLLECT=0)"; chủ shop không cần thấy tên biến
+const noVar = (t) => String(t).replace(/\s*\([A-Z][A-Z0-9_]*(=[^)]*)?\)/g, '');
+
 const AutoCollect = () => {
   const [s, setS] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -100,9 +103,9 @@ const AutoCollect = () => {
               Đang {s.stage.step}{s.stage.product ? `: ${s.stage.product}` : ` (${s.stage.query})`}
             </p>
           )}
-          {s.reason && <p className="mt-1 max-w-[70ch] text-sm text-high">{s.reason}</p>}
+          {s.reason && <p className="mt-1 max-w-[70ch] text-sm text-high">{noVar(s.reason)}</p>}
           {s.lastError && !s.running && <p className="mt-1 max-w-[70ch] text-sm text-high">{s.lastError}</p>}
-          {s.note && <p className="mt-1 max-w-[70ch] text-xs leading-relaxed text-ink-mid">{s.note}</p>}
+          {s.note && <p className="mt-1 max-w-[70ch] text-xs leading-relaxed text-ink-mid">{noVar(s.note)}</p>}
           <dl className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-ink-mid">
             {last && (
               <div className="flex gap-1">

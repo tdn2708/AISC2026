@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { Send, CircleCheck } from 'lucide-react';
 import { GlassPanel, PanelHeader, Button, Badge, EmptyState, Skeleton } from '../ui';
-import { fmtInt, fmtPct, fmtDec } from '../../lib/format';
+import { fmtInt, fmtRate, fmtDec } from '../../lib/format';
 import { EffectLine } from './ActionCoach';
 import { reportRefreshing } from '../../lib/dataVersion';
 import { clock } from './shared';
@@ -26,11 +26,15 @@ const Big = ({ label, value, sub, tone }) => (
   </div>
 );
 
-const Delta = ({ now, prev, fmt = fmtInt, pctMode }) => {
+// lowerIsBetter: chỉ số mà tăng là xấu (khiếu nại): tăng tô đỏ, giảm tô xanh
+const Delta = ({ now, prev, fmt = fmtInt, pctMode, lowerIsBetter = false }) => {
   if (prev == null || now == null) return <span className="text-ink-lo">Chưa so được</span>;
   const d = now - prev;
-  const txt = pctMode ? `${d >= 0 ? '+' : ''}${Math.round(d * 100)} điểm` : `${d >= 0 ? '+' : ''}${fmt(d)}`;
-  return <span className={d > 0 ? 'text-ok' : d < 0 ? 'text-crit' : 'text-ink-lo'}>{txt}</span>;
+  const pts = d * 100;
+  const txt = pctMode ? `${d >= 0 ? '+' : ''}${fmtDec(pts, Math.abs(pts) < 1 && pts !== 0 ? 1 : 0)} điểm` : `${d >= 0 ? '+' : ''}${fmt(d)}`;
+  const good = lowerIsBetter ? d < 0 : d > 0;
+  const bad = lowerIsBetter ? d > 0 : d < 0;
+  return <span className={good ? 'text-ok' : bad ? 'text-crit' : 'text-ink-lo'}>{txt}</span>;
 };
 
 const Funnel = ({ f }) => {
@@ -52,7 +56,7 @@ const Funnel = ({ f }) => {
               <span className="text-ink-hi">{label}</span>
               <span className="tabular-nums text-ink-hi">
                 {fmtInt(v)}
-                {prev ? <span className="ml-2 text-xs text-ink-lo">{fmtPct(v / prev, 0)} bước trước</span> : null}
+                {prev ? <span className="ml-2 text-xs text-ink-lo">{fmtRate(v / prev, 0)} bước trước</span> : null}
               </span>
             </div>
             <div className="mt-1 h-2 overflow-hidden rounded-full bg-raised">
@@ -99,7 +103,7 @@ const Report = ({ sessionId }) => {
       <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         <Big label="Doanh thu ước tính" value={money(r.revenue.estimated)} sub={`Từ ${fmtInt(t.byIntent.order)} lượt chốt trên bình luận, ${r.revenue.confirmed ? `đã lên đơn ${money(r.revenue.confirmed)}` : 'chưa lên đơn nào'}`} tone="ok" />
         <Big label="Doanh thu lỡ vì hết hàng" value={money(r.revenue.lostTotal)} sub={r.revenue.lost.length ? `${r.revenue.lost.length} biến thể hết khi khách vẫn chốt` : 'Không có'} tone={r.revenue.lostTotal ? 'crit' : undefined} />
-        <Big label="Khách hỏi được trả lời" value={r.response.answeredShare != null ? fmtPct(r.response.answeredShare, 0) : '—'} sub={r.response.medianWaitMin != null ? `Chờ trung vị ${r.response.medianWaitMin.toFixed(1).replace('.', ',')} phút` : `${fmtInt(r.response.askedPeople)} lượt hỏi`} />
+        <Big label="Khách hỏi được trả lời" value={r.response.answeredShare != null ? fmtRate(r.response.answeredShare, 0) : '—'} sub={r.response.medianWaitMin != null ? `Chờ trung vị ${r.response.medianWaitMin.toFixed(1).replace('.', ',')} phút` : `${fmtInt(r.response.askedPeople)} lượt hỏi`} />
         <Big label="Khiếu nại" value={fmtInt(r.complaints.total)} sub={r.complaints.byCategory[0] ? `Nhiều nhất: ${r.complaints.byCategory[0].label.toLowerCase()}` : 'Không có'} tone={r.complaints.total ? 'crit' : undefined} />
       </div>
 
@@ -128,7 +132,7 @@ const Report = ({ sessionId }) => {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <GlassPanel tone="strong" className="reveal p-4 sm:p-5">
-          <PanelHeader title="Phễu phiên live"subtitle="Rơi rụng nhiều nhất ở bước nào" />
+          <PanelHeader title="Phễu phiên live" subtitle="Rơi rụng nhiều nhất ở bước nào" />
           <Funnel f={r.funnel} />
         </GlassPanel>
 
@@ -235,20 +239,20 @@ const Report = ({ sessionId }) => {
                 {[
                   ['Bình luận', t.comments, prev.comments],
                   ['Lượt chốt', t.byIntent.order, prev.orders],
-                  ['Khiếu nại', t.byIntent.complaint, prev.complaints],
+                  ['Khiếu nại', t.byIntent.complaint, prev.complaints, null, true],
                   ['Doanh thu ước tính', r.revenue.estimated, prev.revenue, money]
-                ].map(([label, a, b, f]) => (
+                ].map(([label, a, b, f, lowerIsBetter]) => (
                   <tr key={label} className="border-b border-line-soft last:border-0">
                     <td className="py-2 text-ink-hi">{label}</td>
                     <td className="py-2 text-right tabular-nums">{f ? f(a) : fmtInt(a)}</td>
                     <td className="py-2 text-right tabular-nums text-ink-mid">{b == null ? '—' : f ? f(b) : fmtInt(b)}</td>
-                    <td className="py-2 text-right tabular-nums"><Delta now={a} prev={b} fmt={f || fmtInt} /></td>
+                    <td className="py-2 text-right tabular-nums"><Delta now={a} prev={b} fmt={f || fmtInt} lowerIsBetter={lowerIsBetter} /></td>
                   </tr>
                 ))}
                 <tr>
                   <td className="py-2 text-ink-hi">Khách hỏi được trả lời</td>
-                  <td className="py-2 text-right tabular-nums">{r.response.answeredShare != null ? fmtPct(r.response.answeredShare, 0) : '—'}</td>
-                  <td className="py-2 text-right tabular-nums text-ink-mid">{prev.answeredShare != null ? fmtPct(prev.answeredShare, 0) : '—'}</td>
+                  <td className="py-2 text-right tabular-nums">{r.response.answeredShare != null ? fmtRate(r.response.answeredShare, 0) : '—'}</td>
+                  <td className="py-2 text-right tabular-nums text-ink-mid">{prev.answeredShare != null ? fmtRate(prev.answeredShare, 0) : '—'}</td>
                   <td className="py-2 text-right tabular-nums"><Delta now={r.response.answeredShare} prev={prev.answeredShare} pctMode /></td>
                 </tr>
               </tbody>
@@ -260,7 +264,7 @@ const Report = ({ sessionId }) => {
       <GlassPanel tone="strong" className="reveal p-4 sm:p-5">
         <PanelHeader title="Sản phẩm" subtitle="Hỏi nhiều mà chốt ít là dấu hiệu khách còn do dự về giá, size hoặc chất lượng" />
         {r.products.length ? (
-          <div className="paper"><div className="-mx-1 overflow-x-auto">
+          <div className="paper"><div className="-mx-1 scroll-hint-x overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead><tr className="border-b border-line-soft text-xs text-ink-lo"><th className="px-1 py-2 font-medium">Sản phẩm</th><th className="px-1 py-2 text-right font-medium">Câu hỏi</th><th className="px-1 py-2 text-right font-medium">Lượt chốt</th><th className="px-1 py-2 text-right font-medium">Số lượng</th><th className="px-1 py-2 text-right font-medium">Chốt trên hỏi</th><th className="px-1 py-2 text-right font-medium">Khiếu nại</th></tr></thead>
               <tbody>
@@ -270,7 +274,7 @@ const Report = ({ sessionId }) => {
                     <td className="px-1 py-2 text-right tabular-nums">{fmtInt(p.questions)}</td>
                     <td className="px-1 py-2 text-right tabular-nums">{fmtInt(p.orders)}</td>
                     <td className="px-1 py-2 text-right tabular-nums">{fmtInt(p.quantity)}</td>
-                    <td className="px-1 py-2 text-right tabular-nums">{p.conversion != null ? fmtPct(p.conversion, 0) : '—'}</td>
+                    <td className="px-1 py-2 text-right tabular-nums">{p.conversion != null ? fmtRate(p.conversion, 0) : '—'}</td>
                     <td className={`px-1 py-2 text-right tabular-nums ${p.complaints ? 'text-crit' : ''}`}>{fmtInt(p.complaints)}</td>
                   </tr>
                 ))}

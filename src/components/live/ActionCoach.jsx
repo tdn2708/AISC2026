@@ -35,7 +35,8 @@ const num = (x) => (x == null ? '—' : x.toFixed(1).replace('.', ','));
 export const EffectLine = ({ effect }) => {
   if (!effect) return null;
   if (!effect.ready) return <span className="text-ink-lo">Đang đo hiệu quả, cần đủ 3 phút sau khi làm</span>;
-  const Icon = effect.better ? TrendingUp : effect.after === effect.before ? Minus : TrendingDown;
+  // K7-02 lỗi 25: mũi tên theo chiều của SỐ (giảm từ 5,0 xuống 0,0 là mũi tên xuống), màu theo tốt hay không
+  const Icon = effect.after === effect.before ? Minus : effect.after > effect.before ? TrendingUp : TrendingDown;
   return (
     <span className={`inline-flex items-center gap-1 ${effect.better ? 'text-ok' : 'text-ink-mid'}`}>
       <Icon size={13} aria-hidden="true" />

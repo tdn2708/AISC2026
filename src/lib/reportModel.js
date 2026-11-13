@@ -94,7 +94,9 @@ export function buildReportModel({ data, filters = {}, workspaceLabel, generated
   const minSample = cmp ? Math.min(cmp.current?.valid ?? 0, cmp.previous?.valid ?? 0) : 0;
 
   // ---------- Thông tin chung ----------
-  const range = trend.length ? `${trend[0].name} đến ${trend[trend.length - 1].name}` : null;
+  // Không suy khoảng ngày từ biểu đồ xu hướng (14 ô x 2 ngày, chỉ là 28 ngày gần nhất, không phải ngày đầu/cuối của dữ liệu trong bộ lọc).
+  // Chờ backend trả minTs/maxTs trong /stats thì điền ở đây; trong lúc đó bìa chỉ ghi kỳ lọc và ngày lập.
+  const range = null;
   const meta = {
     title: 'Báo cáo phản hồi khách hàng',
     period: periodLabel(filters.time),
