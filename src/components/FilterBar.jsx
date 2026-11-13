@@ -149,7 +149,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
   const filteredProducts = productOptions.filter((p) => foldVi(p).includes(productNeedle));
 
   return (
-    <div ref={barRef} className="cx glass-chrome filterbar sticky top-[calc(var(--topbar-h,5rem)+0.5rem)] z-[110] mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-surf px-4 py-3">
+    <div ref={barRef} className="cx glass-chrome filterbar md:sticky md:top-[calc(var(--topbar-h,5rem)+0.5rem)] z-[110] mb-6 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-surf px-4 py-3">
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Khoảng thời gian">
         <span className="eyebrow mr-1 hidden lg:inline">Thời gian</span>
         {TIME_PRESETS.map((t) => (

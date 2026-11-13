@@ -7,11 +7,11 @@ import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
  * khi số thật về, tờ sổ thay vào mà bố cục không nhảy. Dùng ở Tổng quan và
  * Đăng nhập trong lúc chờ /trust/health.
  */
-const ROWS = ['w-40', 'w-28', 'w-32', 'w-36'];
+const ROWS = ['w-40', 'w-28', 'w-32', 'w-36', 'w-24'];
 
 /** flat: không viền, cho chỗ nằm trong khối kính (Tổng quan); mặc định giữ viền như ở Đăng nhập */
 const LedgerSkeleton = ({ className = '', flat = false }) => (
-  <SkeletonBlock label="Đang tải sổ đối chiếu" className={`${flat ? 'rounded-ctrl' : 'rounded-lg border border-line'} bg-(--sheet) px-5 pt-4 pb-5 ${className}`}>
+  <SkeletonBlock label="Đang tải sổ đối chiếu" className={`${flat ? 'rounded-ctrl' : 'rounded-lg border border-line'} bg-(--sheet) px-5 pt-4 pb-5 min-h-[27.75rem] ${className}`}>
     <span className="flex items-center justify-between gap-3 py-1">
       <Skeleton className="h-4 w-44" />
     </span>
@@ -28,6 +28,12 @@ const LedgerSkeleton = ({ className = '', flat = false }) => (
       <Skeleton className="h-8 w-28" />
     </span>
     <Skeleton className="mt-4 h-3 w-4/5" />
+    {/* K7-02 lỗi 15: thanh bằng chứng (đoạn "có chứng từ ... AI đoán") nằm cuối sổ thật; thiếu nó thì sổ thật cao hơn khung xương và kéo cả trang xuống */}
+    <span className="mt-4 block">
+      <Skeleton className="h-2 w-full" />
+      <Skeleton className="mt-2 h-3.5 w-11/12" />
+      <Skeleton className="mt-1.5 h-3.5 w-2/3" />
+    </span>
   </SkeletonBlock>
 );
 

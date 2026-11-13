@@ -86,6 +86,7 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
                   <span className="flex flex-col gap-2.5 py-1" aria-hidden="true">
                     <Skeleton className="h-6 w-[26ch] max-w-full" />
                     <Skeleton className="h-6 w-[17ch] max-w-full" />
+                    <Skeleton className="h-6 w-[20ch] max-w-full sm:hidden" />
                   </span>
                 </>
               )}

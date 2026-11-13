@@ -4,7 +4,8 @@ import { Check, CircleSlash, RotateCw } from 'lucide-react';
 import { Button } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { Pulse, prefersReducedMotion } from '../motion';
-import { SEV, upFirst } from './TodayInbox';
+import { SEV } from './TodayInbox';
+import { upFirst } from '../../lib/format';
 
 /**
  * VIỆC GẤP NHẤT — hai việc đầu của "Việc hôm nay", ngay dưới câu tóm tắt
@@ -72,11 +73,11 @@ const Row = ({ t, state, onAccept, onDismiss }) => {
   );
 };
 
-/** Khung xương đúng hình hai hàng việc, để nhận dữ liệu không nhảy bố cục */
+/** Khung xương đúng hình MỘT hàng việc (trường hợp thường gặp, K7-02 lỗi 15: hai hàng làm khối co lại ~120 px khi dữ liệu về chỉ có một việc), để nhận dữ liệu không nhảy bố cục */
 const UrgentSkeleton = () => (
   <SkeletonBlock as="ol" label="Đang gom việc gấp" className="list-none">
-    {[0, 1].map((i) => (
-      <li key={i} className="flex flex-col gap-2 border-b border-line-soft px-5 py-4 last:border-b-0 sm:px-8">
+    {[0].map((i) => (
+      <li key={i} className="flex min-h-[11.75rem] flex-col gap-2 border-b border-line-soft px-5 py-4 last:border-b-0 sm:min-h-0 sm:px-8">
         <Skeleton className="h-3.5 w-24" />
         <Skeleton className="h-4 w-3/4" />
         <Skeleton className="h-3.5 w-1/2" />
