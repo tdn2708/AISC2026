@@ -621,7 +621,7 @@ const generateRiskAlertsBatch = async (alerts) => {
     const rec = playbook.buildRecommendation(a);
     return {
       id: a.id,
-      issue: a.causeLabel ? `${a.categoryLabel} — ${a.causeLabel}` : a.categoryLabel,
+      issue: require('./wording').issueTitle(a.categoryLabel, a.causeLabel),
       riskLevel: (a.severity || 'Medium').toUpperCase(),
       insight: playbook.summarize(a),
       recommendations: rec.steps.map((s) => s.text)

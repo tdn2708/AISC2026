@@ -56,12 +56,21 @@ const MANUAL_GAP_MS = 30 * 60 * 1000;
 // Muối băm mã khách: nạp lúc khởi động từ biến môi trường hoặc database
 const { saltReady } = require('./pii_salt');
 
-/** Hết hạn thì bỏ qua, không chờ mãi. Việc bị bỏ dở vẫn có thể ghi sau; khóa chống trùng giữ dữ liệu sạch. */
-function withTimeout(promise, ms, what) {
+/**
+ * Hết hạn thì bỏ qua, không chờ mãi. Promise không tự dừng được, nên khi hết giờ hàm đặt
+ * `token.cancelled = true`: việc đang chạy phải kiểm cờ này trước mỗi lần ghi, để sản phẩm
+ * quá giờ không ghi vào kho sau khi lượt thu thập đã đi tiếp.
+ */
+function withTimeout(promise, ms, what, token = null) {
   let t;
   return Promise.race([
     promise,
-    new Promise((_, reject) => { t = setTimeout(() => reject(new Error(`${what} quá ${Math.round(ms / 1000)} giây`)), ms); })
+    new Promise((_, reject) => {
+      t = setTimeout(() => {
+        if (token) token.cancelled = true;
+        reject(new Error(`${what} quá ${Math.round(ms / 1000)} giây`));
+      }, ms);
+    })
   ]).finally(() => clearTimeout(t));
 }
 
@@ -132,6 +141,7 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, o
       seen.add(product.productId);
       totals.products += 1;
 
+      const token = { cancelled: false };
       const work = (async () => {
         let raw = [];
         try {
@@ -142,17 +152,20 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, o
           log(`[${query}] lỗi khi lấy đánh giá ${product.productId}: ${e.message}`);
           return;
         }
+        if (token.cancelled) return;
         totals.fetched += raw.length;
         if (!raw.length) return;
 
         // Kèm số sao; câu nghi mỉa mai được hỏi thêm mô hình thứ hai rồi bỏ phiếu
         stage(query, product, `gán nhãn ${raw.length} đánh giá`);
         const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating })));
+        if (token.cancelled) return;
         for (const a of ai) totals.byLabeller[a?.labelledBy || 'none'] = (totals.byLabeller[a?.labelledBy || 'none'] || 0) + 1;
         const docs = buildFeedbackDocs(raw, ai, { fallbackProduct: product.name, collectedVia: 'bulk', sourceUrl: product.url });
         for (const d of docs) d.productCategory = query;
 
         if (db) {
+          if (token.cancelled) return;
           stage(query, product, 'ghi vào kho');
           const { inserted, duplicates } = await saveFeedbacks(db, docs);
           totals.inserted += inserted;
@@ -165,7 +178,7 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, o
         }
       })();
       try {
-        await withTimeout(work, PRODUCT_BUDGET_MS, `Sản phẩm ${product.productId}`);
+        await withTimeout(work, PRODUCT_BUDGET_MS, `Sản phẩm ${product.productId}`, token);
       } catch (e) {
         totals.failed += 1;
         if (/quá \d+ giây/.test(e.message)) totals.timedOut += 1;
@@ -291,6 +304,7 @@ function startAutoCollect(db, { onDone } = {}) {
 }
 
 module.exports = {
+  withTimeout,
   DEFAULT_QUERIES,
   collectReal,
   collectorStatus,

@@ -107,7 +107,6 @@ TOPIC_LABEL.other = 'Câu hỏi khác';
 // Biến thể và số lượng
 // ------------------------------------------------------------------
 
-const SIZE_RE = /(?<![a-z0-9])(?:size|sz|sai)?\s*(xxxl|xxl|xl|xs|s|m|l|2xl|3xl|[3-4]\d)(?:\s*x?\s*(\d{1,2}))?(?![a-z0-9])/;
 const COLORS = ['đen', 'trắng', 'đỏ', 'xanh dương', 'xanh lá', 'xanh', 'hồng', 'be', 'kem', 'nâu', 'xám', 'vàng', 'tím', 'cam', 'ghi', 'bạc'];
 const COLOR_FOLDED = COLORS.map((c) => [c, fold(c)]);
 const QTY_RE = /(?<![a-z0-9])(?:x|lay|chot|mua|dat|order|cho (?:em|e|minh|m|chi|c|anh|a))\s*(\d{1,2})(?![0-9])|(?<![0-9])(\d{1,2})\s*(?:cai|chiec|bo|hop|doi|sp|san pham|cay|lo|chai|goi)(?![a-z])/;

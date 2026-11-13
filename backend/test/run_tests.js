@@ -1873,6 +1873,42 @@ test('Sổ đối chiếu: phản hồi chờ duyệt còn trọng số được
 }
 
 // ==================================================================
+// K7-02 lỗi 12: lỗi chữ (số kiểu Việt, nhãn vấn đề, tỉ lệ nhỏ)
+// ==================================================================
+{
+  test('Nhãn vấn đề trong câu tóm tắt: "Giao hàng: giao chậm", không còn dấu gạch nối', () => {
+    const a = {
+      type: 'SPIKE', categoryLabel: 'Giao hàng', causeLabel: 'Giao chậm', productName: 'Áo A', region: null,
+      baselineDays: 21, affectedCustomers: 30, evidenceCount: 12, excludedByTrust: 0,
+      statistics: { baselineRate: 0.05, currentRate: 0.12 }
+    };
+    const s = playbook.summarize(a);
+    assert.ok(s.startsWith('Giao hàng: giao chậm trên Áo A'), s);
+    assert.ok(!/Giao hàng - /.test(s));
+    const b = playbook.summarize({ ...a, causeLabel: 'Hư hỏng khi vận chuyển' });
+    assert.ok(b.startsWith('Giao hàng: hư hỏng khi vận chuyển'), b);
+    assert.ok(playbook.summarize({ ...a, causeLabel: null }).startsWith('Giao hàng trên Áo A'));
+  });
+
+  test('Tỉ lệ dưới 1% giữ hai chữ số, không thành "0,0%"', () => {
+    const { formatPct } = require('../services/recommender');
+    assert.strictEqual(formatPct(0.0004), '0,04%');
+    assert.strictEqual(formatPct(0.0099), '0,99%');
+    assert.strictEqual(formatPct(0.005), '0,50%');
+    assert.strictEqual(formatPct(0), '0,0%');
+    assert.strictEqual(formatPct(0.0523), '5,2%');
+    assert.strictEqual(formatPct(0.5, 0), '50%', 'số chữ số chỉ định rõ thì giữ nguyên');
+  });
+
+  test('Số trong báo cáo live in theo dấu chấm nghìn kiểu Việt', () => {
+    const { fmtVi } = require('../services/live/report');
+    assert.strictEqual(fmtVi(9691), '9.691');
+    assert.strictEqual(fmtVi(1647), '1.647');
+    assert.strictEqual(fmtVi(12), '12');
+  });
+}
+
+// ==================================================================
 // K7-02 lỗi 26: dọn backend (coverage chia 0, PII trong originalText, lỗi trả ra ngoài)
 // ==================================================================
 {
@@ -1902,6 +1938,37 @@ test('Sổ đối chiếu: phản hồi chờ duyệt còn trọng số được
     assert.strictEqual(errorResponse(Object.assign(new Error('x'), { type: 'entity.too.large', status: 413 })).message, 'Thân request vượt quá 2MB');
     assert.strictEqual(errorResponse(Object.assign(new Error('x'), { type: 'entity.parse.failed', status: 400 })).message, 'Thân request không phải JSON hợp lệ');
     assert.strictEqual(errorResponse(Object.assign(new Error('chi tiết nội bộ'), { status: 503 })).message, 'Lỗi máy chủ, vui lòng thử lại sau.');
+  });
+}
+
+// ==================================================================
+// K7-02 lỗi 25: thời lượng "đã live" không tính lúc phiên bị ngắt
+// ==================================================================
+{
+  const { liveDurationMs } = require('../services/live/hub');
+  const T = (iso) => new Date(iso);
+  const MIN = 60000;
+
+  test('Thời lượng live: phiên đang chạy = phần đã cộng dồn + đoạn hiện tại', () => {
+    const s = { startedAt: T('2026-11-11T12:00:00Z'), activeMs: 30 * MIN, segmentStartedAt: T('2026-11-12T08:00:00Z'), lastActiveAt: T('2026-11-12T08:10:00Z') };
+    const now = T('2026-11-12T08:20:00Z').getTime();
+    assert.strictEqual(liveDurationMs(s, { status: 'live' }, now), 50 * MIN);
+  });
+
+  test('Thời lượng live: phiên bị ngắt chỉ tính đến lần cuối còn hoạt động, không tính khoảng nghỉ', () => {
+    const s = { status: 'live', startedAt: T('2026-11-11T12:00:00Z'), activeMs: 0, segmentStartedAt: T('2026-11-11T12:00:00Z'), lastActiveAt: T('2026-11-11T13:30:00Z') };
+    const now = T('2026-11-14T00:00:00Z').getTime(); // đã nghỉ hơn hai ngày
+    assert.strictEqual(liveDurationMs(s, null, now), 90 * MIN);
+  });
+
+  test('Thời lượng live: phiên đã kết thúc lấy tổng cộng dồn; phiên cũ chưa có số cộng dồn lấy mốc đầu đến mốc cuối', () => {
+    assert.strictEqual(liveDurationMs({ status: 'ended', startedAt: T('2026-11-11T12:00:00Z'), endedAt: T('2026-11-11T13:00:00Z'), activeMs: 45 * MIN }, null, 0), 45 * MIN);
+    assert.strictEqual(liveDurationMs({ status: 'ended', startedAt: T('2026-11-11T12:00:00Z'), endedAt: T('2026-11-11T13:00:00Z') }, null, 0), 60 * MIN);
+  });
+
+  test('Thời lượng live: phiên cũ đang bị ngắt không có dữ liệu thì trả null thay vì đoán', () => {
+    assert.strictEqual(liveDurationMs({ status: 'live', startedAt: T('2026-11-08T12:00:00Z') }, null, Date.now()), null);
+    assert.strictEqual(liveDurationMs({ status: 'connecting' }, null, Date.now()), null);
   });
 }
 
@@ -2026,6 +2093,151 @@ testAsync('Live: nối lại phiên mô phỏng đã quá trần thì dừng nga
     assert.strictEqual(u.hostname, 'tiki.vn');
   });
 
+}
+
+{
+  const { ObjectId } = require('mongodb');
+
+  testAsync('Báo cáo live: đọc bình luận bằng cursor, không .toArray() cả phiên, kết quả giữ nguyên', async () => {
+    const hub = require('../services/live/hub');
+    const { buildReport } = require('../services/live/report');
+    const session = { _id: new ObjectId(), platform: 'simulator', simulated: true, products: [], startedAt: new Date('2026-11-11T12:00:00Z'), title: 'Thử', createdAt: new Date('2026-11-11T12:00:00Z') };
+    const texts = ['giá bao nhiêu shop', 'chốt 1 cái size M', 'đẹp quá', 'hi shop', 'giao hàng chậm quá shop ơi'];
+    const t0 = Date.parse('2026-11-11T12:00:00Z');
+    const docs = [];
+    for (let i = 0; i < 1000; i += 1) {
+      docs.push(hub.buildCommentDoc(session, { text: texts[i % 5], ts: new Date(t0 + i * 500), platformMsgId: `sim-1-a-${i}`, author: { handle: `khach${i % 300}`, platformUserId: `u${i % 300}` } }));
+    }
+    const calls = { toArray: 0, iterated: 0, projection: null };
+    const cur = (list, opts) => {
+      const c = {
+        sort() { return c; }, batchSize() { return c; }, limit() { return c; },
+        async next() { return null; },
+        async toArray() { calls.toArray += 1; return [...list]; },
+        async *[Symbol.asyncIterator]() { for (const d of list) { calls.iterated += 1; yield d; } }
+      };
+      if (opts && opts.projection) calls.projection = opts.projection;
+      return c;
+    };
+    const db = { collection: (name) => ({ find: (q, opts) => cur(name === 'live_comments' ? docs : [], opts) }) };
+    const r = await buildReport(db, session);
+    assert.strictEqual(calls.toArray, 0, 'không được .toArray() cả phiên');
+    assert.strictEqual(calls.iterated, 1000);
+    assert.strictEqual(calls.projection.piiTypes, 0, 'phải bỏ trường thừa như REPLAY_PROJECTION');
+    // Kết quả giống bản đọc bằng toArray trước khi sửa
+    assert.strictEqual(r.totals.comments, 1000);
+    assert.deepStrictEqual(r.funnel, { viewersPeak: null, commenters: 300, askers: 60, buyers: 60, confirmed: 0 });
+    assert.strictEqual(r.response.askedPeople, 200);
+    assert.strictEqual(r.response.answeredPeople, 0);
+    assert.strictEqual(r.complaints.total, 200);
+    assert.deepStrictEqual(r.complaints.byCategory.map((c) => [c.category, c.count]), [['Delivery', 200]]);
+    assert.deepStrictEqual(r.todo.map((t) => t.kind), ['orders', 'complaints', 'catalog', 'staffing', 'script']);
+  });
+
+  testAsync('Báo cáo live: số từ một nghìn trở lên in có dấu chấm nghìn trong việc cần làm', async () => {
+    const hub = require('../services/live/hub');
+    const { buildReport } = require('../services/live/report');
+    const session = { _id: new ObjectId(), platform: 'simulator', simulated: true, products: [], startedAt: new Date('2026-11-11T12:00:00Z'), title: 'Thử', createdAt: new Date('2026-11-11T12:00:00Z') };
+    const texts = ['chốt 1 cái size M', 'chốt 2 cái size L', 'giao hàng chậm quá shop ơi', 'hi shop', 'đẹp quá'];
+    const t0 = Date.parse('2026-11-11T12:00:00Z');
+    const docs = [];
+    for (let i = 0; i < 6000; i += 1) {
+      docs.push(hub.buildCommentDoc(session, { text: texts[i % 5], ts: new Date(t0 + i * 500), platformMsgId: `m-${i}`, author: { handle: `k${i % 900}`, platformUserId: `u${i % 900}` } }));
+    }
+    const cur = (list) => { const c = { sort() { return c; }, batchSize() { return c; }, limit() { return c; }, async next() { return null; }, async *[Symbol.asyncIterator]() { for (const d of list) yield d; } }; return c; };
+    const db = { collection: (name) => ({ find: () => cur(name === 'live_comments' ? docs : []) }) };
+    const r = await buildReport(db, session);
+    const titles = r.todo.map((t) => t.title).join(' | ');
+    assert.ok(/Lên đơn cho 2\.400 lượt/.test(titles), titles);
+    assert.ok(/Xử lý 1\.200 khiếu nại/.test(titles), titles);
+    assert.ok(!/\b\d{4,}\b/.test(titles), `không còn số dài không có dấu chấm: ${titles}`);
+  });
+
+  testAsync('Thu thập: sản phẩm quá giờ bị hủy thì không ghi vào kho sau khi lượt đã đi tiếp', async () => {
+    const { withTimeout } = require('../services/real_collector');
+    const wrote = [];
+    const token = { cancelled: false };
+    const work = (async () => {
+      await new Promise((r) => setTimeout(r, 60));
+      if (token.cancelled) return;
+      wrote.push('ghi');
+    })();
+    await assert.rejects(() => withTimeout(work, 15, 'Sản phẩm 1', token), /quá/);
+    assert.strictEqual(token.cancelled, true, 'hết giờ phải đặt cờ hủy');
+    await new Promise((r) => setTimeout(r, 90));
+    assert.deepStrictEqual(wrote, [], 'việc đã hủy không được ghi');
+  });
+
+  testAsync('Thu thập: việc xong đúng giờ thì không bị đánh dấu hủy', async () => {
+    const { withTimeout } = require('../services/real_collector');
+    const token = { cancelled: false };
+    const out = await withTimeout(Promise.resolve(42), 50, 'x', token);
+    assert.strictEqual(out, 42);
+    assert.strictEqual(token.cancelled, false);
+  });
+}
+
+{
+  const MIN = 60000;
+  // Database giả ghi lại các lần updateOne lên live_sessions
+  const recordingDb = () => {
+    const updates = [];
+    const { db } = fakeLiveDb(function* () {});
+    const base = db.collection();
+    return {
+      updates,
+      db: { collection: (name) => ({ ...base, updateOne: async (f, u) => { if (name === 'live_sessions') updates.push(u); return {}; } }) }
+    };
+  };
+
+  testAsync('Live: nối lại phiên chỉ cộng đoạn đã chạy trước đó, không cộng khoảng bị ngắt', async () => {
+    const hub = require('../services/live/hub');
+    const session = {
+      ...liveSimSession(), status: 'live',
+      startedAt: new Date('2026-11-11T12:00:00Z'), activeMs: 10 * MIN,
+      segmentStartedAt: new Date('2026-11-12T08:00:00Z'), lastActiveAt: new Date('2026-11-12T08:25:00Z')
+    };
+    const { db, updates } = recordingDb();
+    const r = new hub.Runtime(session, db, 'demo');
+    try {
+      await r.setStatus('live');
+      const set = updates[0].$set;
+      assert.strictEqual(set.activeMs, 35 * MIN, '10 phút cũ + đoạn trước khi bị ngắt (25 phút)');
+      assert.ok(set.segmentStartedAt instanceof Date && set.lastActiveAt instanceof Date);
+      assert.ok(Date.now() - set.segmentStartedAt.getTime() < 5000, 'đoạn mới bắt đầu từ bây giờ');
+    } finally {
+      r.dispose();
+    }
+  });
+
+  testAsync('Live: phiên cũ chưa có số cộng dồn thì ước tính đến bình luận cuối, không đến lúc nối lại', async () => {
+    const hub = require('../services/live/hub');
+    const session = { ...liveSimSession(), status: 'live', startedAt: new Date('2026-11-11T12:00:00Z') };
+    const { db, updates } = recordingDb();
+    const r = new hub.Runtime(session, db, 'demo');
+    try {
+      r.agg.lastAt = new Date('2026-11-11T13:30:00Z').getTime();
+      await r.setStatus('live');
+      assert.strictEqual(updates[0].$set.activeMs, 90 * MIN);
+    } finally {
+      r.dispose();
+    }
+  });
+
+  testAsync('Live: dừng phiên cộng đoạn đang chạy vào tổng và xóa mốc đoạn', async () => {
+    const hub = require('../services/live/hub');
+    const t0 = Date.now() - 20 * MIN;
+    const session = { ...liveSimSession(), status: 'live', startedAt: new Date(t0 - 60 * MIN), activeMs: 60 * MIN, segmentStartedAt: new Date(t0), lastActiveAt: new Date(t0 + 19 * MIN) };
+    const { db, updates } = recordingDb();
+    const r = new hub.Runtime(session, db, 'demo');
+    r.status = 'live';
+    r.segmentOpen = true;
+    await r.stop('thử');
+    const u = updates.find((x) => x.$set && x.$set.status === 'ended');
+    assert.ok(u, 'phải ghi trạng thái ended');
+    near(u.$set.activeMs, 80 * MIN, 5000, 'tổng = 60 phút cũ + 20 phút đoạn này');
+    assert.ok('segmentStartedAt' in u.$unset && 'lastActiveAt' in u.$unset);
+  });
 }
 
 (async () => {

@@ -25,7 +25,6 @@
  *   missing_info      danh mục thiếu thông tin khách đang hỏi: bổ sung danh mục
  */
 
-const { stockOf } = require('./answer');
 const { TOPIC_LABEL } = require('./intent');
 
 const MIN = 60 * 1000;

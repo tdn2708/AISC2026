@@ -477,7 +477,7 @@ function suggestedQuestions(ctx) {
     const result = alertEngine.detectAlerts(ctx.items, { transactionCount: ctx.transactionCount, transactions: ctx.transactions, now: ctx.asOf || undefined });
     if (result.alerts.length > 0) {
       const top = result.alerts[0];
-      suggestions.push(`Vì sao ${top.categoryLabel}${top.causeLabel ? ' - ' + top.causeLabel : ''} lại bị cảnh báo?`);
+      suggestions.push(`Vì sao ${require('./wording').issueTitle(top.categoryLabel, top.causeLabel)} lại bị cảnh báo?`);
       suggestions.push('Tôi nên làm gì với các cảnh báo đang mở?');
     } else {
       suggestions.push('Tuần này có vấn đề gì đáng chú ý không?');

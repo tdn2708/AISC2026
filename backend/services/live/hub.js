@@ -138,6 +138,28 @@ function publicComment(d, productName) {
   };
 }
 
+/**
+ * Thời lượng thật sự đã live (mili giây), KHÔNG tính khoảng phiên bị ngắt (máy chủ khởi
+ * động lại, mất kết nối rồi nối lại sau nhiều giờ). Phiên ghi ba trường: `activeMs` (các đoạn
+ * đã chạy xong), `segmentStartedAt` (đoạn đang chạy) và `lastActiveAt` (nhịp tim của đoạn
+ * đó, cập nhật mỗi 30 giây). Phiên cũ chưa có các trường này: đã kết thúc thì lấy mốc đầu đến
+ * mốc cuối như trước, đang bị ngắt thì trả null (không đoán).
+ */
+function liveDurationMs(s, runtime, now = Date.now()) {
+  if (!s || !s.startedAt) return null;
+  const base = Number(s.activeMs) || 0;
+  if (s.segmentStartedAt != null) {
+    const start = new Date(s.segmentStartedAt).getTime();
+    let end = null;
+    if (runtime && runtime.status === 'live') end = now;
+    else if (s.lastActiveAt) end = new Date(s.lastActiveAt).getTime();
+    return end == null ? null : base + Math.max(0, end - start);
+  }
+  if (s.activeMs != null) return base;
+  if (s.status === 'ended' && s.endedAt) return Math.max(0, new Date(s.endedAt).getTime() - new Date(s.startedAt).getTime());
+  return null;
+}
+
 function publicSession(s, runtime) {
   const status = runtime ? runtime.status : (s.status === 'live' || s.status === 'connecting' || s.status === 'reconnecting') ? 'interrupted' : s.status;
   return {
@@ -156,6 +178,8 @@ function publicSession(s, runtime) {
     createdAt: s.createdAt,
     startedAt: s.startedAt || null,
     endedAt: s.endedAt || null,
+    // Thời lượng đã live không tính lúc bị ngắt; null nếu phiên cũ không đủ dữ liệu
+    liveMs: liveDurationMs(s, runtime),
     summary: s.summary || null,
     ingestKey: s.ingestKey
   };
@@ -229,7 +253,10 @@ class Runtime {
     this.seen = new Set();
     this.recent = [];
     this.connector = null;
-    this.flushTimer = setInterval(() => this.flush().catch((e) => console.warn('[LIVE] Ghi lỗi:', e.message)), FLUSH_INTERVAL_MS);
+    this.flushTimer = setInterval(() => {
+      this.flush().catch((e) => console.warn('[LIVE] Ghi lỗi:', e.message));
+      this.touch().catch(() => {});
+    }, FLUSH_INTERVAL_MS);
     this.statsTimer = setInterval(() => this.pushStats(), STATS_INTERVAL_MS);
     this.heartbeat = setInterval(() => this.broadcastRaw(': ping\n\n'), HEARTBEAT_MS);
     this.dirty = false;
@@ -323,12 +350,47 @@ class Runtime {
     }
   }
 
+  /**
+   * Số mili giây của đoạn chạy trước khi bị ngắt, tính tới lần cuối còn hoạt động. Phiên cũ
+   * chưa ghi nhịp tim thì ước tính tới bình luận cuối cùng đã nhận (không tính tới lúc nối lại).
+   */
+  priorSegmentMs() {
+    const s = this.session;
+    if (s.segmentStartedAt && s.lastActiveAt) {
+      return Math.max(0, new Date(s.lastActiveAt).getTime() - new Date(s.segmentStartedAt).getTime());
+    }
+    if (s.activeMs == null && s.startedAt && this.agg.lastAt) {
+      return Math.max(0, Number(this.agg.lastAt) - new Date(s.startedAt).getTime());
+    }
+    return 0;
+  }
+
+  /** Nhịp tim: ghi mốc còn hoạt động để biết phiên bị ngắt từ lúc nào (tối đa 30 giây một lần) */
+  async touch() {
+    const now = Date.now();
+    if (this.status !== 'live' || !this.segmentOpen || now - (this.lastTouchAt || 0) < 30000) return;
+    this.lastTouchAt = now;
+    await this.db.collection('live_sessions').updateOne({ _id: this.session._id }, { $set: { lastActiveAt: new Date(now) } });
+  }
+
   async setStatus(status, extra = {}) {
     this.status = status;
     const set = { status, ...extra };
     if (status === 'live' && !this.session.startedAt) {
       set.startedAt = new Date();
       this.session.startedAt = set.startedAt;
+    }
+    // Mở một đoạn chạy mới: cộng dồn đoạn trước (nếu phiên được nối lại) rồi bắt đầu đếm lại
+    if (status === 'live' && !this.segmentOpen) {
+      const now = new Date();
+      set.activeMs = (Number(this.session.activeMs) || 0) + this.priorSegmentMs();
+      set.segmentStartedAt = now;
+      set.lastActiveAt = now;
+      this.session.activeMs = set.activeMs;
+      this.session.segmentStartedAt = now;
+      this.session.lastActiveAt = now;
+      this.segmentOpen = true;
+      this.lastTouchAt = now.getTime();
     }
     if (this.info) set.info = this.info;
     await this.db.collection('live_sessions').updateOne({ _id: this.session._id }, { $set: set });
@@ -468,9 +530,18 @@ class Runtime {
     }
     this.session.endedAt = new Date();
     this.session.summary = summary;
+    // Chốt thời lượng: cộng đoạn đang chạy vào tổng, bỏ mốc đoạn
+    let activeMs = Number(this.session.activeMs) || 0;
+    if (this.segmentOpen && this.session.segmentStartedAt) {
+      activeMs += Math.max(0, this.session.endedAt.getTime() - new Date(this.session.segmentStartedAt).getTime());
+    }
+    this.session.activeMs = activeMs;
+    delete this.session.segmentStartedAt;
+    delete this.session.lastActiveAt;
+    this.segmentOpen = false;
     await this.db.collection('live_sessions').updateOne(
       { _id: this.session._id },
-      { $set: { status: 'ended', endedAt: this.session.endedAt, endReason: reason || null, summary } }
+      { $set: { status: 'ended', endedAt: this.session.endedAt, endReason: reason || null, summary, activeMs }, $unset: { segmentStartedAt: '', lastActiveAt: '' } }
     );
     this.session.status = 'ended';
     this.broadcast('session', publicSession(this.session, this));
@@ -614,6 +685,7 @@ module.exports = {
   buildCommentDoc,
   publicComment,
   publicSession,
+  liveDurationMs,
   withSuggestion,
   runtimeFor,
   loadSession,

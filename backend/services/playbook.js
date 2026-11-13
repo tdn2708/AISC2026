@@ -231,10 +231,16 @@ function buildRecommendation(alert) {
  * đạt lại nội dung này cho tự nhiên hơn — KHÔNG được phép thêm dữ kiện
  * hay hành động mới ngoài playbook.
  */
+const { issueTitle } = require('./wording');
+
+/** Số "đơn vị phần trăm" (ví dụ 0.5 nghĩa là 0,5%): dưới 1 giữ hai chữ số, từ 1 trở lên giữ tối đa hai chữ số */
+const pctUnit = (n) => {
+  const x = Number(n);
+  return (x < 1 ? x.toFixed(2) : String(Number(x.toFixed(2)))).replace('.', ',');
+};
+
 function summarize(alert) {
-  const what = alert.causeLabel
-    ? `${alert.categoryLabel} - ${alert.causeLabel}`
-    : alert.categoryLabel;
+  const what = issueTitle(alert.categoryLabel, alert.causeLabel);
   const scopeParts = [];
   if (alert.productName) scopeParts.push(`trên ${alert.productName}`);
   if (alert.region) scopeParts.push(`tại khu vực ${alert.region}`);
@@ -243,7 +249,7 @@ function summarize(alert) {
   if (alert.type === 'SUSTAINED_DRIFT') {
     const st = alert.statistics;
     const level = st.unit === '%'
-      ? ` (tỉ lệ khiếu nại ${String(st.ewmaCurrent).replace('.', ',')}% so với nền ${String(st.baselineMean).replace('.', ',')}%)`
+      ? ` (tỉ lệ khiếu nại ${pctUnit(st.ewmaCurrent)}% so với nền ${pctUnit(st.baselineMean)}%)`
       : '';
     return `${what}${scope} đang xấu đi đều đặn${level}, vượt ngưỡng kiểm soát ${st.consecutiveBreaches} kỳ liên tiếp. Không có ngày nào tăng vọt, nhưng xu hướng đã lệch khỏi mức bình thường.`;
   }

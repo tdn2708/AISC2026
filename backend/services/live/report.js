@@ -49,6 +49,7 @@ const median = (arr) => {
   const m = Math.floor(s.length / 2);
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 };
+const { fmtVi } = require('../wording');
 const vndShort = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} triệu` : `${Math.round(n / 1000).toLocaleString('vi-VN')} nghìn`);
 
 /**
@@ -89,16 +90,41 @@ function stockReplay(comments, products) {
   return { revenue, revenueConfirmed, unpricedOrders, lost: [...lost.values()].sort((a, b) => b.value - a.value || b.qty - a.qty) };
 }
 
+/** Phần của một bình luận mà các lượt duyệt của báo cáo còn dùng (nội dung chỉ giữ cho khiếu nại) */
+function slimForReport(c) {
+  return {
+    ts: c.ts,
+    intent: c.intent,
+    orderStatus: c.orderStatus,
+    quantity: c.quantity,
+    productId: c.productId,
+    variant: c.variant,
+    author: { hash: c.author?.hash },
+    status: c.status,
+    answer: c.answer?.at ? { at: c.answer.at } : undefined,
+    hasPhone: c.hasPhone,
+    pushedToFeedback: c.pushedToFeedback,
+    text: c.intent === 'complaint' ? c.text : undefined
+  };
+}
+
 /**
  * @param {import('mongodb').Db} db
  * @param {object} session tài liệu live_sessions
  */
 async function buildReport(db, session) {
-  const comments = await db.collection('live_comments').find({ sessionId: session._id }, { projection: REPLAY_PROJECTION }).sort({ ts: 1 }).batchSize(500).toArray();
   const products = session.products || [];
   const byId = new Map(products.map((p) => [p.id, p]));
   const agg = new LiveAggregator(session);
-  for (const c of comments) agg.add(c);
+  // Đọc bằng cursor, từng đợt, và chỉ giữ lại các trường báo cáo cần cho những lượt
+  // duyệt sau (phễu, doanh thu, trả lời, khiếu nại). Phiên dài vài chục nghìn bình luận
+  // mà nạp nguyên .toArray() làm máy chủ 512 MB hết RAM.
+  const comments = [];
+  const cursor = db.collection('live_comments').find({ sessionId: session._id }, { projection: REPLAY_PROJECTION }).sort({ ts: 1 }).batchSize(500);
+  for await (const c of cursor) {
+    agg.add(c);
+    comments.push(slimForReport(c));
+  }
   if (session.summary?.viewers) agg.viewers = { ...session.summary.viewers };
   const snap = agg.snapshot({ now: agg.lastAt || Date.now(), queueLimit: 500 });
 
@@ -183,17 +209,17 @@ async function buildReport(db, session) {
   const todo = [];
   const newOrders = comments.filter((c) => c.intent === 'order' && (c.orderStatus || 'new') === 'new');
   if (newOrders.length) {
-    todo.push({ priority: 'high', kind: 'orders', title: `Lên đơn cho ${newOrders.length} lượt chốt chưa xử lý`, detail: `${newOrders.filter((c) => c.hasPhone).length} khách để lại số điện thoại (đã che trong hệ thống), số còn lại nhắn qua tin nhắn nền tảng. Tải danh sách CSV ở mục Khách chốt đơn.` });
+    todo.push({ priority: 'high', kind: 'orders', title: `Lên đơn cho ${fmtVi(newOrders.length)} lượt chốt chưa xử lý`, detail: `${newOrders.filter((c) => c.hasPhone).length} khách để lại số điện thoại (đã che trong hệ thống), số còn lại nhắn qua tin nhắn nền tảng. Tải danh sách CSV ở mục Khách chốt đơn.` });
   }
   if (complaints.total) {
     const top = complaints.byCategory[0];
-    todo.push({ priority: 'high', kind: 'complaints', title: `Xử lý ${complaints.total} khiếu nại trước phiên sau`, detail: `Nhiều nhất là ${top.label.toLowerCase()} (${top.count}). ${complaints.pushed < complaints.total ? 'Đưa khiếu nại vào hệ thống phản hồi để theo dõi cùng các kênh khác.' : 'Đã đưa vào hệ thống phản hồi.'}` });
+    todo.push({ priority: 'high', kind: 'complaints', title: `Xử lý ${fmtVi(complaints.total)} khiếu nại trước phiên sau`, detail: `Nhiều nhất là ${top.label.toLowerCase()} (${fmtVi(top.count)}). ${complaints.pushed < complaints.total ? 'Đưa khiếu nại vào hệ thống phản hồi để theo dõi cùng các kênh khác.' : 'Đã đưa vào hệ thống phản hồi.'}` });
   }
   for (const l of money.lost.slice(0, 3)) {
-    todo.push({ priority: 'high', kind: 'restock', title: `Nhập thêm ${l.name}${l.variant ? ` ${/^[A-Z0-9]+$/.test(l.variant) ? `size ${l.variant}` : l.variant}` : ''}`, detail: `${l.people} lượt chốt (${l.qty} sản phẩm) đến sau khi đã hết hàng${l.value ? `, khoảng ${vndShort(l.value)} doanh thu bị lỡ` : ''}.` });
+    todo.push({ priority: 'high', kind: 'restock', title: `Nhập thêm ${l.name}${l.variant ? ` ${/^[A-Z0-9]+$/.test(l.variant) ? `size ${l.variant}` : l.variant}` : ''}`, detail: `${fmtVi(l.people)} lượt chốt (${fmtVi(l.qty)} sản phẩm) đến sau khi đã hết hàng${l.value ? `, khoảng ${vndShort(l.value)} doanh thu bị lỡ` : ''}.` });
   }
   for (const g of gaps.slice(0, 3)) {
-    todo.push({ priority: 'medium', kind: 'catalog', title: `Bổ sung ${g.topicLabel.toLowerCase()}${g.productName ? ` cho ${g.productName}` : ''} vào danh mục`, detail: `${g.people} khách hỏi nhưng danh mục chưa có thông tin, nên trợ lý không gợi ý được câu trả lời.` });
+    todo.push({ priority: 'medium', kind: 'catalog', title: `Bổ sung ${g.topicLabel.toLowerCase()}${g.productName ? ` cho ${g.productName}` : ''} vào danh mục`, detail: `${fmtVi(g.people)} khách hỏi nhưng danh mục chưa có thông tin, nên trợ lý không gợi ý được câu trả lời.` });
   }
   const answeredShare = askedPeople ? answeredPeople / askedPeople : null;
   if (answeredShare != null && answeredShare < 0.6 && askedPeople >= 10) {
@@ -207,11 +233,11 @@ async function buildReport(db, session) {
   }
   const weak = productRows.filter((p) => p.questions >= 8 && p.conversion != null && p.conversion < 0.2).sort((a, b) => b.questions - a.questions)[0];
   if (weak) {
-    todo.push({ priority: 'medium', kind: 'product', title: `Xem lại cách bán ${weak.name}`, detail: `${weak.questions} câu hỏi nhưng chỉ ${weak.orders} lượt chốt. Có thể do giá, size, hoặc cần cho xem sản phẩm thật kỹ hơn.` });
+    todo.push({ priority: 'medium', kind: 'product', title: `Xem lại cách bán ${weak.name}`, detail: `${fmtVi(weak.questions)} câu hỏi nhưng chỉ ${fmtVi(weak.orders)} lượt chốt. Có thể do giá, size, hoặc cần cho xem sản phẩm thật kỹ hơn.` });
   }
   const best = productRows.slice().sort((a, b) => b.quantity - a.quantity)[0];
   if (best && best.quantity > 0) {
-    todo.push({ priority: 'low', kind: 'opening', title: `Mở đầu phiên sau bằng ${best.name}`, detail: `Chốt nhiều nhất phiên này (${best.quantity} sản phẩm).${bestMinuteProduct && bestMinute ? ` Phút chốt dồn nhất có ${bestMinute.order} lượt, chủ yếu ${bestMinuteProduct}.` : ''}` });
+    todo.push({ priority: 'low', kind: 'opening', title: `Mở đầu phiên sau bằng ${best.name}`, detail: `Chốt nhiều nhất phiên này (${fmtVi(best.quantity)} sản phẩm).${bestMinuteProduct && bestMinute ? ` Phút chốt dồn nhất có ${bestMinute.order} lượt, chủ yếu ${bestMinuteProduct}.` : ''}` });
   }
 
   return {
@@ -230,4 +256,4 @@ async function buildReport(db, session) {
   };
 }
 
-module.exports = { buildReport, stockReplay, complaintCategory };
+module.exports = { buildReport, stockReplay, complaintCategory, fmtVi };

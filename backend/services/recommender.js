@@ -78,8 +78,10 @@ function formatVnd(n) {
   return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' đ';
 }
 
-function formatPct(fraction, digits = 1) {
-  return `${(fraction * 100).toFixed(digits).replace('.', ',')}%`;
+// Không chỉ định số chữ số thì: tỉ lệ dưới 1% giữ hai chữ số để 0,04% không thành "0,0%"
+function formatPct(fraction, digits) {
+  const d = digits ?? (fraction > 0 && fraction < 0.01 ? 2 : 1);
+  return `${(fraction * 100).toFixed(d).replace('.', ',')}%`;
 }
 
 // ==================================================================
@@ -656,6 +658,7 @@ function verifyNumericGrounding(text, allowedNumbers) {
 }
 
 module.exports = {
+  formatPct,
   buildAll,
   buildRecommendation,
   reconstructEvidence,

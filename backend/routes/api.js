@@ -1131,6 +1131,8 @@ router.get('/alerts', wrap(async (req, res) => {
  * Endpoint cũ /risks — giữ nguyên hình dạng dữ liệu để giao diện hiện
  * tại không vỡ, nhưng nội dung bên dưới đã là cảnh báo có kiểm định.
  */
+const { issueTitle } = require('../services/wording');
+
 router.get('/risks', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const result = detectAlertsCached(ctx, req.query);
@@ -1144,7 +1146,7 @@ router.get('/risks', wrap(async (req, res) => {
       const rec = recByAlert.get(a.id);
       return {
         id: a.id,
-        issue: a.causeLabel ? `${a.categoryLabel} — ${a.causeLabel}` : a.categoryLabel,
+        issue: issueTitle(a.categoryLabel, a.causeLabel),
         riskLevel: a.severity === 'Critical' ? 'CRITICAL' : a.severity === 'High' ? 'HIGH' : a.severity.toUpperCase(),
         insight: playbook.summarize(a),
         recommendations: (rec?.steps || []).map((s) => s.text),
@@ -1247,7 +1249,7 @@ router.get('/decisions', wrap(async (req, res) => {
       // khi cảnh báo đã không còn và bản ghi cũ chưa có ảnh chụp
       const [cat, cause, product] = String(d.alertId).split('|');
       const fromId = cat ? [taxonomy.categoryLabel(cat), cause && cause !== '*' ? taxonomy.causeLabel(cat, cause) : null].filter(Boolean).join(' — ') : null;
-      const title = d.snapshot?.title || (a ? (a.causeLabel ? `${a.categoryLabel} — ${a.causeLabel}` : a.categoryLabel) : fromId);
+      const title = d.snapshot?.title || (a ? issueTitle(a.categoryLabel, a.causeLabel) : fromId);
       return {
         alertId: d.alertId,
         decision: d.decision,
@@ -1635,14 +1637,14 @@ router.post('/scrape', wrap(async (req, res) => {
   });
 }));
 
-router.post('/seed', wrap(async (req, res) => {
-  const { buildDataset } = require('../seed_realistic_data');
 const { seedRouteCheck } = require('../services/write_guard');
 
-  const { feedbacks, orders } = buildDataset();
+router.post('/seed', wrap(async (req, res) => {
   // Xóa sạch kho rồi nạp dữ liệu mô phỏng: mặc định tắt, chỉ chạy trên kho demo khi ALLOW_SEED_ROUTE=1
   const guard = seedRouteCheck({ dbName: req.db.databaseName, workspace: req.workspace });
   if (!guard.allowed) return res.status(guard.status).json({ error: guard.error });
+  const { buildDataset } = require('../seed_realistic_data');
+  const { feedbacks, orders } = buildDataset();
 
   await req.db.collection('feedbacks').deleteMany({});
   await req.db.collection('transactions').deleteMany({});
