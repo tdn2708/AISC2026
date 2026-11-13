@@ -19,6 +19,7 @@ const metrics = require('./metrics');
 const { gramsOf, fold } = require('./pain_points');
 const { buildGrouper } = require('./product_group');
 const { shownName } = require('./ingest');
+const { spanWords } = require('./cadence');
 
 const DAY = 86400000;
 
@@ -141,7 +142,7 @@ function buildCaseFile(point, group, ctx) {
     topBaselineShare: null,
     affected: int(point.customers),
     evidenceCount: int(members.length),
-    windowDays: spanDays != null ? int(spanDays) : null,
+    windowDays: spanDays != null ? spanWords(spanDays) : null,
     revenue: orderValue > 0 ? money(orderValue) : null,
     currentRate: null,
     baselineRate: null
@@ -283,7 +284,11 @@ function caseEffect(items, c, now, windowDays = 7, beforeDays = windowDays) {
   const before = win(at - beforeSpan, at);
   // Kho thưa: phần "sau" gom tiếp phản hồi mới tới hết độ dài nền, để đủ câu mà so
   const after = win(at, Math.max(at, Math.min(at + beforeSpan, nowMs)));
-  const elapsed = Math.max(0, (nowMs - at) / DAY);
+  // `createdAt` là mốc DỮ LIỆU lúc mở (kho thật: đánh giá mới nhất, có thể cũ hơn hôm
+  // nay nhiều ngày) và neo hai cửa sổ trước/sau; số ngày đã trôi tính từ `openedAt`
+  // (giờ thật), nếu không hồ sơ kho thật vừa mở đã báo "xong"
+  const opened = new Date(c.openedAt || c.createdAt).getTime();
+  const elapsed = Math.max(0, (nowMs - opened) / DAY);
   return {
     status: elapsed >= windowDays ? 'done' : 'pending',
     daysLeft: elapsed >= windowDays ? 0 : Math.ceil(windowDays - elapsed),

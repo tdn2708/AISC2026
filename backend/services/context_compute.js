@@ -14,6 +14,7 @@
 
 const { runTrustLayer } = require('./trust_layer');
 const taxonomy = require('./taxonomy');
+const { decodeEntities } = require('./normalizer');
 const { analysisCadence } = require('./cadence');
 const { findPainPoints } = require('./pain_points');
 
@@ -23,6 +24,8 @@ function normalizeLabels(fb) {
   const cause = taxonomy.normalizeCause(category, fb.subCategory);
   return {
     ...fb,
+    // Tên lưu từ trước còn mã HTML ("&amp;") thì giải ngay lúc đọc
+    ...(typeof fb.productName === 'string' && fb.productName.includes('&') ? { productName: decodeEntities(fb.productName) } : {}),
     category,
     subCategory: cause,
     categoryLabel: taxonomy.categoryLabel(category),

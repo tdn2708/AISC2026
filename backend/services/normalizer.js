@@ -264,6 +264,20 @@ function stripHtml(text) {
     .replace(/&gt;/g, '>');
 }
 
+/**
+ * Giải mã thực thể HTML trong tên (sàn trả "Lock&amp;Lock"): không giải thì cùng một
+ * sản phẩm thành hai tên khác nhau, bộ lọc và so sánh sản phẩm bị tách đôi.
+ */
+function decodeEntities(text) {
+  if (text == null) return text;
+  return String(text)
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'")
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ').trim();
+}
+
 /** Che PII, trả về cả danh sách loại PII đã che để phục vụ báo cáo tuân thủ */
 function maskPII(text) {
   let masked = canonicalize(text);
@@ -589,6 +603,7 @@ function spamSignals(rawText) {
 const DICTIONARY_SIZE = Object.keys(SLANG_DICTIONARY).length;
 
 module.exports = {
+  decodeEntities,
   SLANG_DICTIONARY,
   DICTIONARY_SIZE,
   normalize,

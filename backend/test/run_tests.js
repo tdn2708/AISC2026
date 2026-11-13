@@ -2461,6 +2461,10 @@ testAsync('Live: nối lại phiên mô phỏng đã quá trần thì dừng nga
     const c = { groupKey: 'shop', phraseKeys: ['bị lỗi'], createdAt: new Date(NOW - 10 * DAY) };
     const e = caseFile.caseEffect(items, c, new Date(NOW), 7, 180);
     assert.strictEqual(e.status, 'done');
+    // Kho thật: mốc dữ liệu cũ hơn hôm nay 9 ngày, vừa mở xong thì vẫn còn đủ 7 ngày chờ
+    const fresh = caseFile.caseEffect(items, { ...c, createdAt: new Date(NOW - 9 * DAY), openedAt: new Date(NOW) }, new Date(NOW), 7, 180);
+    assert.strictEqual(fresh.status, 'pending');
+    assert.strictEqual(fresh.daysLeft, 7);
     assert.ok(e.before.n > 0, 'nền trước phải có câu');
     assert.strictEqual(e.beforeDays, 180);
   });

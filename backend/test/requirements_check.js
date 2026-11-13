@@ -295,7 +295,9 @@ console.log('\nPHẦN 8 + 9 — DEMO VÀ KINH DOANH');
 
 req('D1', 'Tài khoản demo in sẵn trên màn hình đăng nhập', () => {
   const login = readFile('src/components/Login.jsx');
-  assert.ok(login.includes('DEMO_ACCOUNT'), 'thiếu khai báo tài khoản demo');
+  // Tài khoản demo khai báo một chỗ (hằng DEMO) và điền sẵn vào ô đăng nhập
+  assert.ok(/const DEMO(_ACCOUNT)? = {[^}]*email:[^}]*password:/.test(login), 'thiếu khai báo tài khoản demo');
+  assert.ok(/useState\(DEMO(_ACCOUNT)?\.email\)/.test(login) && /useState\(DEMO(_ACCOUNT)?\.password\)/.test(login), 'ô đăng nhập không điền sẵn tài khoản demo');
   assert.ok(/Tài khoản dùng thử|Điền sẵn/.test(login), 'không hiển thị tài khoản demo cho người xem');
 });
 
@@ -346,7 +348,9 @@ req('I1', 'Không còn nhãn sinh ngẫu nhiên trong tầng phân tích', () =>
 });
 
 req('I2', 'Thẻ chỉ số không hiển thị số viết cứng', () => {
-  const kpi = readCode('src/components/KPICards.jsx');
+  // Thẻ chỉ số nằm ở khối "Cửa hàng đang thế nào" (KPICards.jsx cũ đã bỏ)
+  const kpi = readCode('src/components/dashboard/StoreHealth.jsx');
+  assert.ok(/stats\?\.weightedComplaintRate/.test(kpi) && /stats\?\.shareOfNegative/.test(kpi), 'thẻ chỉ số không đọc số từ /stats');
   assert.ok(!/NPS Score/.test(kpi), 'vẫn còn NPS viết cứng');
   assert.ok(!/"\+12%"|'\+12%'|"-2\.1%"|'-2\.1%'/.test(kpi), 'vẫn còn mức tăng giảm viết cứng');
 });

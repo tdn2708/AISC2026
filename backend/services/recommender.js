@@ -52,6 +52,7 @@
 const evidenceProfile = require('./evidence_profile');
 const library = require('./playbook_library');
 const { ACTION_KIND } = require('./playbook');
+const { spanWords } = require('./cadence');
 const taxonomy = require('./taxonomy');
 const { isCountable, isComplaint } = require('./metrics');
 
@@ -149,7 +150,8 @@ function buildSlots(alert, profile, ctx) {
   const st = alert.statistics || {};
   slots.affected = String(alert.affectedCustomers ?? 0);
   slots.evidenceCount = String(profile.evidenceCount);
-  slots.windowDays = String(ctx.windowDays);
+  // Có sẵn đơn vị ("7 ngày", "6 tháng"): cửa sổ theo nhịp của kho, kho thưa tính bằng tháng
+  slots.windowDays = spanWords(ctx.windowDays);
   slots.currentRate = st.currentRate != null ? formatPct(st.currentRate) : null;
   slots.baselineRate = st.baselineRate != null ? formatPct(st.baselineRate) : null;
   slots.deltaPP = st.deltaPP != null ? `${st.deltaPP} điểm phần trăm` : null;

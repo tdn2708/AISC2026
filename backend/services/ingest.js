@@ -84,7 +84,7 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
       // Dòng nạp từ file không có ngày: timestamp là ngày nạp, không dùng cho phép so thời gian
       ...(review.timeInferred ? { timeInferred: true } : {}),
       ...(review.importRef ? { importRef: review.importRef } : {}),
-      productName: review.productName || meta.fallbackProduct || 'Sản phẩm chưa xác định',
+      productName: normalizer.decodeEntities(review.productName || meta.fallbackProduct) || 'Sản phẩm chưa xác định',
       // Mảng hàng: danh mục của sàn hoặc cột danh mục trong file shop nạp lên (product_group.js)
       productCategory: review.productCategory || meta.productCategory || null,
       accountAgeDays: review.accountAgeDays ?? null,
