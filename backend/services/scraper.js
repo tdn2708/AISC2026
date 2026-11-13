@@ -20,6 +20,7 @@
  */
 
 const puppeteer = require('puppeteer');
+const { leafFromBreadcrumbs } = require('./product_group');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { GEMINI_MODEL, LLM_TIMEOUT_MS } = require('./ai_analyzer');
 const { canonicalize, maskPII } = require('./normalizer');
@@ -168,9 +169,12 @@ async function fetchTikiReviews(u, opts = {}) {
   const maxPages = opts.maxPages || TIKI_MAX_PAGES;
 
   let productName = null;
+  let productCategory = null;
   try {
     const { data } = await axios.get(`https://tiki.vn/api/v2/products/${productId}?${q.slice(1)}`, { headers: TIKI_HEADERS, timeout: 15000 });
     productName = data?.name || null;
+    // Danh mục lá của sàn (breadcrumb: Điện Gia Dụng > ... > Nồi chiên > tên sản phẩm): mảng hàng cho lớp điểm đau
+    productCategory = leafFromBreadcrumbs(data?.breadcrumbs, productName);
   } catch {
     // không lấy được tên thì route dùng đoạn cuối đường dẫn
   }
@@ -199,6 +203,7 @@ async function fetchTikiReviews(u, opts = {}) {
           : null,
         orderId: null,
         productName,
+        productCategory,
         timestamp,
         platformFacts: facts
       });

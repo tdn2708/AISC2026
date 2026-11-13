@@ -1637,6 +1637,112 @@ router.post('/scrape', wrap(async (req, res) => {
   });
 }));
 
+// ==================================================================
+// ĐIỂM ĐAU + HỒ SƠ XỬ LÝ (từ dữ liệu tới việc làm)
+// ==================================================================
+
+const painPoints = require('../services/pain_points');
+const caseFile = require('../services/case_file');
+const { ObjectId } = require('mongodb');
+
+// Tách cụm từ cả kho tốn vài giây lần đầu (chuẩn hóa từng câu); kết quả chỉ đổi
+// khi dữ liệu hoặc bộ lọc đổi, nên nhớ theo đúng hai thứ đó
+const painMemo = new Map();
+function painPointsFor(ctx, query) {
+  const filters = { time: query.time, source: query.source, product: query.product, region: query.region };
+  const key = `${ctx.dbName}|${ctx.computedAt}|${JSON.stringify(filters)}`;
+  const hit = painMemo.get(key);
+  if (hit) return hit;
+  const items = applyFilters(ctx.items, filters, ctx.asOf);
+  const result = painPoints.findPainPoints(items, { now: ctxNow(ctx) });
+  painMemo.set(key, result);
+  if (painMemo.size > 12) painMemo.delete(painMemo.keys().next().value);
+  return result;
+}
+
+const findPoint = (result, key) => {
+  const [groupKey] = String(key || '').split('::');
+  const group = groupKey === 'shop' ? result.shop : result.groups.find((g) => g.key === groupKey);
+  return { group, point: group?.painPoints.find((p) => p.key === key) || null };
+};
+
+router.get('/pain-points', wrap(async (req, res) => {
+  const ctx = await getContext(req.db);
+  const r = painPointsFor(ctx, req.query);
+  res.json({ ...r, asOf: ctx.asOf || null, computedAt: ctx.computedAt });
+}));
+
+router.get('/cases/preview', wrap(async (req, res) => {
+  const ctx = await getContext(req.db);
+  const { group, point } = findPoint(painPointsFor(ctx, req.query), req.query.key);
+  if (!point) return res.status(404).json({ error: 'Không còn điểm đau này với bộ lọc hiện tại' });
+  res.json(caseFile.buildCaseFile(point, group, { items: ctx.items, transactions: ctx.transactions, now: ctxNow(ctx) }));
+}));
+
+const clipText = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : null);
+const cleanTasks = (tasks) => (Array.isArray(tasks) ? tasks.slice(0, 20) : []).map((t, i) => ({
+  id: clipText(t?.id, 40) || `T${i + 1}`,
+  text: clipText(t?.text, 600) || '',
+  kind: clipText(t?.kind, 30) || 'INVESTIGATE',
+  owner: clipText(t?.owner, 80) || null,
+  due: t?.due && !Number.isNaN(new Date(t.due).getTime()) ? new Date(t.due) : null,
+  done: t?.done === true,
+  doneAt: t?.done === true ? (t.doneAt ? new Date(t.doneAt) : new Date()) : null
+})).filter((t) => t.text);
+
+/** Hồ sơ đang xử lý + hiệu quả trước/sau (tính lại theo dữ liệu hiện tại) */
+router.get('/cases', wrap(async (req, res) => {
+  const ctx = await getContext(req.db);
+  const list = await req.db.collection('cases').find({}).sort({ createdAt: -1 }).limit(50).toArray();
+  const now = ctxNow(ctx);
+  res.json({
+    cases: list.map((c) => ({ ...c, _id: String(c._id), effect: caseFile.caseEffect(ctx.items, c, now) })),
+    asOf: ctx.asOf || null
+  });
+}));
+
+router.post('/cases', wrap(async (req, res) => {
+  const ctx = await getContext(req.db);
+  const { key, tasks, by } = req.body || {};
+  const { group, point } = findPoint(painPointsFor(ctx, req.body?.filters || {}), key);
+  if (!point) return res.status(404).json({ error: 'Không còn điểm đau này với bộ lọc hiện tại' });
+  const existing = await req.db.collection('cases').findOne({ key, status: 'open' });
+  if (existing) return res.status(409).json({ error: 'Điểm đau này đã có hồ sơ đang mở', id: String(existing._id) });
+  const doc = {
+    key,
+    groupKey: group.key,
+    groupLabel: group.label,
+    phrase: point.phrase,
+    phraseKeys: point.phraseKeys,
+    category: point.category,
+    cause: point.cause,
+    owner: point.owner,
+    // Mốc lúc mở hồ sơ: theo thời gian của dữ liệu (kho thật neo vào đánh giá mới nhất)
+    createdAt: ctxNow(ctx),
+    openedAt: new Date(),
+    by: clipText(by, 80) || 'Chủ shop',
+    status: 'open',
+    snapshot: { count: point.count, customers: point.customers, weight: point.weight, firstSeen: point.firstSeen, lastSeen: point.lastSeen, products: point.products.slice(0, 3) },
+    tasks: cleanTasks(tasks)
+  };
+  const r = await req.db.collection('cases').insertOne(doc);
+  res.status(201).json({ id: String(r.insertedId) });
+}));
+
+router.patch('/cases/:id', wrap(async (req, res) => {
+  if (!ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Mã hồ sơ không hợp lệ' });
+  const set = { updatedAt: new Date() };
+  if (Array.isArray(req.body?.tasks)) set.tasks = cleanTasks(req.body.tasks);
+  if (['open', 'closed'].includes(req.body?.status)) {
+    set.status = req.body.status;
+    set.closedAt = req.body.status === 'closed' ? new Date() : null;
+  }
+  if (typeof req.body?.note === 'string') set.note = clipText(req.body.note, 1000);
+  const r = await req.db.collection('cases').findOneAndUpdate({ _id: new ObjectId(req.params.id) }, { $set: set }, { returnDocument: 'after' });
+  if (!r) return res.status(404).json({ error: 'Không tìm thấy hồ sơ' });
+  res.json({ ...r, _id: String(r._id) });
+}));
+
 const { seedRouteCheck } = require('../services/write_guard');
 
 router.post('/seed', wrap(async (req, res) => {

@@ -2240,6 +2240,166 @@ testAsync('Live: nối lại phiên mô phỏng đã quá trần thì dừng nga
   });
 }
 
+// ------------------------------------------------------------------
+// ĐIỂM ĐAU + HỒ SƠ XỬ LÝ: chạy được với mảng hàng chưa từng có trong dữ liệu nào
+// ------------------------------------------------------------------
+{
+  console.log('\nĐiểm đau và hồ sơ xử lý');
+  const pain = require('../services/pain_points');
+  const groupMod = require('../services/product_group');
+  const caseFile = require('../services/case_file');
+  const DAY = 86400000;
+  const T0 = Date.parse('2026-10-01T03:00:00Z');
+  let seq = 0;
+  // Phản hồi giả đã qua Trust Layer: chỉ cần trọng số > 0 để được tính
+  const fb = (text, o = {}) => ({
+    _id: `t${++seq}`,
+    originalText: text,
+    sentiment: o.sentiment || 'Negative',
+    rating: o.rating ?? (o.sentiment === 'Positive' ? 5 : 1),
+    productName: o.productName === undefined ? 'Ốp lưng silicon XYZ trong suốt' : o.productName,
+    productCategory: o.productCategory,
+    category: o.category || (o.sentiment === 'Positive' ? 'Other' : 'ProductQuality'),
+    subCategory: o.subCategory || (o.sentiment === 'Positive' ? null : 'NotAsDescribed'),
+    customerId: o.customerId || `kh${seq}`,
+    author: o.author || null,
+    orderId: o.orderId || null,
+    timestamp: new Date(T0 + (o.day ?? seq % 20) * DAY).toISOString(),
+    trust: { weight: 1, tier: o.tier || 'P3' }
+  });
+  // Một mảng bịa (ốp lưng) với điểm đau "ố vàng" cố ý cài; mảng nền (nệm) chê chuyện khác
+  const build = () => {
+    seq = 0;
+    const out = [];
+    for (let i = 0; i < 12; i += 1) out.push(fb(`Dùng được ${i + 2} tuần thì ốp bị ố vàng, nhìn rất xấu`, { day: i }));
+    for (let i = 0; i < 8; i += 1) out.push(fb(`Ốp lưng hơi ${i % 2 ? 'cứng' : 'mỏng'}, giao hàng lâu quá`, { day: i, subCategory: 'TechnicalDefect' }));
+    for (let i = 0; i < 25; i += 1) out.push(fb('Ốp lưng đẹp, ôm máy vừa khít', { sentiment: 'Positive', day: i % 20 }));
+    for (let i = 0; i < 20; i += 1) out.push(fb(`Nệm bị xẹp lún sau ${i + 1} tháng, nằm đau lưng`, { productName: 'Nệm cao su ABC 1m6', day: i, subCategory: 'TechnicalDefect' }));
+    for (let i = 0; i < 25; i += 1) out.push(fb('Nệm êm, nằm thích', { productName: 'Nệm cao su ABC 1m8', sentiment: 'Positive', day: i % 20 }));
+    return out;
+  };
+
+  test('Điểm đau: tìm đúng "ố vàng" ở mảng chưa từng thấy, tách khỏi mảng khác', () => {
+    const r = pain.findPainPoints(build(), { now: T0 + 30 * DAY });
+    const g = r.groups.find((x) => /ốp/i.test(x.label));
+    assert.ok(g, 'phải có mảng ốp lưng');
+    assert.strictEqual(g.status, 'ok');
+    const p = g.painPoints.find((x) => /ố vàng/.test(x.phrase) || x.variants.some((v) => /ố vàng/.test(v)));
+    assert.ok(p, `phải có điểm đau "ố vàng", được: ${g.painPoints.map((x) => x.phrase).join(', ')}`);
+    assert.ok(p.count >= 12 && p.customers >= 12);
+    const n = r.groups.find((x) => /nệm/i.test(x.label));
+    assert.ok(n.painPoints.some((x) => /xẹp|lún/.test(x.phrase)), 'mảng nệm phải ra "xẹp lún"');
+    assert.ok(!n.painPoints.some((x) => /ố vàng/.test(x.phrase)), 'điểm đau của mảng này không lọt sang mảng kia');
+  });
+
+  test('Điểm đau: tên hàng không thành điểm đau; JSON không mang danh sách phản hồi', () => {
+    const r = pain.findPainPoints(build(), { now: T0 + 30 * DAY });
+    const all = r.groups.flatMap((g) => g.painPoints);
+    assert.ok(!all.some((p) => /^(ốp lưng|nệm cao su)$/i.test(p.phrase)), all.map((p) => p.phrase).join(', '));
+    const json = JSON.parse(JSON.stringify(r));
+    assert.ok(json.groups.every((g) => g.painPoints.every((p) => !('members' in p))));
+    assert.ok(all.every((p) => Array.isArray(p.members) && p.members.length === p.count));
+  });
+
+  test('Điểm đau: một người viết 10 câu không thành điểm đau', () => {
+    const items = build();
+    for (let i = 0; i < 10; i += 1) items.push(fb('Ốp bị bong keo viền camera', { customerId: 'mot-nguoi', day: 3 }));
+    const r = pain.findPainPoints(items, { now: T0 + 30 * DAY });
+    const g = r.groups.find((x) => /ốp/i.test(x.label));
+    assert.ok(!g.painPoints.some((p) => /bong keo/.test(p.phrase)), 'cùng một khách, cùng một ngày: không đủ rộng');
+  });
+
+  test('Điểm đau: mảng ít câu chê trả "chưa đủ câu", không đoán', () => {
+    const items = [fb('Ốp bị ố vàng'), fb('Ốp bị ố vàng'), fb('Ốp đẹp', { sentiment: 'Positive' })];
+    const r = pain.findPainPoints(items, { now: T0 + 30 * DAY });
+    assert.strictEqual(r.groups[0].status, 'too_few');
+    assert.strictEqual(r.groups[0].painPoints.length, 0);
+  });
+
+  test('Điểm đau: dữ liệu nghèo (không tên sản phẩm, không số sao, không đơn) vẫn chạy', () => {
+    const items = build().map((f) => ({ ...f, productName: null, productCategory: undefined, rating: null }));
+    const r = pain.findPainPoints(items, { now: T0 + 30 * DAY });
+    assert.strictEqual(r.groups.length, 1);
+    assert.strictEqual(r.groups[0].source, 'shop');
+    const g = r.groups[0];
+    const p = g.painPoints[0];
+    assert.ok(p, 'vẫn tìm ra điểm đau');
+    const c = caseFile.buildCaseFile(p, g, { items, transactions: [], now: T0 + 30 * DAY });
+    assert.strictEqual(c.steps.ready.compensation.available, false);
+    assert.ok(c.steps.ready.compensation.missing[0].includes('mã đơn hàng'));
+    assert.ok(c.steps.scope.missing.some((m) => m.includes('mã đơn hàng')));
+    assert.ok(c.steps.follow.tasks.length >= 1);
+  });
+
+  test('Điểm đau: gõ không dấu vẫn gộp với có dấu', () => {
+    const items = build();
+    for (let i = 0; i < 6; i += 1) items.push(fb('op bi o vang qua nhanh', { day: 10 + i }));
+    const r = pain.findPainPoints(items, { now: T0 + 30 * DAY });
+    const g = r.groups.find((x) => /ốp/i.test(x.label));
+    const p = g.painPoints.find((x) => x.phraseKeys.some((k) => pain.fold(k).includes('o vang')));
+    assert.ok(p && p.count >= 18, `câu không dấu phải vào cùng điểm đau (${p && p.count})`);
+  });
+
+  test('Mảng hàng: danh mục có sẵn thắng; suy từ tên; một sản phẩm; không tên', () => {
+    const items = [
+      { productName: 'Máy Xay Sinh Tố Toshiba 700W' },
+      { productName: 'Máy xay sinh tố Philips HR2223' },
+      { productName: 'Combo 2 Áo thun nam cotton' },
+      { productName: 'Áo thun nam MRM basic' },
+      { productName: 'Kệ sách gỗ độc bản' },
+      { productName: 'Bất kỳ', productCategory: 'nồi chiên' },
+      { productName: null }
+    ];
+    const g = groupMod.buildGrouper(items);
+    assert.strictEqual(g(items[0]).label, 'Máy xay sinh tố');
+    assert.strictEqual(g(items[0]).key, g(items[1]).key);
+    assert.strictEqual(g(items[2]).key, g(items[3]).key, '"Combo 2" không được chặn ghép mảng');
+    assert.strictEqual(g(items[4]).source, 'product');
+    assert.strictEqual(g(items[5]).label, 'Nồi chiên');
+    assert.strictEqual(g(items[5]).source, 'field');
+    assert.strictEqual(g(items[6]).source, 'shop');
+    assert.strictEqual(groupMod.leafFromBreadcrumbs([{ name: 'Điện Gia Dụng' }, { name: 'Nồi chiên' }, { name: 'Tên SP' }], 'Tên SP'), 'Nồi chiên');
+  });
+
+  test('Hồ sơ: việc mẫu chỉ giữ khi điền đủ số; có đơn thì soạn được tin bù', () => {
+    const items = build().map((f, i) => (f.sentiment === 'Negative' && /ố vàng/.test(f.originalText) ? { ...f, orderId: `DH${i}` } : f));
+    const tx = items.filter((f) => f.orderId).map((f) => ({ orderId: f.orderId, amount: 120000 }));
+    const r = pain.findPainPoints(items, { now: T0 + 30 * DAY });
+    const g = r.groups.find((x) => /ốp/i.test(x.label));
+    const p = g.painPoints.find((x) => /ố vàng/.test(x.phrase) || x.variants.some((v) => /ố vàng/.test(v)));
+    const c = caseFile.buildCaseFile(p, g, { items, transactions: tx, now: T0 + 30 * DAY });
+    assert.ok(c.steps.who.actions.every((a) => !/\{\w+\}/.test(a.text)), 'không còn chỗ trống chưa điền');
+    assert.ok(c.steps.who.actions.length > 0, 'phải còn việc làm được');
+    assert.ok(c.steps.who.dropped.every((d) => d.need.length > 0), 'việc bị loại phải ghi rõ thiếu gì');
+    assert.strictEqual(c.steps.ready.compensation.available, true);
+    assert.strictEqual(c.steps.ready.compensation.orderValue, 12 * 120000);
+    assert.ok(c.steps.ready.letter.text.includes(String(p.customers)));
+  });
+
+  test('Hồ sơ: đo trước/sau theo cụm của điểm đau', () => {
+    const items = build();
+    const r = pain.findPainPoints(items, { now: T0 + 30 * DAY });
+    const g = r.groups.find((x) => /ốp/i.test(x.label));
+    const p = g.painPoints[0];
+    const e = caseFile.caseEffect(items, { groupKey: g.key, phraseKeys: p.phraseKeys, createdAt: new Date(T0 + 7 * DAY) }, T0 + 30 * DAY);
+    assert.strictEqual(e.status, 'done');
+    assert.ok(e.before.n > 0 && e.after.n > 0);
+  });
+
+  test('Điểm đau: mã nguồn không viết cứng tên mảng hay sản phẩm nào', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const src = ['pain_points.js', 'product_group.js', 'case_file.js']
+      .map((f) => fs.readFileSync(path.join(__dirname, '..', 'services', f), 'utf8')).join('\n')
+      // bỏ chú thích: ví dụ trong chú thích được phép
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    for (const word of ['chuột', 'tai nghe', 'nồi', 'máy xay', 'sữa', 'áo', 'kết nối', 'giao chậm', 'Tiki']) {
+      const re = new RegExp(`(?<!\\p{L})${word.toLowerCase()}(?!\\p{L})`, 'u');
+      assert.ok(!re.test(src.toLowerCase()), `không được viết cứng "${word}"`);
+    }
+  });
+}
+
 (async () => {
   for (const t of asyncTests) {
     try {

@@ -3,10 +3,11 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { readStorage, writeStorage } from '../lib/storage';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, GitCompareArrows } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, GitCompareArrows, Crosshair } from 'lucide-react';
 import FilterBar from './FilterBar';
 import Segments from './Segments';
 import Compare from './analytics/Compare';
+import PainPoints from './analytics/PainPoints';
 import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat, ChartTooltip, Skeleton } from './ui';
 import { buildQuery, fmtInt, fmtPct, fmtGrowth, fmtDate } from '../lib/format';
 import { useDataVersion } from '../lib/dataVersion';
@@ -357,7 +358,7 @@ const TabPane = ({ tabKey, children }) => {
 
 const Analytics = () => {
   const [params, setParams] = useSearchParams();
-  const tab = ['segments', 'compare'].includes(params.get('tab')) ? params.get('tab') : 'causes';
+  const tab = ['segments', 'compare', 'pain'].includes(params.get('tab')) ? params.get('tab') : 'causes';
 
   return (
     <PageEnter className="cx">
@@ -365,6 +366,7 @@ const Analytics = () => {
         title="Phân tích nguyên nhân"
         subtitle={{
           causes: 'Chọn một nhóm vấn đề để xem nguyên nhân, sản phẩm bị chê và phản hồi gốc.',
+          pain: 'Khách đang than chuyện gì, theo từng mảng hàng. Mỗi chuyện mở được một hồ sơ xử lý.',
           compare: 'Đặt sản phẩm của bạn cạnh sản phẩm đối thủ, xem bên nào bị chê nhiều hơn và vì sao.',
           segments: 'Nhóm khách hàng theo cảm xúc trong các phản hồi của họ.'
         }[tab]}
@@ -375,12 +377,13 @@ const Analytics = () => {
         onChange={(v) => setParams(v === 'causes' ? {} : { tab: v }, { replace: true })}
         tabs={[
           { value: 'causes', label: 'Theo nhóm vấn đề', icon: ScanSearch },
+          { value: 'pain', label: 'Điểm đau cụ thể', icon: Crosshair },
           { value: 'compare', label: 'So sánh sản phẩm', icon: GitCompareArrows },
           { value: 'segments', label: 'Phân khúc khách hàng', icon: Users }
         ]}
       />
       <TabPane tabKey={tab}>
-        {tab === 'segments' ? <Segments /> : tab === 'compare' ? <Compare /> : <RootCauses />}
+        {tab === 'segments' ? <Segments /> : tab === 'compare' ? <Compare /> : tab === 'pain' ? <PainPoints /> : <RootCauses />}
       </TabPane>
     </PageEnter>
   );

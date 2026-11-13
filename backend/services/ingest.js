@@ -75,6 +75,8 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
       customerId: facts ? pseudoCustomerId(facts.platform, rawCustomerId) : null,
       timestamp: review.timestamp,
       productName: review.productName || meta.fallbackProduct || 'Sản phẩm chưa xác định',
+      // Mảng hàng: danh mục của sàn hoặc cột danh mục trong file shop nạp lên (product_group.js)
+      productCategory: review.productCategory || meta.productCategory || null,
       accountAgeDays: review.accountAgeDays ?? null,
       rating: review.rating ?? null,
       orderId: review.orderId ?? null,

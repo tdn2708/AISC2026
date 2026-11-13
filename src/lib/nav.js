@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, ChartColumnBig, Siren, MessagesSquare, ScanSearch, ShieldCheck, FlaskConical,
-  DatabaseZap, FileText, Settings, Palette, Radio
+  DatabaseZap, FileText, Settings, Palette, Radio, FolderKanban
 } from 'lucide-react';
 
 /**
@@ -31,6 +31,7 @@ export const NAV = [
 
 /** Trang không nằm trên thanh bên nhưng vẫn tìm được qua bảng lệnh */
 export const HIDDEN_PAGES = [
+  { to: '/cases', label: 'Hồ sơ xử lý', icon: FolderKanban, group: 'Khác' },
   { to: '/reports', label: 'Báo cáo', icon: FileText, group: 'Khác' },
   { to: '/settings', label: 'Cài đặt', icon: Settings, group: 'Khác' },
   { to: '/lab', label: 'Phòng thí nghiệm mô hình', icon: FlaskConical, group: 'Khác' },
