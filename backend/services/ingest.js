@@ -123,4 +123,15 @@ async function saveFeedbacks(db, docs) {
   return { inserted: write.upsertedCount, duplicates: docs.length - write.upsertedCount };
 }
 
-module.exports = { dedupKey, maskName, pseudoCustomerId, buildFeedbackDocs, saveFeedbacks };
+/**
+ * Tên hiển thị ra giao diện: luôn ở dạng che ("Quang D. H.", "l***"). Dữ liệu
+ * mô phỏng và bản ghi cũ lưu tên đầy đủ; gom khách theo tên gốc vẫn chạy ở phía
+ * máy chủ, chỉ chữ đi ra ngoài mới bị che. Tên đã che che lại vẫn ra chính nó.
+ */
+function shownName(name) {
+  if (!name) return name ?? null;
+  if (/^(anonymous|ẩn danh)$/i.test(String(name).trim())) return name;
+  return maskName(name);
+}
+
+module.exports = { dedupKey, maskName, shownName, pseudoCustomerId, buildFeedbackDocs, saveFeedbacks };

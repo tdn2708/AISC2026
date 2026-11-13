@@ -18,6 +18,7 @@ const taxonomy = require('./taxonomy');
 const metrics = require('./metrics');
 const { gramsOf, fold } = require('./pain_points');
 const { buildGrouper } = require('./product_group');
+const { shownName } = require('./ingest');
 
 const DAY = 86400000;
 
@@ -114,7 +115,7 @@ function buildCaseFile(point, group, ctx) {
         productName: f.productName || null,
         source: f.source || null,
         timestamp: f.timestamp || null,
-        author: f.author || null,
+        author: shownName(f.author) || null,
         orderId: f.orderId || null,
         region: f.region || null,
         verified: ['P1', 'P2'].includes(f.trust?.tier)

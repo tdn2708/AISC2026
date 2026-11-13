@@ -17,6 +17,7 @@
  */
 
 const metrics = require('./metrics');
+const { shownName } = require('./ingest');
 const alertEngine = require('./alert_engine');
 const taxonomy = require('./taxonomy');
 const playbook = require('./playbook');
@@ -311,7 +312,7 @@ const TOOLS = {
           `Nhóm có nguy cơ (ít nhất một phản hồi tiêu cực): ${num(atRisk.length)} (${pct(atRisk.length / Math.max(1, all.length))})`,
           `Khách hàng khiếu nại lặp lại từ 2 lần trở lên: ${num(repeat.length)} — đây là nhóm cần ưu tiên liên hệ`,
           repeat.length
-            ? 'Một số khách khiếu nại nhiều lần: ' + repeat.slice(0, 5).map(([a, e]) => `${a} (${e.negative} lần)`).join(', ')
+            ? 'Một số khách khiếu nại nhiều lần: ' + repeat.slice(0, 5).map(([a, e]) => `${shownName(a)} (${e.negative} lần)`).join(', ')
             : 'Không có khách hàng nào khiếu nại lặp lại.'
         ]
       };

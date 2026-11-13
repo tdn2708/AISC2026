@@ -139,14 +139,14 @@ const Segments = () => {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((u) => {
+                {rows.map((u, i) => {
                   const parts = [
                     ['Positive', u.positive, 'bg-pos'],
                     ['Neutral', u.neutral, 'bg-neu'],
                     ['Negative', u.negative, 'bg-neg']
                   ];
                   return (
-                    <tr key={u.author}>
+                    <tr key={`${u.author}-${i}`}>
                       <td className="pl-6">
                         <span className="font-medium">{u.author}</span>
                       </td>

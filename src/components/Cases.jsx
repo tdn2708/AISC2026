@@ -244,7 +244,7 @@ const CaseFile = ({ caseKey, filterQuery }) => {
             <Stat label="Khách nhắc" value={fmtInt(s.scope.customers)} />
             <Stat label="Phản hồi" value={fmtInt(s.scope.count)} sub={`${fmtPct(file.shareOfNegatives, 0)} câu chê của mảng`} />
             <Stat label="Có chứng từ mua" value={fmtInt(s.scope.verified)} />
-            <Stat label="Khoảng thời gian" value={fmtDate(s.scope.lastSeen)} sub={`Lần đầu ${fmtDate(s.scope.firstSeen)}`} />
+            <Stat label="Lần gần nhất" value={fmtDate(s.scope.lastSeen)} sub={`Lần đầu ${fmtDate(s.scope.firstSeen)}`} />
           </div>
         </GlassPanel>
 

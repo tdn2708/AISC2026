@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Link2, RefreshCw, Store, ShoppingBag, Music2, Globe, Plus, Trash2, Boxes, Activity, Clock, CircleCheck, CircleX, CircleDashed, Unplug, History, Info
-} from 'lucide-react';
+  Link2, RefreshCw, Store, ShoppingBag, Music2, Globe, Plus, Trash2, Boxes, Activity, Clock, CircleCheck, CircleX, CircleDashed, Unplug, History, Info, FileUp } from 'lucide-react';
+import ImportCsv from './data/ImportCsv';
 import { PageHeader, GlassPanel, PanelHeader, Tabs, Button, IconButton, TextField, Select, Modal, Badge, EmptyState } from './ui';
 import { fmtInt } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
@@ -256,6 +256,7 @@ const DataSources = () => {
         onChange={setTab}
         tabs={[
           { value: 'url', label: 'Liên kết', icon: Link2 },
+          { value: 'file', label: 'Nạp file', icon: FileUp },
           { value: 'shops', label: 'Gian hàng', icon: Store, count: shops.length || undefined },
           { value: 'history', label: 'Lịch sử', icon: History, count: history.length || undefined }
         ]}
@@ -332,6 +333,8 @@ const DataSources = () => {
           {lastResult && <ScrapeResult result={lastResult} />}
         </GlassPanel>
       )}
+
+      {tab === 'file' && <ImportCsv />}
 
       {tab === 'history' && (
         <GlassPanel tone="strong" className="overflow-hidden">

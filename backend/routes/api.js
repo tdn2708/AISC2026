@@ -11,7 +11,7 @@ const metrics = require('../services/metrics');
 const playbook = require('../services/playbook');
 const recommender = require('../services/recommender');
 const taxonomy = require('../services/taxonomy');
-const { buildFeedbackDocs, saveFeedbacks } = require('../services/ingest');
+const { buildFeedbackDocs, saveFeedbacks, shownName } = require('../services/ingest');
 const normalizer = require('../services/normalizer');
 const visobert = require('../services/visobert_client');
 const insights = require('../services/insights');
@@ -106,7 +106,7 @@ function publicItem(f) {
     source: f.source,
     productName: f.productName,
     region: f.region,
-    author: f.author,
+    author: shownName(f.author),
     originalText: f.originalText,
     timestamp: f.timestamp,
     rating: f.rating,
@@ -520,7 +520,7 @@ router.get('/trust/bursts', wrap(async (req, res) => {
 router.get('/trust/queue', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const limit = clampInt(req.query.limit, 50, 1, 1000);
-  res.json(trustLayer.buildReviewQueue(ctx.items, limit));
+  res.json(trustLayer.buildReviewQueue(ctx.items, limit).map((q) => ({ ...q, author: shownName(q.author) })));
 }));
 
 /**
@@ -1527,6 +1527,8 @@ router.get('/segments', wrap(async (req, res) => {
     }
   }
 
+  // Gom theo tên gốc ở trên; chữ đi ra giao diện thì che
+  for (const list of Object.values(segments)) if (Array.isArray(list)) for (const u of list) u.author = shownName(u.author);
   res.json(segments);
 }));
 
@@ -1741,6 +1743,77 @@ router.patch('/cases/:id', wrap(async (req, res) => {
   const r = await req.db.collection('cases').findOneAndUpdate({ _id: new ObjectId(req.params.id) }, { $set: set }, { returnDocument: 'after' });
   if (!r) return res.status(404).json({ error: 'Không tìm thấy hồ sơ' });
   res.json({ ...r, _id: String(r._id) });
+}));
+
+// ==================================================================
+// NẠP FILE PHẢN HỒI CỦA SHOP (CSV đọc ở trình duyệt, gửi lên từng lô)
+// ==================================================================
+
+const IMPORT_MAX_ROWS = 50;
+const IMPORT_SOURCES = ['Shopee', 'Lazada', 'Tiki', 'TikTok', 'Facebook', 'Zalo', 'Website', 'CSKH', 'Email', 'Hotline', 'Form', 'Khác'];
+const { maskName, pseudoCustomerId, dedupKey } = require('../services/ingest');
+
+/**
+ * Nhận tối đa IMPORT_MAX_ROWS dòng mỗi lần: gán nhãn bằng cùng tầng nhãn với
+ * thu thập sàn (ViSoBERT, LLM, luật), che PII, chống trùng, rồi tính lại. Chỉ
+ * nhận ở kho Dữ liệu thật: kho Mô phỏng giữ nguyên câu chuyện demo.
+ */
+router.post('/import/feedbacks', wrap(async (req, res) => {
+  if (req.workspace !== 'real') return res.status(403).json({ error: 'Chỉ nạp file vào kho Dữ liệu thật. Chọn kho ở góc trên thanh bên.' });
+  const rows = Array.isArray(req.body?.rows) ? req.body.rows : null;
+  if (!rows || !rows.length) return res.status(400).json({ error: 'Cần ít nhất một dòng' });
+  if (rows.length > IMPORT_MAX_ROWS) return res.status(400).json({ error: `Mỗi lần gửi tối đa ${IMPORT_MAX_ROWS} dòng` });
+  const fileSource = IMPORT_SOURCES.includes(req.body?.source) ? req.body.source : 'Khác';
+  const fileName = typeof req.body?.fileName === 'string' ? req.body.fileName.slice(0, 120) : null;
+
+  const skipped = [];
+  const raw = [];
+  rows.forEach((r, i) => {
+    const text = readText(r?.text);
+    if (!text) { skipped.push({ row: r?.row ?? i, reason: 'Không có nội dung' }); return; }
+    const ts = r?.date ? new Date(r.date) : null;
+    const rating = Number(r?.rating);
+    const customer = typeof r?.customer === 'string' ? r.customer.trim().slice(0, 100) : '';
+    raw.push({
+      source: IMPORT_SOURCES.includes(r?.source) ? r.source : fileSource,
+      rawText: text.slice(0, MAX_TEXT_CHARS),
+      author: customer ? maskName(customer) : 'Ẩn danh',
+      customerKey: customer || null,
+      rating: Number.isFinite(rating) && rating >= 1 && rating <= 5 ? Math.round(rating) : null,
+      orderId: typeof r?.orderId === 'string' && r.orderId.trim() ? r.orderId.trim().slice(0, 60) : null,
+      productName: typeof r?.product === 'string' && r.product.trim() ? r.product.trim().slice(0, 200) : null,
+      productCategory: typeof r?.category === 'string' && r.category.trim() ? r.category.trim().slice(0, 80) : null,
+      timestamp: ts && !Number.isNaN(ts.getTime()) && ts.getTime() <= Date.now() + 86400000 ? ts : new Date()
+    });
+  });
+  if (!raw.length) return res.json({ inserted: 0, duplicates: 0, skipped });
+
+  // Bỏ dòng đã nạp TRƯỚC khi gán nhãn: nạp lại cả file không tốn thêm lượt gọi mô hình
+  const keyOf = (r) => dedupKey({ source: r.source, productName: r.productName || 'Sản phẩm chưa ghi tên', author: r.author, timestamp: r.timestamp, originalText: normalizer.maskPII(r.rawText).text });
+  const keys = raw.map(keyOf);
+  const seen = new Set((await req.db.collection('feedbacks').find({ dedupKey: { $in: keys } }, { projection: { dedupKey: 1 } }).toArray()).map((d) => d.dedupKey));
+  const fresh = raw.filter((r, i) => !seen.has(keys[i]));
+  if (!fresh.length) return res.json({ inserted: 0, duplicates: raw.length, skipped, labelledBy: [], negatives: 0 });
+  raw.splice(0, raw.length, ...fresh);
+
+  const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating })));
+  const docs = buildFeedbackDocs(raw, ai, { collectedVia: 'import', sourceUrl: fileName ? `file:${fileName}` : null, fallbackProduct: 'Sản phẩm chưa ghi tên' });
+  // Mã khách ẩn danh: băm tên/mã khách trong file kèm muối bí mật (không có muối thì không lưu)
+  docs.forEach((d, i) => {
+    d.customerId = raw[i].customerKey ? pseudoCustomerId('import', raw[i].customerKey) : null;
+  });
+  const { inserted, duplicates } = await saveFeedbacks(req.db, docs);
+  if (inserted > 0) {
+    await req.db.collection('predictions').deleteMany({});
+    invalidate(req.db);
+  }
+  res.json({
+    inserted,
+    duplicates: duplicates + seen.size,
+    skipped,
+    labelledBy: [...new Set(docs.map((d) => d.labelledBy).filter(Boolean))],
+    negatives: docs.filter((d) => d.sentiment === 'Negative').length
+  });
 }));
 
 const { seedRouteCheck } = require('../services/write_guard');
