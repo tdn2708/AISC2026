@@ -312,7 +312,7 @@ UI conventions agreed with the user:
 - Chấm giao diện: `node C:/Users/DELL/.claude/skills/hallmark/scripts/sloplint.mjs src --genre modern-minimal --scope app --render --kept --url http://localhost:5199/<route>`.
 
 ### ID và đường dẫn
-- Phiên live mô phỏng cũ `6af204dab6bf75ac113997aa` đã xóa 13/11 (sao lưu ở `D:-DuAnAISC2026-backup-dblive-mo-phong-2026-11-13`); tạo phiên mới khi quay lại livestream.
+- Phiên live mô phỏng cũ `6af204dab6bf75ac113997aa` đã xóa 13/11 (sao lưu ở `D:/03-DuAn/AISC2026-backup-db/live-mo-phong-2026-11-13/`); tạo phiên mới khi quay lại livestream.
 - Mô hình ONNX trên HF: `tdn278/customer-radar-visobert-onnx`.
 - Trang so sánh trước/sau + đối thủ: https://claude.ai/artifact/4vZXq73mA1MUpvJFrNJid9. Bảng đối thủ CHƯA kiểm chứng với Sapo, phần mềm chốt đơn livestream, kênh người bán sàn: chưa đưa lên slide.
 
