@@ -44,7 +44,7 @@ const Reports = () => {
       id: Date.now(),
       name,
       type,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10), // ngày theo giờ Việt Nam, không phải UTC
       size
     };
     setReportHistory(prev => [entry, ...prev]);
@@ -58,7 +58,8 @@ const Reports = () => {
   const [exportDialog, setExportDialog] = useState(null); // { type: 'CSV' | 'PDF', name }
 
   const openExport = (type) =>
-    setExportDialog({ type, name: `${type === 'CSV' ? 'CX_Data' : 'Executive_Report'}_${new Date().toISOString().split('T')[0]}` });
+    // Tên tệp tiếng Việt không dấu, ngày theo giờ Việt Nam (toISOString là giờ UTC, sau 17 giờ ra ngày mai)
+    setExportDialog({ type, name: `${type === 'CSV' ? 'du-lieu-phan-hoi' : 'bao-cao-customer-radar'}-${new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10)}` });
 
   const runExport = () => {
     const { type, name } = exportDialog;

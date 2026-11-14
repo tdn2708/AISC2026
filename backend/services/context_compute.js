@@ -144,7 +144,7 @@ function computeContext(input) {
     for (const g of [...pain.groups, ...(pain.shop ? [pain.shop] : [])]) {
       for (const p of g.painPoints) p.memberIds = (p.members || []).map((f) => String(f._id));
     }
-  } catch (e) {
+  } catch {
     pain = null;
   }
 

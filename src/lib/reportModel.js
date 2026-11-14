@@ -205,9 +205,10 @@ export function buildReportModel({ data, filters = {}, workspaceLabel, generated
   ].filter((r) => r.value > 0);
   const components = health?.components ? [
     { label: 'Tỉ lệ qua bộ lọc', value: `${String(health.components.passRate).replace('.', ',')}%` },
-    { label: 'Độ phủ kênh', value: `${health.components.channelCoverage}%` },
-    { label: 'Độ mới của dữ liệu', value: `${health.components.freshness}%` },
-    { label: 'Tỉ lệ đối soát được', value: `${health.components.reconciliation}%` }
+    // Mọi phần trăm viết kiểu Việt (97,3%): trước đây ba dòng này in "97.3%"
+    { label: 'Độ phủ kênh', value: `${String(health.components.channelCoverage).replace('.', ',')}%` },
+    { label: 'Độ mới của dữ liệu', value: `${String(health.components.freshness).replace('.', ',')}%` },
+    { label: 'Tỉ lệ đối soát được', value: `${String(health.components.reconciliation).replace('.', ',')}%` }
   ] : [];
 
   // ---------- Tóm tắt điều hành: chỉ những câu số liệu chống lưng được ----------

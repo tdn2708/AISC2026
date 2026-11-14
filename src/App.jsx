@@ -25,6 +25,7 @@ import { readStorage, writeStorage } from './lib/storage';
 import { applyWorkspaceHeader } from './lib/workspace';
 import ErrorBoundary from './components/ErrorBoundary';
 import { RouteTransition } from './components/motion/RouteTransition';
+import { findPage } from './lib/nav';
 import './hooks/useTheme';
 
 // Trang giới thiệu công khai (F3): chunk riêng, chỉ tải khi mở `/`
@@ -48,6 +49,11 @@ const MainLayout = ({ children, onLogout }) => {
   const location = useLocation();
 
   useEffect(() => setMenuOpen(false), [location.pathname]);
+  // Tiêu đề tab theo trang: nhiều tab đang mở không còn cùng một chữ "Customer Radar"
+  useEffect(() => {
+    const page = findPage(location.pathname);
+    document.title = page ? `${page.label} | Customer Radar` : 'Customer Radar';
+  }, [location.pathname]);
   useEffect(() => writeStorage('sidebarCollapsed', collapsed), [collapsed]);
 
   useEffect(() => {
@@ -66,6 +72,8 @@ const MainLayout = ({ children, onLogout }) => {
   return (
     <>
       <AppAtmosphere />
+      {/* Lối tắt bàn phím: phím Tab đầu tiên nhảy qua thanh bên vào thẳng nội dung */}
+      <a href="#noi-dung" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-ctrl focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink-hi focus:shadow-lg">Bỏ qua tới nội dung</a>
       <div className="flex min-h-screen">
         <Sidebar
           onLogout={onLogout}
@@ -74,7 +82,7 @@ const MainLayout = ({ children, onLogout }) => {
           collapsed={collapsed}
           onToggleCollapse={() => setCollapsed((v) => !v)}
         />
-        <main className={`main-content ${collapsed ? 'is-collapsed' : ''}`}>
+        <main id="noi-dung" tabIndex={-1} className={`main-content outline-none ${collapsed ? 'is-collapsed' : ''}`}>
           <Topbar onOpenMenu={() => setMenuOpen(true)} onOpenCommand={() => setCommandOpen(true)} />
           {/* Chuyển trang: View Transitions khi trình duyệt có, không thì mờ dần như cũ */}
           <RouteTransition>
