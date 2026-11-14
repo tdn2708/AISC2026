@@ -232,6 +232,7 @@ function buildRecommendation(alert) {
  * hay hành động mới ngoài playbook.
  */
 const { issueTitle } = require('./wording');
+const { spanWords } = require('./cadence');
 
 /** Số "đơn vị phần trăm" (ví dụ 0.5 nghĩa là 0,5%): dưới 1 giữ hai chữ số, từ 1 trở lên giữ tối đa hai chữ số */
 const pctUnit = (n) => {
@@ -257,7 +258,7 @@ function summarize(alert) {
   // Câu cho người quản lý đọc: không z, không p (đã có ở phần "Số liệu kiểm
   // định"), số thập phân kiểu Việt, tỉ lệ dưới 1% giữ hai chữ số để 0,04% không thành 0,0%
   const pct = (v) => `${(v * 100).toFixed(v > 0 && v < 0.01 ? 2 : 1).replace('.', ',')}%`;
-  return `${what}${scope} tăng từ ${pct(alert.statistics.baselineRate)} lên ${pct(alert.statistics.currentRate)} so với ${alert.baselineDays} ngày trước đó. Ước tính ${alert.affectedCustomers} khách hàng bị ảnh hưởng, dựa trên ${alert.evidenceCount} phản hồi hợp lệ${alert.excludedByTrust > 0 ? ` (đã loại ${alert.excludedByTrust} phản hồi không đáng tin)` : ''}.`;
+  return `${what}${scope} tăng từ ${pct(alert.statistics.baselineRate)} lên ${pct(alert.statistics.currentRate)} so với ${spanWords(alert.baselineDays || 28)} trước đó. Ước tính ${alert.affectedCustomers} khách hàng bị ảnh hưởng, dựa trên ${alert.evidenceCount} phản hồi hợp lệ${alert.excludedByTrust > 0 ? ` (đã loại ${alert.excludedByTrust} phản hồi không đáng tin)` : ''}.`;
 }
 
 const PLAYBOOK_COUNT = Object.keys(PLAYBOOKS).length;

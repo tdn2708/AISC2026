@@ -152,7 +152,8 @@ router.get('/sessions', wrap(async (req, res) => {
 router.post('/sessions', wrap(async (req, res) => {
   const b = req.body || {};
   const platform = str(b.platform, 20);
-  if (!hub.PLATFORMS[platform]) throw bad('Nền tảng không hợp lệ');
+  // hasOwn: "__proto__", "constructor" là thuộc tính có sẵn của mọi object, PLATFORMS[...] vẫn ra giá trị
+  if (!platform || !Object.hasOwn(hub.PLATFORMS, platform)) throw bad('Nền tảng không hợp lệ');
   if (platform === 'simulator' && req.workspace !== 'demo') throw bad('Phiên mô phỏng chỉ mở được trong kho demo; kho thật chỉ chứa dữ liệu thật');
   if (platform === 'youtube' && !process.env.YOUTUBE_API_KEY) throw bad('Máy chủ chưa có YOUTUBE_API_KEY');
   const target = str(b.target, 300);

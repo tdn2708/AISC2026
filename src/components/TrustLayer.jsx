@@ -216,21 +216,22 @@ const TrustOverview = () => {
               subtitle="Mỗi nguồn có trọng số tối đa riêng. Nguồn hạng P5 chỉ để theo dõi xu hướng, không đủ để bật cảnh báo mức Cao trở lên."
             />
           </div>
-          <div className="paper mx-3 mb-3">
+          {/* Màn hẹp: cột nguồn giữ tối thiểu 8rem, bảng cuộn ngang thay vì bóp chữ thành cột một từ */}
+          <div className="paper mx-3 mb-3 table-responsive">
           <table className="data-table">
             <thead>
-              <tr><th className="pl-5">Hạng</th><th>Nguồn</th><th className="text-right">Trọng số</th><th className="pr-5 text-right">Phản hồi</th></tr>
+              <tr><th className="pl-3 sm:pl-5">Hạng</th><th className="min-w-[7.5rem]">Nguồn</th><th className="text-right">Trọng số</th><th className="pr-3 text-right sm:pr-5">Phản hồi</th></tr>
             </thead>
             <tbody>
               {health.tierBreakdown.map((t) => (
                 <tr key={t.tier}>
-                  <td className="pl-5"><span className="tabular-nums font-semibold text-accent">{t.tier}</span></td>
+                  <td className="pl-3 sm:pl-5"><span className="tabular-nums font-semibold text-accent">{t.tier}</span></td>
                   <td>
                     <span className="block text-sm text-ink-hi">{t.label}</span>
                     <span className="block text-xs text-ink-lo">Đối soát: {t.reconciliation.toLowerCase()}</span>
                   </td>
                   <td className="text-right tabular-nums">{t.weight.toFixed(2).replace('.', ',')}</td>
-                  <td className="pr-5 text-right tabular-nums">{fmtInt(t.count)}</td>
+                  <td className="pr-3 text-right tabular-nums sm:pr-5">{fmtInt(t.count)}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Download, FileText, FileSpreadsheet, Calendar, Trash2, Eye, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { REPORT } from './report_kit';
 import ReportDocument from './report/ReportDocument';
 import { buildReportModel } from '../lib/reportModel';
@@ -214,6 +212,8 @@ const Reports = () => {
       if (!pages.length) throw new Error('Chưa dựng được bản báo cáo');
 
       setPdfProgress({ done: 0, total: pages.length });
+      // Hai thư viện in (~600 kB) chỉ tải khi bấm xuất: import tĩnh thì mọi trang đều phải tải
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
       const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
       pdf.setProperties({
         title: 'Báo cáo phản hồi khách hàng',

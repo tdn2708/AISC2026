@@ -456,7 +456,10 @@ async function ask(ctx, question, history = [], baseFilters = {}) {
       provider: llm ? llm.provider : 'deterministic',
       llmUsed: Boolean(llm),
       basedOnFeedbacks: ctx.items.length,
-      validFeedbacks: ctx.funnel.validForAnalysis,
+      // Số ĐƯỢC TÍNH (trọng số > 0) trong đúng phạm vi câu hỏi, cùng định nghĩa với mọi trang.
+      // Trước đây là validForAnalysis (chưa trừ phản hồi quá cũ): giao diện ghi "cùng số
+      // liệu với Tổng quan" nhưng ra 4.510 trong khi Tổng quan ghi 4.557.
+      validFeedbacks: require('./analysis_context').applyFilters(ctx.items, filters || {}, ctx.asOf).filter(require('./metrics').isCountable).length,
       dataHealthScore: ctx.funnel.dataHealthScore,
       elapsedMs: Date.now() - started
     },

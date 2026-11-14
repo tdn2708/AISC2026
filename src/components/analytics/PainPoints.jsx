@@ -136,11 +136,14 @@ const PainPoints = () => {
 
   const query = buildQuery({ time: timeFilter, source: sourceFilter, product: productFilter });
   useEffect(() => {
+    // Đổi bộ lọc nhanh: kết quả của bộ lọc cũ về muộn không được ghi đè bộ lọc mới
+    let alive = true;
     setLoading(true);
     axios.get(`/pain-points${query}`)
-      .then((r) => { setData(r.data); setError(null); })
-      .catch(() => setError('Không tải được điểm đau. Tải lại trang, hoặc kiểm tra mạng.'))
-      .finally(() => setLoading(false));
+      .then((r) => { if (alive) { setData(r.data); setError(null); } })
+      .catch(() => { if (alive) setError('Không tải được điểm đau. Tải lại trang, hoặc kiểm tra mạng.'); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
   }, [query, dataVersion]);
 
   // Mảng có điểm đau lên trước, rồi theo số câu chê

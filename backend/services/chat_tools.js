@@ -210,7 +210,8 @@ const TOOLS = {
     run(ctx) {
       const f = ctx.funnel;
       const facts = [
-        `Phễu dữ liệu: ${num(f.rawCollected)} thô → loại ${num(f.spamRemoved.count)} rác (${f.spamRemoved.pct}%) → gắn cờ ${num(f.inauthenticFlagged.count)} nghi ngờ không xác thực (${f.inauthenticFlagged.pct}%) → chờ kiểm duyệt ${num(f.pendingReview.count)} → còn ${num(f.validForAnalysis)} hợp lệ`,
+        // Cùng phép trừ với sổ đối chiếu trên Tổng quan (metrics.ledgerSplit), để số khớp mọi trang
+        ((L) => `Sổ đối chiếu: ${num(f.rawCollected)} thu thập, trừ ${num(L.spam)} rác, ${num(L.inauthentic)} nghi ảo, ${num(L.pendingNotCounted)} chờ duyệt chưa tính, ${num(L.aged)} quá cũ, còn ${num(L.counted)} được tính vào chỉ số (${num(L.pendingCounted)} câu chờ duyệt vẫn được tính tạm)`)(metrics.ledgerSplit(ctx.items)),
         `Điểm Sức khỏe Dữ liệu: ${f.dataHealthScore}/100 (qua lọc ${f.components.passRate}%, phủ kênh ${f.components.channelCoverage}%, độ tươi ${f.components.freshness}%, đối soát giao dịch ${f.components.reconciliation}%)`,
         `Số cụm trùng lặp gần bị phát hiện: ${ctx.clusters.length}`,
         `Số đợt đột biến thời gian: ${ctx.bursts.length}`

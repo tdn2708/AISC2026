@@ -146,7 +146,7 @@ const Segments = () => {
                     ['Negative', u.negative, 'bg-neg']
                   ];
                   return (
-                    <tr key={`${u.author}-${i}`}>
+                    <tr key={u.id || `${u.author}-${i}`}>
                       <td className="pl-6">
                         <span className="font-medium">{u.author}</span>
                       </td>

@@ -166,10 +166,13 @@ const RootCauses = () => {
   }, [timeFilter, sourceFilter, productFilter]);
 
   useEffect(() => {
+    // Đổi bộ lọc nhanh: kết quả của bộ lọc cũ về muộn không được ghi đè bộ lọc mới
+    let alive = true;
     setLoading(true);
     axios
       .get(`/feedbacks${buildQuery({ time: timeFilter, source: sourceFilter, product: productFilter }, { view: 'negative' })}`)
       .then((r) => {
+        if (!alive) return;
         // Chỉ phản hồi tiêu cực (bản gọn) và mốc thời gian của cả phạm vi:
         // trang này chỉ phân tích khiếu nại, không cần tải cả kho
         setItems(Array.isArray(r.data?.items) ? r.data.items : []);
@@ -177,8 +180,9 @@ const RootCauses = () => {
         setCadence(r.data?.cadence || null);
         setError(null);
       })
-      .catch(() => setError('Không tải được dữ liệu phân tích. Tải lại trang, hoặc kiểm tra mạng.'))
-      .finally(() => setLoading(false));
+      .catch(() => { if (alive) setError('Không tải được dữ liệu phân tích. Tải lại trang, hoặc kiểm tra mạng.'); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
   }, [timeFilter, sourceFilter, productFilter, dataVersion]);
 
   // Phân tích nguyên nhân trên KHIẾU NẠI — phản hồi tiêu cực đã được phân loại

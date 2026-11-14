@@ -709,15 +709,20 @@ router.get('/inbox', wrap(async (req, res) => {
 router.post('/trust/label', wrap(async (req, res) => {
   const { feedbackId, label, by } = req.body;
   const allowed = ['valid', 'spam', 'inauthentic'];
-  if (!feedbackId || !allowed.includes(label)) {
+  if (typeof feedbackId !== 'string' || !feedbackId || !allowed.includes(label)) {
     return res.status(400).json({
       error: `Cần feedbackId và label thuộc: ${allowed.join(', ')}`
     });
   }
+  // Chỉ ghi nhãn cho phản hồi có thật: trước đây mã bất kỳ cũng được lưu thành nhãn rác
+  if (!ObjectId.isValid(feedbackId) || !(await req.db.collection('feedbacks').findOne({ _id: new ObjectId(feedbackId) }, { projection: { _id: 1 } }))) {
+    return res.status(404).json({ error: 'Không tìm thấy phản hồi' });
+  }
+  const reviewer = typeof by === 'string' && by.trim() ? by.trim().slice(0, 80) : 'admin';
 
   await req.db.collection('review_labels').updateOne(
     { feedbackId: String(feedbackId) },
-    { $set: { feedbackId: String(feedbackId), label, by: by || 'admin', at: new Date() } },
+    { $set: { feedbackId: String(feedbackId), label, by: reviewer, at: new Date() } },
     { upsert: true }
   );
 
@@ -725,7 +730,7 @@ router.post('/trust/label', wrap(async (req, res) => {
   // Thấy kết quả ngay trên bản đang phục vụ; bản tính lại đầy đủ chạy ở nền
   patchServing(req.db, (ctx) => {
     const item = ctx.items.find((f) => String(f._id) === String(feedbackId));
-    if (item) applyReviewLabel(item, { label, by: by || 'admin', at: new Date() });
+    if (item) applyReviewLabel(item, { label, by: reviewer, at: new Date() });
     ctx.patchedAt = Date.now();
   });
   const total = await req.db.collection('review_labels').countDocuments();
@@ -1537,8 +1542,16 @@ router.get('/segments', wrap(async (req, res) => {
   const userMap = new Map();
   for (const fb of items) {
     const author = fb.author || 'Ẩn danh';
-    if (!userMap.has(author)) {
-      userMap.set(author, {
+    // Gom theo MÃ KHÁCH ẩn danh (cùng cách Trust Layer gom tài khoản). Tên đã che dễ trùng:
+    // kho thật có 4.057 mã khách nhưng chỉ 3.191 tên che, gom theo tên thì "Nguyễn T. T."
+    // thành một khách 42 phản hồi. Không có mã: theo tên; "Ẩn danh" hoặc tên một chữ đã che
+    // ("n***") thì không nhận ra được ai, mỗi phản hồi tính là một khách riêng.
+    const anonymous = author === 'Ẩn danh' || /\*{3}$/.test(author);
+    const key = fb.customerId ? `c:${fb.customerId}` : anonymous ? `f:${fb._id}` : `a:${author}`;
+    if (!userMap.has(key)) {
+      userMap.set(key, {
+        // Khóa cho giao diện: số thứ tự, không lộ mã khách ẩn danh ra API
+        id: `u${userMap.size + 1}`,
         author,
         total: 0,
         positive: 0,
@@ -1549,7 +1562,7 @@ router.get('/segments', wrap(async (req, res) => {
         latestFeedback: fb.timestamp
       });
     }
-    const u = userMap.get(author);
+    const u = userMap.get(key);
     u.total += 1;
     u.weight += fb.trust.weight;
     if (fb.sentiment === 'Positive') u.positive += 1;
@@ -2073,7 +2086,7 @@ router.get('/chat/suggestions', wrap(async (req, res) => {
   res.json({
     suggestions: chatEngine.suggestedQuestions(ctx),
     dataHealthScore: ctx.funnel.dataHealthScore,
-    validFeedbacks: ctx.funnel.validForAnalysis
+    validFeedbacks: ctx.items.filter(metrics.isCountable).length
   });
 }));
 
