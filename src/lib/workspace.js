@@ -19,8 +19,16 @@ export const getWorkspace = () => {
   return WORKSPACES[ws] ? ws : 'demo';
 };
 
+/**
+ * Mã ghi (VITE_WRITE_KEY, đặt trên Vercel, khớp WRITE_KEY trên Render): chỉ gắn
+ * vào lệnh ghi. Nó nằm trong gói JS nên không phải bí mật thật; nó chặn bot và
+ * script gọi bừa vào API, xem backend/services/api_access.js.
+ */
+const WRITE_KEY = import.meta.env.VITE_WRITE_KEY;
+
 export const applyWorkspaceHeader = () => {
   axios.defaults.headers.common['X-Workspace'] = getWorkspace();
+  if (WRITE_KEY) for (const m of ['post', 'put', 'patch', 'delete']) axios.defaults.headers[m]['X-Write-Key'] = WRITE_KEY;
 };
 
 export const switchWorkspace = (ws) => {

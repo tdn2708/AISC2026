@@ -11,6 +11,8 @@ const { rateLimit } = require('../services/rate_limit');
 const llmLimit = rateLimit({ max: 12, windowMs: 60 * 1000, name: 'trợ lý' });
 const importLimit = rateLimit({ max: 60, windowMs: 60 * 1000, name: 'nạp file' });
 const collectLimit = rateLimit({ max: 3, windowMs: 10 * 60 * 1000, name: 'thu thập' });
+// Cả danh sách phản hồi (xuất CSV, khoảng 11 MB trên kho demo): đường GET nặng nhất
+const exportLimit = rateLimit({ max: 6, windowMs: 60 * 1000, name: 'xuất toàn bộ phản hồi' });
 const trustLayer = require('../services/trust_layer');
 const alertEngine = require('../services/alert_engine');
 const metrics = require('../services/metrics');
@@ -209,7 +211,8 @@ const slimItem = (f) => ({
  *   ?view=negative         bản gọn của phản hồi tiêu cực + mốc thời gian (trang Phân tích)
  *   không có page/limit    cả danh sách (chỉ còn dùng cho xuất CSV)
  */
-router.get('/feedbacks', wrap(async (req, res) => {
+const isFullList = (q) => q.limit == null && q.page == null && q.view !== 'negative';
+router.get('/feedbacks', (req, res, next) => (isFullList(req.query) ? exportLimit(req, res, next) : next()), wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   let items = applyFilters(ctx.items, req.query, ctx.asOf);
 

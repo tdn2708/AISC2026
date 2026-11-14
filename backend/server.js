@@ -7,8 +7,12 @@ const { errorResponse } = require('./services/http_errors');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// cors() mặc định phản chiếu header trình duyệt xin gửi, nên X-Workspace tự được cho phép
-app.use(cors());
+// CORS chỉ cho trang của nhóm + localhost; header trình duyệt xin gửi (X-Workspace,
+// X-Write-Key) vẫn được phản chiếu như trước. Khóa ghi: services/api_access.js
+const { corsOptions, writeGuard } = require('./services/api_access');
+app.use(cors(corsOptions()));
+app.use(writeGuard());
+if (process.env.WRITE_KEY) console.log('Khóa ghi: đang bật (cần header X-Write-Key).');
 // Render đứng sau một proxy: lấy IP thật của người gọi cho giới hạn tần suất
 app.set('trust proxy', 1);
 app.use(express.json({ limit: '2mb' }));

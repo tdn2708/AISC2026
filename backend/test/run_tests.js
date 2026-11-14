@@ -2546,6 +2546,37 @@ testAsync('Live: nối lại phiên mô phỏng đã quá trần thì dừng nga
     const b = timeBounds('Custom:2026-01-31:2026-01-01');
     assert.deepStrictEqual(b, a);
   });
+
+  test('Khóa ghi: không đặt WRITE_KEY thì không khóa; đặt rồi thì lệnh ghi thiếu hoặc sai mã trả 401', () => {
+    const { writeGuard } = require('../services/api_access');
+    const run = (env, method, path, key) => {
+      let code = 200;
+      const req = { method, path, get: (h) => (h === 'X-Write-Key' ? key : undefined) };
+      writeGuard(env)(req, { status: (c) => { code = c; return { json: () => {} }; } }, () => {});
+      return code;
+    };
+    assert.strictEqual(run({}, 'POST', '/api/cases', undefined), 200);
+    const env = { WRITE_KEY: 'ma-thu-123' };
+    assert.strictEqual(run(env, 'GET', '/api/stats', undefined), 200);
+    assert.strictEqual(run(env, 'POST', '/api/cases', undefined), 401);
+    assert.strictEqual(run(env, 'DELETE', '/api/live/sessions/abc', 'sai'), 401);
+    assert.strictEqual(run(env, 'PATCH', '/api/cases/abc', 'ma-thu-123'), 200);
+    // Webhook bình luận live có khóa nhập riêng của phiên
+    assert.strictEqual(run(env, 'POST', '/api/live/sessions/abc/comments', undefined), 200);
+    assert.strictEqual(run(env, 'POST', '/api/live/sessions/abc/comments/x/label', undefined), 401);
+  });
+
+  test('CORS: chỉ trang Vercel của nhóm, localhost và origin thêm qua CORS_ORIGINS', () => {
+    const { corsOptions } = require('../services/api_access');
+    const ok = (origin, env = {}) => { let r; corsOptions(env).origin(origin, (_e, v) => { r = v; }); return r; };
+    assert.strictEqual(ok('https://aisc-2026.vercel.app'), true);
+    assert.strictEqual(ok('http://localhost:5199'), true);
+    assert.strictEqual(ok('http://127.0.0.1:5173'), true);
+    assert.strictEqual(ok(undefined), true);
+    assert.strictEqual(ok('https://aisc-2026-evil.vercel.app'), false);
+    assert.strictEqual(ok('http://localhost.evil.com'), false);
+    assert.strictEqual(ok('https://ban-nhom.example', { CORS_ORIGINS: 'https://ban-nhom.example/' }), true);
+  });
 }
 
 (async () => {
