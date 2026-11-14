@@ -44,7 +44,7 @@ const RANGES = [
 const PAGE = 12;
 
 const Segments = () => {
-  const [data, setData] = useState({ promoters: [], atRisk: [], passives: [] });
+  const [data, setData] = useState({ promoters: [], atRisk: [], passives: [], oneTime: 0, asOf: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [segment, setSegment] = useState('atRisk');
@@ -66,7 +66,9 @@ const Segments = () => {
     let l = data[segment] || [];
     if (search) l = l.filter((u) => u.author.toLowerCase().includes(search.toLowerCase()));
     if (range !== 'all') {
-      const cutoff = Date.now() - Number(range) * 86400000;
+      // Tính từ mốc dữ liệu (kho thật: đánh giá mới nhất), không từ đồng hồ, như mọi trang khác
+      const anchor = data.asOf ? new Date(data.asOf).getTime() : Date.now();
+      const cutoff = anchor - Number(range) * 86400000;
       l = l.filter((u) => new Date(u.latestFeedback).getTime() >= cutoff);
     }
     return [...l].sort((a, b) => b.total - a.total);
@@ -107,6 +109,12 @@ const Segments = () => {
           );
         })}
       </div>
+
+      {!loading && data.oneTime > 0 && (
+        <p className="-mt-2 mb-6 text-sm text-ink-mid">
+          Còn <span className="font-semibold text-ink-hi tabular-nums">{fmtInt(data.oneTime)}</span> khách chỉ để lại một phản hồi không chê: chưa đủ để gọi là trung thành hay trung lập, nên không xếp vào nhóm nào.
+        </p>
+      )}
 
       <GlassPanel tone="strong" className="overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 border-b border-line-soft p-5">

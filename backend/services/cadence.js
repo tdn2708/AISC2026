@@ -82,7 +82,8 @@ function analysisCadence(items, now, isCountable = (f) => f && f.trust && f.trus
     enough,
     adaptive: windowDays !== LADDER[0],
     trendSpanDays: baselineDays,
-    trendBuckets: TREND_BUCKETS,
+    // Kho thưa: ô khoảng 2 tháng (6 đến 24 ô) để nhãn là tháng tròn, không phải "mỗi 51 ngày"
+    trendBuckets: windowDays === LADDER[0] ? TREND_BUCKETS : Math.min(24, Math.max(6, Math.round(baselineDays / 60))),
     windowLabel: spanWords(windowDays),
     baselineLabel: spanWords(baselineDays),
     thresholds: { minWindow: MIN_WINDOW, minBaseline: MIN_BASELINE, ratio: BASE_RATIO }

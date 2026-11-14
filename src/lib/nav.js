@@ -23,6 +23,8 @@ export const NAV = [
       { to: '/feedbacks', label: 'Phản hồi', icon: MessagesSquare },
       { to: '/live', label: 'Livestream', icon: Radio },
       { to: '/analytics', label: 'Phân tích nguyên nhân', icon: ScanSearch },
+      // Từ dữ liệu tới hành động: hồ sơ mở từ điểm đau phải tìm được ngay, không chỉ qua Ctrl+K
+      { to: '/cases', label: 'Hồ sơ xử lý', icon: FolderKanban },
       { to: '/trust', label: 'Tin cậy dữ liệu', icon: ShieldCheck, badge: 'queue' },
       { to: '/data', label: 'Nguồn dữ liệu', icon: DatabaseZap }
     ]
@@ -31,11 +33,11 @@ export const NAV = [
 
 /** Trang không nằm trên thanh bên nhưng vẫn tìm được qua bảng lệnh */
 export const HIDDEN_PAGES = [
-  { to: '/cases', label: 'Hồ sơ xử lý', icon: FolderKanban, group: 'Khác' },
   { to: '/reports', label: 'Báo cáo', icon: FileText, group: 'Khác' },
   { to: '/settings', label: 'Cài đặt', icon: Settings, group: 'Khác' },
   { to: '/lab', label: 'Phòng thí nghiệm mô hình', icon: FlaskConical, group: 'Khác' },
-  { to: '/ui-kit', label: 'Bộ giao diện (UI kit)', icon: Palette, group: 'Khác' }
+  // Trang nội bộ cho người làm giao diện: chỉ hiện ở bản dev, giám khảo không thấy trong Ctrl+K
+  ...(import.meta.env.DEV ? [{ to: '/ui-kit', label: 'Bộ giao diện (UI kit)', icon: Palette, group: 'Khác' }] : [])
 ];
 
 export const findPage = (pathname) => {

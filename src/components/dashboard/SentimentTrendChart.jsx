@@ -44,7 +44,7 @@ const trendSubtitle = (data) => {
   const step = data[0]?.days;
   if (!step) return 'Số phản hồi theo thời gian';
   const span = step * data.length;
-  const each = step < 1.5 ? 'mỗi ngày' : `mỗi ${Math.round(step)} ngày`;
+  const each = step < 1.5 ? 'mỗi ngày' : `mỗi ${spanWords(step)}`;
   return `Số phản hồi ${each}, ${spanWords(span)} tính tới mốc dữ liệu`;
 };
 

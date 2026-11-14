@@ -2524,6 +2524,30 @@ testAsync('Live: nối lại phiên mô phỏng đã quá trần thì dừng nga
   });
 }
 
+// ------------------------------------------------------------------
+// Kiểm thử 14/11: giới hạn tần suất, khoảng ngày đảo ngược
+// ------------------------------------------------------------------
+{
+  test('Giới hạn tần suất: quá số lượt trả 429 kèm số giây chờ, IP khác không bị ảnh hưởng', () => {
+    const { rateLimit } = require('../services/rate_limit');
+    const mw = rateLimit({ max: 2, windowMs: 60000, name: 'thử' });
+    const call = (ip) => { let code = 200; let body = null; const headers = {}; mw({ ip }, { set: (k, v) => { headers[k] = v; }, status: (c) => { code = c; return { json: (b) => { body = b; } }; } }, () => {}); return { code, body, headers }; };
+    assert.strictEqual(call('1.1.1.1').code, 200);
+    assert.strictEqual(call('1.1.1.1').code, 200);
+    const third = call('1.1.1.1');
+    assert.strictEqual(third.code, 429);
+    assert.ok(Number(third.headers['Retry-After']) > 0);
+    assert.strictEqual(call('2.2.2.2').code, 200);
+  });
+
+  test('Khoảng ngày chọn ngược được đổi chỗ, không ra 0 phản hồi', () => {
+    const { timeBounds } = require('../services/analysis_context');
+    const a = timeBounds('Custom:2026-01-01:2026-01-31');
+    const b = timeBounds('Custom:2026-01-31:2026-01-01');
+    assert.deepStrictEqual(b, a);
+  });
+}
+
 (async () => {
   for (const t of asyncTests) {
     try {

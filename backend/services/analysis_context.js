@@ -391,6 +391,12 @@ function timeBounds(time, nowRef = null) {
       start = vnDayFromInput(parts[1]);
       const endDay = vnDayFromInput(parts[2]);
       end = endDay + DAY_MS - 1;
+      // Người dùng chọn ngày ngược (đến trước từ): đổi chỗ thay vì lặng lẽ ra 0 phản hồi
+      if (!Number.isNaN(start) && !Number.isNaN(end) && start > end) {
+        const from = vnDayFromInput(parts[2]);
+        end = start + DAY_MS - 1;
+        start = from;
+      }
       // Ngày sai định dạng: bỏ qua bộ lọc thay vì so sánh với NaN
       if (Number.isNaN(start) || Number.isNaN(end)) {
         start = null;

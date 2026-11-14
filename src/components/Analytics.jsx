@@ -196,7 +196,7 @@ const RootCauses = () => {
   const cw = cadenceWords(cadence);
   // Khung biểu đồ: kho dày 28 ngày từng ngày; kho thưa trải hết độ dài nền, 14 ô
   const spanDays = cadence?.adaptive ? cadence.trendSpanDays : MAX_POINTS;
-  const step = cadence?.adaptive ? Math.ceil(spanDays / 14) : 1;
+  const step = cadence?.adaptive ? Math.ceil(spanDays / (cadence.trendBuckets || 14)) : 1;
   const series = useMemo(() => (step === 1 ? dailySeries(scoped, anchor, spanDays) : bucketSeries(scoped, anchor, spanDays, step)), [scoped, anchor, spanDays, step]);
   const delta = useMemo(() => weekDelta(scoped, anchor, cw.windowDays), [scoped, anchor, cw.windowDays]);
   const samples = useMemo(
@@ -297,7 +297,7 @@ const RootCauses = () => {
             </GlassPanel>
 
             <GlassPanel tone="strong" className="p-5">
-              <PanelHeader title={step === 1 ? `Khiếu nại mỗi ngày, ${spanDays} ngày gần nhất` : `Khiếu nại mỗi ${step} ngày, ${spanWords(spanDays)} gần nhất`} />
+              <PanelHeader title={step === 1 ? `Khiếu nại mỗi ngày, ${spanDays} ngày gần nhất` : `Khiếu nại mỗi ${spanWords(step)}, ${spanWords(spanDays)} gần nhất`} />
               <div className="h-[230px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={series} margin={{ top: 6, right: 6, left: -6, bottom: 0 }}>

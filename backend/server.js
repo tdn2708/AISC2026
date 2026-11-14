@@ -9,6 +9,8 @@ const PORT = process.env.PORT || 5000;
 
 // cors() mặc định phản chiếu header trình duyệt xin gửi, nên X-Workspace tự được cho phép
 app.use(cors());
+// Render đứng sau một proxy: lấy IP thật của người gọi cho giới hạn tần suất
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '2mb' }));
 // Express 5 để req.body là undefined khi request không có thân JSON; mọi route
 // viết `const { x } = req.body` khi đó ném TypeError thành lỗi 500

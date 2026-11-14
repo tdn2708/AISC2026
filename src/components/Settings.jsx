@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserRound, Palette, Database, ShieldCheck, Save, Mail, KeyRound, FlaskConical, FileText } from 'lucide-react';
+import { UserRound, Palette, Database, Save, Mail, FlaskConical, FileText } from 'lucide-react';
 import { useTheme, useGlass } from '../hooks/useTheme';
 import { PageHeader, GlassPanel, PanelHeader, Button, TextField, Select, RadioCards, Toast } from './ui';
 import { DEFAULT_USER, currentUser } from '../hooks/useDecisions';
@@ -32,8 +32,8 @@ const load = () => {
 const TABS = [
   { id: 'general', label: 'Hồ sơ', icon: UserRound },
   { id: 'appearance', label: 'Giao diện', icon: Palette },
-  { id: 'data', label: 'Dữ liệu và mô hình', icon: Database },
-  { id: 'security', label: 'Bảo mật', icon: ShieldCheck }
+  { id: 'data', label: 'Dữ liệu và mô hình', icon: Database }
+  // Tab "Bảo mật" đã bỏ: chưa có máy chủ xác thực, hai ô mật khẩu bị khóa không làm gì
 ];
 
 const Row = ({ icon: Icon, title, description, children }) => (
@@ -168,20 +168,6 @@ const Settings = () => {
             </>
           )}
 
-          {tab === 'security' && (
-            <>
-              <PanelHeader title="Bảo mật" />
-              {/* Bản này dùng tài khoản dùng thử cố định, chưa có máy chủ xác thực */}
-              <p className="mb-5 rounded-ctrl bg-raised px-4 py-3 text-sm text-ink-mid">
-                Bản demo dùng tài khoản dùng thử cố định. Đổi mật khẩu và xác thực hai lớp sẽ mở khi có máy chủ xác thực.
-              </p>
-              <form className="grid gap-4 md:grid-cols-2" onSubmit={(e) => e.preventDefault()}>
-                <input type="text" name="username" autoComplete="username" value={form.email} readOnly hidden />
-                <TextField label="Mật khẩu hiện tại" type="password" icon={KeyRound} placeholder="••••••••" autoComplete="current-password" disabled />
-                <TextField label="Mật khẩu mới" type="password" icon={KeyRound} placeholder="Tối thiểu 10 ký tự" autoComplete="new-password" disabled />
-              </form>
-            </>
-          )}
         </GlassPanel>
       </div>
 

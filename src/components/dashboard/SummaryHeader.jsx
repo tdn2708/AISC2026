@@ -38,6 +38,18 @@ const todayLabel = () => {
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
+/**
+ * Việc gấp nhất thành một mệnh đề đọc liền: cảnh báo ghép "nguyên nhân ở sản phẩm"
+ * ("giao chậm ở Điện thoại Samsung Galaxy A55"), không dồn tiêu đề "Giao hàng: Giao chậm,
+ * …" với hai dấu hai chấm và chữ hoa giữa câu.
+ */
+const topWords = (t) => {
+  const a = t.kind === 'alert' ? t.alert : null;
+  if (!a) return lower1(t.title);
+  const what = lower1(a.causeLabel || a.categoryLabel || t.title);
+  return a.productName ? `${what} ở ${a.productName}` : what;
+};
+
 /** todo: danh sách việc đã gộp và xếp (TodayInbox.buildTodo) */
 const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, lastUpdated, ledger, ledgerFailed, onRetryLedger, onLedgerDone, playRun = true, evidence, urgent = null, hasUrgent = false, asOfRight = false }) => {
   const navigate = useNavigate();
@@ -56,7 +68,7 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
     sentence = (
       <>
         Hôm nay có {todo.length} việc cần làm{urgentCount ? `, ${urgentCount} việc khẩn` : ''}.{' '}
-        {hasUrgent ? 'Việc gấp nhất ở ngay bên dưới.' : <>Gấp nhất: {lower1(top.title)}.</>}
+        {hasUrgent ? 'Việc gấp nhất ở ngay bên dưới.' : <>Gấp nhất: {topWords(top)}.</>}
       </>
     );
   } else {

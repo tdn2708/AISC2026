@@ -73,7 +73,7 @@ export const SEV = {
   high: { rank: 2, label: 'Gấp', text: 'text-high' },
   medium: { rank: 1, label: 'Nên làm', text: 'text-accent-hi' }
 };
-const SOURCE = { alert: 'Cảnh báo', pain: 'Điểm đau', live: 'Livestream', orders: 'Đơn hàng', review: 'Duyệt phản hồi', data: 'Dữ liệu' };
+const SOURCE = { alert: 'Cảnh báo', pain: 'Điểm đau', case: 'Hồ sơ', live: 'Livestream', orders: 'Đơn hàng', review: 'Duyệt phản hồi', data: 'Dữ liệu' };
 const ALERT_SEV = { Critical: 'critical', High: 'high', Medium: 'medium', Low: 'medium' };
 const PREVIEW = 6;
 

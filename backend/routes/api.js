@@ -2,10 +2,15 @@ const express = require('express');
 const router = express.Router();
 
 const { scrapeShopeeReviews } = require('../services/scraper');
-const { generateRiskAlertsBatch, classifyByRulesFallback } = require('../services/ai_analyzer');
+const { classifyByRulesFallback } = require('../services/ai_analyzer');
 const { findDecision } = require('../services/decision_match');
 const { getContext, invalidate, isRefreshing, patchServing, applyFilters, scopeTransactions, ctxNow, cadenceOf, timeBounds, applyHumanLabels, applyReviewLabel } = require('../services/analysis_context');
 const { spanWords: spanWordsOf } = require('../services/cadence');
+const { rateLimit } = require('../services/rate_limit');
+// Các API tốn lượt mô hình ngôn ngữ (dùng chung 500 lượt Gemini mỗi ngày)
+const llmLimit = rateLimit({ max: 12, windowMs: 60 * 1000, name: 'trợ lý' });
+const importLimit = rateLimit({ max: 60, windowMs: 60 * 1000, name: 'nạp file' });
+const collectLimit = rateLimit({ max: 3, windowMs: 10 * 60 * 1000, name: 'thu thập' });
 const trustLayer = require('../services/trust_layer');
 const alertEngine = require('../services/alert_engine');
 const metrics = require('../services/metrics');
@@ -101,7 +106,6 @@ function buildRecommendationsCached(ctx, query, opts, result, decisions) {
     recommender.buildAll(result.alerts, { items: ctx.items, transactions: ctx.transactions, decisions, now: ctxNow(ctx) })
   );
 }
-
 
 /** Chỉ trả ra phần trust cần cho giao diện, bỏ các trường nội bộ nặng */
 function publicItem(f) {
@@ -262,12 +266,6 @@ router.get('/feedbacks', wrap(async (req, res) => {
 router.get('/products', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const names = [...new Set(ctx.items.map((f) => f.productName).filter((p) => p && p.trim()))];
-  res.json(names.sort());
-}));
-
-router.get('/regions', wrap(async (req, res) => {
-  const ctx = await getContext(req.db);
-  const names = [...new Set(ctx.items.map((f) => f.region).filter(Boolean))];
   res.json(names.sort());
 }));
 
@@ -524,10 +522,6 @@ router.get('/trust/clusters', wrap(async (req, res) => {
 }));
 
 /** Các đợt đột biến thời gian đã phát hiện */
-router.get('/trust/bursts', wrap(async (req, res) => {
-  const ctx = await getContext(req.db);
-  res.json(ctx.bursts);
-}));
 
 /**
  * Hàng đợi kiểm duyệt, sắp theo ĐỘ BẤT ĐỊNH của mô hình (entropy cao
@@ -662,7 +656,9 @@ router.get('/inbox', wrap(async (req, res) => {
   // không có đột biến nào: kho thật lấy từ sàn thường không có cảnh báo mà vẫn có
   // hàng chục khách than cùng một lỗi. Đưa tối đa 3 chuyện nhiều khách nhất chưa
   // có hồ sơ đang mở; đang tăng (kỳ gần nhất hơn hẳn kỳ trước) thì mức gấp.
-  try {
+  // Chỉ kho thật: câu của kho mô phỏng ghép từ mẫu nên điểm đau ra mẩu câu mẫu ("quảng cáo"),
+  // đưa lên hộp việc thì chen trước các cảnh báo vốn là câu chuyện của kho demo
+  if (req.workspace === 'real') try {
     const pain = painPointsFor(ctx, {});
     const open = new Set((await req.db.collection('cases').find({ status: 'open' }, { projection: { key: 1 } }).toArray()).map((c) => c.key));
     const list = [...pain.groups, ...(pain.shop ? [pain.shop] : [])]
@@ -684,6 +680,28 @@ router.get('/inbox', wrap(async (req, res) => {
     }
   } catch (e) {
     console.warn('[INBOX] Bỏ qua phần điểm đau:', e.message);
+  }
+
+  // ---------- Hồ sơ đã đủ ngày theo dõi ----------
+  // Khép vòng "từ dữ liệu tới hành động": mở hồ sơ xong, 7 ngày sau hệ thống nhắc
+  // người mở quay lại xem điểm đau đã giảm chưa (đủ câu thì có số, không thì nói chưa đủ)
+  try {
+    const openCases = await req.db.collection('cases').find({ status: 'open' }).sort({ openedAt: 1 }).limit(20).toArray();
+    for (const c of openCases) {
+      const e = caseFile.caseEffect(ctx.items, c, new Date(), 7, cadenceOf(ctx).windowDays);
+      if (e.status !== 'done') continue;
+      const result = e.enough && e.change != null
+        ? `Tỉ lệ câu nhắc chuyện này ${e.change < 0 ? 'đã giảm' : e.change > 0 ? 'đang tăng' : 'không đổi'}.`
+        : 'Chưa đủ phản hồi mới để so, xem việc nào còn dở.';
+      items.push({
+        id: `case|${c._id}`, source: 'case', severity: e.enough && e.change > 0 ? 'high' : 'medium', score: 1,
+        title: `Hồ sơ "${c.phrase}" ở ${c.groupLabel} đã đủ 7 ngày theo dõi`,
+        why: result,
+        actions: [{ label: 'Xem kết quả', to: `/cases?key=${encodeURIComponent(c.key)}` }]
+      });
+    }
+  } catch (e) {
+    console.warn('[INBOX] Bỏ qua phần hồ sơ:', e.message);
   }
 
   // ---------- Độ tươi của dữ liệu thật ----------
@@ -738,7 +756,7 @@ router.post('/trust/label', wrap(async (req, res) => {
     success: true,
     label,
     totalLabels: total,
-    note: 'Nhãn đã được nạp vào tập huấn luyện cho lần tái huấn luyện định kỳ tiếp theo'
+    note: 'Đã lưu nhãn, số liệu tính lại ngay. Nhãn này cũng được dùng khi nhóm huấn luyện lại mô hình.'
   });
 }));
 
@@ -794,7 +812,7 @@ function labelDistribution(rows, kind, category) {
  * hình nhìn thấy, phân bố xác suất, mức ảnh hưởng từng từ) kèm thời gian
  * đo được. Giao diện chỉ hiển thị lại những gì có trong trace, không vẽ sẵn.
  */
-router.post('/analyze', wrap(async (req, res) => {
+router.post('/analyze', llmLimit, wrap(async (req, res) => {
   // Chỉ nhận chuỗi: số hay đối tượng từng làm `text.trim()` ném lỗi 500
   const text = readText(req.body?.text);
   if (!text) {
@@ -1021,7 +1039,7 @@ router.post('/analyze', wrap(async (req, res) => {
  */
 const BATCH_LIMIT = 500;
 
-router.post('/analyze/batch', wrap(async (req, res) => {
+router.post('/analyze/batch', importLimit, wrap(async (req, res) => {
   const texts = Array.isArray(req.body?.texts) ? req.body.texts.map(readText).filter(Boolean) : [];
   if (texts.length === 0) return res.status(400).json({ error: 'Cần mảng texts gồm các chuỗi không rỗng' });
   if (texts.length > BATCH_LIMIT) {
@@ -1183,41 +1201,6 @@ router.get('/alerts', wrap(async (req, res) => {
  * tại không vỡ, nhưng nội dung bên dưới đã là cảnh báo có kiểm định.
  */
 const { issueTitle } = require('../services/wording');
-
-router.get('/risks', wrap(async (req, res) => {
-  const ctx = await getContext(req.db);
-  const result = detectAlertsCached(ctx, req.query);
-
-  const decisions = await req.db.collection('recommendation_log').find({}).toArray();
-  const built = buildRecommendationsCached(ctx, req.query, {}, result, decisions);
-  const recByAlert = new Map(built.recommendations.map((r) => [r.alertId, r]));
-
-  res.json(
-    result.alerts.map((a) => {
-      const rec = recByAlert.get(a.id);
-      return {
-        id: a.id,
-        issue: issueTitle(a.categoryLabel, a.causeLabel),
-        riskLevel: a.severity === 'Critical' ? 'CRITICAL' : a.severity === 'High' ? 'HIGH' : a.severity.toUpperCase(),
-        insight: playbook.summarize(a),
-        recommendations: (rec?.steps || []).map((s) => s.text),
-        increase:
-          a.type === 'SPIKE' && a.statistics.baselineRate > 0
-            ? `+${Math.round(((a.statistics.currentRate - a.statistics.baselineRate) / a.statistics.baselineRate) * 100)}%`
-            : a.typeVi,
-        severity: a.severity,
-        severityScore: a.severityScore,
-        statistics: a.statistics,
-        evidenceCount: a.evidenceCount,
-        excludedByTrust: a.excludedByTrust,
-        sla: a.sla,
-        owner: a.owner,
-        type: a.type,
-        typeVi: a.typeVi
-      };
-    })
-  );
-}));
 
 /** Bằng chứng gốc của một cảnh báo — nhấp để mở xuống tận phản hồi thô */
 router.get('/alerts/:id/evidence', wrap(async (req, res) => {
@@ -1437,6 +1420,7 @@ router.get('/compare', wrap(async (req, res) => {
   const a = readText(req.query.a);
   const b = readText(req.query.b);
   if (!a || !b) return res.status(400).json({ error: 'Cần hai tham số a và b là tên sản phẩm' });
+  if (a === b) return res.status(400).json({ error: 'Chọn hai sản phẩm khác nhau để so sánh' });
   const ctx = await getContext(req.db);
   res.json(insights.compareProducts(ctx.items, a, b));
 }));
@@ -1445,7 +1429,7 @@ router.get('/compare', wrap(async (req, res) => {
 // SOẠN NHÁP TRẢ LỜI KHÁCH — người duyệt và tự gửi, hệ thống không gửi
 // ==================================================================
 
-router.post('/reply/draft', wrap(async (req, res) => {
+router.post('/reply/draft', llmLimit, wrap(async (req, res) => {
   const { feedbackId, tone } = req.body || {};
   const ctx = await getContext(req.db);
   const item = ctx.items.find((f) => String(f._id) === String(feedbackId));
@@ -1572,11 +1556,17 @@ router.get('/segments', wrap(async (req, res) => {
   }
 
   const segments = { promoters: [], atRisk: [], passives: [] };
+  // Khách chỉ có MỘT phản hồi không chê: chưa đủ để gọi là trung thành hay trung lập.
+  // Dữ liệu sàn thường mỗi khách đánh giá một lần (kho thật 94%), xếp họ vào "trung thành"
+  // làm nhóm này phình ra vô nghĩa. Khách có lời chê vẫn vào nhóm rủi ro dù chỉ một câu.
+  let oneTime = 0;
   for (const user of userMap.values()) {
     user.weight = Number(user.weight.toFixed(2));
     if (user.negative > 0) {
       user.segment = 'At-Risk';
       segments.atRisk.push(user);
+    } else if (user.total < 2) {
+      oneTime += 1;
     } else if (user.positive >= user.neutral) {
       user.segment = 'Promoter';
       segments.promoters.push(user);
@@ -1588,7 +1578,8 @@ router.get('/segments', wrap(async (req, res) => {
 
   // Gom theo tên gốc ở trên; chữ đi ra giao diện thì che
   for (const list of Object.values(segments)) if (Array.isArray(list)) for (const u of list) u.author = shownName(u.author);
-  res.json(segments);
+  // asOf: mốc dữ liệu, để bộ lọc "7 ngày" của trang tính theo đánh giá mới nhất như mọi trang khác
+  res.json({ ...segments, oneTime, asOf: ctx.asOf || null });
 }));
 
 // ==================================================================
@@ -1606,7 +1597,7 @@ router.get('/collector/status', wrap(async (req, res) => {
   res.json({ applicable: true, ...(await realCollector.collectorStatus(req.db)) });
 }));
 
-router.post('/collector/run', wrap(async (req, res) => {
+router.post('/collector/run', collectLimit, wrap(async (req, res) => {
   if (req.workspace !== 'real') return res.status(400).json({ error: 'Chỉ kho Dữ liệu thật mới tự thu thập' });
   // Bấm tay vẫn giữ khoảng cách tối thiểu 30 phút, để không ai vô tình chạy dồn
   const r = await realCollector.runOnce(req.db, { trigger: 'manual', minGapMs: realCollector.MANUAL_GAP_MS });
@@ -1620,7 +1611,7 @@ router.post('/collector/run', wrap(async (req, res) => {
   res.status(202).json({ started: true, status });
 }));
 
-router.post('/scrape', wrap(async (req, res) => {
+router.post('/scrape', collectLimit, wrap(async (req, res) => {
   const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
   if (!url) return res.status(400).json({ error: 'Cần trường url' });
 
@@ -1736,6 +1727,7 @@ router.get('/pain-points', wrap(async (req, res) => {
 }));
 
 router.get('/cases/preview', wrap(async (req, res) => {
+  if (typeof req.query.key !== 'string' || !req.query.key) return res.status(400).json({ error: 'Thiếu mã điểm đau (key)' });
   const ctx = await getContext(req.db);
   const { group, point } = findPoint(painPointsFor(ctx, req.query), req.query.key);
   if (!point) return res.status(404).json({ error: 'Không còn điểm đau này với bộ lọc hiện tại' });
@@ -1820,7 +1812,7 @@ const { maskName, pseudoCustomerId, dedupKey } = require('../services/ingest');
  * thu thập sàn (ViSoBERT, LLM, luật), che PII, chống trùng, rồi tính lại. Chỉ
  * nhận ở kho Dữ liệu thật: kho Mô phỏng giữ nguyên câu chuyện demo.
  */
-router.post('/import/feedbacks', wrap(async (req, res) => {
+router.post('/import/feedbacks', importLimit, wrap(async (req, res) => {
   if (req.workspace !== 'real') return res.status(403).json({ error: 'Chỉ nạp file vào kho Dữ liệu thật. Chọn kho ở góc trên thanh bên.' });
   const rows = Array.isArray(req.body?.rows) ? req.body.rows : null;
   if (!rows || !rows.length) return res.status(400).json({ error: 'Cần ít nhất một dòng' });
@@ -1960,73 +1952,9 @@ router.post('/transactions', wrap(async (req, res) => {
   });
 }));
 
-router.get('/transactions/summary', wrap(async (req, res) => {
-  const ctx = await getContext(req.db);
-  res.json({
-    total: ctx.transactionCount,
-    connected: ctx.transactionCount > 0,
-    note:
-      ctx.transactionCount > 0
-        ? 'WCR được tính trên mẫu số giao dịch thật'
-        : 'Chưa kết nối dữ liệu giao dịch — hệ thống chạy ở chế độ suy giảm, dùng chỉ số thay thế trong cùng kênh'
-  });
-}));
-
 // ==================================================================
 // AI: DỰ BÁO VÀ TRỢ LÝ HỘI THOẠI
 // ==================================================================
-
-router.get('/predict', wrap(async (req, res) => {
-  const { source = 'All', time = 'All', product = 'All' } = req.query;
-  const cached = await req.db
-    .collection('predictions')
-    .findOne({ source, time, product }, { sort: { timestamp: -1 } });
-
-  // Trả kèm cả cỡ mẫu đã dùng lúc sinh dự báo. Không có nó thì giao diện
-  // không nói được dự báo này dựa trên bao nhiêu phản hồi, và người đọc
-  // mất đúng thứ giúp họ cân nhắc nên tin đến mức nào.
-  if (cached) {
-    return res.json({
-      success: true,
-      data: cached.data,
-      cached: true,
-      basedOnValidFeedbacks: cached.basedOnValidFeedbacks ?? null,
-      generatedAt: cached.timestamp
-    });
-  }
-  res.json({ success: true, data: null, message: 'Chưa có dự báo trong bộ nhớ đệm' });
-}));
-
-router.post('/predict/refresh', wrap(async (req, res) => {
-  const { source = 'All', time = 'All', product = 'All' } = req.body;
-  const ctx = await getContext(req.db);
-
-  // CHỈ đưa phản hồi đã qua Trust Layer vào mô hình dự báo. Dự báo trên
-  // dữ liệu chưa lọc là tái lập đúng cái sai mà cả hệ thống này sinh ra
-  // để tránh.
-  const items = applyFilters(ctx.items, { source, time, product }, ctx.asOf)
-    .filter(metrics.isCountable)
-    .slice(0, 500);
-
-  if (items.length === 0) {
-    return res.status(400).json({ success: false, message: 'Chưa có dữ liệu hợp lệ cho bộ lọc này' });
-  }
-
-  const { generatePrediction } = require('../services/ai_analyzer');
-  const prediction = await generatePrediction(items, time, product);
-
-  await req.db.collection('predictions').deleteMany({ source, time, product });
-  await req.db.collection('predictions').insertOne({
-    source,
-    time,
-    product,
-    timestamp: new Date(),
-    basedOnValidFeedbacks: items.length,
-    data: prediction
-  });
-
-  res.json({ success: true, data: prediction, cached: false, basedOnValidFeedbacks: items.length });
-}));
 
 /**
  * Trợ lý phân tích.
@@ -2036,7 +1964,7 @@ router.post('/predict/refresh', wrap(async (req, res) => {
  * TOÀN BỘ dữ liệu, truy xuất dẫn chứng bằng BM25, rồi mới nhờ mô hình
  * diễn đạt. Xem `services/chat_engine.js`.
  */
-router.post('/chat', wrap(async (req, res) => {
+router.post('/chat', llmLimit, wrap(async (req, res) => {
   const { history, filters } = req.body || {};
   const message = readText(req.body?.message);
   if (!message) {
@@ -2144,10 +2072,5 @@ router.get('/evaluation', wrap(async (req, res) => {
 }));
 
 /** Diễn đạt lại cảnh báo thành văn bản tự nhiên (tầng LLM tùy chọn) */
-router.post('/alerts/narrate', wrap(async (req, res) => {
-  const ctx = await getContext(req.db);
-  const result = detectAlertsCached(ctx, req.query);
-  res.json(await generateRiskAlertsBatch(result.alerts.slice(0, 5)));
-}));
 
 module.exports = router;

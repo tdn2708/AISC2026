@@ -409,7 +409,7 @@ router.post('/sessions/:id/groups/resolve', wrap(async (req, res) => {
 }));
 
 /** Viết lại câu gợi ý bằng LLM, chỉ dùng dữ kiện của bản mẫu */
-router.post('/sessions/:id/groups/rewrite', wrap(async (req, res) => {
+router.post('/sessions/:id/groups/rewrite', require('../services/rate_limit').rateLimit({ max: 12, windowMs: 60 * 1000, name: 'viết lại câu trả lời' }), wrap(async (req, res) => {
   const s = await sessionOr404(req);
   const key = str(req.body?.key, 200);
   const r = hub.runtimeFor(s._id, req.workspace);

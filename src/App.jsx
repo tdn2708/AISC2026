@@ -19,7 +19,8 @@ import SettingsPage from './components/Settings';
 import Login from './components/Login';
 import TrustLayerPage from './components/TrustLayer';
 import Lab from './components/Lab';
-import UiKit from './components/UiKit';
+// Bộ giao diện chỉ có ở bản dev: lazy để bản build bỏ hẳn trang này
+const UiKit = import.meta.env.DEV ? lazy(() => import('./components/UiKit')) : null;
 import { API_URL } from './config';
 import { readStorage, writeStorage } from './lib/storage';
 import { applyWorkspaceHeader } from './lib/workspace';
@@ -146,7 +147,7 @@ function App() {
         <Route path="/data" element={page(<DataSources />)} />
         <Route path="/reports" element={page(<Reports />)} />
         <Route path="/settings" element={page(<SettingsPage />)} />
-        <Route path="/ui-kit" element={page(<UiKit />)} />
+        {UiKit && <Route path="/ui-kit" element={page(<Suspense fallback={null}><UiKit /></Suspense>)} />}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>

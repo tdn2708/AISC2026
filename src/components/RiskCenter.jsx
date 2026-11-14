@@ -159,8 +159,12 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
         ) : (
           steps.length > 0 && (
             <>
-              <Button icon={Check} onClick={onAccept} loading={saving}>Chấp nhận kế hoạch</Button>
+              {/* Độ tin dưới một nửa: nút chấp nhận thành nút phụ và nói vì sao, không mời bấm như kế hoạch chắc chắn */}
+              <Button variant={confidence != null && confidence < 0.5 ? 'secondary' : 'primary'} icon={Check} onClick={onAccept} loading={saving}>Chấp nhận kế hoạch</Button>
               <Button variant="ghost" onClick={onDismiss} disabled={saving}>Bỏ qua</Button>
+              {confidence != null && confidence < 0.5 && (
+                <p className="w-full text-sm text-ink-mid">Độ tin của kế hoạch còn thấp: ít phản hồi hoặc ít quyết định cũ để học. Xem bằng chứng trước khi chấp nhận.</p>
+              )}
             </>
           )
         )}
