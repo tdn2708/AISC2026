@@ -162,6 +162,9 @@ async function startServer() {
     // Livestream: phiên live, bình luận thời gian thực (SSE), hàng đợi trả lời
     // Đăng ký, đăng nhập, phiên (routes/auth.js)
     app.use('/api/auth', require('./routes/auth')(authDb));
+    // Từ đây mọi API dữ liệu cần phiên đăng nhập (ngoại lệ và lý do: services/auth.js requireSession)
+    app.use('/api', auth.requireSession(authDb));
+    if (String(process.env.AUTH_REQUIRED) === '0') console.log('Đăng nhập: TẮT kiểm phiên (AUTH_REQUIRED=0).');
     app.use('/api/live', require('./routes/live'));
     app.use('/api', require('./routes/api'));
 

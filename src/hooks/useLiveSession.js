@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config';
 import { getWorkspace } from '../lib/workspace';
+import { sessionToken } from '../lib/auth';
 
 /**
  * Theo dõi một phiên live qua luồng sự kiện (SSE).
@@ -18,7 +19,9 @@ const FEED_MAX = 300;
 
 export const liveUrl = (path, params = {}) => {
   const base = API_URL.replace(/\/$/, '');
-  const qs = new URLSearchParams({ workspace: getWorkspace(), ...params }).toString();
+  // EventSource và liên kết tải file không gửi được header Authorization: token đi theo đường dẫn
+  const token = sessionToken();
+  const qs = new URLSearchParams({ workspace: getWorkspace(), ...(token ? { access_token: token } : {}), ...params }).toString();
   return `${base}/live${path}?${qs}`;
 };
 

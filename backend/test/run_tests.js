@@ -2624,6 +2624,62 @@ testAsync('Live: nối lại phiên mô phỏng đã quá trần thì dừng nga
   });
 }
 
+test('API dữ liệu cần đăng nhập: chỉ đăng nhập, sổ tổng hợp và webhook live là công khai', () => {
+  const auth = require('../services/auth');
+  assert.strictEqual(auth.isPublicApi('POST', '/api/auth/login'), true);
+  assert.strictEqual(auth.isPublicApi('GET', '/api/auth/me'), true, 'router tài khoản tự kiểm phiên');
+  assert.strictEqual(auth.isPublicApi('GET', '/api/trust/health'), true);
+  assert.strictEqual(auth.isPublicApi('POST', '/api/live/sessions/abc/comments'), true);
+  assert.strictEqual(auth.isPublicApi('OPTIONS', '/api/stats'), true);
+  for (const [m, p] of [['GET', '/api/stats'], ['GET', '/api/feedbacks'], ['GET', '/api/trust/healthx'], ['GET', '/api/live/sessions/abc/comments'], ['POST', '/api/trust/health'], ['GET', '/api/authx']]) {
+    assert.strictEqual(auth.isPublicApi(m, p), false, `${m} ${p} phải cần đăng nhập`);
+  }
+});
+
+test('Token qua ?access_token= chỉ nhận ở luồng live và xuất file (GET)', () => {
+  const auth = require('../services/auth');
+  const tok = 'abcdefghijklmnopqrstuvwxyz_-0123';
+  const req = (method, q) => ({ method, query: { access_token: q }, get: () => undefined });
+  assert.strictEqual(auth.requestToken(req('GET', tok), '/api/live/sessions/x1/stream'), tok);
+  assert.strictEqual(auth.requestToken(req('GET', tok), '/api/live/sessions/x1/export'), tok);
+  assert.strictEqual(auth.requestToken(req('GET', tok), '/api/stats'), null);
+  assert.strictEqual(auth.requestToken(req('POST', tok), '/api/live/sessions/x1/export'), null);
+  assert.strictEqual(auth.requestToken(req('GET', 'ngan'), '/api/live/sessions/x1/stream'), null);
+});
+
+testAsync('Chặn API dữ liệu: không phiên trả 401 auth_required; có phiên thì qua và ghi đúng tên người làm', async () => {
+  const auth = require('../services/auth');
+  const { ObjectId } = require('mongodb');
+  const token = 'tokenthunghiem_abcdefghijklmnop123';
+  const uid = new ObjectId();
+  const fakeDb = {
+    collection: (name) => ({
+      findOne: async (q) => {
+        if (name === 'auth_sessions') return q.tokenHash === auth.hashToken(token) ? { userId: uid, expiresAt: new Date(Date.now() + 6e4) } : null;
+        return { _id: uid, email: 'a@b.vn', name: 'Chủ Shop Thật' };
+      }
+    })
+  };
+  const run = async (method, url, { bearer, body, env = {} } = {}) => {
+    let code = 200;
+    let payload = null;
+    let passed = false;
+    const req = { method, originalUrl: url, query: {}, body, get: (h) => (h === 'Authorization' && bearer ? `Bearer ${bearer}` : undefined) };
+    const res = { status: (c) => { code = c; return { json: (p) => { payload = p; } }; } };
+    await auth.requireSession(fakeDb, env)(req, res, () => { passed = true; });
+    return { code: passed ? 200 : code, payload, req };
+  };
+  const none = await run('GET', '/api/stats');
+  assert.strictEqual(none.code, 401);
+  assert.strictEqual(none.payload.code, 'auth_required');
+  assert.strictEqual((await run('GET', '/api/stats', { bearer: 'saisaisaisaisaisaisaisai' })).code, 401);
+  const ok = await run('POST', '/api/recommendations/decision', { bearer: token, body: { by: 'Tên tự khai', decision: 'accepted' } });
+  assert.strictEqual(ok.code, 200);
+  assert.strictEqual(ok.req.body.by, 'Chủ Shop Thật', 'nhật ký ghi tên tài khoản, không tin tên trình duyệt gửi');
+  assert.strictEqual((await run('GET', '/api/trust/health')).code, 200);
+  assert.strictEqual((await run('GET', '/api/stats', { env: { AUTH_REQUIRED: '0' } })).code, 200);
+});
+
 testAsync('Tài khoản: băm mật khẩu scrypt có muối riêng, đúng thì qua, sai thì không', async () => {
   const auth = require('../services/auth');
   const h1 = await auth.hashPassword('matkhau2026');

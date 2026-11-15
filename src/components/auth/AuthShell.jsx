@@ -30,6 +30,26 @@ const ORDER = { '/auth': 0, '/login': 1, '/signup': 2 };
 const PAD = 8; // khung đứng cách mép thứ được ngắm
 const SIZE = 14; // cạnh mỗi góc
 
+/**
+ * Hộp của `el` so với `stage` theo bố cục, bỏ qua mọi transform đang chạy.
+ * Cộng offsetLeft/Top theo chuỗi offsetParent tới stage (stage là position: relative).
+ * Chuỗi không về tới stage (hiếm) thì dùng hình đang hiện.
+ */
+const layoutBox = (el, stage) => {
+  let x = 0;
+  let y = 0;
+  let n = el;
+  while (n && n !== stage) {
+    x += n.offsetLeft;
+    y += n.offsetTop;
+    n = n.offsetParent;
+  }
+  if (n === stage) return { left: x, top: y, width: el.offsetWidth, height: el.offsetHeight };
+  const s = stage.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  return { left: r.left - s.left, top: r.top - s.top, width: r.width, height: r.height };
+};
+
 const supportsVT = () => typeof document !== 'undefined' && typeof document.startViewTransition === 'function';
 
 const AuthCtx = createContext(null);
@@ -129,12 +149,13 @@ const AuthShell = () => {
       b.removeAttribute('data-on');
       return;
     }
-    const s = stage.getBoundingClientRect();
-    const r = t.getBoundingClientRect();
-    const left = r.left - s.left - PAD;
-    const top = r.top - s.top - PAD;
-    const right = r.right - s.left + PAD - SIZE;
-    const bottom = r.bottom - s.top + PAD - SIZE;
+    // Đo theo bố cục (offset*), KHÔNG theo getBoundingClientRect: lúc trang vừa mở nội dung còn
+    // đang trượt (PageEnter dịch 12px, nút Back dịch 24px), đo theo hình đang chạy thì khung chốt lệch
+    const r = layoutBox(t, stage);
+    const left = r.left - PAD;
+    const top = r.top - PAD;
+    const right = r.left + r.width + PAD - SIZE;
+    const bottom = r.top + r.height + PAD - SIZE;
     a.style.transform = `translate(${Math.round(right)}px, ${Math.round(top)}px)`;
     b.style.transform = `translate(${Math.round(left)}px, ${Math.round(bottom)}px)`;
     a.setAttribute('data-on', '');

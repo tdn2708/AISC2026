@@ -34,7 +34,7 @@ module.exports = function authRouter(authDb) {
   };
 
   const issue = async (res, status, user, remember) => {
-    const { token, expiresAt } = await auth.createSession(authDb, user._id, { remember });
+    const { token, expiresAt } = await auth.createSession(authDb, user, { remember });
     res.status(status).json({ user: auth.publicUser(user), token, expiresAt });
   };
 
@@ -113,6 +113,7 @@ module.exports = function authRouter(authDb) {
       if (req.body?.shop !== undefined) set.shop = auth.cleanText(req.body.shop, auth.SHOP_MAX);
       if (!Object.keys(set).length) return res.json({ user: auth.publicUser(req.user) });
       await authDb.collection('users').updateOne({ _id: req.user._id }, { $set: set });
+      auth.forgetUser(req.user._id); // phiên trong bộ nhớ đệm đang giữ tên cũ
       return res.json({ user: auth.publicUser({ ...req.user, ...set }) });
     } catch (e) {
       return next(e);

@@ -139,12 +139,15 @@ async function findByEmail(authDb, email) {
   return authDb.collection('users').findOne({ email: normalizeEmail(email) });
 }
 
-async function createSession(authDb, userId, { remember = true } = {}) {
+/** Tạo phiên cho `user` (cả bản ghi người dùng, để ghi luôn vào bộ đệm: trang đầu sau đăng nhập không phải đọc lại) */
+async function createSession(authDb, user, { remember: keep = true } = {}) {
   const token = newToken();
   const now = new Date();
-  const ms = remember ? SESSION_DAYS * 864e5 : SHORT_SESSION_HOURS * 36e5;
-  await authDb.collection('auth_sessions').insertOne({ tokenHash: hashToken(token), userId: new ObjectId(String(userId)), createdAt: now, expiresAt: new Date(now.getTime() + ms) });
-  return { token, expiresAt: new Date(now.getTime() + ms) };
+  const ms = keep ? SESSION_DAYS * 864e5 : SHORT_SESSION_HOURS * 36e5;
+  const session = { tokenHash: hashToken(token), userId: new ObjectId(String(user._id)), createdAt: now, expiresAt: new Date(now.getTime() + ms) };
+  await authDb.collection('auth_sessions').insertOne(session);
+  remember(session.tokenHash, user, session);
+  return { token, expiresAt: session.expiresAt };
 }
 
 /** Đọc token từ header `Authorization: Bearer <token>` */
@@ -154,19 +157,110 @@ function bearerToken(req) {
   return m ? m[1] : null;
 }
 
+/**
+ * Bộ nhớ đệm phiên: một lần mở Tổng quan gọi khoảng 10 API, mỗi API mà đọc
+ * Mongo hai lần (phiên + người dùng) thì chậm thấy rõ trên Render. Giữ 60 giây
+ * trong tiến trình (Render chạy một tiến trình); đăng xuất và sửa hồ sơ xóa ngay.
+ */
+// Đo 16/11 (local, Atlas): mở Tổng quan bắn khoảng 12 API cùng lúc; khi chưa có bộ đệm, mỗi API
+// tự đọc phiên hai lần và cả loạt mất 1.860 ms (driver mở thêm kết nối), có bộ đệm còn 11 ms.
+// Nên: đăng nhập, đăng ký ghi phiên vào bộ đệm ngay (remember); request trùng token dùng chung
+// MỘT lượt đọc (inflight); giữ 5 phút. Đăng xuất, sửa hồ sơ xóa ngay, nên không phải chờ hết 5 phút.
+const CACHE_MS = 5 * 60 * 1000;
+const cache = new Map(); // tokenHash -> { user, session, at }
+const inflight = new Map(); // tokenHash -> Promise đang đọc
+
+const remember = (key, user, session) => {
+  if (cache.size > 5000) cache.clear();
+  cache.set(key, { user, session, at: Date.now() });
+};
+
+const forgetUser = (userId) => {
+  for (const [k, v] of cache) if (String(v.user._id) === String(userId)) cache.delete(k);
+};
+
+async function lookupSession(authDb, key) {
+  const s = await authDb.collection('auth_sessions').findOne({ tokenHash: key });
+  // TTL của MongoDB chạy mỗi phút: phiên vừa hết hạn có thể còn trong collection
+  if (!s || s.expiresAt <= new Date()) {
+    cache.delete(key);
+    return null;
+  }
+  const user = await authDb.collection('users').findOne({ _id: s.userId });
+  if (!user) return null;
+  remember(key, user, s);
+  return { user, session: s };
+}
+
 async function sessionUser(authDb, token) {
   if (!token) return null;
-  const s = await authDb.collection('auth_sessions').findOne({ tokenHash: hashToken(token) });
-  // TTL của MongoDB chạy mỗi phút: phiên vừa hết hạn có thể còn trong collection
-  if (!s || s.expiresAt <= new Date()) return null;
-  const user = await authDb.collection('users').findOne({ _id: s.userId });
-  return user ? { user, session: s } : null;
+  const key = hashToken(token);
+  const now = Date.now();
+  const hit = cache.get(key);
+  if (hit && now - hit.at < CACHE_MS && hit.session.expiresAt.getTime() > now) return { user: hit.user, session: hit.session };
+  if (inflight.has(key)) return inflight.get(key);
+  const p = lookupSession(authDb, key).finally(() => inflight.delete(key));
+  inflight.set(key, p);
+  return p;
 }
 
 async function endSession(authDb, token) {
   if (!token) return 0;
+  cache.delete(hashToken(token));
   const r = await authDb.collection('auth_sessions').deleteOne({ tokenHash: hashToken(token) });
   return r.deletedCount;
+}
+
+/**
+ * API DỮ LIỆU CẦN ĐĂNG NHẬP
+ * Mọi /api/* phải có phiên, trừ:
+ *   /api/auth/*                              đăng ký, đăng nhập (router riêng tự kiểm)
+ *   GET  /api/trust/health                   chỉ số tổng hợp của sổ đối chiếu, không câu chữ, không tên;
+ *                                            trang giới thiệu và khối mực ở trang đăng nhập cần nó
+ *   POST /api/live/sessions/:id/comments     webhook của hệ thống ngoài, đã có khóa nhập của phiên
+ * EventSource và liên kết tải file không gửi được header, nên riêng GET luồng
+ * live và xuất file nhận token qua `?access_token=`.
+ * Đặt AUTH_REQUIRED=0 để tắt (chạy thử cục bộ không cần đăng nhập).
+ */
+const PUBLIC = [
+  [null, /^\/api\/auth(\/|$)/],
+  ['GET', /^\/api\/trust\/health\/?$/],
+  ['POST', /^\/api\/live\/sessions\/[^/]+\/comments\/?$/]
+];
+const QUERY_TOKEN_PATH = /^\/api\/live\/sessions\/[^/]+\/(stream|export)\/?$/;
+
+function isPublicApi(method, path) {
+  if (method === 'OPTIONS') return true;
+  return PUBLIC.some(([m, re]) => (!m || m === method || (m === 'GET' && method === 'HEAD')) && re.test(path));
+}
+
+/** Token của request: header Bearer; riêng luồng live và xuất file thì cả ?access_token= */
+function requestToken(req, path) {
+  const fromHeader = bearerToken(req);
+  if (fromHeader) return fromHeader;
+  if (req.method === 'GET' && QUERY_TOKEN_PATH.test(path)) {
+    const q = String(req.query?.access_token || '');
+    if (/^[A-Za-z0-9_-]{20,200}$/.test(q)) return q;
+  }
+  return null;
+}
+
+function requireSession(authDb, env = process.env) {
+  return async (req, res, next) => {
+    if (String(env.AUTH_REQUIRED) === '0') return next();
+    const path = String(req.originalUrl || req.url || '').split('?')[0];
+    if (isPublicApi(req.method, path)) return next();
+    try {
+      const found = await sessionUser(authDb, requestToken(req, path));
+      if (!found) return res.status(401).json({ error: 'Cần đăng nhập để xem dữ liệu này.', code: 'auth_required' });
+      req.user = found.user;
+      // Nhật ký (quyết định, nhãn duyệt, câu trả lời live) ghi tên tài khoản thật, không tin tên trình duyệt gửi
+      if (req.body && typeof req.body === 'object' && typeof req.body.by === 'string') req.body.by = found.user.name;
+      return next();
+    } catch (e) {
+      return next(e);
+    }
+  };
 }
 
 module.exports = {
@@ -189,5 +283,9 @@ module.exports = {
   createSession,
   bearerToken,
   sessionUser,
-  endSession
+  endSession,
+  forgetUser,
+  isPublicApi,
+  requestToken,
+  requireSession
 };

@@ -72,8 +72,25 @@ const clear = () => {
   emit();
 };
 
-/** Gọi một lần lúc nạp app: gắn header nếu đã có phiên */
-export const applyAuthHeader = () => applyHeader(getSession());
+/**
+ * Gọi một lần lúc nạp app: gắn header nếu đã có phiên, và nghe lỗi 401
+ * "auth_required" của API dữ liệu (phiên hết hạn hoặc bị đăng xuất ở máy khác):
+ * xóa phiên ở đây, App thấy sự kiện cr-auth và đưa về /auth?next=<trang đang xem>.
+ * 401 của khóa ghi (X-Write-Key) không có mã này nên không làm đăng xuất.
+ */
+let intercepted = false;
+export const applyAuthHeader = () => {
+  applyHeader(getSession());
+  if (intercepted) return;
+  intercepted = true;
+  axios.interceptors.response.use(undefined, (err) => {
+    if (err?.response?.status === 401 && err.response.data?.code === 'auth_required' && getSession()) clear();
+    return Promise.reject(err);
+  });
+};
+
+/** Token cho chỗ không gửi được header (EventSource, liên kết tải file) */
+export const sessionToken = () => getSession()?.token || null;
 
 /** Câu lỗi để hiện cho người dùng, kèm lỗi từng ô nếu máy chủ trả */
 export const authError = (e) => {
