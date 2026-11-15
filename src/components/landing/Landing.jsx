@@ -38,7 +38,7 @@ import './landing.css';
  *   node <scratchpad>/cap_live.mjs http://localhost:5199 cap/light light "Báo cáo sau live"   (rồi dark)
  *   python <scratchpad>/make_webp.py cap .hallmark/team/nhom-customer-radar.png public/landing
  * (Ba script đó chép lại trong .hallmark/shots/F3/scripts/.) Ảnh 1440x900 ở tỉ lệ 1,5,
- * localStorage workspace=demo, cr-theme=light|dark, isAuthenticated=true. Đổi kích thước
+ * localStorage workspace=demo, cr-theme=light|dark, cr-session (đăng nhập bằng tài khoản mẫu qua POST /api/auth/login). Đổi kích thước
  * ảnh thì sửa width/height ở SHOTS bên dưới. Ảnh chụp có số của ngày chụp: chụp lại
  * thì sửa luôn SNAPSHOT và SNAPSHOT_DATE trong data.js cho cùng ngày.
  */
@@ -279,7 +279,8 @@ const Landing = ({ isAuthenticated = false }) => {
     };
   }, []);
 
-  const cta = isAuthenticated ? { to: '/dashboard', label: 'Vào ứng dụng' } : { to: '/login', label: 'Xem bản dùng thử' };
+  // Chưa đăng nhập: nút chính tới trang chọn (có "Vào bằng tài khoản mẫu"), liên kết trên thanh tới thẳng /login
+  const cta = isAuthenticated ? { to: '/dashboard', label: 'Vào ứng dụng' } : { to: '/auth', label: 'Xem bản dùng thử' };
   const nav = isAuthenticated ? { to: '/dashboard', label: 'Vào ứng dụng' } : { to: '/login', label: 'Đăng nhập' };
 
   const l = normalizeLedger(health);

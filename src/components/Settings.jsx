@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserRound, Palette, Database, Save, Mail, FlaskConical, FileText } from 'lucide-react';
+import { UserRound, Palette, Database, Save, Mail, FlaskConical, FileText, Store } from 'lucide-react';
+import { currentAccount, updateAccount, authError } from '../lib/auth';
 import { useTheme, useGlass } from '../hooks/useTheme';
 import { PageHeader, GlassPanel, PanelHeader, Button, TextField, Select, RadioCards, Toast } from './ui';
 import { DEFAULT_USER, currentUser } from '../hooks/useDecisions';
@@ -71,12 +72,29 @@ const Settings = () => {
   const [tab, setTab] = useState('general');
   const [form, setForm] = useState(load);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  // Tài khoản đang đăng nhập: tên và cửa hàng lưu ở máy chủ, email là tên đăng nhập (không đổi ở đây)
+  const account = currentAccount();
+  const [acct, setAcct] = useState(() => ({ name: account?.name || '', shop: account?.shop || '' }));
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v?.target ? v.target.value : v }));
 
-  const save = () => {
+  const save = async () => {
+    setSaveError('');
+    if (account && !account.isDemo) {
+      setSaving(true);
+      try {
+        await updateAccount({ name: acct.name, shop: acct.shop });
+      } catch (e) {
+        setSaveError(authError(e).message);
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
+    }
     localStorage.setItem(KEY, JSON.stringify({ ...load(), ...form }));
-    // Thanh bên đọc tên/email từ đây — báo cho nó cập nhật ngay
+    // Thanh bên đọc tên từ đây và từ tài khoản: báo cho nó cập nhật ngay
     window.dispatchEvent(new Event('cr-settings'));
     setSaved(true);
     setTimeout(() => setSaved(false), 2200);
@@ -86,7 +104,7 @@ const Settings = () => {
     <PageEnter className="cx">
       <PageHeader
         title="Cài đặt"
-        actions={tab === 'general' && <Button icon={Save} onClick={save}>Lưu thay đổi</Button>}
+        actions={tab === 'general' && <Button icon={Save} onClick={save} loading={saving}>Lưu thay đổi</Button>}
       />
 
       <div className="grid items-start gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
@@ -112,9 +130,33 @@ const Settings = () => {
             <>
               <PanelHeader title="Hồ sơ" subtitle="Tên của bạn được ghi vào nhật ký quyết định." />
               <div className="grid gap-4 md:grid-cols-2">
-                <TextField label="Họ và tên" value={form.name} onChange={set('name')} />
-                <TextField label="Email" type="email" icon={Mail} value={form.email} onChange={set('email')} />
-                <TextField label="Vai trò" value="Quản lý trải nghiệm khách hàng" disabled hint="Do quản trị viên tổ chức cấp" />
+                {account ? (
+                  <>
+                    <TextField
+                      label="Họ và tên"
+                      value={account.isDemo ? account.name : acct.name}
+                      onChange={(e) => setAcct((a) => ({ ...a, name: e.target.value }))}
+                      disabled={account.isDemo}
+                      maxLength={80}
+                      hint={account.isDemo ? 'Tài khoản mẫu dùng chung nên không đổi được. Tạo tài khoản riêng để đặt tên.' : undefined}
+                      error={saveError || undefined}
+                    />
+                    <TextField label="Email đăng nhập" type="email" icon={Mail} value={account.email} disabled hint="Email dùng để đăng nhập, chưa đổi được ở đây" />
+                    <TextField
+                      label="Tên cửa hàng"
+                      icon={Store}
+                      value={account.isDemo ? account.shop : acct.shop}
+                      onChange={(e) => setAcct((a) => ({ ...a, shop: e.target.value }))}
+                      disabled={account.isDemo}
+                      maxLength={120}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <TextField label="Họ và tên" value={form.name} onChange={set('name')} />
+                    <TextField label="Email" type="email" icon={Mail} value={form.email} onChange={set('email')} />
+                  </>
+                )}
                 <Select
                   label="Múi giờ"
                   value={form.timezone}

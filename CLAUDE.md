@@ -241,6 +241,14 @@ UI conventions agreed with the user:
 - Rules fallback (`classifyByRulesFallback(text, rating)`): no keyword → stars decide; 1 to 2 stars beat weak praise words.
 - Blind check of pain points: `.hallmark/kiem-mu-diem-dau*.html`, see `KE-HOACH-GIAO-DIEN.md` 13.7.
 
+### Accounts (`/auth`, `/login`, `/signup`)
+
+- Backend: `services/auth.js` (pure helpers + Mongo calls) and `routes/auth.js` mounted at `/api/auth` (`POST /signup`, `POST /login`, `POST /logout`, `GET /me`, `PATCH /me`). Accounts live in their own database, `MONGODB_AUTH_DB` or `<MONGODB_DB>_auth` (prod `customer_radar_auth`; a local run with `MONGODB_DB=..._test` writes to `..._test_auth`), so `npm run seed` never touches them.
+- Passwords: Node `crypto.scrypt` with a per-user salt (`scrypt$N$r$p$salt$hash`), no extra package. Sessions: random 32-byte token sent as `Authorization: Bearer`; only its SHA-256 is stored in `auth_sessions` with a TTL index (30 days with "Giữ đăng nhập", 12 h without). `publicUser` never returns the hash.
+- Abuse limits: per IP (`rate_limit.js`: signup 5 per 10 min, login 20 per 5 min) and per email (10 wrong passwords in 15 min lock that email 15 min). A wrong login never says whether the email exists.
+- The demo account `demo@customerradar.vn` / `demo2026` is created at startup if missing (never overwritten) and cannot be renamed (`PATCH /me` 403). `POST /api/auth/(signup|login|logout)` are exempt from the `X-Write-Key` guard.
+- Frontend: `src/lib/auth.js` (session in localStorage or sessionStorage, event `cr-auth`, `safeNext`). `App.jsx` gates every app page: no session redirects to `/auth?next=<path>`; the three auth pages share `components/auth/AuthShell.jsx` (see DESIGN.md, "Khung ngắm tài khoản"). The data API itself does not require a session yet.
+
 ### Bảng số liệu (`/insights`, BI-style)
 
 - `GET /api/bi/cube` (`services/bi_cube.js`, pure): every counted feedback as one integer row `[back, source, category, sentiment, evidence, product, cause, rating, weight×10000]` plus shared dictionaries; memoised per context version. About 370 KB for 14 k rows.

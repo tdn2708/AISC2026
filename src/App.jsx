@@ -17,6 +17,10 @@ import DataSources from './components/DataSources';
 import Reports from './components/Reports';
 import SettingsPage from './components/Settings';
 import Login from './components/Login';
+import AuthShell from './components/auth/AuthShell';
+import AuthChoice from './components/auth/AuthChoice';
+import Signup from './components/auth/Signup';
+import { applyAuthHeader, getSession, logout, refreshAccount, safeNext } from './lib/auth';
 import TrustLayerPage from './components/TrustLayer';
 import Lab from './components/Lab';
 // Bộ giao diện chỉ có ở bản dev: lazy để bản build bỏ hẳn trang này
@@ -34,9 +38,22 @@ const Landing = lazy(() => import('./components/landing/Landing'));
 
 axios.defaults.baseURL = API_URL;
 applyWorkspaceHeader();
+applyAuthHeader();
 
-const ProtectedRoute = ({ isAuthenticated, children }) =>
-  isAuthenticated ? children : <Navigate to="/login" replace />;
+/** Chưa đăng nhập: về trang chọn, nhớ trang đang muốn vào để đăng nhập xong quay lại đúng chỗ */
+const ProtectedRoute = ({ isAuthenticated, children }) => {
+  const location = useLocation();
+  if (isAuthenticated) return children;
+  const here = location.pathname + location.search;
+  return <Navigate to={here === '/dashboard' ? '/auth' : `/auth?next=${encodeURIComponent(here)}`} replace />;
+};
+
+/** Ba trang tài khoản: đã đăng nhập thì đi tiếp tới trang đang chờ (?next=) */
+const AuthGate = ({ isAuthenticated }) => {
+  const location = useLocation();
+  if (!isAuthenticated) return <AuthShell />;
+  return <Navigate to={safeNext(new URLSearchParams(location.search).get('next'))} replace />;
+};
 
 /**
  * KHUNG ỨNG DỤNG
@@ -98,18 +115,20 @@ const MainLayout = ({ children, onLogout }) => {
 };
 
 function App() {
-  // Lần đầu mở vẫn vào thẳng bảng điều khiển (bản demo cho giám khảo), nhưng
-  // đã đăng xuất thì phải nhớ — trước đây tải lại trang là tự đăng nhập lại.
-  const [isAuthenticated, setIsAuthenticated] = useState(() => readStorage('isAuthenticated') !== 'false');
+  // Đăng nhập thật (lib/auth.js, backend/routes/auth.js): có phiên thì vào app,
+  // không có thì về /auth. Người chỉ muốn xem bấm "Vào bằng tài khoản mẫu".
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(getSession()));
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-    writeStorage('isAuthenticated', 'true');
-  };
+  useEffect(() => {
+    const onAuth = () => setIsAuthenticated(Boolean(getSession()));
+    window.addEventListener('cr-auth', onAuth);
+    // Phiên đã bị xóa ở máy chủ (đăng xuất ở máy khác, hết hạn): refreshAccount tự đăng xuất
+    refreshAccount();
+    return () => window.removeEventListener('cr-auth', onAuth);
+  }, []);
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
-    writeStorage('isAuthenticated', 'false');
+    logout();
   };
 
   const page = (el) => (
@@ -121,15 +140,17 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLogin} />} />
+        <Route element={<AuthGate isAuthenticated={isAuthenticated} />}>
+          <Route path="/auth" element={<AuthChoice />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+        </Route>
         <Route
           path="/"
           element={
             <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
-              {/* Chỉ người đã bấm đăng nhập thật (lưu 'true') mới thấy "Vào ứng dụng";
-                  người mở lần đầu (chưa lưu gì) thấy "Xem bản dùng thử", bấm vào vẫn
-                  thẳng tới Tổng quan vì /login tự chuyển khi chưa đăng xuất. */}
-              <Landing isAuthenticated={readStorage('isAuthenticated') === 'true'} />
+              {/* Có phiên đăng nhập: "Vào ứng dụng"; chưa có: "Đăng nhập" và "Xem bản dùng thử" (trang chọn) */}
+              <Landing isAuthenticated={isAuthenticated} />
             </Suspense>
           }
         />

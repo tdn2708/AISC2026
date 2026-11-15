@@ -1,137 +1,128 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, EyeOff, Eye } from 'lucide-react';
-import Logo from './Logo';
-import { Button, IconButton, TextField, EvidenceSwatch } from './ui';
-import { LedgerRun, PageEnter } from './motion';
-import LedgerSkeleton from './dashboard/LedgerSkeleton';
+import React, { useLayoutEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Mail, Lock, EyeOff, Eye, CircleAlert } from 'lucide-react';
+import { Button, IconButton, TextField, Checkbox } from './ui';
+import { useAuthFlow } from './auth/AuthShell';
+import { AuthLink, BackLink, Pane, useFocusFrame, canAutoFocus } from './auth/parts';
+import { login, authError, DEMO_LOGIN } from '../lib/auth';
 
 /**
- * ĐĂNG NHẬP
- * ------------------------------------------------------------------
- * Trái: một khối mực nói sản phẩm làm gì, minh hoạ bằng chính thanh bằng
- * chứng sẽ gặp trong ứng dụng. Phải: biểu mẫu, đã điền sẵn tài khoản dùng
- * thử — người mở link lần đầu (giám khảo, khách tham quan) gặp ô trống
- * không gợi ý thì phần lớn sẽ đóng tab.
- *
- * F4-04: khối mực chạy "phép trừ" (LedgerRun mode="auto") MỘT lần khi tải,
- * với số thật của /trust/health; đây là chuyển động dàn dựng duy nhất của
- * trang. Giảm chuyển động: tờ sổ tĩnh, đủ số ngay. Chờ số thì khung xương
- * cùng hình tờ sổ; không tải được thì hiện ba loại bằng chứng.
+ * ĐĂNG NHẬP (/login), nằm trong khung chung `auth/AuthShell.jsx`.
+ * Tài khoản thật lưu ở máy chủ (backend/routes/auth.js). Ô trống như mọi trang
+ * đăng nhập thật; người xem thử bấm "Điền tài khoản mẫu" hoặc vào từ trang chọn.
+ * Sai mật khẩu: một câu chung, không nói email có tồn tại hay không.
  */
-const DEMO = { email: 'demo@customerradar.vn', password: 'demo2026' };
+const Login = () => {
+  const location = useLocation();
+  const { setHome } = useAuthFlow();
+  const focusFrame = useFocusFrame();
+  const formRef = useRef(null);
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
 
-const PROOF = [
-  { kind: 'verified', text: 'Có chứng từ: khớp đơn hàng hoặc sàn xác nhận đã mua' },
-  { kind: 'human', text: 'Người kiểm duyệt đã đọc lại' },
-  { kind: 'inferred', text: 'AI đoán, chưa có chứng từ' }
-];
-
-const Login = ({ onLogin }) => {
-  const [email, setEmail] = useState(DEMO.email);
-  const [password, setPassword] = useState(DEMO.password);
+  const [email, setEmail] = useState(() => location.state?.email || '');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [fieldErr, setFieldErr] = useState({});
 
-  // Sổ đối chiếu thật của kho đang chọn: người mở link thấy sản phẩm làm gì
-  // trước cả khi đăng nhập. Không tải được thì quay về danh sách ba loại bằng chứng.
-  const [ledger, setLedger] = useState(null);
-  const [ledgerFailed, setLedgerFailed] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    axios.get('/trust/health').then((r) => alive && setLedger(r.data)).catch(() => alive && setLedgerFailed(true));
-    return () => { alive = false; };
-  }, []);
+  // Khung về biểu mẫu; có chuột thì đặt con trỏ vào ô đầu còn trống (khung bay theo)
+  useLayoutEffect(() => {
+    setHome(formRef.current);
+    if (canAutoFocus()) (location.state?.email ? passwordRef.current : emailRef.current)?.focus({ preventScroll: true });
+    return () => setHome(null);
+  }, [setHome]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    const fe = {};
+    if (!email.trim()) fe.email = 'Nhập email đã đăng ký.';
+    if (!password) fe.password = 'Nhập mật khẩu.';
+    setFieldErr(fe);
     setError('');
-    setTimeout(() => {
-      if (email === DEMO.email && password === DEMO.password) {
-        onLogin();
-        navigate('/dashboard');
-      } else {
-        setError(`Sai email hoặc mật khẩu. Tài khoản dùng thử: ${DEMO.email} / ${DEMO.password}`);
-        setLoading(false);
-      }
-    }, 500);
+    if (Object.keys(fe).length) {
+      (fe.email ? emailRef : passwordRef).current?.focus();
+      return;
+    }
+    setLoading(true);
+    try {
+      await login({ email, password, remember });
+      // App thấy phiên mới và tự chuyển sang trang cần vào
+    } catch (err) {
+      const { message } = authError(err);
+      setError(message);
+      setLoading(false);
+      passwordRef.current?.select();
+    }
+  };
+
+  const fillDemo = () => {
+    setEmail(DEMO_LOGIN.email);
+    setPassword(DEMO_LOGIN.password);
+    setFieldErr({});
+    setError('');
   };
 
   return (
-    <div className="cx grid min-h-screen min-h-dvh bg-canvas lg:grid-cols-[minmax(0,1fr)_minmax(420px,560px)]">
-      <section className="hidden flex-col justify-between bg-strip p-12 text-on-strip lg:flex">
-        {/* Đổi token chữ cục bộ để chữ ký thương hiệu đọc được trên nền mực */}
-        <div style={{ '--text-hi': 'var(--on-strip)', '--accent': 'var(--accent-on-strip)' }}>
-          <Logo size="md" showTagline={false} />
-        </div>
-        <div className="max-w-[34rem]">
-          <h1 className="text-cover font-semibold tracking-[-0.02em] text-balance">
-            Phản hồi khách hàng, kèm bằng chứng cho từng con số.
-          </h1>
-          <p className="mt-5 text-base leading-relaxed text-on-strip-mid">
-            Đánh giá ảo, quảng cáo và chiến dịch có tổ chức bị lọc trước khi được tính. Phần còn lại cho bạn biết
-            con số nào dựa trên chứng từ, con số nào do AI đoán.
-          </p>
-          {!ledgerFailed ? (
-            <div className="mt-8 max-w-[400px]">
-              {ledger ? <LedgerRun ledger={ledger} mode="auto" play={false} showLink={false} /> : <LedgerSkeleton />}
-            </div>
-          ) : (
-          <ul className="mt-8 flex list-none flex-col gap-3 text-sm text-on-strip-mid">
-            {PROOF.map((p) => (
-              <li key={p.kind} className="flex items-center gap-3">
-                {/* Mẫu tô sáng trên nền mực: cùng ngôn ngữ với thanh bằng chứng trong ứng dụng */}
-                <span style={{ '--accent': 'var(--accent-on-strip)' }}><EvidenceSwatch kind={p.kind} size={14} /></span>
-                {p.text}
-              </li>
-            ))}
-          </ul>
-          )}
-        </div>
-        <p className="text-xs text-on-strip-lo">© 2026 Customer Radar, đội LDS, Trường Đại học Công nghệ Thông tin</p>
-      </section>
+    <Pane>
+      <BackLink />
+      <div className="mt-4">
+        <h1 className="text-display font-semibold tracking-[-0.01em] text-ink-hi">Đăng nhập</h1>
+        <p className="mt-1.5 text-sm text-ink-mid">
+          Chưa có tài khoản?{' '}
+          <AuthLink to="/signup" className="rounded-ctrl font-medium text-accent-hi underline underline-offset-4 hover:text-accent">
+            Tạo tài khoản
+          </AuthLink>
+        </p>
+      </div>
 
-      <section className="flex items-center justify-center px-6 py-12">
-        {/* M1 (K4-02): chỉ phần form vào bằng PageEnter; khối mực bên trái đứng yên */}
-        <PageEnter className="w-full max-w-[380px]">
-          <div className="mb-10 lg:hidden"><Logo size="md" showTagline={false} /></div>
-          <div>
-            <h2 className="text-display font-semibold tracking-[-0.01em] text-ink-hi">Đăng nhập</h2>
-            <p className="mt-1.5 text-sm text-ink-mid">Tài khoản dùng thử đã được điền sẵn.</p>
-          </div>
-
-          <form onSubmit={submit} className="mt-8 flex flex-col gap-4">
-            <TextField label="Email" type="email" icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
-            <TextField
-              label="Mật khẩu"
-              type={showPw ? 'text' : 'password'}
-              icon={Lock}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-              error={error || undefined}
-              trailing={
-                <IconButton icon={showPw ? EyeOff : Eye} variant="ghost" size="sm" label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} pressed={showPw} onClick={() => setShowPw((v) => !v)} />
-              }
-            />
-            <Button type="submit" block loading={loading} className="mt-2 h-11">
-              Đăng nhập
-            </Button>
-          </form>
-          <p className="mt-8 border-t border-line-soft pt-5 text-sm text-ink-mid">
-            Chưa biết Customer Radar làm gì?{' '}
-            <Link to="/" className="rounded-ctrl font-medium text-accent-hi underline underline-offset-4 hover:text-accent">
-              Xem trang giới thiệu
-            </Link>
+      <form ref={formRef} onSubmit={submit} noValidate className="mt-8 flex flex-col gap-4" {...focusFrame}>
+        <TextField
+          ref={emailRef}
+          label="Email"
+          type="email"
+          icon={Mail}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="username"
+          inputMode="email"
+          error={fieldErr.email}
+          required
+        />
+        <TextField
+          ref={passwordRef}
+          label="Mật khẩu"
+          type={showPw ? 'text' : 'password'}
+          icon={Lock}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+          error={fieldErr.password}
+          required
+          trailing={
+            <IconButton icon={showPw ? EyeOff : Eye} variant="ghost" size="sm" label={showPw ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} pressed={showPw} onClick={() => setShowPw((v) => !v)} />
+          }
+        />
+        <Checkbox checked={remember} onChange={setRemember} label="Giữ đăng nhập trên máy này" description="Tắt khi dùng máy chung: đóng trình duyệt là phải đăng nhập lại." />
+        {error && (
+          <p role="alert" className="flex items-start gap-1.5 rounded-ctrl bg-crit/12 px-3 py-2.5 text-sm text-crit">
+            <CircleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" /> {error}
           </p>
-        </PageEnter>
-      </section>
-    </div>
+        )}
+        <Button type="submit" block loading={loading} className="mt-2 h-11">
+          Đăng nhập
+        </Button>
+      </form>
+
+      <p className="mt-6 text-sm text-ink-mid">
+        Chỉ xem thử?{' '}
+        <Button variant="link" type="button" onClick={fillDemo} className="font-medium">
+          Điền tài khoản mẫu
+        </Button>
+      </p>
+    </Pane>
   );
 };
 

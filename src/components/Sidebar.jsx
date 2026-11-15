@@ -7,6 +7,7 @@ import Logo, { LogoMark } from './Logo';
 import { NAV } from '../lib/nav';
 import { WORKSPACES, getWorkspace, switchWorkspace } from '../lib/workspace';
 import { DEFAULT_USER, currentUser } from '../hooks/useDecisions';
+import { currentAccount } from '../lib/auth';
 import { useBrowserModelStatus } from '../lib/analyze';
 import { useRefreshing, useDataVersion, reportRefreshing } from '../lib/dataVersion';
 import { useReducedMotion } from './motion';
@@ -234,22 +235,21 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
-  // Tên và email lấy từ Cài đặt → Hồ sơ; cập nhật ngay khi người dùng lưu
+  // Tên, email, cửa hàng của tài khoản đang đăng nhập (lib/auth.js); đổi tên ở Cài đặt thì cập nhật ngay
   const readProfile = () => {
-    try {
-      const s = JSON.parse(localStorage.getItem('crSettings') || '{}');
-      return { name: currentUser(), email: s.email || 'demo@customerradar.vn' };
-    } catch {
-      return { name: DEFAULT_USER, email: 'demo@customerradar.vn' };
-    }
+    const acc = currentAccount();
+    if (acc) return { name: acc.name || DEFAULT_USER, email: acc.email, role: acc.shop || 'Chủ cửa hàng' };
+    return { name: currentUser(), email: '—', role: 'Chưa đăng nhập' };
   };
   const [profile, setProfile] = useState(readProfile);
   useEffect(() => {
     const onChange = () => setProfile(readProfile());
     window.addEventListener('cr-settings', onChange);
+    window.addEventListener('cr-auth', onChange);
     window.addEventListener('storage', onChange);
     return () => {
       window.removeEventListener('cr-settings', onChange);
+      window.removeEventListener('cr-auth', onChange);
       window.removeEventListener('storage', onChange);
     };
   }, []);
@@ -416,7 +416,7 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
               <>
                 <span className="min-w-0 flex-1 text-left">
                   <span className="block truncate text-sm font-medium text-ink-hi">{profile.name}</span>
-                  <span className="block truncate text-xs text-ink-lo">Quản lý trải nghiệm KH</span>
+                  <span className="block truncate text-xs text-ink-lo">{profile.role}</span>
                 </span>
                 <ChevronsUpDown size={14} className="shrink-0 text-ink-lo" />
               </>

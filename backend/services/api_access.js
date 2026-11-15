@@ -45,6 +45,9 @@ function corsOptions(env = process.env) {
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const WEBHOOK_PATH = /^\/api\/live\/sessions\/[^/]+\/comments\/?$/;
+// Đăng ký, đăng nhập, đăng xuất: có giới hạn tần suất riêng (routes/auth.js) và
+// không chạm dữ liệu phân tích. Không miễn thì Vercel thiếu mã ghi là không ai vào được.
+const AUTH_PATH = /^\/api\/auth\/(signup|login|logout)\/?$/;
 
 function sameSecret(a, b) {
   const x = Buffer.from(String(a));
@@ -56,7 +59,7 @@ function writeGuard(env = process.env) {
   return (req, res, next) => {
     const key = String(env.WRITE_KEY || '');
     if (!key || SAFE_METHODS.has(req.method)) return next();
-    if (req.method === 'POST' && WEBHOOK_PATH.test(req.path)) return next();
+    if (req.method === 'POST' && (WEBHOOK_PATH.test(req.path) || AUTH_PATH.test(req.path))) return next();
     const sent = req.get('X-Write-Key');
     if (sent && sameSecret(sent, key)) return next();
     return res.status(401).json({ error: 'Thiếu hoặc sai mã ghi. Thao tác này chỉ chạy từ trang Customer Radar của nhóm.' });

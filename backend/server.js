@@ -107,6 +107,15 @@ async function startServer() {
     await Promise.all(Object.values(workspaces).map(ensureIndexes));
     console.log('Đã kiểm tra chỉ mục.');
 
+    // Tài khoản: database riêng, không thuộc kho nào (`npm run seed` không đụng tới).
+    // Mặc định theo tên kho demo, nên chạy thử với MONGODB_DB=..._test thì tài
+    // khoản cũng nằm trong ..._test_auth, không lẫn vào bản đang phục vụ.
+    const auth = require('./services/auth');
+    const authDb = client.db(process.env.MONGODB_AUTH_DB || `${db.databaseName}_auth`);
+    await auth.ensureAuthIndexes(authDb);
+    if (await auth.ensureDemoAccount(authDb)) console.log('Đã tạo tài khoản mẫu cho người xem thử.');
+    console.log(`Tài khoản: database ${authDb.databaseName}.`);
+
     // Muối băm mã khách: từ biến môi trường, không có thì từ kho thật (services/pii_salt.js)
     const saltSource = await require('./services/pii_salt').loadSalt(workspaces.real);
     console.log(saltSource ? `Muối băm mã khách: đã nạp (nguồn ${saltSource === 'env' ? 'biến môi trường' : 'database'}).` : 'Muối băm mã khách: CHƯA CÓ, các đường ghi dữ liệu thật sẽ từ chối.');
@@ -151,6 +160,8 @@ async function startServer() {
     });
 
     // Livestream: phiên live, bình luận thời gian thực (SSE), hàng đợi trả lời
+    // Đăng ký, đăng nhập, phiên (routes/auth.js)
+    app.use('/api/auth', require('./routes/auth')(authDb));
     app.use('/api/live', require('./routes/live'));
     app.use('/api', require('./routes/api'));
 

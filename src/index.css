@@ -609,6 +609,47 @@ html.vt-route .main-content > .sticky:first-child { view-transition-name: app-to
 ::view-transition-old(app-main) { animation: vt-out var(--motion-micro) var(--ease-in) both; }
 ::view-transition-new(app-main) { animation: vt-in var(--motion-medium) var(--ease-out) both; }
 
+/* Tài khoản (/auth, /login, /signup; components/auth/AuthShell.jsx).
+   Khung ngắm: hai góc cùng nét logo A2, màu nhấn (san hô vẫn chỉ là chấm logo),
+   chỉ dịch chuyển bằng transform. Lần đặt đầu chỉ hiện dần tại chỗ; từ khi
+   khung có data-ready mới trượt. Trong lúc View Transition chạy, transition
+   tắt để trình duyệt chụp đúng chỗ mới, và hai góc là hai lớp riêng nên bay
+   từ chỗ cũ sang chỗ mới. Ô nội dung: cũ lùi 20px và mờ, mới tiến 24px theo
+   hướng đi (--auth-dir: 1 tới, -1 lui). Giảm chuyển động: khối cuối file đưa
+   thời lượng về 0, và JS không mở View Transition. */
+.auth-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 14px;
+  height: 14px;
+  color: var(--accent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--motion-short) var(--ease-out);
+}
+.auth-corner svg { display: block; }
+.auth-corner[data-on] { opacity: 1; }
+.auth-stage[data-ready] .auth-corner {
+  transition: opacity var(--motion-short) var(--ease-out), transform var(--motion-short) var(--ease-out);
+}
+html.vt-auth .auth-corner { transition: none; }
+html.vt-auth .auth-pane { view-transition-name: auth-pane; }
+html.vt-auth .auth-corner-a { view-transition-name: auth-corner-a; }
+html.vt-auth .auth-corner-b { view-transition-name: auth-corner-b; }
+::view-transition-group(auth-pane) { animation: none; }
+@keyframes auth-out { to { opacity: 0; transform: translateX(calc(var(--auth-dir, 1) * -20px)); } }
+@keyframes auth-in { from { opacity: 0; transform: translateX(calc(var(--auth-dir, 1) * 24px)); } }
+/* Cũ ra trong --motion-micro, mới vào trễ đúng một nhịp đó: hai lớp chữ không chồng lên nhau giữa chừng */
+::view-transition-old(auth-pane) { animation: auth-out var(--motion-micro) var(--ease-in) both; }
+::view-transition-new(auth-pane) { animation: auth-in var(--motion-medium) var(--ease-out) var(--motion-micro) both; }
+::view-transition-group(auth-corner-a),
+::view-transition-group(auth-corner-b) {
+  animation-duration: var(--motion-medium);
+  animation-timing-function: var(--ease-out);
+}
+
 /* Giảm chuyển động: mọi token thời lượng về 0, mọi animation và transition
    kết thúc ngay ở trạng thái cuối (fill both giữ trạng thái cuối, delay bỏ,
    vòng lặp còn một lần). Phần tử nào buộc phải chạy (vòng xoay đang tải) đặt

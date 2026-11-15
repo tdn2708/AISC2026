@@ -1,13 +1,16 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
 import { alertTitle } from '../lib/format';
+import { currentAccount } from '../lib/auth';
 
 /** Tên mặc định khi chưa đặt tên ở Cài đặt. Nhật ký cũ đã ghi "Admin User" thì vẫn hiện nguyên chuỗi đó. */
 export const DEFAULT_USER = 'Chủ shop';
 const LEGACY_USER = 'Admin User';
 
-/** Tên người đang dùng (Cài đặt, Hồ sơ) để nhật ký quyết định ghi đúng người */
+/** Tên người đang dùng để nhật ký quyết định ghi đúng người: tên tài khoản đang đăng nhập, không có thì tên ở Cài đặt */
 export const currentUser = () => {
+  const account = currentAccount();
+  if (account?.name) return account.name;
   try {
     const name = JSON.parse(localStorage.getItem('crSettings') || '{}').name;
     return !name || name === LEGACY_USER ? DEFAULT_USER : name;

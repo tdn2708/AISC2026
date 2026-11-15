@@ -2577,7 +2577,63 @@ testAsync('Live: nối lại phiên mô phỏng đã quá trần thì dừng nga
     assert.strictEqual(ok('http://localhost.evil.com'), false);
     assert.strictEqual(ok('https://ban-nhom.example', { CORS_ORIGINS: 'https://ban-nhom.example/' }), true);
   });
+
+  test('Khóa ghi miễn cho đăng ký, đăng nhập, đăng xuất; sửa hồ sơ vẫn cần mã', () => {
+    const { writeGuard } = require('../services/api_access');
+    const env = { WRITE_KEY: 'ma-thu-123' };
+    const run = (method, path) => {
+      let code = 200;
+      writeGuard(env)({ method, path, get: () => undefined }, { status: (c) => { code = c; return { json: () => {} }; } }, () => {});
+      return code;
+    };
+    assert.strictEqual(run('POST', '/api/auth/login'), 200);
+    assert.strictEqual(run('POST', '/api/auth/signup'), 200);
+    assert.strictEqual(run('POST', '/api/auth/logout'), 200);
+    assert.strictEqual(run('PATCH', '/api/auth/me'), 401);
+    assert.strictEqual(run('POST', '/api/auth/login/x'), 401);
+  });
+
+  test('Tài khoản: kiểm tra đăng ký nói đúng ô sai, chuẩn hóa email và tên', () => {
+    const auth = require('../services/auth');
+    const bad = auth.validateSignup({ name: ' a ', email: 'khong-phai-email', password: 'ngan1' });
+    assert.ok(bad.errors.name && bad.errors.email && bad.errors.password);
+    assert.ok(auth.validateSignup({ name: 'An', email: 'a@b.vn', password: 'chiconchu' }).errors.password.includes('chữ và số'));
+    assert.ok(auth.validateSignup({ name: 'An', email: 'a@b.vn', password: '12345678' }).errors.password.includes('chữ và số'));
+    const ok = auth.validateSignup({ name: '  Nguyễn   Văn\tA ', shop: ' Shop  X ', email: ' Ten@CuaHang.VN ', password: 'matkhau2026' });
+    assert.deepStrictEqual(ok.value, { name: 'Nguyễn Văn A', shop: 'Shop X', email: 'ten@cuahang.vn', password: 'matkhau2026' });
+    // Mật khẩu chữ có dấu vẫn tính là chữ
+    assert.deepStrictEqual(auth.passwordProblems('mậtkhẩu99'), []);
+  });
+
+  test('Tài khoản: thông tin gửi về trình duyệt không bao giờ có mật khẩu băm', () => {
+    const auth = require('../services/auth');
+    const u = auth.publicUser({ _id: 'x1', email: 'a@b.vn', name: 'An', shop: '', passwordHash: 'scrypt$...', createdAt: new Date(0) });
+    assert.ok(!('passwordHash' in u));
+    assert.strictEqual(u.isDemo, false);
+    assert.strictEqual(auth.publicUser({ _id: 'x2', email: auth.DEMO_ACCOUNT.email, name: 'M' }).isDemo, true);
+  });
+
+  test('Tài khoản: đọc token Bearer, từ chối chuỗi lạ', () => {
+    const auth = require('../services/auth');
+    const req = (h) => ({ get: () => h });
+    assert.strictEqual(auth.bearerToken(req('Bearer abcdefghijklmnopqrstuvwxyz_-0123')), 'abcdefghijklmnopqrstuvwxyz_-0123');
+    assert.strictEqual(auth.bearerToken(req('Bearer ngan')), null);
+    assert.strictEqual(auth.bearerToken(req('Basic abcdefghijklmnopqrstuvwxyz')), null);
+    assert.strictEqual(auth.bearerToken(req(undefined)), null);
+    assert.notStrictEqual(auth.hashToken('a'), 'a');
+  });
 }
+
+testAsync('Tài khoản: băm mật khẩu scrypt có muối riêng, đúng thì qua, sai thì không', async () => {
+  const auth = require('../services/auth');
+  const h1 = await auth.hashPassword('matkhau2026');
+  const h2 = await auth.hashPassword('matkhau2026');
+  assert.notStrictEqual(h1, h2, 'cùng mật khẩu phải ra chuỗi băm khác nhau (muối riêng)');
+  assert.ok(h1.startsWith('scrypt$') && !h1.includes('matkhau2026'));
+  assert.strictEqual(await auth.verifyPassword('matkhau2026', h1), true);
+  assert.strictEqual(await auth.verifyPassword('matkhau2027', h1), false);
+  assert.strictEqual(await auth.verifyPassword('matkhau2026', 'hong'), false);
+});
 
 (async () => {
   for (const t of asyncTests) {
