@@ -268,7 +268,7 @@ const AuthShell = () => {
 
   return (
     <AuthCtx.Provider value={ctx}>
-      <div className="cx grid min-h-screen min-h-dvh bg-canvas lg:grid-cols-[minmax(0,1fr)_minmax(440px,600px)]">
+      <div className="cx grid min-h-screen min-h-dvh bg-canvas lg:grid-cols-[minmax(0,1.1fr)_minmax(440px,1fr)]">
         <InkBlock />
         <section ref={stageRef} className="auth-stage relative flex min-w-0 flex-col px-6 py-8 sm:px-10">
           <div className="mb-10 lg:hidden">
