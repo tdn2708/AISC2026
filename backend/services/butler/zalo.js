@@ -148,7 +148,7 @@ async function getMe(opts) {
   const r = await call('getMe', {}, opts);
   const val = {
     id: r?.id != null ? String(r.id) : '',
-    name: r?.account_name || r?.name || 'Bot Zalo'
+    name: r?.display_name || r?.account_name || r?.name || 'Bot Zalo'
   };
   meCache = { tokenKey: tk, at: Date.now(), value: val };
   return val;

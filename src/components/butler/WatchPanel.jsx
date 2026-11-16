@@ -7,7 +7,7 @@ const OptionBar = ({ label, options, value, onChange }) => (
   <div
     role="group"
     aria-label={label}
-    className="flex flex-wrap gap-1 rounded-ctrl border border-line bg-surface p-0.5"
+    className={`grid gap-1 rounded-ctrl border border-line bg-surface p-0.5 ${options.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}
   >
     {options.map((o) => {
       const active = o.value === value;
@@ -18,7 +18,7 @@ const OptionBar = ({ label, options, value, onChange }) => (
           aria-pressed={active}
           onClick={() => onChange(o.value)}
           disabled={o.disabled}
-          className={`inline-flex h-8 pointer-coarse:h-10 flex-1 items-center justify-center rounded-[calc(var(--r-ctrl)-2px)] border px-2 text-xs font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-micro ease-out disabled:cursor-not-allowed disabled:opacity-55 ${
+          className={`inline-flex h-8 pointer-coarse:h-10 min-w-0 items-center justify-center rounded-[calc(var(--r-ctrl)-2px)] border px-2 text-xs font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-micro ease-out disabled:cursor-not-allowed disabled:opacity-55 ${
             active
               ? SELECTED
               : 'border-transparent text-ink-mid hover:bg-raised hover:text-ink-hi'
@@ -37,7 +37,7 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
 }));
 
 const NOTIFY_OPTIONS = [
-  { value: 'critical', label: 'Chỉ nghiêm trọng' },
+  { value: 'critical', label: 'Nghiêm trọng' },
   { value: 'high', label: 'Từ mức cao' },
   { value: 'all', label: 'Mọi việc' }
 ];

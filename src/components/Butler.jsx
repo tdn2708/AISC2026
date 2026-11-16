@@ -43,7 +43,7 @@ const ButlerSkeleton = () => (
       <Skeleton className="h-9 w-28 rounded-ctrl" />
     </div>
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-      <div className="flex min-h-[28rem] flex-1 max-w-[680px] flex-col justify-between rounded-surf border border-line-soft p-5">
+      <div className="flex min-h-[28rem] min-w-0 flex-1 flex-col justify-between rounded-surf border border-line-soft p-5">
         <div className="flex flex-col gap-4">
           <Skeleton className="h-12 w-3/4 rounded-ctrl" />
           <Skeleton className="h-10 w-1/2 self-end rounded-ctrl" />
@@ -51,7 +51,7 @@ const ButlerSkeleton = () => (
         </div>
         <Skeleton className="h-12 w-full rounded-ctrl" />
       </div>
-      <div className="hidden w-[320px] shrink-0 lg:block">
+      <div className="hidden w-[340px] shrink-0 overflow-y-auto rounded-surf lg:block lg:h-[calc(100dvh-11.5rem)] lg:min-h-[26rem]">
         <Skeleton className="h-[32rem] w-full rounded-surf" />
       </div>
     </div>
@@ -285,13 +285,13 @@ const Butler = () => {
         </div>
       </div>
 
-      {/* Bố cục chính: cột cuộc trò chuyện (tối đa 680px) và cột phải (320px trên lg) */}
+      {/* Bố cục chính: cột trò chuyện co giãn hết bề ngang, cột phải 340px cao bằng cột trò chuyện và tự cuộn */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <GlassPanel
           as="section"
           tone="strong"
           aria-label="Cuộc trò chuyện với quản gia"
-          className="flex h-[calc(100dvh-12rem)] min-h-[24rem] w-full max-w-[680px] flex-col overflow-hidden px-4 pt-2 sm:px-5 lg:h-[calc(100dvh-11.5rem)] lg:min-h-[26rem] lg:flex-1"
+          className="flex h-[calc(100dvh-12rem)] min-h-[24rem] w-full min-w-0 flex-col overflow-hidden px-4 pt-2 sm:px-5 lg:h-[calc(100dvh-11.5rem)] lg:min-h-[26rem] lg:flex-1"
         >
           <Conversation
             messages={messages}
@@ -305,7 +305,7 @@ const Butler = () => {
           <Composer onSend={handleSendCommand} busy={busy} />
         </GlassPanel>
 
-        <div className="hidden w-[320px] shrink-0 lg:block">
+        <div className="hidden w-[340px] shrink-0 overflow-y-auto rounded-surf lg:block lg:h-[calc(100dvh-11.5rem)] lg:min-h-[26rem]">
           <WatchPanel
             status={status}
             outboxItems={outboxItems}
