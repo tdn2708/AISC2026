@@ -563,9 +563,6 @@ function buildRecommendation(alert, options = {}) {
       suppressed: held,
       learnedFromDecisions: learning.totalDecisions
     },
-
-    safetyNote:
-      'Hệ thống không tự thực thi bất kỳ hành động nào phát sinh chi phí hoặc tác động tới khách hàng cuối. Mọi hành động ở đây là đề xuất; người có thẩm quyền quyết định.',
     followUpDays: steps.length ? steps[0].effectCheck.followUpDays : 14
   };
 }

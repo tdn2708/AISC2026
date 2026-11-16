@@ -163,8 +163,7 @@ const TOOLS = {
 
       if (result.alerts.length === 0) {
         facts.push(
-          'Không có biến động nào đạt đồng thời ý nghĩa thống kê (p < 0.01) và ý nghĩa nghiệp vụ. ' +
-          'Đây là kết quả bình thường, không phải lỗi hệ thống.'
+          'Không có biến động nào vượt ngưỡng cảnh báo.'
         );
       }
 

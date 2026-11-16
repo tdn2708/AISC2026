@@ -167,9 +167,6 @@ const Report = ({ sessionId }) => {
           ) : (
             <EmptyState compact title="Không có khiếu nại" />
           )}
-          {r.complaints.total > 0 && r.complaints.pushed < r.complaints.total && (
-            <p className="mt-3 text-xs text-ink-lo">Đưa vào hệ thống để Trust Layer, cảnh báo và báo cáo tính chung với đánh giá trên sàn và các kênh khác.</p>
-          )}
         </GlassPanel>
       </div>
 

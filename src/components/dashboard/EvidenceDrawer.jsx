@@ -162,7 +162,7 @@ const EvidenceDrawer = ({ metric, stats, onClose }) => {
 
           {ev?.samples?.length > 0 && (
             <Section title="Đọc thử phản hồi gốc">
-              <p className="mb-3 text-xs text-ink-lo">Năm khiếu nại mới nhất trong phạm vi đang lọc, nguyên văn (tên người mua đã che).</p>
+              <p className="mb-3 text-xs text-ink-lo">Năm khiếu nại mới nhất, nguyên văn.</p>
               <ul className="flex list-none flex-col gap-2.5">
                 {ev.samples.map((s) => {
                   const b = sampleBadge(s);

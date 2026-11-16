@@ -214,7 +214,7 @@ const VersusDemo = () => {
               </Badge>
             </div>
             <p className="mb-5 text-xs leading-relaxed text-ink-lo">
-              {usedModel ? 'Mô hình hiểu tiếng Việt mạng xã hội, bóc tách từng vấn đề' : 'Dịch vụ mô hình chưa sẵn sàng, đang dùng luật từ khóa'}
+              {usedModel ? 'Bóc tách từng vấn đề' : 'Dịch vụ mô hình chưa sẵn sàng, đang dùng luật từ khóa'}
             </p>
 
             {spam?.isSpam ? (

@@ -220,8 +220,6 @@ function buildRecommendation(alert) {
     confidence: alert.severityScore,
     steps,
     requiresApproval: steps.some((s) => s.requiresApproval),
-    safetyNote:
-      'Hệ thống không tự thực thi bất kỳ hành động nào phát sinh chi phí hoặc tác động tới khách hàng cuối. Mọi hành động ở đây là đề xuất; người có thẩm quyền quyết định.',
     followUpDays: escalate ? 7 : 14
   };
 }

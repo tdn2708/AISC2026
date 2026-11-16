@@ -522,7 +522,7 @@ function StepFinal({ t, scenario }) {
           <Label>Đối chiếu: luật từ khóa thấy gì</Label>
           <p className="-mt-0.5 mb-2 text-xs leading-relaxed text-ink-mid">
             {f.source === 'visobert'
-              ? <>Nhánh đối chứng B1, <strong className="text-high">không dùng để ghi nhận</strong>. Để đây chỉ để thấy luật bỏ sót hay bắt được gì.</>
+              ? <>Nhánh đối chứng B1, <strong className="text-high">không dùng để ghi nhận</strong>.</>
               : <>Hiện đây <strong className="text-high">đang là nguồn nhãn chính</strong>, vì dịch vụ ViSoBERT không sẵn sàng.</>}
           </p>
           {r.length === 0 ? (

@@ -87,7 +87,7 @@ const CatalogEditor = ({ rows, onRows, policy, onPolicy }) => {
           <h3 className="text-sm font-semibold text-ink-hi">Sản phẩm trong phiên</h3>
           <Button size="sm" variant="secondary" icon={Plus} onClick={add}>Thêm sản phẩm</Button>
         </div>
-        {rows.length === 0 && <p className="text-sm text-ink-lo">Chưa có sản phẩm. Không có danh mục thì vẫn phân loại được bình luận, nhưng không gợi ý được giá, size, tồn kho.</p>}
+        {rows.length === 0 && <p className="text-sm text-ink-lo">Chưa có sản phẩm.</p>}
         <ol className="flex list-none flex-col gap-3">
           {rows.map((r, i) => (
             <li key={r.id || i} className="rounded-ctrl bg-raised p-3">

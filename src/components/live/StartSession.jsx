@@ -119,7 +119,7 @@ const StartSession = ({ onStarted, onCancel, initial = null }) => {
               onChange={setSpeed}
               options={[{ value: '0.5', label: 'Chậm' }, { value: '1', label: 'Thật' }, { value: '2', label: 'Nhanh gấp 2' }]}
             />
-            <p className="text-xs text-ink-lo">Dùng danh mục mẫu 5 sản phẩm thời trang. Dữ liệu được gắn nhãn mô phỏng và chỉ nằm trong kho demo.</p>
+            <p className="text-xs text-ink-lo">Dùng danh mục mẫu 5 sản phẩm thời trang.</p>
           </div>
         )}
       </div>
@@ -129,7 +129,7 @@ const StartSession = ({ onStarted, onCancel, initial = null }) => {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-ink-hi">Danh mục và chính sách</p>
-              <p className="text-xs text-ink-lo">Gợi ý trả lời chỉ dùng thông tin khai báo ở đây. Sửa được cả khi đang live.</p>
+              <p className="text-xs text-ink-lo">Sửa được cả khi đang live.</p>
             </div>
             <Segmented
               label="Danh mục"

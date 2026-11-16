@@ -111,7 +111,6 @@ const ActionCoach = ({ stats, sessionId, live, onOpenCatalog }) => {
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h2 id="coach-title" className="text-heading font-semibold text-ink-hi">Việc nên làm ngay</h2>
-          <p className="text-xs text-ink-mid">Rút ra từ bình luận trong vài phút gần nhất. Câu nói mẫu chỉ dùng thông tin shop đã khai báo.</p>
         </div>
         {active.length > 3 && (
           <Button variant="link" size="sm" onClick={() => setShowAll((v) => !v)} aria-expanded={showAll}>
@@ -130,7 +129,7 @@ const ActionCoach = ({ stats, sessionId, live, onOpenCatalog }) => {
 
       {history.length > 0 && (
         <div className="mt-4 border-t border-line-soft pt-3">
-          <p className="mb-1.5 text-xs font-semibold text-ink-mid">Hiệu quả các việc đã làm (so 3 phút trước và sau, chưa loại trừ yếu tố khác)</p>
+          <p className="mb-1.5 text-xs font-semibold text-ink-mid">Hiệu quả các việc đã làm, so 3 phút trước và sau</p>
           <ul className="flex list-none flex-col gap-1">
             {history.map((h) => (
               <li key={`${h.id}-${h.at}`} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs">

@@ -351,7 +351,7 @@ function buildPrompt(question, intent, briefing, history, ctx, filters) {
    như thể hệ thống sẽ tự làm. Mọi hành động đều là đề xuất chờ người duyệt.
 8. Người đọc là quản lý, không phải nhà thống kê: viết số thập phân kiểu Việt
    (5,5% chứ không phải 5.5%), KHÔNG nêu z, p, EWMA trừ khi được hỏi; thay bằng
-   lời thường như "tăng đủ lớn để chắc chắn không phải ngẫu nhiên".
+   lời thường như "tăng rõ so với trước".
 
 ## Phạm vi đang xét
 ${scope.length ? scope.join(', ') : 'toàn bộ dữ liệu'}
