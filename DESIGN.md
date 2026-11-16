@@ -229,6 +229,10 @@ Luật:
 | `paper` (lớp CSS) | `className="paper p-3"` | nền đặc cho vùng chữ dày trong panel kính (mục 4, Kính); demo ở `/ui-kit`, mục Kính |
 | Khác | `PageHeader`, `PanelHeader`, `SectionLabel`, `Stat`, `ProgressBar`, `Stepper`, `EmptyState`, `Pager`, `EvidenceBar` | trạng thái rỗng dùng `EmptyState` |
 
+**Vùng chạm trên màn cảm ứng (16/11):** trên máy có chuột, control giữ cỡ ở bảng trên. Trên màn cảm ứng (`pointer-coarse:`), mọi control cao tối thiểu 40px: `Button sm`, nút link, `Chip`, `Segmented`, `Tabs`, nút lọc ở `FilterBar`, ô số trang của `Pager`, nút sắp xếp cột tự cao lên 40px; `IconButton` dưới 40px giữ nguyên hình nhưng có lớp `::before` trong suốt nới vùng chạm ra 40px; `Switch` nới lớp `::after`. Control tự dựng mới có `h-8` thì thêm `pointer-coarse:h-10`.
+
+**Kho chưa có dữ liệu (16/11):** Tổng quan thay bằng `shell/StartGuide.jsx` (ba cách có dữ liệu, mỗi cách một nút tới đúng chỗ), các trang số liệu khác có một dòng `NoDataNotice` ở đầu nói số 0 là vì chưa có dữ liệu. Không bao giờ để trạng thái "không có việc, mọi chỉ số bình thường" hiện trên 0 dữ liệu. Biết kho trống bằng `useWorkspaceEmpty()` (`lib/workspaceEmpty.js`).
+
 Trạng thái mọi control (xem `/ui-kit`, 8 trạng thái): mặc định, rê (đổi một bước màu, chỉ trên thiết bị có chuột), nhấn (lún 1px, tức thì), focus-visible (viền ngoài 2px `--accent`, cách 2px, hiện ngay; ô nhập lõm vào trong), tắt (mờ 55%, con trỏ cấm, `disabled` thật), đang tải (`aria-busy`), lỗi (chữ), đã chọn (`SELECTED`, `aria-pressed`).
 
 ## 7. Logo A2 "khung ngắm" (`src/components/Logo.jsx`)

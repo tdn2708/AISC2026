@@ -64,7 +64,7 @@ const Trigger = ({ icon: Icon, active, children, onClick, open }) => (
     type="button"
     onClick={onClick}
     aria-expanded={open}
-    className={`inline-flex h-8 max-w-[240px] items-center gap-1.5 rounded-ctrl border px-3 text-xs font-medium transition-[background-color,border-color,color] duration-micro ease-out ${
+    className={`inline-flex h-8 pointer-coarse:h-10 max-w-[240px] items-center gap-1.5 rounded-ctrl border px-3 text-xs font-medium transition-[background-color,border-color,color] duration-micro ease-out ${
       active ? SELECTED : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'
     }`}
   >
@@ -234,7 +234,7 @@ const FilterBar = ({ timeFilter, setTimeFilter, sourceFilter, setSourceFilter, p
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex h-8 items-center gap-1 rounded-ctrl px-2.5 text-xs text-ink-mid transition-colors hover:bg-crit/10 hover:text-crit"
+            className="inline-flex h-8 pointer-coarse:h-10 items-center gap-1 rounded-ctrl px-2.5 text-xs text-ink-mid transition-colors hover:bg-crit/10 hover:text-crit"
           >
             <X size={13} aria-hidden="true" />
             Xoá {activeCount} bộ lọc

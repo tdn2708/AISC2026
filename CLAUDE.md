@@ -191,11 +191,15 @@ Real-time comment intake for live-selling sessions (TikTok Live, YouTube Live, m
 ### Frontend
 
 - Pages live in `src/components/*.jsx`, with routes in `App.jsx`. Building blocks are in `components/ui`, `shell`, `dashboard`, `alerts`, `trust`, `analytics` and `feedback`.
-- The sidebar shows only the six pages in `lib/nav.js`. Reports, Settings and Lab are `HIDDEN_PAGES`, reachable through Ctrl+K and in-context links.
+- The sidebar shows the nine pages in `lib/nav.js` in three groups (daily work without a label, then "Phân tích" and "Dữ liệu"), rendered as ONE `NavList` so the active-page mark can slide across groups. Reports, Settings and Lab are `HIDDEN_PAGES`, reachable through Ctrl+K and in-context links.
+- Only Dashboard and the auth pages are in the main bundle. Every other page is `lazyPage(() => import(...))` (`lib/lazyPage.js`): `MainLayout` preloads all of them when the browser is idle, and a loaded page renders without React.lazy so no fallback flashes. If a chunk fails to load (old hashes after a Vercel deploy), the page reloads once. Main JS went from 1,2 MB (353 KB gzip) to about 700 KB (210 KB gzip) on 2026-11-16.
+- Empty workspace: `useWorkspaceEmpty()` (`lib/workspaceEmpty.js`, reads `/trust/health` `rawCollected`). Dashboard renders `shell/StartGuide.jsx` instead of its sections, `/feedbacks` says the store has no feedback yet, and `MainLayout` shows `NoDataNotice` on the other data pages. The sidebar health score shows "—" instead of a red 0.
+- Touch screens: controls are at least 40px tall under `pointer-coarse:` (see DESIGN.md section 6); mouse layouts are unchanged.
 - Tabs are driven by `?tab=` in the URL:
   - Cảnh báo: `?tab=log`;
   - Tin cậy dữ liệu: `?tab=audit`;
-  - Phân tích: `?tab=compare|segments`.
+  - Phân tích: `?tab=compare|segments`;
+  - Nguồn dữ liệu: `?tab=url|file|shops|history` (read once on mount).
 - The assistant drawer (`shell/Assistant.jsx`) is opened from anywhere with `askAssistant(q)` / `openAssistant()` in `lib/assistant.js`, which uses a window event. `MainLayout` remounts on every route change, so the chat history lives in sessionStorage.
 - `lib/format.js` has the shared wording helpers:
   - `evidenceOf` maps a feedback to verified / human / inferred;

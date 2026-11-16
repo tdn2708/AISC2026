@@ -108,7 +108,7 @@ const Metric = ({ label, children, sub, note, extra, bad, onOpen }) => (
       onClick={onOpen}
       aria-haspopup="dialog"
       aria-label={`Cách tính: ${label}`}
-      className="mt-2 -ml-1 inline-flex h-8 items-center self-start rounded-ctrl px-1 text-sm font-semibold text-accent-hi underline-offset-4 hover:underline"
+      className="mt-2 -ml-1 inline-flex h-8 pointer-coarse:h-10 items-center self-start rounded-ctrl px-1 text-sm font-semibold text-accent-hi underline-offset-4 hover:underline"
     >
       Cách tính
     </button>

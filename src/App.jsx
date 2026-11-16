@@ -7,22 +7,11 @@ import CommandPalette from './components/shell/CommandPalette';
 import Assistant from './components/shell/Assistant';
 import AppAtmosphere from './components/shell/AppAtmosphere';
 import Dashboard from './components/Dashboard';
-import Analytics from './components/Analytics';
-import Cases from './components/Cases';
-import Insights from './components/Insights';
-import Feedbacks from './components/Feedbacks';
-import Live from './components/Live';
-import RiskCenter from './components/RiskCenter';
-import DataSources from './components/DataSources';
-import Reports from './components/Reports';
-import SettingsPage from './components/Settings';
 import Login from './components/Login';
 import AuthShell from './components/auth/AuthShell';
 import AuthChoice from './components/auth/AuthChoice';
 import Signup from './components/auth/Signup';
 import { applyAuthHeader, getSession, logout, refreshAccount, safeNext } from './lib/auth';
-import TrustLayerPage from './components/TrustLayer';
-import Lab from './components/Lab';
 // Bộ giao diện chỉ có ở bản dev: lazy để bản build bỏ hẳn trang này
 const UiKit = import.meta.env.DEV ? lazy(() => import('./components/UiKit')) : null;
 import { API_URL } from './config';
@@ -31,10 +20,36 @@ import { applyWorkspaceHeader } from './lib/workspace';
 import ErrorBoundary from './components/ErrorBoundary';
 import { RouteTransition } from './components/motion/RouteTransition';
 import { findPage } from './lib/nav';
+import { lazyPage, preloadPages } from './lib/lazyPage';
+import { Skeleton, SkeletonBlock } from './components/ui/Skeleton';
+import { NoDataNotice } from './components/shell/StartGuide';
 import './hooks/useTheme';
 
 // Trang giới thiệu công khai (F3): chunk riêng, chỉ tải khi mở `/`
 const Landing = lazy(() => import('./components/landing/Landing'));
+
+// Tổng quan nằm trong gói chính (trang mở đầu tiên sau đăng nhập). Các trang
+// còn lại là gói riêng, tải ngầm khi trình duyệt rảnh (lib/lazyPage.js).
+const Insights = lazyPage(() => import('./components/Insights'));
+const RiskCenter = lazyPage(() => import('./components/RiskCenter'));
+const Feedbacks = lazyPage(() => import('./components/Feedbacks'));
+const Live = lazyPage(() => import('./components/Live'));
+const Analytics = lazyPage(() => import('./components/Analytics'));
+const Cases = lazyPage(() => import('./components/Cases'));
+const TrustLayerPage = lazyPage(() => import('./components/TrustLayer'));
+const DataSources = lazyPage(() => import('./components/DataSources'));
+const Lab = lazyPage(() => import('./components/Lab'));
+const Reports = lazyPage(() => import('./components/Reports'));
+const SettingsPage = lazyPage(() => import('./components/Settings'));
+
+/** Chỗ giữ trong lúc gói của trang đang về (chỉ thấy khi mạng chậm, trước lượt tải ngầm) */
+const PageFallback = () => (
+  <SkeletonBlock label="Đang mở trang" className="px-4 pt-6 sm:px-8">
+    <Skeleton className="h-8 w-56" />
+    <Skeleton className="mt-3 h-4 w-80 max-w-full" />
+    <Skeleton className="mt-8 h-48 w-full rounded-surf" />
+  </SkeletonBlock>
+);
 
 axios.defaults.baseURL = API_URL;
 applyWorkspaceHeader();
@@ -73,6 +88,8 @@ const MainLayout = ({ children, onLogout }) => {
     document.title = page ? `${page.label} | Customer Radar` : 'Customer Radar';
   }, [location.pathname]);
   useEffect(() => writeStorage('sidebarCollapsed', collapsed), [collapsed]);
+  // Đã vào app: tải ngầm các trang còn lại để lúc bấm sang không phải chờ
+  useEffect(() => preloadPages(), []);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -104,7 +121,11 @@ const MainLayout = ({ children, onLogout }) => {
           <Topbar onOpenMenu={() => setMenuOpen(true)} onOpenCommand={() => setCommandOpen(true)} />
           {/* Chuyển trang: View Transitions khi trình duyệt có, không thì mờ dần như cũ */}
           <RouteTransition>
-            <ErrorBoundary>{children}</ErrorBoundary>
+            <ErrorBoundary>
+              {/* Kho chưa có phản hồi nào: nói rõ số 0 là vì chưa có dữ liệu (đánh giá 16/11) */}
+              <NoDataNotice />
+              <Suspense fallback={<PageFallback />}>{children}</Suspense>
+            </ErrorBoundary>
           </RouteTransition>
         </main>
       </div>

@@ -192,7 +192,7 @@ export const LedgerRun = ({
       <figcaption className="flex items-baseline justify-between gap-3">
         <span className="text-base font-semibold text-ink-hi">{title}</span>
         {showLink && (
-          <Link to="/trust" className="-my-1.5 inline-flex min-h-8 shrink-0 items-center rounded-ctrl text-sm font-medium text-accent-hi underline-offset-4 hover:underline focus-visible:underline">
+          <Link to="/trust" className="-my-1.5 inline-flex min-h-8 pointer-coarse:min-h-10 shrink-0 items-center rounded-ctrl text-sm font-medium text-accent-hi underline-offset-4 hover:underline focus-visible:underline">
             Xem phễu
           </Link>
         )}

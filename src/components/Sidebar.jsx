@@ -5,6 +5,7 @@ import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X
 import { Popover, MenuItem } from './ui';
 import Logo, { LogoMark } from './Logo';
 import { NAV } from '../lib/nav';
+import { useWorkspaceEmpty } from '../lib/workspaceEmpty';
 import { WORKSPACES, getWorkspace, switchWorkspace } from '../lib/workspace';
 import { DEFAULT_USER, currentUser } from '../hooks/useDecisions';
 import { currentAccount } from '../lib/auth';
@@ -284,7 +285,9 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
   }, [refreshing, dataVersion]);
 
   const counts = { alerts: status?.openAlerts || null, queue: status?.reviewQueue || null };
-  const health = status?.dataHealth;
+  // Kho chưa có phản hồi nào: điểm 0 màu đỏ là sai nghĩa (chưa có gì để chấm), hiện "—"
+  const empty = useWorkspaceEmpty();
+  const health = empty === true ? null : status?.dataHealth;
   const healthText = health == null ? 'text-ink-lo' : health >= 75 ? 'text-ok' : health >= 50 ? 'text-high' : 'text-crit';
 
   // Máy chủ không có mô hình nhưng trình duyệt đã nạp bản ONNX: nói đúng điều đó
@@ -329,24 +332,32 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
 
         <WorkspacePicker collapsed={collapsed} />
 
-        {/* Điều hướng — sáu mục, không cần nhãn nhóm */}
+        {/* Điều hướng: ba nhóm trong MỘT danh sách để dấu "đang ở trang này" trượt được qua nhóm */}
         <nav aria-label="Trang" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-3">
-          {NAV.map((g) => (
-            <div key={g.group} className="mt-2">
-              <NavList items={g.items}>
-                {g.items.map((item) => (
-                  <NavItem
-                    key={item.to}
-                    item={item}
-                    collapsed={collapsed}
-                    count={item.badge ? counts[item.badge] : null}
-                    critical={item.badge === 'alerts' && status?.criticalAlerts > 0}
-                    onNavigate={onClose}
-                  />
-                ))}
-              </NavList>
-            </div>
-          ))}
+          <div className="mt-2">
+            <NavList items={NAV}>
+              {NAV.map((g) => (
+                <React.Fragment key={g.group}>
+                  {!g.hideLabel &&
+                    (collapsed ? (
+                      <hr aria-hidden="true" className="mx-2 my-2 border-line" />
+                    ) : (
+                      <p className="mt-3 mb-1 px-3 text-xs text-ink-lo">{g.group}</p>
+                    ))}
+                  {g.items.map((item) => (
+                    <NavItem
+                      key={item.to}
+                      item={item}
+                      collapsed={collapsed}
+                      count={item.badge ? counts[item.badge] : null}
+                      critical={item.badge === 'alerts' && status?.criticalAlerts > 0}
+                      onNavigate={onClose}
+                    />
+                  ))}
+                </React.Fragment>
+              ))}
+            </NavList>
+          </div>
         </nav>
 
         {/* Dải trạng thái hệ thống */}

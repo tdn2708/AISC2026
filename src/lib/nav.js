@@ -7,24 +7,37 @@ import {
  * Cấu trúc điều hướng DÙNG CHUNG cho thanh bên và bảng lệnh Ctrl+K — khai
  * báo một lần để hai nơi không bao giờ lệch nhau.
  *
- * Thanh bên chỉ giữ tám việc người dùng làm hằng ngày. Ba trang còn lại vẫn
+ * Thanh bên chia ba nhóm (việc hằng ngày, phân tích, dữ liệu) để chủ shop
+ * thấy ngay năm việc dùng mỗi ngày ở trên cùng. Ba trang còn lại vẫn
  * mở được, nhưng từ đúng chỗ người ta cần tới chúng:
  *   Báo cáo         — nút "Xuất báo cáo" trên thanh lọc, và Ctrl+K
  *   Cài đặt         — menu người dùng ở cuối thanh bên, và Ctrl+K
  *   Phòng thí nghiệm — dòng trạng thái mô hình ở cuối thanh bên, và Ctrl+K
  */
 export const NAV = [
+  // Nhóm đầu là việc chủ shop làm mỗi ngày: không cần nhãn, đứng ngay dưới ô chọn kho
   {
-    group: 'Chính',
+    group: 'Hằng ngày',
+    hideLabel: true,
     items: [
       { to: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
-      { to: '/insights', label: 'Bảng số liệu', icon: ChartColumnBig },
-      { to: '/risk', label: 'Cảnh báo', icon: Siren, badge: 'alerts' },
       { to: '/feedbacks', label: 'Phản hồi', icon: MessagesSquare },
-      { to: '/live', label: 'Livestream', icon: Radio },
-      { to: '/analytics', label: 'Phân tích nguyên nhân', icon: ScanSearch },
+      { to: '/risk', label: 'Cảnh báo', icon: Siren, badge: 'alerts' },
       // Từ dữ liệu tới hành động: hồ sơ mở từ điểm đau phải tìm được ngay, không chỉ qua Ctrl+K
       { to: '/cases', label: 'Hồ sơ xử lý', icon: FolderKanban },
+      { to: '/live', label: 'Livestream', icon: Radio }
+    ]
+  },
+  {
+    group: 'Phân tích',
+    items: [
+      { to: '/insights', label: 'Bảng số liệu', icon: ChartColumnBig },
+      { to: '/analytics', label: 'Phân tích nguyên nhân', icon: ScanSearch }
+    ]
+  },
+  {
+    group: 'Dữ liệu',
+    items: [
       { to: '/trust', label: 'Tin cậy dữ liệu', icon: ShieldCheck, badge: 'queue' },
       { to: '/data', label: 'Nguồn dữ liệu', icon: DatabaseZap }
     ]

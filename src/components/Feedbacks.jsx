@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
 import FilterBar from './FilterBar';
 import FeedbackList, { FeedbackListSkeleton } from './feedback/FeedbackList';
@@ -8,6 +8,7 @@ import { PageHeader, GlassPanel, Button, IconButton, fieldClass, Chip, EmptyStat
 import { fmtInt } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
 import useFeedbackPage from '../hooks/useFeedbackPage';
+import { useWorkspaceEmpty } from '../lib/workspaceEmpty';
 import { PageEnter } from './motion';
 
 /**
@@ -101,6 +102,9 @@ const Feedbacks = () => {
     }
   };
 
+  // Kho trống hẳn (không phải do lọc): nói chưa có dữ liệu thay vì khuyên bỏ bớt bộ lọc
+  const noData = useWorkspaceEmpty() === true;
+  const filtered = Boolean(query) || mood !== 'All' || evidence !== 'All' || timeFilter !== 'All' || sourceFilter !== 'All' || productFilter !== 'All';
   const clearAll = () => {
     clearSearch();
     setMood('All');
@@ -170,6 +174,12 @@ const Feedbacks = () => {
           <EmptyState variant="error" title="Không tải được phản hồi" description={error} />
         ) : firstLoad ? (
           <FeedbackListSkeleton rows={8} />
+        ) : total === 0 && noData && !filtered ? (
+          <EmptyState
+            title="Kho này chưa có phản hồi nào"
+            description="Chưa thu thập hay nạp phản hồi nào. Lấy đánh giá từ liên kết sản phẩm hoặc nạp file CSV của shop."
+            action={<Button as={Link} to="/data?tab=url" variant="secondary">Mở trang thu thập</Button>}
+          />
         ) : total === 0 ? (
           <EmptyState
             title="Không có phản hồi khớp"

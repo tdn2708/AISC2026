@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   Link2, RefreshCw, Store, ShoppingBag, Music2, Globe, Plus, Trash2, Boxes, Activity, Clock, CircleCheck, CircleX, CircleDashed, Unplug, History, Info, FileUp } from 'lucide-react';
@@ -148,7 +148,9 @@ const SyncProgress = () => {
 
 const DataSources = () => {
   // Thu thập theo liên kết là đường duy nhất đang chạy thật, nên mở trước
-  const [tab, setTab] = useState('url');
+  // ?tab=url|file|shops|history: khối "Bắt đầu" khi kho trống dẫn thẳng tới đúng tab
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState(() => (['url', 'file', 'shops', 'history'].includes(params.get('tab')) ? params.get('tab') : 'url'));
   const [url, setUrl] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [history, setHistory] = useState(() => loadLocal('syncHistory', []));

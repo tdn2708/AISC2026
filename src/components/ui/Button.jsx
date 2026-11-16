@@ -38,12 +38,12 @@ const ALIAS = { outline: 'secondary', soft: 'secondary' };
 const PRESSED = 'border border-accent bg-accent-dim text-accent-hi';
 
 const SIZE = {
-  sm: 'h-8 gap-1.5 px-3 text-xs',
+  sm: 'h-8 pointer-coarse:h-10 gap-1.5 px-3 text-xs',
   md: 'h-10 gap-2 px-4 text-sm',
   lg: 'h-12 gap-2 px-5 text-base'
 };
 /** Nút chữ: không đệm ngang để thẳng mép với chữ quanh nó, nhưng vẫn cao tối thiểu 32px cho dễ bấm */
-const LINK_SIZE = { sm: 'min-h-8 gap-1 text-xs', md: 'min-h-8 gap-1 text-sm', lg: 'min-h-10 gap-1.5 text-base' };
+const LINK_SIZE = { sm: 'min-h-8 pointer-coarse:min-h-10 gap-1 text-xs', md: 'min-h-8 pointer-coarse:min-h-10 gap-1 text-sm', lg: 'min-h-10 gap-1.5 text-base' };
 
 export const Button = ({
   as: Tag = 'button',
@@ -92,6 +92,9 @@ const ICON_PX = { sm: 32, md: 40 };
 export const IconButton = ({ icon: Icon, label, variant = 'glass', size = 40, className = '', badge, pressed, loading = false, disabled, ...rest }) => {
   const px = typeof size === 'number' ? size : ICON_PX[size] || 40;
   const iconPx = px <= 32 ? 16 : Math.round(px * 0.42);
+  // Màn cảm ứng: nút nhỏ hơn 40px giữ nguyên hình nhưng vùng chạm nới ra 40px (lớp ::before trong suốt)
+  const pad = px < 40 ? (40 - px) / 2 : 0;
+  const hit = pad ? "pointer-coarse:before:absolute pointer-coarse:before:inset-[calc(var(--hit)*-1)] pointer-coarse:before:content-['']" : '';
   return (
     <button
       type="button"
@@ -100,8 +103,8 @@ export const IconButton = ({ icon: Icon, label, variant = 'glass', size = 40, cl
       aria-pressed={pressed === undefined ? undefined : !!pressed}
       aria-busy={loading || undefined}
       disabled={disabled || loading}
-      className={`relative grid shrink-0 place-items-center rounded-ctrl transition-[color,background-color,border-color] duration-micro ease-out disabled:cursor-not-allowed disabled:opacity-55 ${pressed ? PRESSED : ICON_TONE[variant] || ICON_TONE.glass} ${className}`}
-      style={{ width: px, height: px }}
+      className={`relative grid shrink-0 place-items-center rounded-ctrl transition-[color,background-color,border-color] duration-micro ease-out disabled:cursor-not-allowed disabled:opacity-55 ${pressed ? PRESSED : ICON_TONE[variant] || ICON_TONE.glass} ${hit} ${className}`}
+      style={{ width: px, height: px, ...(pad ? { '--hit': `${pad}px` } : null) }}
       {...rest}
     >
       {loading ? <Loader2 size={iconPx} className="keep-motion animate-spin" aria-hidden="true" /> : <Icon size={iconPx} aria-hidden="true" />}

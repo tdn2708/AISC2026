@@ -16,6 +16,7 @@ import SentimentShare from './dashboard/SentimentShare';
 import RisingIssues from './dashboard/RisingIssues';
 import LiveDigest from './dashboard/LiveDigest';
 import { Button } from './ui';
+import { StartGuide } from './shell/StartGuide';
 import { useReducedMotion, MOTION, PageEnter, usePageEntered } from './motion';
 
 /**
@@ -140,6 +141,16 @@ const Dashboard = () => {
   useEffect(() => {
     if (!loading) setLastUpdated(nowLabel());
   }, [loading]);
+
+  // Kho chưa có phản hồi nào (tài khoản mới, kho thật chưa thu thập): không nói
+  // "không có việc, chỉ số bình thường" trên 0 dữ liệu, mà chỉ cách có dữ liệu
+  if (ledger && ledger.rawCollected === 0) {
+    return (
+      <PageEnter className="cx pt-2" onDone={onEntered}>
+        <StartGuide />
+      </PageEnter>
+    );
+  }
 
   return (
     <PageEnter className="cx pt-2" onDone={onEntered}>

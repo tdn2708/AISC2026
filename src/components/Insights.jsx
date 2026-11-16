@@ -229,7 +229,7 @@ const ProductTable = ({ groups, names, selected, onPick }) => {
   if (!rows.length) return <p className="py-8 text-center text-sm text-ink-lo">Phản hồi trong phạm vi này không gắn sản phẩm</p>;
   const head = (k, cls = '') => (
     <th scope="col" className={`py-2 font-medium text-ink-mid ${cls}`} aria-sort={sort === k ? (desc ? 'descending' : 'ascending') : 'none'}>
-      <button type="button" onClick={() => (sort === k ? setDesc(!desc) : (setSort(k), setDesc(true)))} className="inline-flex items-center gap-1 rounded-ctrl px-1 whitespace-nowrap hover:text-ink-hi">
+      <button type="button" onClick={() => (sort === k ? setDesc(!desc) : (setSort(k), setDesc(true)))} className="inline-flex items-center gap-1 rounded-ctrl px-1 whitespace-nowrap pointer-coarse:min-h-10 hover:text-ink-hi">
         {SORTS[k].label}
         {sort === k && (desc ? <ArrowDown size={12} aria-hidden="true" /> : <ArrowUp size={12} aria-hidden="true" />)}
       </button>

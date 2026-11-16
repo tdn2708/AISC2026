@@ -52,7 +52,7 @@ export const Pager = ({ page, pages, total, pageSize, onChange, unit, className 
                   type="button"
                   onClick={() => go(p)}
                   aria-current={p === page ? 'page' : undefined}
-                  className={`h-8 min-w-8 rounded-ctrl border px-2 text-xs tabular-nums transition-[background-color,border-color,color] duration-micro ease-out ${
+                  className={`h-8 min-w-8 pointer-coarse:h-10 pointer-coarse:min-w-10 rounded-ctrl border px-2 text-xs tabular-nums transition-[background-color,border-color,color] duration-micro ease-out ${
                     p === page ? `${SELECTED} font-semibold` : 'border-transparent text-ink-mid hover:bg-raised hover:text-ink-hi'
                   }`}
                 >

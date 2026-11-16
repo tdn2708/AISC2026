@@ -6,8 +6,8 @@ import { Check } from 'lucide-react';
 export const Switch = ({ checked, onChange, label, disabled, size = 'md' }) => {
   // Vùng bấm tối thiểu 32 px: lớp phủ trong suốt kéo dài theo chiều dọc, không đổi cỡ công tắc
   const dims = size === 'sm'
-    ? { track: 'h-5 w-9 after:-inset-y-1.5', knob: 'size-4', on: 'translate-x-4' }
-    : { track: 'h-6 w-11 after:-inset-y-1', knob: 'size-5', on: 'translate-x-5' };
+    ? { track: 'h-5 w-9 after:-inset-y-1.5 pointer-coarse:after:-inset-y-2.5', knob: 'size-4', on: 'translate-x-4' }
+    : { track: 'h-6 w-11 after:-inset-y-1 pointer-coarse:after:-inset-y-2', knob: 'size-5', on: 'translate-x-5' };
   return (
     <button
       type="button"
