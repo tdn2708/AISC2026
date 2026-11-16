@@ -900,3 +900,210 @@ Claude đã chạy lại: `npm test` 204/204, lint 0 lỗi, build đạt, `butle
 ### Tài liệu
 
 11. `CLAUDE.md` và nhật ký mục 12 ghi máy chủ Zalo là `bot-api.zapps.me`. Code đúng là `bot-api.zaloplatforms.com` (Claude đã thử: trả `401 Unauthorized` với mã giả). Sửa chữ trong tài liệu cho khớp code.
+
+## 14. Quản gia lo livestream: canh nhanh, báo cáo cuối phiên, lịch live (giao 16/11)
+
+Người dùng chọn làm cả hai phần: A (canh live nhanh và báo cáo cuối phiên) và B (lịch livestream có nhắc). Luật mục 0 giữ nguyên: không commit, không push, không thêm thư viện, chỉ chạy trên database `_test`. Làm theo thứ tự L1 đến L7 ở 14.8, ghi nhật ký vào mục 12, báo cáo theo mục 11 rồi dừng.
+
+### 14.1 Kết quả người dùng phải thấy
+
+1. Mở phiên live (bất kỳ nền tảng nào) thì trong khoảng 1 phút Zalo nhận được: `Phiên live "Megalive 11.11" đã bắt đầu trên TikTok. Quản gia canh mỗi phút, có việc gấp sẽ nhắn ngay.`
+2. Trong lúc live, việc gấp (mức cao, nghiêm trọng) của trợ lý live tới Zalo chậm nhất khoảng 1 phút, thay vì 5 phút như hiện nay. Nhiều việc cùng lúc thì gộp thành một tin. Mỗi phiên tối đa một tin việc gấp mỗi 3 phút.
+3. Phiên kết thúc thì trong khoảng 1 phút Zalo nhận báo cáo tóm tắt: thời lượng, bình luận, lượt chốt, doanh thu ước tính, doanh thu lỡ vì hết hàng, tỉ lệ câu hỏi được trả lời, khiếu nại, sản phẩm chốt nhiều nhất, liên kết mở báo cáo đầy đủ.
+4. Trang Livestream có thêm phần "Lịch live": thêm, sửa, hủy phiên đã hẹn (tên, nền tảng, tài khoản hoặc liên kết, giờ bắt đầu, thời lượng dự kiến, nhắc trước bao lâu, ghi chú).
+5. Trước giờ hẹn (mặc định 30 phút), Zalo nhận lời nhắc. Quá giờ hẹn 10 phút mà chưa mở phiên trên Customer Radar thì nhắc thêm một lần.
+6. Nhắn bot `lịch` (hoặc `lich`, `lịch live`) thì bot trả 5 phiên hẹn sắp tới. Bản tin sáng có thêm dòng lịch live trong ngày.
+7. Bảng "Đang canh" có công tắc "Báo về livestream" (mặc định bật) và dòng "Phiên hẹn tới: <tên>, <giờ>".
+
+Không làm: tự mở phiên live khi tới giờ (kết nối nền tảng lúc chưa live sẽ lỗi), lên lịch qua Zalo (đọc ngày giờ tự do dễ sai), lịch lặp lại hằng tuần.
+
+### 14.2 Kiến trúc
+
+```
+                 mỗi 60 giây (BUTLER_LIVE_WATCH_SEC)
+live_watch.js  (khóa meta._id = 'butler_live_watch')
+   |
+   |-- đọc live_sessions (đang chạy, vừa kết thúc)     chỉ đọc Mongo và bộ nhớ hub,
+   |-- đọc hub.runtimeFor(...).snapshot()              KHÔNG gọi getContext
+   |-- đọc live_schedule (sắp tới giờ, quá giờ)
+   |
+   |-- ghi butler_incidents (cùng _id với vòng canh 5 phút, nên không báo trùng)
+   '-- outbox.enqueue(...)  với dedupKey cố định cho từng sự kiện
+```
+
+- Vòng canh 5 phút giữ nguyên. Vòng canh live chạy riêng và nhẹ: không có liên kết Zalo nào thì dừng sau 1 truy vấn; không có phiên chạy và không có lịch gần giờ thì dừng sau tối đa 3 truy vấn mỗi kho.
+- `hub.runtimeFor` nằm trong bộ nhớ tiến trình. Render chạy 1 tiến trình, nên vòng canh live phải chạy trong cùng tiến trình với `server.js` (khởi động trong `startButler`).
+- Render bản miễn phí ngủ sau khoảng 15 phút không ai gọi. Khi đang live, luồng bình luận giữ máy thức. Lời nhắc lịch thì cần máy thức trước giờ live, nên trong `startButler`: nếu có lịch `scheduled` trong 2 giờ tới thì bật nhịp giữ thức (như `BUTLER_KEEPALIVE`) dù biến này chưa đặt; hết lịch thì tắt. Kiểm điều kiện này trong mỗi nhịp canh live. Ghi rõ trong CLAUDE.md.
+
+### 14.3 Dữ liệu
+
+**Collection mới `live_schedule`**, nằm trong database của kho (real hoặc demo), giống `live_sessions`:
+
+| Trường | Kiểu | Luật |
+|---|---|---|
+| `title` | string | 1 đến 120 ký tự, cắt khoảng trắng |
+| `platform` | string | khóa có trong `hub.PLATFORMS` (kiểm bằng `Object.hasOwn`); `simulator` chỉ được ở kho demo |
+| `target` | string | 0 đến 300 ký tự; bắt buộc với `tiktok`, `youtube` (giống POST /sessions) |
+| `startAt` | Date | khi tạo hoặc sửa: từ hiện tại trừ 5 phút đến hiện tại cộng 90 ngày |
+| `durationMin` | int | 15 đến 720, mặc định 120 |
+| `remindBeforeMin` | int | một trong 0, 10, 15, 30, 60, 120; mặc định 30; 0 là không nhắc trước |
+| `note` | string | 0 đến 500 ký tự |
+| `status` | string | `scheduled`, `cancelled`, `done` |
+| `sessionId` | ObjectId hoặc null | phiên live đã gắn |
+| `createdBy` | string | tên người tạo (`req.user.name`), không lưu email |
+| `createdAt`, `updatedAt` | Date | |
+
+Chỉ mục `{ status: 1, startAt: 1 }`, tạo một lần trong route mới (cùng kiểu `hub.ensureIndexes`). Mỗi kho tối đa 50 lịch `scheduled` có `startAt` trong tương lai; quá thì trả 400 "Đã có 50 phiên hẹn, hủy bớt rồi thêm."
+
+**Cài đặt quản gia mới** trong `store.js`: `DEFAULT_SETTINGS.live = true`. `updateSettings` nhận `live` kiểu boolean, sai kiểu trả 400 như `digest`.
+
+Không thêm collection nào khác. Việc "đã nhắc chưa" dùng `dedupKey` của outbox (14.4), không ghi cờ vào `live_schedule`.
+
+### 14.4 Backend
+
+**L1. `backend/routes/live_schedule.js`** (mới), gắn trong `server.js` ngay TRƯỚC dòng `app.use('/api/live', ...)`:
+
+```js
+app.use('/api/live/schedule', require('./routes/live_schedule'));
+```
+
+Dùng `req.db`, `req.workspace` như `routes/live.js`, bọc lỗi bằng `wrap` cùng kiểu. Đường này cần đăng nhập như mọi đường khác; KHÔNG thêm vào danh sách công khai.
+
+- `GET /api/live/schedule`: trả `{ items }` gồm lịch `scheduled` có `startAt >= now - 1 ngày`, và lịch `done` hoặc `cancelled` trong 7 ngày qua; sắp theo `startAt` tăng dần, tối đa 60. Mỗi phần tử: `id`, `title`, `platform`, `platformLabel`, `target`, `startAt`, `endAt` (startAt cộng durationMin), `durationMin`, `remindBeforeMin`, `note`, `status`, `sessionId`, `createdBy`.
+- `POST /api/live/schedule`: tạo, kiểm theo bảng 14.3, trả 201 `{ item }`.
+- `PATCH /api/live/schedule/:id`: sửa các trường như POST (trừ `status`), hoặc nhận `{ status: 'cancelled' }` để hủy. Lịch `done` không sửa được (409). `:id` sai dạng ObjectId thì 404.
+- `DELETE /api/live/schedule/:id`: chỉ xóa được lịch `cancelled`; còn lại trả 409 "Hủy lịch trước rồi mới xóa."
+- Giới hạn ghi: `rateLimit({ max: 30, windowMs: 60_000, name: 'lịch live' })` cho POST, PATCH, DELETE.
+- Xuất thêm `linkSession(db, session)` từ file này (dùng ở L1b).
+
+**L1b. Gắn lịch với phiên.** Trong `routes/live.js`, ở `POST /sessions`, sau khi `hub.startSession` chạy xong và trước `res.status(201)`, gọi không chặn:
+
+```js
+require('./live_schedule').linkSession(req.db, session).catch(() => {});
+```
+
+`linkSession` tìm 1 lịch `scheduled` cùng `platform`, có `startAt` trong khoảng [giờ tạo phiên trừ 60 phút, giờ tạo phiên cộng 180 phút], gần giờ tạo phiên nhất; đặt `status: 'done'`, `sessionId`, `updatedAt`. Không thấy thì thôi.
+
+**L2. `backend/services/butler/live_watch.js`** (mới). Xuất `liveTick({ authDb, workspaces, now })`, `startLiveWatch({ authDb, workspaces })`, và các hàm thuần để test: `dueReminders(schedules, now)`, `lateSchedules(schedules, sessions, now)`, `buildLiveStartText`, `buildLiveAlertText`, `buildLiveReportText`, `buildReminderText`, `buildLateText`, `buildScheduleListText`.
+
+Một nhịp `liveTick`:
+
+1. Khóa `meta._id = 'butler_live_watch'`, hết hạn sau 2 phút (cùng kiểu khóa trong `watcher.js`). Không lấy được khóa thì thoát.
+2. Đọc `butler_links` có `chatId` kiểu string và `settings.live !== false`. Không có thì nhả khóa, thoát.
+3. Với mỗi kho mà các liên kết cần (`settings.workspace`):
+   - `running`: `live_sessions.find({ status: { $in: ['connecting', 'live', 'reconnecting'] }, createdAt: { $gte: now - 2 ngày } })`, giữ phiên có `hub.runtimeFor(id, ws)` và `runtime.status !== 'ended'`.
+   - `ended`: `live_sessions.find({ status: 'ended', endedAt: { $gte: now - 6 giờ } })`, tối đa 5.
+   - `schedules`: `live_schedule.find({ status: 'scheduled', startAt: { $gte: now - 30 phút, $lte: now + 125 phút } })`.
+4. Với mỗi liên kết dùng kho đó; bỏ qua liên kết đang tạm im (`muteUntil` còn hạn):
+   - **Phiên bắt đầu**: mỗi phiên trong `running` có `startedAt` (không có thì `createdAt`) trong 30 phút gần nhất: gửi tin, `dedupKey: live_start|<userId>|<sessionId>`, `kind: 'live'`.
+   - **Việc gấp**: lấy `snapshot().actions.active` có `severity` khác `medium`. Mỗi việc là một sự cố, `_id` PHẢI là `` `${ws}|inbox|live|${sessionId}|${action.id}` `` (trùng `_id` mà vòng canh 5 phút tạo từ `buildInboxItems`, để hai vòng không báo trùng). Upsert cùng các trường như `watcher.js` (`kind: 'live'`, `to: '/live?session=<id>'`). Lọc bằng `shouldNotify` nhưng bỏ qua giờ yên lặng (shop đang live thì chủ shop đang thức): thêm tham số thứ tư `{ ignoreQuiet: true }` cho `shouldNotify`, mặc định false. Gộp các việc được chọn thành 1 tin, `dedupKey: live_alert|<userId>|<sha1 của các _id:severity:cycle>`, `kind: 'live'`. Nhịp độ: nếu `butler_links.liveLastAlertAt.<sessionId>` cách chưa đủ 3 phút thì để nhịp sau; gửi thì cập nhật mốc này. Gửi xong thì `$push notified` như `watcher.js`. Vòng canh live KHÔNG đặt `resolvedAt`; việc đó vẫn do vòng canh 5 phút làm.
+   - **Báo cáo cuối phiên**: mỗi phiên trong `ended` có `endedAt` sau `link.linkedAt` (để vừa nối Zalo không bị dồn báo cáo cũ): gọi `hub.reportFor(db, session, null)` bọc `withTimeout` 15 giây, dựng tin bằng `buildLiveReportText`, `dedupKey: live_end|<userId>|<sessionId>`, `kind: 'live'`.
+   - **Nhắc trước giờ**: `dueReminders` trả các lịch có `remindBeforeMin > 0` và `startAt - remindBeforeMin <= now < startAt`. `dedupKey: live_remind|<userId>|<scheduleId>|<startAt ISO>` (đổi giờ hẹn thì nhắc lại). Bỏ qua giờ yên lặng.
+   - **Quá giờ chưa mở phiên**: `lateSchedules` trả các lịch có `startAt + 10 phút <= now < startAt + 30 phút`, chưa có `sessionId`, và trong kho không có phiên nào tạo trong [startAt trừ 60 phút, now]. `dedupKey: live_late|<userId>|<scheduleId>|<startAt ISO>`. Bỏ qua giờ yên lặng.
+5. Ghi `meta.butler_live_watch`: `running: false`, `lastRunAt`, `lastMs`, `lastError`.
+6. Cả nhịp bọc `withTimeout` 45 giây, không ném lỗi ra ngoài (giống `watcher.tick`).
+
+`startLiveWatch`: chu kỳ `BUTLER_LIVE_WATCH_SEC` (mặc định 60, kẹp trong 5 đến 600), nhịp đầu sau 20 giây, timer `unref()`. Gọi trong `services/butler/index.js` ngay sau `startWatcher`, và thêm vào hàm `stop`. `BUTLER=0` thì không chạy.
+
+**Outbox**: `kind: 'live'` có giới hạn riêng 20 tin mỗi giờ mỗi người (đếm giống `alert`); quá thì `skipped`, `lastError: 'Quá 20 tin live trong một giờ'`. Giới hạn của `alert` giữ nguyên.
+
+**L3. Mẫu tin** (trong `live_watch.js`; theo luật chữ mục 0: không "·", không "→" dính chữ, không IN HOA, số kiểu Việt, không emoji; mọi tin dưới 2000 ký tự):
+
+```
+Phiên live "Megalive 11.11" đã bắt đầu trên TikTok. Quản gia canh mỗi phút, có việc gấp sẽ nhắn ngay. Nhắn "live" để xem tình hình.
+```
+
+```
+Việc gấp trong phiên "Megalive 11.11":
+1. [Nghiêm trọng] Hết hàng Nồi chiên 5.5L: 23 khách chốt sau khi hết.
+2. [Cao] 14 câu hỏi về phí ship chưa trả lời.
+Mở phiên: https://aisc-2026.vercel.app/live?session=<id>
+```
+
+```
+Phiên "Megalive 11.11" đã kết thúc sau 2 giờ 15 phút.
+Bình luận: 3.412. Lượt chốt: 286 (412 sản phẩm).
+Doanh thu ước tính: 48,2 triệu đồng. Lỡ vì hết hàng: 6,2 triệu đồng.
+Khách hỏi được trả lời: 82%. Khiếu nại: 17, đã đưa vào hệ thống 0.
+Chốt nhiều nhất: Tai nghe SoundCore Q30 (96 sản phẩm).
+Báo cáo đầy đủ: https://aisc-2026.vercel.app/live?session=<id>
+```
+
+Dòng nào thiếu số liệu thì bỏ cả dòng; không in "chưa rõ", "undefined" hay "NaN" (hàm `money`, `pct` trả "chưa rõ" khi số là null, nên kiểm null trước khi gọi). Số liệu lấy từ `hub.reportFor` và `session.summary`; thời lượng dùng `liveDurationMs` trong `hub.js` (xuất ra nếu chưa xuất), null thì bỏ phần "sau ...". Tiền và phần trăm dùng chung hàm `money`, `pct` của `services/live/brief.js` (xuất ra nếu chưa xuất), không viết lại.
+
+```
+Còn 30 phút nữa tới phiên live "Sale cuối tháng" lúc 20:00 trên TikTok (@tenshop). Mở trang Livestream để bắt đầu canh: https://aisc-2026.vercel.app/live
+```
+
+```
+Đã quá giờ hẹn 10 phút mà phiên "Sale cuối tháng" chưa mở trên Customer Radar. Mở phiên để quản gia canh bình luận: https://aisc-2026.vercel.app/live
+```
+
+Liên kết dùng `PUBLIC_APP_URL` như `watcher.js`. Giờ hiển thị theo giờ Việt Nam: thêm `vnTime(date, now)` vào `text.js`, trả "20:00" nếu cùng ngày với `now`, "20:00 ngày 18/11" nếu khác ngày.
+
+**L4. Lệnh và bản tin**
+
+- `commands.js`: thêm TRƯỚC mục 13 (lệnh `live`): khớp `^(?:lich|lich live|lich livestream)$` trên chuỗi đã bỏ dấu, trả `{ type: 'schedule' }`.
+- `engine.js`: `case 'schedule'` đọc 5 lịch `scheduled` có `startAt >= now` của kho đang dùng, trả `kind: 'schedule'`, chữ do `buildScheduleListText` dựng. Không có thì: `Chưa có phiên live nào được hẹn. Thêm lịch ở trang Livestream: <url>/live`.
+- `HELP_TEXT`: thêm dòng `lịch: xem các phiên live đã hẹn`.
+- `incidents.buildDigest`: thêm dòng `Lịch live hôm nay: 20:00 "Sale cuối tháng" trên TikTok.` khi có lịch trong ngày (giờ Việt Nam); nhiều lịch nối bằng dấu chấm phẩy, tối đa 3. `watcher.js` đọc lịch hôm nay của kho và truyền vào `buildDigest`.
+- `GET /api/butler/status`: thêm `nextLive: { title, startAt, platformLabel } | null` (lịch `scheduled` gần nhất của kho Zalo đang canh) và `liveWatch: { everySec, lastRunAt, lastError }`.
+
+### 14.5 Frontend
+
+Theo DESIGN.md, dùng component có sẵn trong `src/components/ui` (`GlassPanel`, `PanelHeader`, `Button`, `Select`, `Modal`, `Badge`, `EmptyState`, `Switch`, trường nhập). Không thêm thư viện lịch hay chọn ngày; dùng `<input type="datetime-local">` trong trường nhập sẵn có.
+
+**L5a. `src/components/live/Schedule.jsx`** (mới) và `src/lib/liveSchedule.js` (gọi API bằng axios mặc định như `src/lib/butler.js`).
+
+- `Live.jsx`: thêm một `GlassPanel` "Lịch live" dưới danh sách phiên, hiện cả khi chưa có phiên nào. Nút "Thêm lịch" ở `PanelHeader`.
+- Danh sách nhóm theo ngày ("Hôm nay", "Ngày mai", rồi dạng "Thứ năm, 20/11"). Mỗi dòng: giờ (`tabular-nums`), tên, nền tảng và tài khoản, `Badge` trạng thái ("Đã hẹn", "Đã mở phiên", "Đã hủy"), nhắc trước bao lâu. Dòng đã mở phiên có liên kết "Xem phiên". Lịch `scheduled` có nút "Bắt đầu phiên": mở `StartSession` đã điền sẵn `platform`, `target`, `title` (thêm prop `initial` cho `StartSession`; không truyền thì hành vi như cũ).
+- Thêm và sửa trong `Modal`: tên; nền tảng (lấy từ `/live/platforms` như `StartSession`); tài khoản hoặc liên kết (chỉ hiện khi nền tảng cần); ngày giờ bắt đầu; thời lượng (`Select`: 30 phút, 1 giờ, 1 giờ 30 phút, 2 giờ, 3 giờ, 4 giờ); nhắc trước (`Select`: Không nhắc, 10 phút, 15 phút, 30 phút, 1 giờ, 2 giờ); ghi chú. Nút lưu ghi "Lưu lịch", xong thì toast "Đã lưu lịch". Hủy lịch: hỏi lại bằng `Modal` "Hủy phiên hẹn này?", nút "Hủy lịch". Lịch đã hủy có nút "Xóa".
+- Trống: `EmptyState` "Chưa có phiên nào được hẹn. Thêm lịch để quản gia nhắc qua Zalo trước giờ live." kèm nút "Thêm lịch".
+- 390 px: một cột, nút chạm cao tối thiểu 44 px, không cuộn ngang.
+
+**L5b. Bảng "Đang canh"** (`WatchPanel.jsx`): thêm `Switch` "Báo về livestream" (lưu `settings.live`), chú thích "Báo khi phiên bắt đầu, việc gấp trong phiên, báo cáo cuối phiên và nhắc lịch." Nếu `status.nextLive` có thì thêm dòng "Phiên hẹn tới: Sale cuối tháng, 20:00" kèm liên kết "Xem lịch" tới `/live`.
+
+**L5c.** `Composer`: thêm Chip "Lịch live" gửi `lịch`.
+
+### 14.6 Kiểm thử
+
+**Test đơn vị** (thêm vào `backend/test/run_tests.js`, giữ CRLF):
+
+1. Kiểm dữ liệu lịch: thiếu tên, nền tảng lạ, `__proto__` làm nền tảng, `simulator` ở kho real, `startAt` quá 90 ngày, `durationMin: 5`, `remindBeforeMin: 45` đều bị từ chối; dữ liệu đúng thì qua. Tách hàm kiểm thành hàm thuần để test không cần Mongo.
+2. `dueReminders`: nhắc 30 phút, lịch 20:00; lúc 19:29 không, 19:30 có, 19:59 có, 20:00 không; `remindBeforeMin: 0` không bao giờ.
+3. `lateSchedules`: quá 10 phút, chưa có phiên thì có; có phiên tạo lúc 19:55 thì không; quá 30 phút thì không.
+4. `_id` sự cố do vòng canh live tạo trùng đúng `_id` vòng canh 5 phút tạo cho cùng một việc live (dựng cả hai từ cùng một việc giả, so chuỗi).
+5. `shouldNotify(..., { ignoreQuiet: true })` lúc 23:00 với việc mức cao thì báo; không có cờ thì không báo.
+6. `buildLiveReportText`: báo cáo đủ số liệu ra đúng các dòng như mẫu; báo cáo thiếu doanh thu thì không có dòng doanh thu; không chứa "undefined", "NaN", "·", "→".
+7. `parseCommand`: "lịch", "lich", "Lịch live" ra `schedule`; "live", "livestream" vẫn ra `live`.
+8. `updateSettings({ live: 'yes' })` trả 400; `{ live: false }` lưu được (dùng database `_test` như các test Mongo đang có, hoặc hàm kiểm thuần).
+9. Outbox: tin `kind: 'live'` thứ 21 trong một giờ bị `skipped`; `kind: 'alert'` không bị ảnh hưởng.
+
+**E2E**: thêm bước 12 đến 16 vào `backend/scripts/butler_e2e.js` (kho demo; máy chủ thử đặt `BUTLER_LIVE_WATCH_SEC=5`):
+
+- 12. POST lịch với `startAt` bằng bây giờ cộng 20 phút, `remindBeforeMin: 30`. Trong 20 giây máy Zalo giả nhận tin có "Còn" và tên lịch. Chờ thêm 2 nhịp: không nhận lần hai.
+- 13. Mở phiên `simulator` tốc độ 4 (POST `/api/live/sessions`). Trong 20 giây nhận tin "đã bắt đầu". GET lịch: lịch ở bước 12 thành `done`, có `sessionId`.
+- 14. Chờ tối đa 60 giây: nếu trình mô phỏng sinh việc mức cao thì phải nhận tin "Việc gấp trong phiên"; không sinh thì in "BỎ QUA (mô phỏng chưa sinh việc gấp)", không tính là lỗi.
+- 15. Dừng phiên (POST `/stop`). Trong 20 giây nhận tin "đã kết thúc" có "Bình luận:". Chờ thêm 2 nhịp: không nhận lần hai.
+- 16. Nhắn `lịch` qua Zalo giả: trả lời đúng (hết lịch thì là câu "Chưa có phiên live nào được hẹn").
+- Dọn: xóa phiên mô phỏng (DELETE `/api/live/sessions/:id`), xóa lịch thử và bản ghi outbox thử, chỉ trong database có tên chứa `_test`.
+
+**Tải**: thêm mục 5 vào `butler_load.js`: 3 phiên mô phỏng chạy cùng lúc, `BUTLER_LIVE_WATCH_SEC=5`, trong 60 giây: `lastMs` của `butler_live_watch` dưới 300 ms mỗi nhịp, `/health` p95 dưới 500 ms, vòng canh live không gọi `getContext` (kiểm bằng cách bọc `getContext` đếm số lần gọi khi `BUTLER_COUNT_CTX=1`, hoặc cách khác không đổi hành vi bản thật). Dừng và xóa 3 phiên sau khi đo.
+
+**Giao diện**: chụp 1280 và 390 px, sáng và tối: trang Livestream có 3 lịch (hôm nay, mai, đã hủy), hộp thêm lịch, bảng Đang canh có công tắc mới. Ảnh để ngoài repo.
+
+### 14.7 Tài liệu
+
+- CLAUDE.md, mục Quản gia: thêm `live_watch.js`, collection `live_schedule`, biến `BUTLER_LIVE_WATCH_SEC`, việc tự giữ máy thức khi có lịch trong 2 giờ tới.
+- DESIGN.md mục 6: một câu về phần "Lịch live".
+- Nhật ký mục 12 của file này.
+
+### 14.8 Thứ tự
+
+- L1: route lịch, `linkSession`, test 1. Chạy `npm test`.
+- L2: `live_watch.js`, cài đặt `live`, giới hạn outbox, `ignoreQuiet`, test 2 đến 5, 8, 9.
+- L3: mẫu tin, `vnTime`, test 6.
+- L4: lệnh `lịch`, bản tin sáng, `/status`, test 7.
+- L5: giao diện, chụp ảnh.
+- L6: e2e bước 12 đến 16, tải mục 5.
+- L7: tài liệu; `npm test`, `npm run lint`, `npm run build`; chạy lại toàn bộ `butler_e2e.js` và `butler_load.js`; báo cáo theo mục 11, thêm số liệu nhịp canh live (`lastMs` trung bình và lớn nhất).
