@@ -221,7 +221,7 @@ const TodayInbox = ({ alerts = [], items = [], loading, failed, onRetry, skip = 
         <div>
           <h2 id="today-title" className="text-heading font-semibold tracking-[-0.01em] text-ink-hi">Việc hôm nay</h2>
           <p className="mt-0.5 text-sm text-ink-mid">
-            {loading && !todo.length ? <Skeleton as="span" className="mt-1 h-3.5 w-44" /> : failed && !todo.length ? 'Chưa gom được việc' : remaining ? (skip ? `Còn ${remaining} việc khác, ${skip === 1 ? 'việc gấp nhất' : `${skip} việc gấp nhất`} ở đầu trang` : `${remaining} việc cần làm, việc gấp ở trên`) : 'Đã xử lý hết'}
+            {loading && !todo.length ? <Skeleton as="span" className="mt-1 h-3.5 w-44" /> : failed && !todo.length ? 'Chưa gom được việc' : remaining ? (skip ? `Còn ${remaining} việc khác` : `${remaining} việc cần làm`) : 'Đã xử lý hết'}
           </p>
         </div>
       </header>

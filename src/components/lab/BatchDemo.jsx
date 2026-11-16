@@ -150,7 +150,7 @@ export default function BatchDemo() {
         <TextArea
           className="mt-4"
           label="Phản hồi cần chạy"
-          hint="Mỗi dòng là một phản hồi. Nạp phản hồi thật bằng nút phía trên, hoặc dán dữ liệu của bạn vào đây."
+          hint="Mỗi dòng là một phản hồi."
           rows={6}
           maxLength={200000}
           value={text}
@@ -198,8 +198,7 @@ export default function BatchDemo() {
             </div>
             <p className="mt-5 border-t border-line-soft pt-3 text-xs leading-relaxed text-ink-mid">
               Nguồn nhãn: {result.source === 'visobert' ? (result.modelRuntime === 'browser' ? 'ViSoBERT chạy trên trình duyệt của bạn' : 'ViSoBERT tinh chỉnh') : 'luật từ khóa (ViSoBERT chưa sẵn sàng)'}.
-              Chuẩn hóa và che thông tin cá nhân {dec(result.timings.normalizeMs, 0)} ms, mô hình {dec(result.timings.modelMs / 1000, 1)} giây, chạy trên CPU một tiến trình.
-              Một phản hồi có thể nêu nhiều vấn đề nên tổng theo danh mục lớn hơn số phản hồi có khiếu nại.
+              Chuẩn hóa {dec(result.timings.normalizeMs, 0)} ms, mô hình {dec(result.timings.modelMs / 1000, 1)} giây.
             </p>
           </GlassPanel>
 

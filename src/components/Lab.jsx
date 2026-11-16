@@ -193,8 +193,7 @@ const Experiments = () => {
           <p className="mt-2 max-w-[78ch] text-sm leading-relaxed text-ink-mid">
             Cùng một bộ phân loại luật đạt Macro-F1 <strong className="tabular-nums text-ok">{b1.devCategoryMacroF1.toFixed(2).replace('.', ',')}</strong> trên tập đã dùng
             để tinh chỉnh từ khóa, nhưng chỉ còn <strong className="tabular-nums text-crit">{b1.categoryMacroF1.toFixed(2).replace('.', ',')}</strong> trên tập kiểm tra giữ
-            riêng, chênh {gap.toFixed(2).replace('.', ',')}. Thêm từ khóa chỉ giúp khớp đúng những câu đã thấy, không giúp hiểu câu mới. Đây là lập luận định lượng cho
-            việc dùng một mô hình ngôn ngữ được tinh chỉnh, thay vì tiếp tục mở rộng danh sách từ khóa.
+            riêng, chênh {gap.toFixed(2).replace('.', ',')}. Thêm từ khóa chỉ giúp khớp câu đã thấy, không giúp hiểu câu mới.
           </p>
         </GlassPanel>
       )}

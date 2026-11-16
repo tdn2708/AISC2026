@@ -190,7 +190,7 @@ const PainPoints = () => {
     <>
       {filters}
       <p className="mb-5 max-w-3xl text-sm leading-relaxed text-ink-mid">
-        Máy tìm được <span className="tabular-nums font-semibold text-ink-hi">{fmtInt(total)}</span> điểm đau trong{' '}
+        Tìm được <span className="tabular-nums font-semibold text-ink-hi">{fmtInt(total)}</span> điểm đau trong{' '}
         <span className="tabular-nums font-semibold text-ink-hi">{fmtInt(groupCount)}</span> mảng hàng, từ{' '}
         <span className="tabular-nums">{fmtInt(data.counted)}</span> phản hồi được tính.
       </p>
@@ -212,7 +212,7 @@ const PainPoints = () => {
           {current.status === 'too_few' ? (
             <>
               <p className="mt-5 text-sm leading-relaxed text-ink-mid">
-                Mảng này mới có {fmtInt(current.negatives)} câu chê, chưa đủ {fmtInt(current.minNegatives)} câu để tách ra chuyện cụ thể. Máy không đoán; đây là các câu gốc:
+                Mảng này mới có {fmtInt(current.negatives)} câu chê, chưa đủ {fmtInt(current.minNegatives)} câu để tách điểm đau. Các câu gốc:
               </p>
               <ul className="paper mt-3 flex list-none flex-col divide-y divide-line-soft px-3 py-2">
                 {current.examples.map((e) => <li key={e.id} className="py-2 text-sm leading-relaxed text-ink-hi">{e.text}</li>)}
@@ -221,7 +221,7 @@ const PainPoints = () => {
           ) : current.painPoints.length === 0 ? (
             <>
               <p className="mt-5 text-sm leading-relaxed text-ink-mid">
-                Không có chuyện nào được đủ nhiều khách nhắc bằng những chữ giống nhau. Có thể mỗi người tả một kiểu: đọc câu gốc ở trang Phản hồi.
+                Chưa có chuyện nào được nhiều khách nhắc giống nhau.
               </p>
               <ul className="paper mt-3 flex list-none flex-col divide-y divide-line-soft px-3 py-2">
                 {current.examples.map((e) => <li key={e.id} className="py-2 text-sm leading-relaxed text-ink-hi">{e.text}</li>)}

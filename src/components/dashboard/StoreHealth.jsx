@@ -200,7 +200,7 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry, countStart =
           label="Độ tin số liệu"
           bad={health != null && health < 50}
           sub={health != null && <span className="text-sm text-ink-mid">Điểm <span className="font-semibold text-ink-hi"><Counted on={turn >= 3} value={health} /></span>/100</span>}
-          note={`${fmtInt(stats?.totalFeedbacks?.valid)} trên ${fmtInt(stats?.totalFeedbacks?.value)} phản hồi được tính, phần còn lại là rác hoặc nghi ảo`}
+          note={`${fmtInt(stats?.totalFeedbacks?.valid)} trên ${fmtInt(stats?.totalFeedbacks?.value)} phản hồi được tính`}
           onOpen={() => setOpen('health')}
         >
           {trust ? <span className={trust[0]}>{trust[1]}</span> : <span className="text-heading font-medium text-ink-mid">Chưa có dữ liệu</span>}

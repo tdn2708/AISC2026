@@ -109,7 +109,7 @@ const Report = ({ sessionId }) => {
 
       {/* Việc cần làm */}
       <GlassPanel tone="strong" className="p-4 sm:p-5">
-        <PanelHeader title="Việc cần làm cho phiên sau" subtitle="Xếp theo mức ưu tiên. Mỗi việc kèm số liệu của chính phiên này." />
+        <PanelHeader title="Việc cần làm cho phiên sau" />
         {r.todo.length ? (
           <ol className="flex list-none flex-col">
             {r.todo.map((x, i) => (
@@ -213,7 +213,7 @@ const Report = ({ sessionId }) => {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <GlassPanel tone="strong" className="reveal p-4 sm:p-5">
-          <PanelHeader title="Hành động trong phiên" subtitle="Việc trợ lý gợi ý và kết quả trước/sau 3 phút, chưa loại trừ yếu tố khác" />
+          <PanelHeader title="Hành động trong phiên" subtitle="Việc trợ lý gợi ý và kết quả 3 phút trước, sau" />
           {r.actions.length ? (
             <div className="paper"><ul className="flex list-none flex-col">
               {r.actions.slice().reverse().map((a) => (
@@ -262,7 +262,7 @@ const Report = ({ sessionId }) => {
       </div>
 
       <GlassPanel tone="strong" className="reveal p-4 sm:p-5">
-        <PanelHeader title="Sản phẩm" subtitle="Hỏi nhiều mà chốt ít là dấu hiệu khách còn do dự về giá, size hoặc chất lượng" />
+        <PanelHeader title="Sản phẩm" />
         {r.products.length ? (
           <div className="paper"><div className="-mx-1 scroll-hint-x overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">

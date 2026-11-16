@@ -125,7 +125,7 @@ const Assistant = () => {
       open={open}
       onClose={close}
       title="Hỏi dữ liệu"
-      subtitle="Trả lời bằng chính số liệu trên dashboard, kèm dẫn chứng"
+      subtitle="Trả lời bằng số liệu của shop"
       width={520}
       footer={
         <div className="flex w-full flex-col gap-2">
@@ -166,7 +166,7 @@ const Assistant = () => {
       {messages.length === 0 ? (
         <div>
           <p className="text-sm leading-relaxed text-ink-mid">
-            Hỏi bằng tiếng Việt thường. Hệ thống tự tính con số trên toàn bộ dữ liệu, rồi trả lời kèm phản hồi gốc để bạn kiểm lại.
+            Hỏi bằng tiếng Việt thường, câu trả lời kèm phản hồi gốc.
           </p>
           {suggestions.length > 0 && (
             <ul className="mt-5 flex list-none flex-col gap-2">

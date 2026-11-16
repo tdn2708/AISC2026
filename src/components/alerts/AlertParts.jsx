@@ -87,7 +87,7 @@ export const DismissModal = ({ alert, open, onClose, onConfirm }) => {
       icon={CircleSlash}
       tone="crit"
       title="Bỏ qua khuyến nghị này?"
-      description={alert ? `${alertTitle(alert)}. Bạn cần nêu lý do để hệ thống học và điều chỉnh các đề xuất sau.` : undefined}
+      description={alert ? `${alertTitle(alert)}. Ghi lý do bỏ qua.` : undefined}
       footer={
         <>
           <Button variant="ghost" onClick={close}>Huỷ</Button>

@@ -395,8 +395,8 @@ const Analytics = () => {
         title="Phân tích nguyên nhân"
         subtitle={{
           causes: 'Chọn một nhóm vấn đề để xem nguyên nhân, sản phẩm bị chê và phản hồi gốc.',
-          pain: 'Khách đang than chuyện gì, theo từng mảng hàng. Mỗi chuyện mở được một hồ sơ xử lý.',
-          compare: 'Đặt sản phẩm của bạn cạnh sản phẩm đối thủ, xem bên nào bị chê nhiều hơn và vì sao.',
+          pain: 'Khách đang than chuyện gì, theo từng mảng hàng.',
+          compare: 'So sản phẩm của bạn với sản phẩm đối thủ.',
           segments: 'Nhóm khách hàng theo cảm xúc trong các phản hồi của họ.'
         }[tab]}
       />

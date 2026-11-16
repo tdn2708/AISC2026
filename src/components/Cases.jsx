@@ -83,9 +83,9 @@ const periodSpan = (step = 7) => (step <= 7 ? '12 tuần' : spanWords(step * 12)
 const effectWords = (e) => {
   if (!e) return null;
   if (e.status === 'pending') return `Còn ${fmtInt(e.daysLeft)} ngày nữa mới đo lại được.`;
-  if (!e.enough) return `Chưa đủ phản hồi để so (${spanWords(e.beforeDays || 7)} trước ${fmtInt(e.before.n)}, từ lúc mở tới nay ${fmtInt(e.after.n)}; cần ít nhất 30 mỗi bên). Kho ít phản hồi mới thì phải chờ lâu hơn.`;
+  if (!e.enough) return `Chưa đủ phản hồi để so (${spanWords(e.beforeDays || 7)} trước ${fmtInt(e.before.n)}, từ lúc mở tới nay ${fmtInt(e.after.n)}; cần ít nhất 30 mỗi bên).`;
   const dir = e.change < 0 ? 'giảm' : e.change > 0 ? 'tăng' : 'không đổi';
-  return `Tỉ lệ câu nhắc chuyện này ${dir}: ${fmtPct(e.before.rate, 1)} trước, ${fmtPct(e.after.rate, 1)} sau. Đây là so trước và sau, chưa chứng minh nhờ việc đã làm.`;
+  return `Tỉ lệ câu nhắc chuyện này ${dir}: ${fmtPct(e.before.rate, 1)} trước, ${fmtPct(e.after.rate, 1)} sau.`;
 };
 
 // ------------------------------------------------------------------
@@ -99,7 +99,7 @@ const CaseList = () => {
   }, []);
   return (
     <PageEnter className="cx">
-      <PageHeader title="Hồ sơ xử lý" subtitle="Những điểm đau shop đã nhận xử lý, việc còn lại và kết quả đo sau 7 ngày." />
+      <PageHeader title="Hồ sơ xử lý" subtitle="Điểm đau shop đang xử lý và kết quả sau 7 ngày." />
       {error ? <GlassPanel><EmptyState variant="error" title="Không tải được" description={error} /></GlassPanel>
         : !list ? <Skeleton as="div" className="h-[320px] rounded-surf bg-surface/50" />
           : list.length === 0 ? (
@@ -252,7 +252,7 @@ const CaseFile = ({ caseKey, filterQuery }) => {
           </div>
         </GlassPanel>
 
-        <Step n={1} title="Khoanh vùng" subtitle="Chuyện này dồn vào đâu, từ khi nào.">
+        <Step n={1} title="Khoanh vùng">
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="min-w-0">
               <h3 className="mb-2 text-sm font-semibold text-ink-hi">Sản phẩm</h3>

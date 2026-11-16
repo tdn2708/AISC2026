@@ -406,12 +406,12 @@ const DataSources = () => {
           {isLink(form.shopId) ? (
             <p className="flex gap-2 rounded-ctrl bg-accent-dim p-3 text-xs text-ink-mid">
               <Info size={14} className="mt-0.5 shrink-0 text-accent" />
-              Đây là đường dẫn: hệ thống sẽ thu thập đánh giá công khai của sản phẩm này ngay (hỗ trợ Tiki; Shopee và Lazada chặn truy cập tự động).
+              Sẽ thu thập đánh giá của sản phẩm này ngay (hỗ trợ Tiki).
             </p>
           ) : (
             <p className="flex gap-2 rounded-ctrl bg-raised p-3 text-xs text-ink-mid">
               <Info size={14} className="mt-0.5 shrink-0 text-ink-lo" />
-              Với mã gian hàng, hệ thống chỉ lưu lại; chưa thu thập được cho tới khi có kết nối API của sàn.
+              Mã gian hàng chỉ được lưu lại, chưa thu thập được.
             </p>
           )}
           <div className="mt-2 flex justify-end gap-2">

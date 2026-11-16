@@ -351,7 +351,7 @@ function buildBlocks(model) {
       </div>
     ), { space: 14 });
   } else {
-    add('act-none', '4. Việc cần quyết', <p className="rpt-muted">Không có biến động nào vượt ngưỡng trong kỳ này. Đây là kết quả bình thường, không phải lỗi thu thập dữ liệu.</p>, { space: 14 });
+    add('act-none', '4. Việc cần quyết', <p className="rpt-muted">Không có biến động nào vượt ngưỡng trong kỳ này.</p>, { space: 14 });
   }
 
   // ---------- Phụ lục: chạy tiếp, không ép sang tờ mới để không phí giấy ----------

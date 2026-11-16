@@ -290,7 +290,7 @@ const VersusDemo = () => {
           {/* Mỗi hàng tính từ KẾT QUẢ THẬT của câu đang xem: chỉ hiện hàng liên
               quan, và đánh ✗ cho Customer Radar khi nó bỏ sót — không tô hồng */}
           <ul className="list-none">
-            <CapabilityRow icon={MessageSquareText} label="Gán một nhãn cảm xúc" generic ours detail="Việc mọi công cụ đều làm được" />
+            <CapabilityRow icon={MessageSquareText} label="Gán một nhãn cảm xúc" generic ours />
             {spam?.isSpam ? (
               <CapabilityRow icon={ShieldCheck} label="Nhận ra đây là quảng cáo, không đếm vào chỉ số" generic={false} ours detail={spam.reasons?.[0]} />
             ) : (
@@ -330,13 +330,13 @@ const VersusDemo = () => {
       {mB2 && mM && (
         <GlassPanel className="p-5 sm:p-6">
           <PanelHeader
-            title="Không phải chọn ví dụ đẹp: đo trên tập kiểm tra độc lập"
+            title="Đo trên tập kiểm tra độc lập"
             subtitle={`${sample ? `${sample} phản hồi` : 'Tập kiểm tra'} do nhóm gán nhãn, không dùng để huấn luyện. Macro-F1, càng gần 1 càng tốt.`}
           />
           <div className="flex flex-col gap-4">
-            <MetricBar label="Nhận ra đúng nhóm vấn đề" generic={mB2.categoryMacroF1} ours={mM.categoryMacroF1} note="khoảng trống lớn nhất" />
+            <MetricBar label="Nhận ra đúng nhóm vấn đề" generic={mB2.categoryMacroF1} ours={mM.categoryMacroF1} />
             <MetricBar label="Chỉ ra đúng nguyên nhân gốc" generic={mB2.causeMacroF1} ours={mM.causeMacroF1} />
-            <MetricBar label="Đoán đúng cảm xúc" generic={mB2.sentimentMacroF1} ours={mM.sentimentMacroF1} note="hai bên gần nhau" />
+            <MetricBar label="Đoán đúng cảm xúc" generic={mB2.sentimentMacroF1} ours={mM.sentimentMacroF1} />
           </div>
           <p className="mt-4 text-xs leading-relaxed text-ink-lo">
             Về cảm xúc hai cách gần ngang nhau. Khác biệt nằm ở chỗ biết khách chê <b className="text-ink-mid">cái gì</b> và <b className="text-ink-mid">ai phải xử lý</b>.

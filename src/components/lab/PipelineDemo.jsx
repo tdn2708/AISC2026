@@ -73,14 +73,14 @@ const SCENARIOS = [
 ];
 
 const STEPS = [
-  { key: 'input', title: 'Tiếp nhận phản hồi', icon: MessageSquare, why: 'Văn bản thô như khách hàng gõ: sai chính tả, viết tắt, emoji, số điện thoại.' },
-  { key: 'pii', title: 'Che thông tin cá nhân', icon: EyeOff, why: 'Nghị định 13/2023: số điện thoại, email, mã đơn bị che trước khi chạm tới mô hình hay nhật ký hệ thống.' },
-  { key: 'normalize', title: 'Chuẩn hóa teencode', icon: Languages, why: 'Từ điển tiếng lóng thương mại điện tử dịch cách viết tắt về tiếng Việt chuẩn cho nhánh luật từ khóa.' },
-  { key: 'spam', title: 'Lọc rác và quảng cáo', icon: ShieldCheck, why: 'Tầng T1 của Trust Layer. Ưu tiên độ chính xác: loại nhầm một khiếu nại thật là mất đúng thứ cần nghe.' },
-  { key: 'tokens', title: 'ViSoBERT tách token', icon: Puzzle, why: 'Mô hình không đọc chữ, nó đọc token. Bộ tách SentencePiece học trên văn bản mạng xã hội tiếng Việt.' },
-  { key: 'inference', title: 'Mô hình suy luận', icon: Brain, why: 'Bốn đầu ra dùng chung một bộ mã hóa: cảm xúc, danh mục, nguyên nhân (giải mã phân cấp), rác.' },
-  { key: 'explain', title: 'Vì sao mô hình kết luận vậy', icon: Search, why: 'Bỏ lần lượt từng từ rồi chạy lại mô hình: từ nào làm mô hình mất tự tin nhiều nhất là từ quyết định.' },
-  { key: 'final', title: 'Bản ghi có cấu trúc', icon: ClipboardCheck, why: 'Thứ thực sự đi vào trang Tổng quan, cảnh báo và chỉ số khiếu nại, so với đáp án kỳ vọng và với luật từ khóa.' }
+  { key: 'input', title: 'Tiếp nhận phản hồi', icon: MessageSquare, why: 'Văn bản thô như khách gõ.' },
+  { key: 'pii', title: 'Che thông tin cá nhân', icon: EyeOff, why: 'Số điện thoại, email, mã đơn bị che trước khi tới mô hình (Nghị định 13/2023).' },
+  { key: 'normalize', title: 'Chuẩn hóa teencode', icon: Languages, why: 'Dịch viết tắt về tiếng Việt chuẩn cho nhánh luật từ khóa.' },
+  { key: 'spam', title: 'Lọc rác và quảng cáo', icon: ShieldCheck, why: 'Tầng T1 của Trust Layer.' },
+  { key: 'tokens', title: 'ViSoBERT tách token', icon: Puzzle, why: 'Bộ tách SentencePiece học trên văn bản mạng xã hội tiếng Việt.' },
+  { key: 'inference', title: 'Mô hình suy luận', icon: Brain, why: 'Bốn đầu ra: cảm xúc, danh mục, nguyên nhân, rác.' },
+  { key: 'explain', title: 'Vì sao mô hình kết luận vậy', icon: Search, why: 'Bỏ từng từ rồi chạy lại: từ làm mô hình mất tự tin nhiều nhất là từ quyết định.' },
+  { key: 'final', title: 'Bản ghi có cấu trúc', icon: ClipboardCheck, why: 'Bản ghi đi vào Tổng quan và cảnh báo, so với đáp án kỳ vọng.' }
 ];
 
 const STEP_DELAY_MS = 1400;
@@ -181,7 +181,6 @@ function StepPii({ t }) {
           ? t.pii.types.map((x) => <Chip key={x} tone="ok"><EyeOff size={12} aria-hidden="true" /> đã che: {x}</Chip>)
           : <Chip>Không phát hiện thông tin cá nhân</Chip>}
       </Row>
-      <Note>Từ bước này trở đi, văn bản gốc chứa thông tin cá nhân không còn được dùng ở bất kỳ đâu.</Note>
     </>
   );
 }
@@ -197,10 +196,7 @@ function StepNormalize({ t }) {
       </Row>
       <Label>Kết quả chuẩn hóa</Label>
       <TextBox mono>{t.normalize.normalized}</TextBox>
-      <Note>
-        Văn bản này dùng cho nhánh luật từ khóa. ViSoBERT thì đọc văn bản gốc đã che thông tin cá nhân ở bước 5,
-        vì mô hình được huấn luyện trên chính teencode thật; dịch trước có thể làm mất sắc thái.
-      </Note>
+      <Note>Chỉ nhánh luật từ khóa dùng bản này. ViSoBERT đọc văn bản gốc đã che thông tin cá nhân.</Note>
     </>
   );
 }
@@ -277,10 +273,7 @@ function StepTokens({ t }) {
           );
         })}
       </div>
-      <Note>
-        Viền xanh: token mở đầu một từ. Viền xám: mảnh ghép nối tiếp. Từ phổ biến trên mạng xã hội (kể cả teencode như
-        "dth", "sốp", "rep") thường là MỘT token nguyên vẹn, vì bộ từ vựng học từ chính loại văn bản đó.
-      </Note>
+      <Note>Viền xanh: token mở đầu một từ. Viền xám: mảnh ghép nối tiếp.</Note>
     </>
   );
 }
@@ -317,13 +310,10 @@ function StepInference({ t }) {
         <Chip mono><Zap size={12} aria-hidden="true" /> suy luận {m.timings.inferenceMs} ms</Chip>
       </Row>
       <Note>
-        Nguyên nhân chỉ được chọn trong danh mục đã chọn, nên không có tổ hợp vô nghĩa như “Giao hàng: Trừ tiền hai lần”.
         {m.multiLabel
-          ? ` Danh mục dùng xác suất độc lập (sigmoid) nên các cột không cộng lại thành 100%: mọi danh mục vượt ngưỡng ${m.thresholds?.category ?? 0.5} đều được ghi nhận, nhờ vậy một câu nêu được nhiều vấn đề.`
-          : ' Danh mục dùng softmax nên tổng bằng 100% và chỉ chọn được một danh mục.'}
-        {m.calibrated
-          ? ` Xác suất cảm xúc đã được hiệu chỉnh bằng temperature scaling học trên tập dev (T = ${m.calibration?.sentimentTemperature ?? '—'}), nên con số đọc được sát với tần suất đúng thật hơn.`
-          : ' Mô hình hiện tự tin quá mức: đọc thứ hạng, đừng đọc như xác suất đã hiệu chỉnh.'}
+          ? `Mỗi danh mục có xác suất riêng, vượt ngưỡng ${m.thresholds?.category ?? 0.5} là được ghi nhận.`
+          : 'Chỉ chọn một danh mục.'}
+        {!m.calibrated && ' Xác suất chưa hiệu chỉnh, chỉ nên đọc thứ hạng.'}
       </Note>
     </>
   );
@@ -414,16 +404,7 @@ function StepExplain({ t }) {
       {ranked.length === 0 && (
         <Note>Không từ đơn lẻ nào đủ sức làm đổi kết luận: mô hình dựa vào nhiều từ cùng lúc, bỏ một từ thì các từ còn lại vẫn đủ.</Note>
       )}
-      <Note>
-        Cách đọc trung thực: nếu từ quyết định không mang nghĩa của nhãn (ví dụ "tuần", "mua" cho nhãn lỗi kỹ thuật), mô hình đang dựa
-        vào lối tắt học từ dữ liệu huấn luyện sinh theo khung câu, chứ chưa hiểu đúng lý do. Đây là phát hiện cần báo cáo, và là lý do
-        cần tập gán nhãn thật.
-      </Note>
-      <Note>
-        Đo bằng {m.words.length} lần chạy lại mô hình ({m.timings.explainMs} ms), mỗi lần bỏ một từ. Độ mạnh tính theo mức giảm
-        log-odds: khi mô hình đã chắc gần 100%, xác suất gần như không nhúc nhích dù bỏ từ quan trọng, còn log-odds thì có. Đây là
-        phép thử trên chính câu này, không phải trọng số attention.
-      </Note>
+      <Note>Đo bằng {m.words.length} lần chạy lại mô hình ({m.timings.explainMs} ms), mỗi lần bỏ một từ.</Note>
     </>
   );
 }
@@ -495,8 +476,8 @@ function StepFinal({ t, scenario }) {
               {expect.ok
                 ? `Hệ thống kết luận khớp kỳ vọng${expect.coverage ? ` (bắt được ${expect.coverage} vấn đề)` : ''}.`
                 : expect.partial
-                  ? `Hệ thống mới bắt được ${expect.coverage} vấn đề, thiếu phần còn lại. Không che đi.`
-                  : 'Hệ thống kết luận không khớp kỳ vọng. Đây là giới hạn thật của mô hình hiện tại, không che đi.'}
+                  ? `Hệ thống mới bắt được ${expect.coverage} vấn đề, thiếu phần còn lại.`
+                  : 'Hệ thống kết luận không khớp kỳ vọng.'}
             </p>
           </div>
         </div>
@@ -506,8 +487,7 @@ function StepFinal({ t, scenario }) {
         <div className="min-w-0">
           <Label>Bản ghi đi vào hệ thống, kết quả chính thức</Label>
           <p className="-mt-0.5 mb-2 text-xs leading-relaxed text-ink-mid">
-            Do <strong className="text-accent-hi">{f.source === 'visobert' ? 'ViSoBERT' : 'luật từ khóa'}</strong> sinh ra. Đây là bản ghi được
-            lưu, được đếm vào chỉ số và có thể kích hoạt cảnh báo.
+            Do <strong className="text-accent-hi">{f.source === 'visobert' ? 'ViSoBERT' : 'luật từ khóa'}</strong> sinh ra.
           </p>
           <dl className="border-y border-line">
             {rows.map(([k, v]) => (
@@ -583,14 +563,8 @@ function StepFinal({ t, scenario }) {
             </Row>
           )}
           {t.model.available && (ruleCategories.length > 1 || aspects.length > 1) && (
-            <Note>
-              Câu này có nhiều vấn đề: luật khớp {ruleCategories.length} danh mục, mô hình phát hiện {aspects.length}. Mô hình dùng đầu ra đa
-              nhãn (mỗi danh mục một xác suất độc lập) nên nêu được đồng thời nhiều vấn đề, còn bản ghi vẫn giữ một danh mục chính để đếm chỉ số.
-            </Note>
+            <Note>Luật khớp {ruleCategories.length} danh mục, mô hình phát hiện {aspects.length}. Bản ghi giữ một danh mục chính để đếm chỉ số.</Note>
           )}
-          <Note>
-            Luật chỉ nhận ra chuỗi ký tự đã có trong từ điển. Mô hình không tra từ điển nào; kết luận của nó đến từ ngữ cảnh của cả câu, như bước 7 cho thấy.
-          </Note>
         </div>
       </div>
     </>
@@ -682,8 +656,7 @@ export default function PipelineDemo() {
           <div className="min-w-0 max-w-[70ch]">
             <h3 className="text-heading font-semibold text-ink-hi">Hành trình của một câu phản hồi</h3>
             <p className="mt-1 text-sm leading-relaxed text-ink-mid">
-              Chọn một thử thách ngôn ngữ hoặc tự gõ câu bất kỳ. Mỗi bước bên dưới hiện dữ liệu thật của đúng câu đó khi đi qua hệ
-              thống, từ chữ thô tới bản ghi có cấu trúc.
+              Chọn một thử thách hoặc gõ câu bất kỳ để xem từng bước xử lý.
             </p>
           </div>
           <Chip tone={modelReady ? 'ok' : 'warn'} title={nlp?.reason || ''}>

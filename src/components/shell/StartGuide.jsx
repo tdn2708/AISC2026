@@ -73,7 +73,7 @@ export const StartGuide = () => {
       </h1>
       <p className="mt-3 max-w-[60ch] text-base leading-relaxed text-ink-mid">
         {real
-          ? 'Chưa có gì để tính nên trang này chưa có việc hay chỉ số nào. Chọn một cách dưới đây để có dữ liệu; số liệu tự hiện khi phân loại xong.'
+          ? 'Chọn một cách dưới đây để có dữ liệu.'
           : 'Kho này chưa được nạp dữ liệu mô phỏng. Người quản trị nạp lại trên máy chủ, hoặc chuyển sang dữ liệu thật.'}
       </p>
       <ul className={`mt-8 grid gap-x-8 gap-y-6 border-t border-line-soft pt-6 ${ways.length > 1 ? 'lg:grid-cols-3' : ''}`}>
@@ -103,7 +103,7 @@ export const NoDataNotice = () => {
       <span className="flex min-w-0 items-center gap-2.5">
         <Inbox size={16} className="shrink-0 text-accent" aria-hidden="true" />
         <span>
-          {real ? 'Kho dữ liệu thật chưa có phản hồi nào' : 'Kho mô phỏng đang trống'}, nên các số trên trang này đều bằng 0, không phải là cửa hàng đang ổn.
+          {real ? 'Kho dữ liệu thật chưa có phản hồi nào' : 'Kho mô phỏng đang trống'}, nên các số trên trang này đều bằng 0.
         </span>
       </span>
       <Button as={Link} to="/dashboard" variant="link" size="sm">

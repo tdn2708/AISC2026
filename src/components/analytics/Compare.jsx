@@ -102,7 +102,7 @@ const Compare = () => {
   if (products.length < 2) {
     return (
       <GlassPanel>
-        <EmptyState title="Chưa đủ sản phẩm để so sánh" description="Cần ít nhất hai sản phẩm, mỗi sản phẩm từ 20 phản hồi. Thu thập thêm ở trang Nguồn dữ liệu, kể cả sản phẩm của đối thủ." />
+        <EmptyState title="Chưa đủ sản phẩm để so sánh" description="Cần ít nhất hai sản phẩm, mỗi sản phẩm từ 20 phản hồi." />
       </GlassPanel>
     );
   }
@@ -119,7 +119,7 @@ const Compare = () => {
       ? `Chưa đủ dữ liệu để kết luận (${d.reason ? d.reason.toLowerCase() : 'mẫu quá nhỏ'}).`
       : d.significant
         ? `Sản phẩm ${higher} bị chê nhiều hơn rõ rệt: chênh ${gap} điểm phần trăm.`
-        : `Chênh ${gap} điểm phần trăm, nhưng chưa đủ chắc để nói sản phẩm nào bị chê nhiều hơn.`;
+        : `Chênh ${gap} điểm phần trăm, chưa đủ để kết luận.`;
   }
 
   return (
