@@ -30,6 +30,7 @@ const Landing = lazy(() => import('./components/landing/Landing'));
 
 // Tổng quan nằm trong gói chính (trang mở đầu tiên sau đăng nhập). Các trang
 // còn lại là gói riêng, tải ngầm khi trình duyệt rảnh (lib/lazyPage.js).
+const Butler = lazyPage(() => import('./components/Butler'));
 const Insights = lazyPage(() => import('./components/Insights'));
 const RiskCenter = lazyPage(() => import('./components/RiskCenter'));
 const Feedbacks = lazyPage(() => import('./components/Feedbacks'));
@@ -176,6 +177,7 @@ function App() {
           }
         />
         <Route path="/dashboard" element={page(<Dashboard />)} />
+        <Route path="/butler" element={page(<Butler />)} />
         <Route path="/insights" element={page(<Insights />)} />
         <Route path="/risk" element={page(<RiskCenter />)} />
         <Route path="/feedbacks" element={page(<Feedbacks />)} />

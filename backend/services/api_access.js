@@ -13,7 +13,8 @@
  *    bừa và người đoán địa chỉ API, không chặn người cố tình đọc mã trang.
  *    Muốn chặn hẳn thì cần đăng nhập thật với phiên ở máy chủ.
  * 2. Ngoại lệ: webhook bình luận live (`POST /api/live/sessions/:id/comments`)
- *    do hệ thống ngoài gọi, đã có khóa nhập riêng của từng phiên (ingestKey).
+ *    do hệ thống ngoài gọi, đã có khóa nhập riêng của từng phiên (ingestKey),
+ *    và webhook Zalo (`POST /api/butler/zalo/webhook`) có secret riêng.
  * 3. CORS: chỉ trang của nhóm được đọc phản hồi trong trình duyệt. Gọi không
  *    có Origin (curl, máy chủ khác) không bị CORS chặn; việc đó do khóa ghi lo.
  */
@@ -45,6 +46,7 @@ function corsOptions(env = process.env) {
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const WEBHOOK_PATH = /^\/api\/live\/sessions\/[^/]+\/comments\/?$/;
+const BUTLER_WEBHOOK_PATH = /^\/api\/butler\/zalo\/webhook\/?$/;
 // Đăng ký, đăng nhập, đăng xuất: có giới hạn tần suất riêng (routes/auth.js) và
 // không chạm dữ liệu phân tích. Không miễn thì Vercel thiếu mã ghi là không ai vào được.
 const AUTH_PATH = /^\/api\/auth\/(signup|login|logout)\/?$/;
@@ -59,7 +61,7 @@ function writeGuard(env = process.env) {
   return (req, res, next) => {
     const key = String(env.WRITE_KEY || '');
     if (!key || SAFE_METHODS.has(req.method)) return next();
-    if (req.method === 'POST' && (WEBHOOK_PATH.test(req.path) || AUTH_PATH.test(req.path))) return next();
+    if (req.method === 'POST' && (WEBHOOK_PATH.test(req.path) || BUTLER_WEBHOOK_PATH.test(req.path) || AUTH_PATH.test(req.path))) return next();
     const sent = req.get('X-Write-Key');
     if (sent && sameSecret(sent, key)) return next();
     return res.status(401).json({ error: 'Thiếu hoặc sai mã ghi. Thao tác này chỉ chạy từ trang Customer Radar của nhóm.' });

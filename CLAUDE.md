@@ -10,7 +10,9 @@ Code comments, UI text, docs and commit messages are in Vietnamese. Answer the u
 
 **UI upgrade (from 2026-11-12; round 2 "glass + motion" and pain points / cases / import from 2026-11-13; merged into `main` on 2026-11-14 after the user approved):** the plan, task board, agent roles and hand-off log live in [KE-HOACH-GIAO-DIEN.md](KE-HOACH-GIAO-DIEN.md). Any UI, design or animation work starts there (read its sections 1, 2 and 8), and updates its sections 8 and 9 when done. Do not copy that plan into this file.
 
-This is the only project document besides that plan. The old `README.md`, `docs/`, `HANDOFF.md` and handoff files were removed on 2026-11-11 (still in git history). Section "Quy tắc làm việc và lịch" at the end holds the working rules and dates from earlier sessions.
+**Butler / Zalo (planned 2026-11-16, not built yet):** the design and step-by-step build plan for the 24/7 "Quản gia" (alerts to the owner over a Zalo Bot, remote commands, mobile `/butler` page) live in [KE-HOACH-QUAN-GIA.md](KE-HOACH-QUAN-GIA.md). The user hands the build to Gemini (rules in [GEMINI.md](GEMINI.md)) and Claude reviews the diff. Only step 6.0 exists: `backend/services/work_items.js` (cached alerts, inbox items, pain points, `recordDecision`, copied from `routes/api.js`); `routes/api.js` does not use it yet.
+
+Besides these two plans, this is the only project document. The old `README.md`, `docs/`, `HANDOFF.md` and handoff files were removed on 2026-11-11 (still in git history). Section "Quy tắc làm việc và lịch" at the end holds the working rules and dates from earlier sessions.
 
 ## Commands
 
@@ -256,6 +258,27 @@ UI conventions agreed with the user:
 - Session lookups are cached in memory for 5 minutes. A new login or signup is written to the cache at once, and concurrent requests with the same token share one lookup. Measured 2026-11-16 on local + Atlas: 12 parallel calls with a cold token took 1,860 ms before this cache, now 181 ms, and 26 ms right after login. Logout and profile edits evict the entry immediately.
 - Calling the prod API by hand (measuring, checking a deploy) now needs a token: `POST /api/auth/login` with the demo account, then `Authorization: Bearer <token>`. Never print the token.
 
+### Quản gia (`/butler`, `services/butler/`, Zalo)
+
+24/7 store butler that watches workspaces on a timer, alerts the shop owner over a Zalo Bot, takes remote commands (both on Zalo and on the mobile-first `/butler` web page / PWA), and logs every action back into the shared decision log.
+
+- **Shared work items (`services/work_items.js`):** `detectAlertsCached`, `buildRecommendationsCached`, `painPointsFor`, `buildInboxItems` and `recordDecision` are shared by `routes/api.js` and the butler so web and Zalo always see the same items and write the same `recommendation_log` (`via: 'web' | 'zalo'`).
+- **Modules (`services/butler/` + `routes/butler.js`):**
+  - `text.js`: Vietnamese plain-text formatting, quiet-hours check (`inQuiet`), 1,800-char chunking (`chunk`), alert and digest copy (`buildAlertMessage`, `buildDigest`, `shouldNotify`).
+  - `commands.js`: accent-tolerant parser (`parseCommand`) for tasks, plans (`xem n`), decisions (`duyệt n`, `bỏ qua n vì ...`), status, live, collect, mute, workspace, link codes and free-form questions.
+  - `zalo.js`: Zalo Bot client (`bot-api.zaloplatforms.com`), token redaction on every error, circuit breaker (5 consecutive failures pause 2 min), long-polling (`startPolling`), constant-time `verifySecret` and `normalizeUpdate`.
+  - `store.js` & `outbox.js`: Mongo helpers and persistent outgoing queue (`butler_outbox`, sequential 1 msg / 1.1 s spacing, `sentParts` tracking for multi-part retries, exponential retry `[30s, 2m, 10m, 30m]`, `BUTLER_FAST_RETRY=1` for automated tests).
+  - `incidents.js` & `watcher.js`: stable incident fingerprinting (`alert|...`, `live|...`, `inbox|...`), lease lock (`meta._id='butler_watch'`), baseline seeding on first run, clearing `notified: []` when resolved so recurring incidents notify again, immediate escalation when severity rises, and morning digest.
+  - `engine.js` & `inbound.js`: command execution, per-chat serial queue with global concurrency cap (2), 20 msg/min/chat rate limit, and 6-digit account linking (demo account `demo@customerradar.vn` is refused with 403).
+- **Collections in `authDb`:** `butler_links` (1-1 `userId` and `zaloChatId`, plus `settings` and `lastTasks` snapshot for number handles), `butler_link_codes` (10-min TTL), `butler_messages` (90-day TTL, shared web + Zalo history), `butler_pending` (5-min TTL), `butler_outbox` (14-day TTL), `butler_inbound` (7-day TTL, `message_id` dedup), and `butler_incidents` (30-day TTL after resolved).
+- **Two-step writes:** `duyệt n`, `bỏ qua n vì ...` and `thu thập` never write immediately; they save a 5-minute confirmation in `butler_pending` and only call `recordDecision` or `realCollector.runOnce` when the owner replies `có` (or cancel on `thôi`).
+- **Two bots (local vs Render) & env vars:** Zalo allows only one active delivery mode per bot, so use a separate test bot locally (`ZALO_MODE=poll`, `ZALO_BOT_TOKEN`) and a production bot on Render (`ZALO_MODE=webhook`, `ZALO_WEBHOOK_SECRET`, `PUBLIC_APP_URL`). Other vars: `BUTLER` (`BUTLER=0` kill-switch disables polling, watcher and outbox while keeping the web app normal), `ZALO_API_BASE`, `BUTLER_WATCH_MINUTES` (default 5), `BUTLER_WATCH_FIRST_DELAY_SEC` (default 45), `BUTLER_KEEPALIVE`.
+- **Render free-tier sleep:** Render sleeps after 15 min without inbound HTTP. Setting `BUTLER_KEEPALIVE=1` with `RENDER_EXTERNAL_URL` pings `/health` every 10 min from inside the process; for guaranteed 24/7 watching, pair with an external uptime ping every 10 min.
+- **Local mock, E2E and load tests (always on `_test` DBs):**
+  - Mock Zalo server (:5055): `node scripts/mock_zalo.js`
+  - Full 11-step E2E: `cd backend && node scripts/butler_e2e.js`
+  - 300-message load & webhook benchmark: `cd backend && node scripts/butler_load.js`
+
 ### Bảng số liệu (`/insights`, BI-style)
 
 - `GET /api/bi/cube` (`services/bi_cube.js`, pure): every counted feedback as one integer row `[back, source, category, sentiment, evidence, product, cause, rating, weight×10000]` plus shared dictionaries; memoised per context version. About 370 KB for 14 k rows.
@@ -298,7 +321,7 @@ UI conventions agreed with the user:
 - `backend/services/real_collector.js`: máy chủ tự lấy đánh giá Tiki mới mỗi 24 giờ (kiểm tra mỗi 30 phút, Render ngủ dậy thì bù), khóa trong `meta._id='autocollect'` hạn 15 phút, nhịp tim mỗi 60 giây. `scripts/collect_real.js` dùng chung lõi. Workflow GitHub đã xóa.
 - Tìm sản phẩm Tiki phải `sort: 'top_seller'` (thứ tự mặc định từ 11/2026 trả hàng mới chưa có đánh giá).
 - Muối băm (services/pii_salt.js): lấy từ biến PII_SALT, không có thì từ `meta._id='pii_salt'` của kho thật. Không có muối bí mật thì ingest KHÔNG lưu customerId (null), livestream dùng muối ngẫu nhiên của tiến trình; thu thập vẫn chạy. Tắt tự thu thập bằng `AUTO_COLLECT=0`. Chạy máy chủ local phải đặt `MONGODB_REAL_DB=..._test` hoặc `AUTO_COLLECT=0`, vì local trỏ cùng cụm Atlas với prod.
-- (Nhánh `giao-dien-kinh`, K7-02) `POST /api/seed` mặc định trả 403; chỉ chạy khi `ALLOW_SEED_ROUTE=1` và đang ở kho demo (không bao giờ đặt trên prod; nạp lại dùng `npm run seed`). `/api/scrape` chặn SSRF (`services/url_guard.js`); Chromium chỉ bật khi `ALLOW_BROWSER_SCRAPE=1`, mặc định tắt. WCR dùng mẫu số giao dịch cùng phạm vi lọc (`scopeTransactions` trong `analysis_context.js`).
+- (K7-02) `POST /api/seed` mặc định trả 403; chỉ chạy khi `ALLOW_SEED_ROUTE=1` và đang ở kho demo (không bao giờ đặt trên prod; nạp lại dùng `npm run seed`). `/api/scrape` chặn SSRF (`services/url_guard.js`); Chromium chỉ bật khi `ALLOW_BROWSER_SCRAPE=1`, mặc định tắt. WCR dùng mẫu số giao dịch cùng phạm vi lọc (`scopeTransactions` trong `analysis_context.js`).
 - (14/11) Khóa ghi + CORS (`services/api_access.js`): khi Render có `WRITE_KEY`, mọi POST/PUT/PATCH/DELETE phải gửi `X-Write-Key` đúng mã (trừ webhook `POST /api/live/sessions/:id/comments`, đã có ingestKey); biến trống thì không khóa. Giao diện gửi mã từ `VITE_WRITE_KEY` (Vercel), chỉ trên lệnh ghi. Mã nằm trong gói JS nên chỉ chặn bot và script gọi bừa, không thay được đăng nhập. CORS chỉ cho `https://aisc-2026.vercel.app`, localhost mọi cổng và `CORS_ORIGINS` (phân cách dấu phẩy). `GET /feedbacks` không phân trang (xuất CSV) giới hạn 6 lượt/phút/IP. Không bao giờ in giá trị `WRITE_KEY`.
 
 ## Quy tắc làm việc và lịch (gộp từ bản bàn giao 11/11/2026)
@@ -328,13 +351,11 @@ UI conventions agreed with the user:
 - Chấm giao diện: `node C:/Users/DELL/.claude/skills/hallmark/scripts/sloplint.mjs src --genre modern-minimal --scope app --render --kept --url http://localhost:5199/<route>`.
 
 ### ID và đường dẫn
-- Phiên live mô phỏng cũ `6af204dab6bf75ac113997aa` đã xóa 13/11 (sao lưu ở `D:/03-DuAn/AISC2026-backup-db/live-mo-phong-2026-11-13/`); tạo phiên mới khi quay lại livestream.
 - Mô hình ONNX trên HF: `tdn278/customer-radar-visobert-onnx`.
 - Trang so sánh trước/sau + đối thủ: https://claude.ai/artifact/4vZXq73mA1MUpvJFrNJid9. Bảng đối thủ CHƯA kiểm chứng với Sapo, phần mềm chốt đơn livestream, kênh người bán sàn: chưa đưa lên slide.
 
 ### Lịch
-- Sáng 12/11: kiểm tra `GET /api/collector/status` (header `X-Workspace: real`) xem lượt tự thu thập 22:06 ngày 11/11 chạy xong.
-- Khoảng 15/11: người dùng chạy `npm run seed` trong `backend` (dữ liệu replay hết khoảng 17/11), rồi bật lại phiên live.
+- Dữ liệu replay của kho demo hết khoảng 17/11: nếu chưa nạp lại thì người dùng chạy `npm run seed` trong `backend`, rồi tạo hoặc bật lại phiên live.
 - Khi đồng đội gửi `model_int8.onnx`, `tokenizer.json`, `meta.json`: đẩy HF, gắn web, chạy lại 4 tab Lab, chỉ báo số trên bộ test mù.
 - 8 đến 9/12: người dùng chạy `npm run seed -- --anchor=2026-12-10T09:00:00+07:00`.
 - 10/12/2026: chung kết.

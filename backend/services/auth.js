@@ -218,6 +218,7 @@ async function endSession(authDb, token) {
  *   GET  /api/trust/health                   chỉ số tổng hợp của sổ đối chiếu, không câu chữ, không tên;
  *                                            trang giới thiệu và khối mực ở trang đăng nhập cần nó
  *   POST /api/live/sessions/:id/comments     webhook của hệ thống ngoài, đã có khóa nhập của phiên
+ *   POST /api/butler/zalo/webhook            webhook của Zalo Bot Platform, tự kiểm X-Bot-Api-Secret-Token
  * EventSource và liên kết tải file không gửi được header, nên riêng GET luồng
  * live và xuất file nhận token qua `?access_token=`.
  * Đặt AUTH_REQUIRED=0 để tắt (chạy thử cục bộ không cần đăng nhập).
@@ -225,7 +226,8 @@ async function endSession(authDb, token) {
 const PUBLIC = [
   [null, /^\/api\/auth(\/|$)/],
   ['GET', /^\/api\/trust\/health\/?$/],
-  ['POST', /^\/api\/live\/sessions\/[^/]+\/comments\/?$/]
+  ['POST', /^\/api\/live\/sessions\/[^/]+\/comments\/?$/],
+  ['POST', /^\/api\/butler\/zalo\/webhook\/?$/]
 ];
 const QUERY_TOKEN_PATH = /^\/api\/live\/sessions\/[^/]+\/(stream|export)\/?$/;
 

@@ -2691,6 +2691,422 @@ testAsync('Tài khoản: băm mật khẩu scrypt có muối riêng, đúng thì
   assert.strictEqual(await auth.verifyPassword('matkhau2026', 'hong'), false);
 });
 
+// ------------------------------------------------------------------
+// Quản gia (services/butler): văn bản, lệnh, sự cố
+// ------------------------------------------------------------------
+{
+  const butlerText = require('../services/butler/text');
+  const { parseCommand } = require('../services/butler/commands');
+  const incidents = require('../services/butler/incidents');
+
+  test('Quản gia: parseCommand phân loại đúng bảng hơn 40 câu lệnh và câu hỏi', () => {
+    // 23:00 giờ Việt Nam (16:00 UTC) -> còn 8 giờ (480 phút) tới 7 giờ sáng
+    const now23VN = new Date('2026-11-16T16:00:00.000Z');
+    const cases = [
+      ['?', { type: 'help' }],
+      ['giúp', { type: 'help' }],
+      ['  TRO GIUP! ', { type: 'help' }],
+      ['hướng dẫn', { type: 'help' }],
+      ['lệnh', { type: 'help' }],
+      ['help', { type: 'help' }],
+      ['/help', { type: 'help' }],
+      ['việc', { type: 'tasks' }],
+      ['Việc hôm nay.', { type: 'tasks' }],
+      ['co viec gi?', { type: 'tasks' }],
+      ['cần làm gì', { type: 'tasks' }],
+      ['/viec', { type: 'tasks' }],
+      ['ds', { type: 'tasks' }],
+      ['xem 2', { type: 'detail', n: 2 }],
+      ['Chi tiết 15', { type: 'detail', n: 15 }],
+      ['ke hoach 1', { type: 'detail', n: 1 }],
+      ['xem số 4', { type: 'detail', n: 4 }],
+      ['2', { type: 'detail', n: 2 }],
+      ['99', { type: 'detail', n: 99 }],
+      ['Duyệt 2', { type: 'accept', n: 2 }],
+      ['duyet 2', { type: 'accept', n: 2 }],
+      ['  OK 2 ', { type: 'accept', n: 2 }],
+      ['chấp nhận 5', { type: 'accept', n: 5 }],
+      ['dong y 3', { type: 'accept', n: 3 }],
+      ['chap nhan so 2', { type: 'accept', n: 2 }],
+      ['bỏ qua 3 vì hàng đã về', { type: 'dismiss', n: 3, reason: 'hàng đã về' }],
+      ['bo qua 2 vi da xu ly', { type: 'dismiss', n: 2, reason: 'da xu ly' }],
+      ['bỏ 2 do hàng đã hết', { type: 'dismiss', n: 2, reason: 'hàng đã hết' }],
+      ['bỏ qua 2: không đúng', { type: 'dismiss', n: 2, reason: 'không đúng' }],
+      ['bo qua 3', { type: 'dismiss', n: 3, reason: null }],
+      ['có', { type: 'confirm' }],
+      ['ok', { type: 'confirm' }],
+      ['đồng ý', { type: 'confirm' }],
+      ['xac nhan', { type: 'confirm' }],
+      ['yes', { type: 'confirm' }],
+      ['uh', { type: 'confirm' }],
+      ['Thôi', { type: 'cancel' }],
+      ['không', { type: 'cancel' }],
+      ['hủy', { type: 'cancel' }],
+      ['no', { type: 'cancel' }],
+      ['tình hình', { type: 'status' }],
+      ['tóm tắt', { type: 'status' }],
+      ['bản tin', { type: 'status' }],
+      ['thế nào rồi?', { type: 'status' }],
+      ['thu thập', { type: 'collect' }],
+      ['lấy dữ liệu mới', { type: 'collect' }],
+      ['im', { type: 'mute', minutes: 120 }],
+      ['tạm im', { type: 'mute', minutes: 120 }],
+      ['im 3h', { type: 'mute', minutes: 180 }],
+      ['im 2 giờ', { type: 'mute', minutes: 120 }],
+      ['im 30 phút', { type: 'mute', minutes: 30 }],
+      ['im đến sáng', { type: 'mute', minutes: 480 }],
+      ['bật báo', { type: 'unmute' }],
+      ['hết im', { type: 'unmute' }],
+      ['kho thật', { type: 'workspace', workspace: 'real' }],
+      ['dữ liệu thật', { type: 'workspace', workspace: 'real' }],
+      ['kho mô phỏng', { type: 'workspace', workspace: 'demo' }],
+      ['kho demo', { type: 'workspace', workspace: 'demo' }],
+      ['live', { type: 'live' }],
+      ['phiên live', { type: 'live' }],
+      ['123456', { type: 'link_code', code: '123456' }],
+      ['123 456', { type: 'link_code', code: '123456' }],
+      ['kết nối 654321', { type: 'link_code', code: '654321' }],
+      ['ma 111 222', { type: 'link_code', code: '111222' }],
+      ['hủy kết nối', { type: 'unlink' }],
+      ['ngat zalo', { type: 'unlink' }],
+      ['1234567', { type: 'question', text: '1234567' }],
+      ['việc hôm nay khách chê gì nhiều nhất', { type: 'question', text: 'việc hôm nay khách chê gì nhiều nhất' }],
+      ['sản phẩm nào bị phàn nàn giao chậm tuần này?', { type: 'question', text: 'sản phẩm nào bị phàn nàn giao chậm tuần này?' }]
+    ];
+    assert.ok(cases.length >= 40, 'bảng test phải có ít nhất 40 câu');
+    for (const [input, expected] of cases) {
+      const actual = parseCommand(input, now23VN);
+      assert.deepStrictEqual(actual, expected, `Sai ở câu: "${input}"`);
+    }
+  });
+
+  test('Quản gia: inQuiet kiểm đúng khung giờ yên lặng trong ngày và qua nửa đêm', () => {
+    assert.strictEqual(butlerText.inQuiet(23, 22, 7), true);
+    assert.strictEqual(butlerText.inQuiet(7, 22, 7), false);
+    assert.strictEqual(butlerText.inQuiet(6, 22, 7), true);
+    assert.strictEqual(butlerText.inQuiet(12, 9, 17), true);
+    assert.strictEqual(butlerText.inQuiet(17, 9, 17), false);
+    assert.strictEqual(butlerText.inQuiet(5, 5, 5), false);
+  });
+
+  test('Quản gia: chunk cắt chuỗi 4500 ký tự nhiều dòng và dòng 3000 ký tự không khoảng trắng', () => {
+    const lines = [];
+    while (lines.join('\n').length < 4500) {
+      lines.push(`Dòng kiểm thử số ${lines.length + 1}: khách phản hồi giao hàng chậm ở khu vực nội thành.`);
+    }
+    const text4500 = lines.join('\n').slice(0, 4500);
+    const parts = butlerText.chunk(text4500, 2000);
+    assert.strictEqual(parts.length, 3);
+    assert.ok(parts.every((p) => p.length > 0 && p.length <= 2000));
+    assert.strictEqual(parts.join('').replace(/\s+/g, ''), text4500.replace(/\s+/g, ''));
+
+    const noSpace3000 = 'a'.repeat(3000);
+    const hardParts = butlerText.chunk(noSpace3000, 2000);
+    assert.strictEqual(hardParts.length, 2);
+    assert.strictEqual(hardParts[0].length, 2000);
+    assert.strictEqual(hardParts[1].length, 1000);
+    assert.strictEqual(hardParts.join(''), noSpace3000);
+  });
+
+  test('Quản gia: plain làm sạch markdown, trích dẫn và giữ gạch đầu dòng', () => {
+    assert.strictEqual(butlerText.plain('**Cảnh báo** [1] _mới_'), 'Cảnh báo mới');
+    const md = '## Tiêu đề\n\n* Mục `một` [2]\n- Mục __hai__\n\n\n\nKết luận.';
+    assert.strictEqual(butlerText.plain(md), 'Tiêu đề\n\n- Mục một\n- Mục hai\n\nKết luận.');
+  });
+
+  test('Quản gia: shouldNotify kiểm đúng mức độ, giờ yên lặng, tạm im và leo thang mức độ', () => {
+    // 14:00 giờ Việt Nam (07:00 UTC): ngoài giờ yên lặng 22..7
+    const dayTime = new Date('2026-11-16T07:00:00.000Z');
+    // 23:00 giờ Việt Nam (16:00 UTC): trong giờ yên lặng 22..7
+    const quietTime = new Date('2026-11-16T16:00:00.000Z');
+    const baseLink = (overrides = {}) => ({
+      userId: 'u1',
+      chatId: 'chat1',
+      settings: { notifyLevel: 'high', quietFrom: 22, quietTo: 7, muteUntil: null, ...(overrides.settings || {}) },
+      ...overrides
+    });
+
+    // Không có chatId -> false
+    assert.strictEqual(incidents.shouldNotify({ severity: 'critical', notified: [] }, baseLink({ chatId: null }), dayTime), false);
+
+    // Đang tạm im -> false kể cả critical
+    const muted = baseLink({ settings: { muteUntil: new Date(dayTime.getTime() + 60000) } });
+    assert.strictEqual(incidents.shouldNotify({ severity: 'critical', notified: [] }, muted, dayTime), false);
+
+    // Ngưỡng notifyLevel: critical / high / all
+    const critLink = baseLink({ settings: { notifyLevel: 'critical' } });
+    assert.strictEqual(incidents.shouldNotify({ severity: 'critical', notified: [] }, critLink, dayTime), true);
+    assert.strictEqual(incidents.shouldNotify({ severity: 'high', notified: [] }, critLink, dayTime), false);
+
+    const highLink = baseLink({ settings: { notifyLevel: 'high' } });
+    assert.strictEqual(incidents.shouldNotify({ severity: 'critical', notified: [] }, highLink, dayTime), true);
+    assert.strictEqual(incidents.shouldNotify({ severity: 'high', notified: [] }, highLink, dayTime), true);
+    assert.strictEqual(incidents.shouldNotify({ severity: 'medium', notified: [] }, highLink, dayTime), false);
+
+    const allLink = baseLink({ settings: { notifyLevel: 'all' } });
+    assert.strictEqual(incidents.shouldNotify({ severity: 'medium', notified: [] }, allLink, dayTime), true);
+
+    // Giờ yên lặng: chỉ critical qua được
+    assert.strictEqual(incidents.shouldNotify({ severity: 'high', notified: [] }, allLink, quietTime), false);
+    assert.strictEqual(incidents.shouldNotify({ severity: 'critical', notified: [] }, allLink, quietTime), true);
+
+    // Đã báo cùng mức -> false; leo thang từ high lên critical -> true
+    const incSame = { severity: 'high', notified: [{ userId: 'u1', severity: 'high', at: dayTime }] };
+    assert.strictEqual(incidents.shouldNotify(incSame, highLink, dayTime), false);
+    const incEscalated = { severity: 'critical', notified: [{ userId: 'u1', severity: 'high', at: dayTime }] };
+    assert.strictEqual(incidents.shouldNotify(incEscalated, highLink, dayTime), true);
+  });
+
+  test('Quản gia: buildAlertMessage định dạng 1 việc, 3 việc, 8 việc đúng luật chữ', () => {
+    const mk = (i, sev = 'high') => ({
+      severity: sev,
+      title: `Sự cố số ${i}`,
+      why: `Lý do chi tiết của sự cố ${i}.`,
+      to: '/risk'
+    });
+    const m1 = incidents.buildAlertMessage([mk(1, 'critical')], { workspaceLabel: 'Dữ liệu thật', appUrl: 'https://aisc-2026.vercel.app' });
+    assert.ok(m1.includes('[Nghiêm trọng] Sự cố số 1'));
+    assert.ok(m1.includes('Nhắn "xem 1" để xem kế hoạch, "duyệt 1" để chấp nhận.'));
+    assert.ok(m1.includes('https://aisc-2026.vercel.app/risk'));
+
+    const m3 = incidents.buildAlertMessage([mk(1, 'critical'), mk(2, 'high'), mk(3, 'medium')], { workspaceLabel: 'Dữ liệu thật', appUrl: 'https://aisc-2026.vercel.app' });
+    assert.ok(m3.includes('có 3 việc mới.'));
+    assert.ok(m3.includes('1. [Nghiêm trọng] Sự cố số 1'));
+    assert.ok(m3.includes('3. [Chú ý] Sự cố số 3'));
+    assert.ok(!m3.includes('Còn '));
+
+    const m8 = incidents.buildAlertMessage(Array.from({ length: 8 }, (_, i) => mk(i + 1)), { workspaceLabel: 'Mô phỏng', appUrl: 'https://aisc-2026.vercel.app' });
+    assert.ok(m8.includes('có 8 việc mới.'));
+    assert.ok(m8.includes('6. [Cao] Sự cố số 6'));
+    assert.ok(!m8.includes('7. '));
+    assert.ok(m8.includes('Còn 2 việc nữa, nhắn "việc" để xem.'));
+
+    for (const msg of [m1, m3, m8]) {
+      assert.ok(!/[\u00b7\u2192]|undefined|NaN/.test(msg), `Tin nhắn chứa chuỗi cấm: ${msg}`);
+    }
+  });
+
+  test('Quản gia: buildDigest bỏ dòng thiếu số liệu, không in undefined hay NaN', () => {
+    const now = new Date('2026-11-17T01:00:00.000Z'); // 08:00 ngày 17/11 giờ VN
+    const full = incidents.buildDigest({
+      workspaceLabel: 'Dữ liệu thật',
+      ctxSummary: { counted: 4557, health: 82, freshAt: new Date(now.getTime() - 2 * 3600 * 1000) },
+      incidents: [{ severity: 'critical' }, { severity: 'critical' }, { severity: 'high' }, { severity: 'medium' }],
+      now
+    });
+    assert.ok(full.includes('Bản tin sáng 17/11, kho Dữ liệu thật.'));
+    assert.ok(full.includes('Phản hồi được tính: 4.557. Độ tin số liệu: 82/100.'));
+    assert.ok(full.includes('Việc đang chờ: 2 nghiêm trọng, 1 cao, 1 chú ý.'));
+    assert.ok(full.includes('Dữ liệu mới nhất: 2 giờ trước.'));
+    assert.ok(!/undefined|NaN/.test(full));
+
+    const sparse = incidents.buildDigest({
+      workspaceLabel: 'Dữ liệu thật',
+      ctxSummary: {},
+      incidents: undefined,
+      now
+    });
+    assert.ok(!sparse.includes('Phản hồi được tính'));
+    assert.ok(!sparse.includes('Việc đang chờ'));
+    assert.ok(!sparse.includes('Dữ liệu mới nhất'));
+    assert.ok(!/undefined|NaN/.test(sparse));
+  });
+
+  const zalo = require('../services/butler/zalo');
+
+  test('Quản gia: normalizeUpdate xử lý đúng các dạng gói tin Zalo, bỏ tin thiếu trường và tin từ bot', () => {
+    const wrapped = zalo.normalizeUpdate({
+      ok: true,
+      result: {
+        event_name: 'message.text.received',
+        message: {
+          message_id: 'm1',
+          date: 1763280000000,
+          message_type: 'text',
+          text: 'việc hôm nay',
+          from: { id: 'u1', display_name: 'Chủ Shop A', is_bot: false },
+          chat: { id: 'c1', chat_type: 'PRIVATE' }
+        }
+      }
+    });
+    assert.strictEqual(wrapped.length, 1);
+    assert.strictEqual(wrapped[0].messageId, 'm1');
+    assert.strictEqual(wrapped[0].chatId, 'c1');
+    assert.strictEqual(wrapped[0].fromName, 'Chủ Shop A');
+    assert.strictEqual(wrapped[0].text, 'việc hôm nay');
+    assert.strictEqual(wrapped[0].kind, 'text');
+    assert.ok(wrapped[0].at instanceof Date);
+
+    const flatSticker = zalo.normalizeUpdate({
+      event_name: 'message.sticker.received',
+      message: {
+        message_id: 'm2',
+        date: 1763280000000,
+        from: { id: 'u1', display_name: 'Chủ Shop A' },
+        chat: { id: 'c1' }
+      }
+    });
+    assert.strictEqual(flatSticker.length, 1);
+    assert.strictEqual(flatSticker[0].kind, 'other');
+    assert.strictEqual(flatSticker[0].text, '');
+
+    const arrMixed = zalo.normalizeUpdate([
+      null,
+      { message: { message_id: 'm3', chat: {} } },
+      { message: { chat: { id: 'c1' } } },
+      { message: { message_id: 'm4', chat: { id: 'c1' }, from: { is_bot: true }, text: 'tự nhắn' } },
+      { event_name: 'message.text.received', message: { message_id: 'm5', chat: { id: 'c2' }, from: { display_name: 'B' }, text: 'ok' } }
+    ]);
+    assert.strictEqual(arrMixed.length, 1);
+    assert.strictEqual(arrMixed[0].messageId, 'm5');
+    assert.strictEqual(arrMixed[0].chatId, 'c2');
+    assert.deepStrictEqual(zalo.normalizeUpdate(null), []);
+  });
+
+  test('Quản gia: verifySecret so khớp thời gian hằng số và từ chối khi chưa cấu hình secret', () => {
+    assert.strictEqual(zalo.verifySecret('secret-12345678', 'secret-12345678'), true);
+    assert.strictEqual(zalo.verifySecret('secret-12345679', 'secret-12345678'), false);
+    assert.strictEqual(zalo.verifySecret('ngan', 'secret-12345678'), false);
+    assert.strictEqual(zalo.verifySecret(undefined, 'secret-12345678'), false);
+    assert.strictEqual(zalo.verifySecret('', 'secret-12345678'), false);
+    assert.strictEqual(zalo.verifySecret('secret-12345678', ''), false);
+  });
+
+  testAsync('Quản gia: lỗi Zalo không bao giờ lộ mã bot và ngắt mạch sau 5 lỗi liên tiếp', async () => {
+    zalo.resetCircuit();
+    const fakeAxiosFail = async () => {
+      const err = new Error('Request failed for https://bot-api.zaloplatforms.com/bot123:SECRET_TOKEN_XYZ/sendMessage');
+      err.code = 'ECONNREFUSED';
+      err.config = { url: 'https://bot-api.zaloplatforms.com/bot123:SECRET_TOKEN_XYZ/sendMessage' };
+      throw err;
+    };
+
+    for (let i = 0; i < 5; i += 1) {
+      let caught = null;
+      try {
+        await zalo.call('sendMessage', { chat_id: '1', text: 'hi' }, { post: fakeAxiosFail });
+      } catch (e) {
+        caught = e;
+      }
+      assert.ok(caught, 'phải ném lỗi');
+      assert.ok(!String(caught).includes('SECRET'), 'String(err) không được chứa SECRET');
+      assert.ok(!caught.message.includes('SECRET'), 'err.message không được chứa SECRET');
+    }
+
+    // Lần thứ 6: mạch đã mở, từ chối ngay với circuit_open
+    let circuitErr = null;
+    try {
+      await zalo.call('sendMessage', { chat_id: '1', text: 'hi' }, { post: fakeAxiosFail });
+    } catch (e) {
+      circuitErr = e;
+    }
+    assert.ok(circuitErr && circuitErr.code === 'circuit_open', 'sau 5 lỗi liên tiếp phải mở mạch circuit_open');
+    assert.strictEqual(zalo.health().circuit, 'open');
+    zalo.resetCircuit();
+    assert.strictEqual(zalo.health().circuit, 'closed');
+  });
+
+  test('Quản gia: isPublicApi và writeGuard miễn đường webhook Zalo nhưng bảo vệ /api/butler/command', () => {
+    const auth = require('../services/auth');
+    const { writeGuard } = require('../services/api_access');
+
+    assert.strictEqual(auth.isPublicApi('POST', '/api/butler/zalo/webhook'), true);
+    assert.strictEqual(auth.isPublicApi('POST', '/api/butler/zalo/webhook/'), true);
+    assert.strictEqual(auth.isPublicApi('GET', '/api/butler/zalo/webhook'), false);
+    assert.strictEqual(auth.isPublicApi('POST', '/api/butler/command'), false);
+    assert.strictEqual(auth.isPublicApi('GET', '/api/butler/status'), false);
+
+    const env = { WRITE_KEY: 'ma-ghi-thu-nghiem' };
+    const runGuard = (method, path, key) => {
+      let code = 200;
+      const req = { method, path, get: (h) => (h === 'X-Write-Key' ? key : undefined) };
+      writeGuard(env)(req, { status: (c) => { code = c; return { json: () => {} }; } }, () => {});
+      return code;
+    };
+    assert.strictEqual(runGuard('POST', '/api/butler/zalo/webhook', undefined), 200);
+    assert.strictEqual(runGuard('POST', '/api/butler/command', undefined), 401);
+    assert.strictEqual(runGuard('POST', '/api/butler/command', 'ma-ghi-thu-nghiem'), 200);
+  });
+
+  test('Quản gia: sự cố đã báo, hết rồi mở lại cùng mức thì được báo lại', () => {
+    const watcher = require('../services/butler/watcher');
+    const dayTime = new Date('2026-11-16T03:00:00Z');
+    const link = {
+      userId: 'u1',
+      chatId: 'c1',
+      settings: { notifyLevel: 'high', quietFrom: 22, quietTo: 7, muteUntil: null }
+    };
+
+    // 1. Sự cố mở lần đầu và đã báo ở mức high -> không báo lặp
+    let incident = {
+      _id: 'demo|alert|1',
+      severity: 'high',
+      resolvedAt: null,
+      notified: [{ userId: 'u1', severity: 'high', at: dayTime }]
+    };
+    assert.strictEqual(incidents.shouldNotify(incident, link, dayTime), false);
+
+    // 2. Sự cố hết -> watcher.resolveUpdate đặt resolvedAt và xóa notified: []
+    const patch = watcher.resolveUpdate(new Date('2026-11-17T03:00:00Z'));
+    incident = {
+      ...incident,
+      ...patch.$set,
+      cycle: (incident.cycle || 0) + (patch.$inc?.cycle || 0)
+    };
+    assert.ok(incident.resolvedAt instanceof Date);
+    assert.deepStrictEqual(incident.notified, []);
+    assert.strictEqual(incident.cycle, 1);
+
+    // 3. Vài ngày sau sự cố xuất hiện lại cùng mức high -> được báo lại
+    incident = {
+      ...incident,
+      resolvedAt: null,
+      lastSeenAt: new Date('2026-11-19T03:00:00Z')
+    };
+    assert.strictEqual(incidents.shouldNotify(incident, link, new Date('2026-11-19T03:00:00Z')), true);
+  });
+
+  testAsync('Quản gia: sendText lưu sentParts khi đoạn sau lỗi và thử lại chỉ gửi đoạn chưa gửi; stripTitlePrefix bỏ lặp tiêu đề', async () => {
+    zalo.resetCircuit();
+    const sentTexts = [];
+    let callCount = 0;
+    const fakePost = async (_url, body) => {
+      callCount += 1;
+      if (callCount === 2) {
+        return { status: 500, data: { ok: false, error_code: 500, description: 'lỗi tạm' } };
+      }
+      sentTexts.push(body.text);
+      return { status: 200, data: { ok: true, result: { message_id: `m_${callCount}` } } };
+    };
+
+    const longMsg = `${'Đoạn một '.repeat(180)}\n${'Đoạn hai '.repeat(180)}`;
+    let err1 = null;
+    try {
+      await zalo.sendText('chat_1', longMsg, { post: fakePost });
+    } catch (e) {
+      err1 = e;
+    }
+    assert.ok(err1, 'lần gửi đầu phải lỗi ở đoạn 2');
+    assert.strictEqual(err1.sentParts, 1, 'đoạn 1 đã gửi thành công nên sentParts = 1');
+    assert.strictEqual(sentTexts.length, 1);
+
+    // Thử lại từ sentParts = 1: chỉ gửi đoạn 2, không gửi lặp đoạn 1
+    const lastId = await zalo.sendText('chat_1', longMsg, { fromPart: err1.sentParts, post: fakePost });
+    assert.strictEqual(lastId, 'm_3');
+    assert.strictEqual(sentTexts.length, 2, 'tổng số đoạn gửi thành công phải đúng bằng 2');
+    assert.ok(sentTexts[0].startsWith('Đoạn một'));
+    assert.ok(sentTexts[1].startsWith('Đoạn hai'));
+    zalo.resetCircuit();
+
+    const title = 'Thanh toán: lỗi cổng thanh toán trên Tai nghe Bluetooth SoundCore Q30';
+    const rawWhy = 'Thanh toán: lỗi cổng thanh toán trên Tai nghe Bluetooth SoundCore Q30 tăng từ 3,1% lên 14,2% so với 28 ngày trước đó.';
+    assert.strictEqual(
+      butlerText.stripTitlePrefix(title, rawWhy),
+      'Tăng từ 3,1% lên 14,2% so với 28 ngày trước đó.'
+    );
+  });
+}
+
 (async () => {
   for (const t of asyncTests) {
     try {

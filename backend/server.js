@@ -166,6 +166,8 @@ async function startServer() {
     app.use('/api', auth.requireSession(authDb));
     if (String(process.env.AUTH_REQUIRED) === '0') console.log('Đăng nhập: TẮT kiểm phiên (AUTH_REQUIRED=0).');
     app.use('/api/live', require('./routes/live'));
+    let butler = { inbound: null };
+    app.use('/api/butler', require('./routes/butler')({ authDb, workspaces, getInbound: () => butler.inbound }));
     app.use('/api', require('./routes/api'));
 
     app.use((req, res) => {
@@ -208,6 +210,9 @@ async function startServer() {
       if (workspaces.real.databaseName !== workspaces.demo.databaseName) {
         require('./services/real_collector').startAutoCollect(workspaces.real);
       }
+      require('./services/butler').startButler({ authDb, workspaces })
+        .then((b) => { butler = b; })
+        .catch((e) => console.warn('[QUẢN GIA] Không bật được:', e.message));
     });
   } catch (e) {
     console.error('Không kết nối được MongoDB:', e.message);

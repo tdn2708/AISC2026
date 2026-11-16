@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, ChartColumnBig, Siren, MessagesSquare, ScanSearch, ShieldCheck, FlaskConical,
-  DatabaseZap, FileText, Settings, Palette, Radio, FolderKanban
+  DatabaseZap, FileText, Settings, Palette, Radio, FolderKanban, ConciergeBell
 } from 'lucide-react';
 
 /**
@@ -21,6 +21,7 @@ export const NAV = [
     hideLabel: true,
     items: [
       { to: '/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
+      { to: '/butler', label: 'Quản gia', icon: ConciergeBell },
       { to: '/feedbacks', label: 'Phản hồi', icon: MessagesSquare },
       { to: '/risk', label: 'Cảnh báo', icon: Siren, badge: 'alerts' },
       // Từ dữ liệu tới hành động: hồ sơ mở từ điểm đau phải tìm được ngay, không chỉ qua Ctrl+K
