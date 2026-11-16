@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CircleAlert } from 'lucide-react';
 import { GlassPanel, Button, Select, Switch, Modal, SELECTED } from '../ui';
 import { fmtRelative } from '../../lib/format';
@@ -248,6 +249,36 @@ const WatchPanel = ({
               value={String(settings.digestHour ?? 8)}
               onChange={(e) => onSaveSettings?.({ digestHour: Number(e.target.value) })}
             />
+          </div>
+        )}
+      </section>
+
+      {/* 5b. Báo về livestream */}
+      <section className="py-4">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs font-medium text-ink-mid">Báo về livestream</span>
+          <Switch
+            size="sm"
+            label="Báo về livestream"
+            checked={settings.live !== false}
+            onChange={(live) => onSaveSettings?.({ live })}
+          />
+        </div>
+        <p className="mt-1.5 text-xs leading-relaxed text-ink-lo">
+          Báo khi phiên bắt đầu, việc gấp trong phiên, báo cáo cuối phiên và nhắc lịch.
+        </p>
+        {status?.nextLive && (
+          <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2 text-xs">
+            <span className="text-ink-hi">
+              Phiên hẹn tới: <strong className="font-semibold">{status.nextLive.title}</strong>,{' '}
+              <span className="tabular-nums">{formatHm(status.nextLive.startAt)}</span>
+            </span>
+            <Link
+              to="/live"
+              className="inline-flex min-h-8 pointer-coarse:min-h-10 items-center font-medium text-accent-hi hover:underline"
+            >
+              Xem lịch
+            </Link>
           </div>
         )}
       </section>

@@ -20,17 +20,26 @@ const PLATFORM_DESC = {
   simulator: 'Phát lại nhịp một phiên megalive 11.11 để trình diễn'
 };
 
-const StartSession = ({ onStarted, onCancel }) => {
+const StartSession = ({ onStarted, onCancel, initial = null }) => {
   const [meta, setMeta] = useState(null);
-  const [platform, setPlatform] = useState(getWorkspace() === 'demo' ? 'simulator' : 'tiktok');
-  const [target, setTarget] = useState('');
-  const [title, setTitle] = useState('');
+  const [platform, setPlatform] = useState(
+    () => initial?.platform || (getWorkspace() === 'demo' ? 'simulator' : 'tiktok')
+  );
+  const [target, setTarget] = useState(() => initial?.target || '');
+  const [title, setTitle] = useState(() => initial?.title || '');
   const [catalogMode, setCatalogMode] = useState('sample');
   const [rows, setRows] = useState([]);
   const [policy, setPolicy] = useState({});
   const [speed, setSpeed] = useState('1');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!initial) return;
+    if (initial.platform) setPlatform(initial.platform);
+    if (initial.target !== undefined) setTarget(initial.target);
+    if (initial.title !== undefined) setTitle(initial.title);
+  }, [initial]);
 
   useEffect(() => {
     axios.get('/live/platforms').then((r) => {

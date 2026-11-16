@@ -45,4 +45,4 @@ async function liveBriefing(db, workspace) {
   return { facts, sessionId: target ? String(target._id) : null };
 }
 
-module.exports = { liveBriefing };
+module.exports = { liveBriefing, money, pct };

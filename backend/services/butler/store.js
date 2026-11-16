@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS = {
   quietTo: 7,
   digest: true,
   digestHour: 8,
+  live: true,
   muteUntil: null
 };
 
@@ -95,8 +96,8 @@ function badRequest(msg) {
   return Object.assign(new Error(msg), { status: 400 });
 }
 
-/** Kiểm tra và cập nhật cài đặt báo của người dùng */
-async function updateSettings(authDb, userId, patch = {}) {
+/** Kiểm tra dữ liệu cài đặt (hàm thuần) */
+function validateSettingsPatch(patch = {}) {
   if (!patch || typeof patch !== 'object') {
     throw badRequest('Dữ liệu cài đặt không hợp lệ.');
   }
@@ -133,6 +134,13 @@ async function updateSettings(authDb, userId, patch = {}) {
     updates['settings.digest'] = patch.digest;
   }
 
+  if ('live' in patch) {
+    if (typeof patch.live !== 'boolean') {
+      throw badRequest('Trường báo về livestream (live) phải là true hoặc false.');
+    }
+    updates['settings.live'] = patch.live;
+  }
+
   if ('muteUntil' in patch) {
     if (patch.muteUntil === null || patch.muteUntil === '') {
       updates['settings.muteUntil'] = null;
@@ -145,6 +153,13 @@ async function updateSettings(authDb, userId, patch = {}) {
       updates['settings.muteUntil'] = d;
     }
   }
+
+  return updates;
+}
+
+/** Kiểm tra và cập nhật cài đặt báo của người dùng */
+async function updateSettings(authDb, userId, patch = {}) {
+  const updates = validateSettingsPatch(patch);
 
   if (Object.keys(updates).length === 0) {
     return getLink(authDb, userId);
@@ -353,6 +368,7 @@ module.exports = {
   ensureButlerIndexes,
   getLink,
   findLinkByChat,
+  validateSettingsPatch,
   updateSettings,
   createLinkCode,
   consumeLinkCode,

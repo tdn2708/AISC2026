@@ -16,6 +16,7 @@ const { liveBriefing } = require('../live/brief');
 const { plain, severityWord, fromAlertSeverity, viDate, viTime, stripTitlePrefix } = require('./text');
 const { parseCommand } = require('./commands');
 const { SEV_RANK, collectIncidents, summarizeContext, buildDigest } = require('./incidents');
+const { buildScheduleListText } = require('./live_watch');
 const store = require('./store');
 
 const HELP_TEXT = [
@@ -26,6 +27,7 @@ const HELP_TEXT = [
   'bỏ qua 2 vì <lý do>: bỏ qua việc số 2',
   'tình hình: tóm tắt số liệu',
   'live: tình hình livestream',
+  'lịch: xem các phiên live đã hẹn',
   'thu thập: lấy đánh giá mới (kho Dữ liệu thật)',
   'im 2 giờ, bật báo: tạm im hoặc bật lại báo',
   'kho thật, kho mô phỏng: đổi kho quản gia canh (trên Zalo)',
@@ -371,14 +373,32 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
       }
 
       case 'status': {
+        const now = new Date();
         const ctx = await withTimeout(getContext(db), 20000, 'Tính số liệu');
         const colStat = ws === 'real' ? await realCollector.collectorStatus(db).catch(() => null) : null;
-        const open = await collectIncidents(db, ws, ctx, { collectorStatus: colStat });
+        const [open, todaySchedules] = await Promise.all([
+          collectIncidents(db, ws, ctx, { collectorStatus: colStat }),
+          db
+            .collection('live_schedule')
+            .find({
+              status: 'scheduled',
+              startAt: {
+                $gte: new Date(now.getTime() - 24 * 3600 * 1000),
+                $lte: new Date(now.getTime() + 24 * 3600 * 1000)
+              }
+            })
+            .sort({ startAt: 1 })
+            .limit(10)
+            .toArray()
+            .catch(() => [])
+        ]);
         const digest = buildDigest({
           workspaceLabel: wsLabel,
           ctxSummary: summarizeContext(ctx),
           incidents: open,
-          appUrl: baseAppUrl
+          todaySchedules,
+          appUrl: baseAppUrl,
+          now
         });
         return { text: digest, kind: 'status' };
       }
@@ -408,6 +428,21 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
         return {
           text: `Từ giờ quản gia canh và trả lời theo kho ${workspaceLabel(cmd.workspace)}.`,
           kind: 'settings'
+        };
+      }
+
+      case 'schedule': {
+        const now = new Date();
+        const rows = await db
+          .collection('live_schedule')
+          .find({ status: 'scheduled', startAt: { $gte: now } })
+          .sort({ startAt: 1 })
+          .limit(5)
+          .toArray()
+          .catch(() => []);
+        return {
+          text: buildScheduleListText(rows, { workspaceLabel: wsLabel, appUrl: baseAppUrl, now }),
+          kind: 'schedule'
         };
       }
 

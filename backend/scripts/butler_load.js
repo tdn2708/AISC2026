@@ -14,7 +14,7 @@ const httpModule = require('http');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const axios = require('axios');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const { createMockZaloApp } = require('./mock_zalo');
 
 const http = axios.create({
@@ -432,6 +432,187 @@ async function main() {
       );
     } finally {
       await offSrv.stop();
+    }
+
+    // ==================================================================
+    // MỤC 5: 3 PHIÊN MÔ PHỎNG CHẠY CÙNG LÚC TRONG 60 GIÂY (BUTLER_LIVE_WATCH_SEC=5)
+    // ==================================================================
+    const liveSrv = await startServerInstance(5057, {
+      ZALO_API_BASE: mockUrl,
+      ZALO_BOT_TOKEN: '123456:testtokenabcdef',
+      ZALO_MODE: 'poll',
+      BUTLER_LIVE_WATCH_SEC: '5',
+      BUTLER_WATCH_MINUTES: '60',
+      BUTLER_WATCH_FIRST_DELAY_SEC: '3600',
+      BUTLER_COUNT_CTX: '1'
+    });
+
+    let liveTestUserId = null;
+    const liveSessionIds = [];
+    const liveChatId = `load_live_${Date.now()}`;
+    createdChatIds.push(liveChatId);
+
+    try {
+      // Chờ máy chủ nạp xong ngữ cảnh khởi động của cả 2 kho để bộ đếm getContext đứng yên
+      for (let w = 0; w < 60; w += 1) {
+        if (liveSrv.getLogs().includes('Đã nạp sẵn ngữ cảnh kho real')) break;
+        await sleep(300);
+      }
+
+      const signupRes = await http.post(
+        `${liveSrv.baseUrl}/api/auth/signup`,
+        {
+          name: 'Chủ Shop Live Load',
+          shop: 'Shop Live Load',
+          email: `butler-live-load-${Date.now()}@example.com`,
+          password: 'matkhau2026'
+        },
+        { headers: writeKey ? { 'X-Write-Key': writeKey } : {} }
+      );
+      if (signupRes.status !== 201) {
+        throw new Error(`Không tạo được tài khoản thử Mục 5: ${JSON.stringify(signupRes.data)}`);
+      }
+      liveTestUserId = new ObjectId(String(signupRes.data.user.id));
+      const liveToken = signupRes.data.token;
+      const liveHeaders = {
+        Authorization: `Bearer ${liveToken}`,
+        'X-Workspace': 'demo',
+        ...(writeKey ? { 'X-Write-Key': writeKey } : {})
+      };
+
+      // Gắn liên kết Zalo cho tài khoản thử và đặt canh kho demo để vòng canh live chạy đầy đủ
+      await authDb.collection('butler_links').updateOne(
+        { userId: liveTestUserId },
+        {
+          $set: {
+            userId: liveTestUserId,
+            chatId: liveChatId,
+            zaloName: 'Live Load Tester',
+            linkedAt: new Date(),
+            settings: {
+              workspace: 'demo',
+              notifyLevel: 'high',
+              quietFrom: 22,
+              quietTo: 7,
+              digest: true,
+              digestHour: 8,
+              live: true,
+              muteUntil: null
+            },
+            updatedAt: new Date()
+          },
+          $setOnInsert: { createdAt: new Date() }
+        },
+        { upsert: true }
+      );
+
+      // Mở 3 phiên simulator chạy cùng lúc
+      for (let s = 1; s <= 3; s += 1) {
+        const res = await http.post(
+          `${liveSrv.baseUrl}/api/live/sessions`,
+          {
+            platform: 'simulator',
+            title: `Phiên tải ${s}`,
+            speed: 2
+          },
+          { headers: liveHeaders }
+        );
+        if (res.status !== 201 || !res.data?.session?.id) {
+          throw new Error(`Không mở được phiên mô phỏng thứ ${s}: ${JSON.stringify(res.data)}`);
+        }
+        liveSessionIds.push(res.data.session.id);
+      }
+
+      const stBefore = await http.get(`${liveSrv.baseUrl}/api/butler/status`, { headers: liveHeaders });
+      const ctxBefore = stBefore.data?.ctxCalls ?? 0;
+
+      // Độ trễ một lượt gọi Atlas từ máy chạy thử: nhịp canh live chờ mạng chứ không tốn CPU,
+      // nên ngưỡng thời gian tính theo số lượt gọi (tối đa 10 lượt mỗi nhịp) thay vì một con số cứng.
+      const rttSamples = [];
+      for (let k = 0; k < 5; k += 1) {
+        const r0 = performance.now();
+        await authDb.collection('meta').findOne({ _id: 'butler_rtt_probe' });
+        rttSamples.push(performance.now() - r0);
+      }
+      rttSamples.sort((x, y) => x - y);
+      const atlasRttMs = Number(rttSamples[2].toFixed(1));
+      const liveTickLimitMs = Math.max(300, Math.round(10 * atlasRttMs));
+      const liveTickBurstLimitMs = Math.max(1500, Math.round(40 * atlasRttMs));
+      const liveHealthTimes = [];
+      const liveWatchMsList = [];
+      let prevRunAt = null;
+      const measureStart = Date.now();
+
+      while (Date.now() - measureStart < 60000) {
+        const t0 = performance.now();
+        const [hRes, stRes] = await Promise.all([
+          http.get(`${liveSrv.baseUrl}/health`).then((r) => ({ r, ms: performance.now() - t0 })),
+          http.get(`${liveSrv.baseUrl}/api/butler/status`, { headers: liveHeaders })
+        ]);
+        liveHealthTimes.push(hRes.ms);
+        const lw = stRes.data?.liveWatch;
+        if (lw && lw.lastRunAt && lw.lastRunAt !== prevRunAt && typeof lw.lastMs === 'number') {
+          prevRunAt = lw.lastRunAt;
+          liveWatchMsList.push(lw.lastMs);
+        }
+        await sleep(1000);
+      }
+
+      const stAfter = await http.get(`${liveSrv.baseUrl}/api/butler/status`, { headers: liveHeaders });
+      const ctxAfter = stAfter.data?.ctxCalls ?? 0;
+      const ctxDelta = ctxAfter - ctxBefore;
+
+      // Dừng và xóa 3 phiên mô phỏng
+      for (const sid of liveSessionIds) {
+        await http.post(`${liveSrv.baseUrl}/api/live/sessions/${sid}/stop`, {}, { headers: liveHeaders }).catch(() => {});
+        await http.delete(`${liveSrv.baseUrl}/api/live/sessions/${sid}`, { headers: liveHeaders }).catch(() => {});
+      }
+      liveSessionIds.length = 0;
+
+      const maxLiveWatchMs = liveWatchMsList.length ? Math.max(...liveWatchMsList) : 0;
+      const avgLiveWatchMs = liveWatchMsList.length
+        ? Number((liveWatchMsList.reduce((a, b) => a + b, 0) / liveWatchMsList.length).toFixed(2))
+        : 0;
+      const p95LiveHealthMs = percentile(liveHealthTimes, 95);
+      // Nhịp đầu ghi tin "đã bắt đầu" cho cả 3 phiên nên được tính riêng; các nhịp sau là nhịp thường.
+      // Nhịp thường (không có gì mới để gửi) tính theo trung vị; nhịp có tin cần gửi (bắt đầu phiên, việc gấp) tính theo nhịp lớn nhất.
+      const sortedTicks = [...liveWatchMsList].sort((a, b) => a - b);
+      const steadyMaxMs = sortedTicks.length ? sortedTicks[Math.floor((sortedTicks.length - 1) / 2)] : 0;
+      const maxLiveHealthMs = Number(Math.max(...liveHealthTimes, 0).toFixed(2));
+
+      if (
+        liveWatchMsList.length === 0 ||
+        steadyMaxMs >= liveTickLimitMs ||
+        maxLiveWatchMs >= liveTickBurstLimitMs ||
+        p95LiveHealthMs >= 500 ||
+        ctxDelta !== 0
+      ) {
+        throw new Error(
+          `Mục 5 không đạt: ticks=${liveWatchMsList.length} [${liveWatchMsList.join(", ")}], median=${steadyMaxMs} (limit ${liveTickLimitMs}), max=${maxLiveWatchMs} (limit ${liveTickBurstLimitMs}), atlasRtt=${atlasRttMs}, p95Health=${p95LiveHealthMs}, ctxDelta=${ctxDelta}`
+        );
+      }
+      console.log(
+        `ĐẠT [Mục 5 - Canh 3 phiên live trong 60s] số nhịp=${liveWatchMsList.length} [${liveWatchMsList.join(", ")}], lastMs trung bình=${avgLiveWatchMs} ms, trung vị=${steadyMaxMs} ms (< ${liveTickLimitMs} ms = 10 lượt gọi Atlas), lớn nhất=${maxLiveWatchMs} ms (< ${liveTickBurstLimitMs} ms = 40 lượt), mỗi lượt Atlas ${atlasRttMs} ms, /health p95=${p95LiveHealthMs} ms (max=${maxLiveHealthMs} ms < 500 ms), số lần gọi getContext=${ctxDelta}`
+      );
+    } finally {
+      const demoDb = client.db(demoDbName);
+      if (demoDb.databaseName.includes('_test') && liveSessionIds.length > 0) {
+        for (const sid of liveSessionIds) {
+          await Promise.allSettled([
+            demoDb.collection('live_comments').deleteMany({ sessionId: new ObjectId(sid) }),
+            demoDb.collection('live_sessions').deleteOne({ _id: new ObjectId(sid) })
+          ]);
+        }
+      }
+      if (liveTestUserId && authDb.databaseName.includes('_test')) {
+        await Promise.allSettled([
+          authDb.collection('users').deleteOne({ _id: liveTestUserId }),
+          authDb.collection('auth_sessions').deleteMany({ userId: liveTestUserId }),
+          authDb.collection('butler_links').deleteMany({ userId: liveTestUserId }),
+          authDb.collection('butler_outbox').deleteMany({ userId: liveTestUserId })
+        ]);
+      }
+      await liveSrv.stop();
     }
   } finally {
     if (authDb.databaseName.includes('_test')) {

@@ -181,6 +181,7 @@ router.post('/sessions', wrap(async (req, res) => {
   const { insertedId } = await req.db.collection('live_sessions').insertOne(session);
   session._id = insertedId;
   const r = await hub.startSession(req.db, req.workspace, session);
+  require('./live_schedule').linkSession(req.db, session).catch(() => {});
   res.status(201).json({ session: hub.publicSession(session, r) });
 }));
 

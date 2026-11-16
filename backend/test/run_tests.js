@@ -3105,6 +3105,299 @@ testAsync('Tài khoản: băm mật khẩu scrypt có muối riêng, đúng thì
       'Tăng từ 3,1% lên 14,2% so với 28 ngày trước đó.'
     );
   });
+
+  test('Quản gia (14.6.1): validateSchedulePayload kiểm đúng tên, nền tảng, __proto__, simulator kho thật, khoảng ngày, thời lượng, nhắc trước', () => {
+    const { validateSchedulePayload } = require('../routes/live_schedule');
+    const now = new Date('2026-11-16T12:00:00Z');
+    const validStart = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+
+    const badCases = [
+      [{ title: '   ', platform: 'tiktok', target: '@shop', startAt: validStart }, 'real', 'thiếu tên'],
+      [{ title: 'Live tối', platform: 'unknown_plat', target: '@shop', startAt: validStart }, 'real', 'nền tảng lạ'],
+      [{ title: 'Live tối', platform: '__proto__', target: '@shop', startAt: validStart }, 'real', '__proto__ làm nền tảng'],
+      [{ title: 'Live tối', platform: 'toString', target: '@shop', startAt: validStart }, 'real', 'toString làm nền tảng'],
+      [{ title: 'Live thử', platform: 'simulator', startAt: validStart }, 'real', 'simulator ở kho real'],
+      [{ title: 'Live tối', platform: 'tiktok', target: '', startAt: validStart }, 'real', 'tiktok thiếu target'],
+      [{ title: 'Live tối', platform: 'tiktok', target: '@shop', startAt: new Date(now.getTime() + 91 * 86400000).toISOString() }, 'real', 'startAt quá 90 ngày'],
+      [{ title: 'Live tối', platform: 'tiktok', target: '@shop', startAt: new Date(now.getTime() - 10 * 60000).toISOString() }, 'real', 'startAt quá khứ hơn 5 phút'],
+      [{ title: 'Live tối', platform: 'tiktok', target: '@shop', startAt: validStart, durationMin: 5 }, 'real', 'durationMin: 5'],
+      [{ title: 'Live tối', platform: 'tiktok', target: '@shop', startAt: validStart, remindBeforeMin: 45 }, 'real', 'remindBeforeMin: 45']
+    ];
+
+    for (const [payload, ws, label] of badCases) {
+      let threw = false;
+      try {
+        validateSchedulePayload(payload, { workspace: ws, now });
+      } catch (e) {
+        threw = true;
+        assert.strictEqual(e.status, 400, `${label} phải có status 400`);
+      }
+      assert.ok(threw, `${label} phải bị từ chối`);
+    }
+
+    const okReal = validateSchedulePayload(
+      {
+        title: '  Sale cuối tháng  ',
+        platform: 'tiktok',
+        target: ' @shop_chinh_hang ',
+        startAt: validStart,
+        durationMin: 120,
+        remindBeforeMin: 30,
+        note: ' Chuẩn bị mã giảm giá '
+      },
+      { workspace: 'real', now }
+    );
+    assert.strictEqual(okReal.title, 'Sale cuối tháng');
+    assert.strictEqual(okReal.platform, 'tiktok');
+    assert.strictEqual(okReal.target, '@shop_chinh_hang');
+    assert.strictEqual(okReal.durationMin, 120);
+    assert.strictEqual(okReal.remindBeforeMin, 30);
+    assert.strictEqual(okReal.note, 'Chuẩn bị mã giảm giá');
+
+    const okSim = validateSchedulePayload(
+      { title: 'Thử megalive', platform: 'simulator', startAt: validStart, remindBeforeMin: 0 },
+      { workspace: 'demo', now }
+    );
+    assert.strictEqual(okSim.platform, 'simulator');
+    assert.strictEqual(okSim.remindBeforeMin, 0);
+  });
+
+  test('Quản gia (14.6.2 & 14.6.3): dueReminders và lateSchedules kiểm đúng mốc giờ nhắc trước và quá giờ', () => {
+    const liveWatch = require('../services/butler/live_watch');
+    const s2000 = {
+      _id: 'sched_1',
+      title: 'Sale cuối tháng',
+      platform: 'tiktok',
+      target: '@tenshop',
+      startAt: new Date('2026-11-16T13:00:00Z'), // 20:00 giờ Việt Nam
+      remindBeforeMin: 30,
+      status: 'scheduled',
+      sessionId: null
+    };
+    const sNoRemind = {
+      ...s2000,
+      _id: 'sched_2',
+      remindBeforeMin: 0
+    };
+
+    assert.strictEqual(liveWatch.dueReminders([s2000], new Date('2026-11-16T12:29:00Z')).length, 0, '19:29 chưa nhắc');
+    assert.strictEqual(liveWatch.dueReminders([s2000], new Date('2026-11-16T12:30:00Z')).length, 1, '19:30 nhắc');
+    assert.strictEqual(liveWatch.dueReminders([s2000], new Date('2026-11-16T12:59:00Z')).length, 1, '19:59 nhắc');
+    assert.strictEqual(liveWatch.dueReminders([s2000], new Date('2026-11-16T13:00:00Z')).length, 0, '20:00 không nhắc');
+    assert.strictEqual(liveWatch.dueReminders([sNoRemind], new Date('2026-11-16T12:45:00Z')).length, 0, 'remindBeforeMin: 0 không bao giờ nhắc');
+
+    // lateSchedules: quá 10 phút (20:10), chưa có phiên thì có
+    assert.strictEqual(liveWatch.lateSchedules([s2000], [], new Date('2026-11-16T13:10:00Z')).length, 1, '20:10 chưa có phiên thì nhắc trễ');
+    // có phiên tạo lúc 19:55 (12:55 UTC) thì không
+    assert.strictEqual(
+      liveWatch.lateSchedules([s2000], [{ createdAt: new Date('2026-11-16T12:55:00Z') }], new Date('2026-11-16T13:15:00Z')).length,
+      0,
+      'có phiên mở lúc 19:55 thì không nhắc trễ'
+    );
+    // quá 30 phút (20:30) thì không
+    assert.strictEqual(liveWatch.lateSchedules([s2000], [], new Date('2026-11-16T13:30:00Z')).length, 0, 'quá 30 phút không nhắc trễ');
+  });
+
+  test('Quản gia (14.6.4 & 14.6.5): _id sự cố live khớp vòng canh 5 phút và shouldNotify hỗ trợ ignoreQuiet', () => {
+    const liveWatch = require('../services/butler/live_watch');
+    const ws = 'demo';
+    const sessionId = '6738a1b2c3d4e5f601234567';
+    const fakeAction = { id: 'soldout_demand:sp-1', severity: 'high', title: 'Hết hàng Nồi chiên' };
+
+    // Vòng canh 5 phút: buildInboxItems tạo id = `live|${s._id}|${a.id}`, collectIncidents tạo key = `inbox|${item.id}`, watcher tạo _id = `${ws}|${item.key}`
+    const inboxItemId = `live|${sessionId}|${fakeAction.id}`;
+    const watcherIncidentKey = `inbox|${inboxItemId}`;
+    const watcherDocId = `${ws}|${watcherIncidentKey}`;
+
+    const liveWatchDocId = liveWatch.liveIncidentId(ws, sessionId, fakeAction.id);
+    assert.strictEqual(liveWatchDocId, watcherDocId, '_id sự cố của vòng canh live phải trùng khít với vòng canh 5 phút');
+
+    // Lúc 23:00 giờ Việt Nam (16:00 UTC), việc mức high
+    const night23VN = new Date('2026-11-16T16:00:00Z');
+    const link = {
+      userId: 'u1',
+      chatId: 'c1',
+      settings: { notifyLevel: 'high', quietFrom: 22, quietTo: 7, muteUntil: null }
+    };
+    const highInc = { _id: liveWatchDocId, severity: 'high', notified: [] };
+
+    assert.strictEqual(incidents.shouldNotify(highInc, link, night23VN), false, 'không có ignoreQuiet thì giờ yên lặng chặn mức high');
+    assert.strictEqual(incidents.shouldNotify(highInc, link, night23VN, { ignoreQuiet: true }), true, 'có ignoreQuiet: true thì báo ngay lúc 23:00');
+  });
+
+  test('Quản gia (14.6.6): buildLiveReportText định dạng đúng mẫu, bỏ dòng thiếu doanh thu và không chứa ký tự cấm', () => {
+    const liveWatch = require('../services/butler/live_watch');
+    const session = {
+      _id: '6738a1b2c3d4e5f601234567',
+      title: 'Megalive 11.11',
+      platform: 'tiktok'
+    };
+    const fullReport = {
+      totals: {
+        comments: 3412,
+        byIntent: { order: 286, complaint: 17 },
+        orderQuantity: 412
+      },
+      revenue: {
+        estimated: 48200000,
+        lostTotal: 6200000
+      },
+      response: {
+        answeredShare: 0.82
+      },
+      complaints: {
+        total: 17,
+        pushed: 0
+      },
+      products: [
+        { id: 'p1', name: 'Tai nghe SoundCore Q30', quantity: 96 },
+        { id: 'p2', name: 'Nồi chiên 5.5L', quantity: 40 }
+      ]
+    };
+
+    const text = liveWatch.buildLiveReportText(session, fullReport, {
+      appUrl: 'https://aisc-2026.vercel.app',
+      durationMs: 135 * 60000
+    });
+    const expected = [
+      'Phiên "Megalive 11.11" đã kết thúc sau 2 giờ 15 phút.',
+      'Bình luận: 3.412. Lượt chốt: 286 (412 sản phẩm).',
+      'Doanh thu ước tính: 48,2 triệu đồng. Lỡ vì hết hàng: 6,2 triệu đồng.',
+      'Khách hỏi được trả lời: 82%. Khiếu nại: 17, đã đưa vào hệ thống 0.',
+      'Chốt nhiều nhất: Tai nghe SoundCore Q30 (96 sản phẩm).',
+      'Báo cáo đầy đủ: https://aisc-2026.vercel.app/live?session=6738a1b2c3d4e5f601234567'
+    ].join('\n');
+    assert.strictEqual(text, expected);
+
+    const noRevReport = {
+      ...fullReport,
+      revenue: { estimated: null, lostTotal: null }
+    };
+    const textNoRev = liveWatch.buildLiveReportText(session, noRevReport, {
+      appUrl: 'https://aisc-2026.vercel.app',
+      durationMs: null
+    });
+    assert.ok(textNoRev.startsWith('Phiên "Megalive 11.11" đã kết thúc.\n'));
+    assert.ok(!textNoRev.includes('Doanh thu ước tính'));
+    assert.ok(!/undefined|NaN|chưa rõ|·|→/.test(textNoRev));
+  });
+
+  testAsync('Quản gia (14.6.8 & 14.6.9): updateSettings kiểm kiểu live boolean và outbox giới hạn 20 tin live/giờ nhưng không chặn alert', async () => {
+    const store = require('../services/butler/store');
+    const outbox = require('../services/butler/outbox');
+    const { ObjectId } = require('mongodb');
+
+    let badErr = null;
+    try {
+      store.validateSettingsPatch({ live: 'yes' });
+    } catch (e) {
+      badErr = e;
+    }
+    assert.ok(badErr && badErr.status === 400, 'live: "yes" phải trả lỗi 400');
+
+    const okPatch = store.validateSettingsPatch({ live: false });
+    assert.strictEqual(okPatch['settings.live'], false);
+
+    // Giả lập authDb trong bộ nhớ cho outbox.enqueue
+    const prevToken = process.env.ZALO_BOT_TOKEN;
+    process.env.ZALO_BOT_TOKEN = '123456:testtokenabcdef';
+    try {
+      const docs = [];
+      const fakeAuthDb = {
+        collection: (name) => {
+          if (name !== 'butler_outbox') throw new Error('unexpected collection ' + name);
+          return {
+            countDocuments: async (filter) =>
+              docs.filter(
+                (d) =>
+                  String(d.userId) === String(filter.userId) &&
+                  d.kind === filter.kind &&
+                  filter.status.$in.includes(d.status) &&
+                  d.createdAt >= filter.createdAt.$gte
+              ).length,
+            insertOne: async (doc) => {
+              if (docs.some((d) => d.dedupKey === doc.dedupKey)) {
+                const dup = new Error('duplicate');
+                dup.code = 11000;
+                throw dup;
+              }
+              const _id = new ObjectId();
+              docs.push({ ...doc, _id });
+              return { insertedId: _id };
+            },
+            updateMany: async () => ({}),
+            findOneAndUpdate: async () => null
+          };
+        }
+      };
+
+      const uid = new ObjectId();
+      for (let i = 1; i <= 20; i += 1) {
+        const r = await outbox.enqueue(fakeAuthDb, {
+          dedupKey: `live_test_${i}`,
+          userId: uid,
+          chatId: 'chat_1',
+          kind: 'live',
+          text: `Tin live ${i}`
+        });
+        assert.strictEqual(r.status, 'queued');
+      }
+
+      // Tin live thứ 21 trong 1 giờ bị skipped
+      const r21 = await outbox.enqueue(fakeAuthDb, {
+        dedupKey: 'live_test_21',
+        userId: uid,
+        chatId: 'chat_1',
+        kind: 'live',
+        text: 'Tin live 21'
+      });
+      assert.strictEqual(r21.status, 'skipped');
+      assert.strictEqual(docs[20].lastError, 'Quá 20 tin live trong một giờ');
+
+      // Tin kind: 'alert' không bị ảnh hưởng bởi giới hạn của live
+      const rAlert = await outbox.enqueue(fakeAuthDb, {
+        dedupKey: 'alert_test_1',
+        userId: uid,
+        chatId: 'chat_1',
+        kind: 'alert',
+        text: 'Tin cảnh báo 1'
+      });
+      assert.strictEqual(rAlert.status, 'queued');
+    } finally {
+      if (prevToken === undefined) delete process.env.ZALO_BOT_TOKEN;
+      else process.env.ZALO_BOT_TOKEN = prevToken;
+    }
+  });
+
+  test('Quản gia (14.6.7): parseCommand phân biệt lệnh lịch và live; buildDigest thêm lịch live hôm nay', () => {
+    const commands = require('../services/butler/commands');
+    assert.deepStrictEqual(commands.parseCommand('lịch'), { type: 'schedule' });
+    assert.deepStrictEqual(commands.parseCommand('lich'), { type: 'schedule' });
+    assert.deepStrictEqual(commands.parseCommand('Lịch live'), { type: 'schedule' });
+    assert.deepStrictEqual(commands.parseCommand('lịch livestream.'), { type: 'schedule' });
+    assert.deepStrictEqual(commands.parseCommand('live'), { type: 'live' });
+    assert.deepStrictEqual(commands.parseCommand('livestream'), { type: 'live' });
+
+    const now = new Date('2026-11-16T01:00:00Z'); // 08:00 ngày 16/11 giờ Việt Nam
+    const digest = incidents.buildDigest({
+      workspaceLabel: 'Dữ liệu thật',
+      ctxSummary: { counted: 1200, health: 88 },
+      incidents: [],
+      todaySchedules: [
+        {
+          title: 'Sale cuối tháng',
+          platform: 'tiktok',
+          startAt: new Date('2026-11-16T13:00:00Z'), // 20:00 ngày 16/11 giờ Việt Nam
+          status: 'scheduled'
+        }
+      ],
+      now
+    });
+    assert.ok(
+      digest.includes('Lịch live hôm nay: 20:00 "Sale cuối tháng" trên TikTok.'),
+      'bản tin sáng phải có dòng Lịch live hôm nay'
+    );
+  });
 }
 
 (async () => {

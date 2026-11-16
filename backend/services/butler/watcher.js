@@ -96,6 +96,7 @@ async function runTickInner({ authDb, workspaces, now = new Date() }) {
 
     const openByWs = {};
     const summaryByWs = {};
+    const schedulesByWs = {};
     const incCol = authDb.collection('butler_incidents');
 
     for (const ws of neededWorkspaces) {
@@ -105,7 +106,23 @@ async function runTickInner({ authDb, workspaces, now = new Date() }) {
         const ctx = await withTimeout(getContext(db), 60000, `Nạp ngữ cảnh kho ${ws}`);
         summaryByWs[ws] = summarizeContext(ctx);
         const colStat = ws === 'real' ? await collectorStatus(db).catch(() => null) : null;
-        const list = await collectIncidents(db, ws, ctx, { collectorStatus: colStat });
+        const [list, todayScheds] = await Promise.all([
+          collectIncidents(db, ws, ctx, { collectorStatus: colStat }),
+          db
+            .collection('live_schedule')
+            .find({
+              status: 'scheduled',
+              startAt: {
+                $gte: new Date(now.getTime() - 24 * 3600 * 1000),
+                $lte: new Date(now.getTime() + 24 * 3600 * 1000)
+              }
+            })
+            .sort({ startAt: 1 })
+            .limit(10)
+            .toArray()
+            .catch(() => [])
+        ]);
+        schedulesByWs[ws] = todayScheds;
 
         if (list.length > 0) {
           const ops = list.map((item) => ({
@@ -264,6 +281,7 @@ async function runTickInner({ authDb, workspaces, now = new Date() }) {
           workspaceLabel: wsLabel,
           ctxSummary: summaryByWs[ws] || {},
           incidents: open,
+          todaySchedules: schedulesByWs[ws] || [],
           appUrl: baseAppUrl,
           now
         });

@@ -119,6 +119,11 @@ function parseCommand(text, now = new Date()) {
     return { type: 'workspace', workspace: 'demo' };
   }
 
+  // 13a. Lịch livestream đã hẹn
+  if (/^(?:lich|lich live|lich livestream)$/.test(f)) {
+    return { type: 'schedule' };
+  }
+
   // 13. Tình hình livestream
   if (/^(?:live|phien live|livestream|tinh hinh live|tinh hinh livestream)$/.test(f)) {
     return { type: 'live' };

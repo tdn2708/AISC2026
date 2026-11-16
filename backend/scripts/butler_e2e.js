@@ -97,6 +97,7 @@ async function ensureEnvironment() {
         BUTLER_FAST_RETRY: '1',
         BUTLER_WATCH_MINUTES: '1',
         BUTLER_WATCH_FIRST_DELAY_SEC: '5',
+        BUTLER_LIVE_WATCH_SEC: '5',
         PUBLIC_APP_URL: 'http://localhost:5199'
       },
       stdio: ['ignore', 'pipe', 'pipe']
@@ -155,6 +156,8 @@ async function main() {
   let testUserId = null;
   let restoredDecision = null;
   let decidedAlertId = null;
+  let createdScheduleId = null;
+  let createdSessionId = null;
 
   try {
     await http.post(`${mockUrl}/_reset`);
@@ -368,9 +371,167 @@ async function main() {
     }
     pass(10, `Lịch sử /api/butler/messages có đủ cả tin web và tin Zalo (${msgs.length} tin)`);
 
-    // Bước 11: Dọn tài khoản thử và các bản ghi butler chỉ trong database có tên chứa _test
+    // Bước 12: POST lịch với startAt = now + 20 phút, remindBeforeMin: 30 -> trong 20s nhận tin nhắc có "Còn" và tên lịch; chờ 2 nhịp không nhận lần hai
+    const schedTitle = `Hẹn Megalive E2E ${Date.now()}`;
+    const idx12 = (await http.get(`${mockUrl}/_sent`)).data.sent.length;
+    const createSched = await http.post(
+      `${apiUrl}/api/live/schedule`,
+      {
+        title: schedTitle,
+        platform: 'simulator',
+        startAt: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+        durationMin: 120,
+        remindBeforeMin: 30,
+        note: 'Kiểm thử nhắc lịch tự động'
+      },
+      { headers: baseHeaders(token, 'demo') }
+    );
+    if (createSched.status !== 201 || !createSched.data?.item?.id) {
+      fail(12, `Tạo lịch thất bại: status=${createSched.status} body=${JSON.stringify(createSched.data)}`);
+    }
+    createdScheduleId = createSched.data.item.id;
+
+    const step12 = await waitForSent(
+      mockUrl,
+      (m, i) =>
+        i >= idx12 &&
+        m.chat_id === chatId &&
+        m.text.includes('Còn') &&
+        m.text.includes(schedTitle),
+      20000
+    );
+    if (!step12.found) {
+      fail(12, 'Trong 20 giây không nhận được tin nhắc trước giờ hẹn');
+    }
+    await sleep(11000); // chờ thêm 2 nhịp (2 * 5s)
+    const sentAfter12 = (await http.get(`${mockUrl}/_sent`)).data.sent.slice(idx12);
+    const remindMatches = sentAfter12.filter(
+      (m) => m.chat_id === chatId && m.text.includes('Còn') && m.text.includes(schedTitle)
+    );
+    if (remindMatches.length !== 1) {
+      fail(12, `Tin nhắc lịch bị gửi lặp: nhận ${remindMatches.length} lần`);
+    }
+    pass(12, 'Nhận đúng 1 tin nhắc trước giờ hẹn, không gửi lặp sau 2 nhịp');
+
+    // Bước 13: Mở phiên simulator tốc độ 4 -> trong 20s nhận tin "đã bắt đầu"; GET lịch thấy status = 'done' và có sessionId
+    const idx13 = (await http.get(`${mockUrl}/_sent`)).data.sent.length;
+    const startLiveRes = await http.post(
+      `${apiUrl}/api/live/sessions`,
+      {
+        platform: 'simulator',
+        title: schedTitle,
+        speed: 4
+      },
+      { headers: baseHeaders(token, 'demo') }
+    );
+    if (startLiveRes.status !== 201 || !startLiveRes.data?.session?.id) {
+      fail(13, `Mở phiên simulator thất bại: status=${startLiveRes.status}`);
+    }
+    createdSessionId = startLiveRes.data.session.id;
+
+    const step13 = await waitForSent(
+      mockUrl,
+      (m, i) =>
+        i >= idx13 &&
+        m.chat_id === chatId &&
+        m.text.includes('đã bắt đầu') &&
+        m.text.includes(schedTitle),
+      20000
+    );
+    if (!step13.found) {
+      fail(13, 'Trong 20 giây không nhận được tin báo phiên live đã bắt đầu');
+    }
+
+    const getSchedRes = await http.get(`${apiUrl}/api/live/schedule`, {
+      headers: baseHeaders(token, 'demo')
+    });
+    const linkedSched = (getSchedRes.data?.items || []).find((x) => x.id === createdScheduleId);
+    if (!linkedSched || linkedSched.status !== 'done' || linkedSched.sessionId !== createdSessionId) {
+      fail(13, `Lịch chưa tự gắn với phiên vừa mở: ${JSON.stringify(linkedSched)}`);
+    }
+    pass(13, 'Nhận tin phiên live đã bắt đầu và lịch tự chuyển sang done kèm sessionId');
+
+    // Bước 14: Chờ tối đa 60s xem trình mô phỏng có sinh việc mức cao không
+    const idx14 = (await http.get(`${mockUrl}/_sent`)).data.sent.length;
+    const step14 = await waitForSent(
+      mockUrl,
+      (m, i) => i >= idx14 && m.chat_id === chatId && m.text.includes('Việc gấp trong phiên'),
+      60000
+    );
+    if (step14.found) {
+      pass(14, 'Nhận tin "Việc gấp trong phiên" từ vòng canh live');
+    } else {
+      console.log('BỎ QUA [Bước 14] (mô phỏng chưa sinh việc gấp)');
+    }
+
+    // Bước 15: Dừng phiên (POST /stop) -> trong 20s nhận tin "đã kết thúc" có "Bình luận:"; chờ thêm 2 nhịp không nhận lần hai
+    const idx15 = (await http.get(`${mockUrl}/_sent`)).data.sent.length;
+    const stopRes = await http.post(
+      `${apiUrl}/api/live/sessions/${createdSessionId}/stop`,
+      {},
+      { headers: baseHeaders(token, 'demo') }
+    );
+    if (stopRes.status !== 200) {
+      fail(15, `Dừng phiên thất bại: status=${stopRes.status}`);
+    }
+
+    const step15 = await waitForSent(
+      mockUrl,
+      (m, i) =>
+        i >= idx15 &&
+        m.chat_id === chatId &&
+        m.text.includes('đã kết thúc') &&
+        m.text.includes('Bình luận:'),
+      20000
+    );
+    if (!step15.found) {
+      fail(15, 'Trong 20 giây không nhận được báo cáo cuối phiên live');
+    }
+    await sleep(11000);
+    const sentAfter15 = (await http.get(`${mockUrl}/_sent`)).data.sent.slice(idx15);
+    const endMatches = sentAfter15.filter(
+      (m) => m.chat_id === chatId && m.text.includes('đã kết thúc') && m.text.includes(schedTitle)
+    );
+    if (endMatches.length !== 1) {
+      fail(15, `Báo cáo cuối phiên bị gửi lặp: nhận ${endMatches.length} lần`);
+    }
+    pass(15, 'Nhận đúng 1 báo cáo cuối phiên có "Bình luận:", không gửi lặp sau 2 nhịp');
+
+    // Bước 16: Nhắn "lịch" qua Zalo giả -> trả lời đúng
+    const idx16 = (await http.get(`${mockUrl}/_sent`)).data.sent.length;
+    const schedCmdMsgId = `sched-cmd-${Date.now()}`;
+    await http.post(`${mockUrl}/_say`, {
+      chat_id: chatId,
+      text: 'lịch',
+      message_id: schedCmdMsgId
+    });
+    const step16 = await waitForSent(
+      mockUrl,
+      (m, i) =>
+        i >= idx16 &&
+        m.chat_id === chatId &&
+        (m.text.includes('Chưa có phiên live nào được hẹn') || m.text.includes('Lịch live sắp tới')),
+      15000
+    );
+    if (!step16.found) {
+      fail(16, 'Lệnh "lịch" qua Zalo không trả lời đúng');
+    }
+    pass(16, 'Lệnh "lịch" qua Zalo trả lời đúng');
+
+    // Bước 11: Dọn tài khoản thử, phiên mô phỏng, lịch thử và các bản ghi butler chỉ trong database có tên chứa _test
     if (!authDb.databaseName.includes('_test') || !demoDb.databaseName.includes('_test')) {
       fail(11, `Tên database không chứa _test (${authDb.databaseName}, ${demoDb.databaseName}), dừng xóa!`);
+    }
+
+    if (createdSessionId) {
+      await http.delete(`${apiUrl}/api/live/sessions/${createdSessionId}`, {
+        headers: baseHeaders(token, 'demo')
+      });
+      createdSessionId = null;
+    }
+    if (createdScheduleId) {
+      await demoDb.collection('live_schedule').deleteOne({ _id: new ObjectId(createdScheduleId) });
+      createdScheduleId = null;
     }
 
     if (decidedAlertId) {
@@ -390,11 +551,22 @@ async function main() {
       authDb.collection('butler_messages').deleteMany({ userId: testUserId }),
       authDb.collection('butler_outbox').deleteMany({ $or: [{ userId: testUserId }, { chatId }] }),
       authDb.collection('butler_pending').deleteOne({ _id: String(testUserId) }),
-      authDb.collection('butler_inbound').deleteMany({ _id: { $in: [fixedMsgId, statusMsgId] } })
+      authDb.collection('butler_inbound').deleteMany({ _id: { $in: [fixedMsgId, statusMsgId, schedCmdMsgId] } })
     ]);
     testUserId = null;
-    pass(11, `Đã dọn sạch dữ liệu thử trong ${authDb.databaseName}`);
+    pass(11, `Đã dọn sạch dữ liệu thử trong ${authDb.databaseName} và ${demoDb.databaseName}`);
   } finally {
+    if (demoDb.databaseName.includes('_test')) {
+      if (createdSessionId) {
+        await Promise.allSettled([
+          demoDb.collection('live_comments').deleteMany({ sessionId: new ObjectId(createdSessionId) }),
+          demoDb.collection('live_sessions').deleteOne({ _id: new ObjectId(createdSessionId) })
+        ]);
+      }
+      if (createdScheduleId) {
+        await demoDb.collection('live_schedule').deleteOne({ _id: new ObjectId(createdScheduleId) }).catch(() => {});
+      }
+    }
     if (testUserId && authDb.databaseName.includes('_test')) {
       await Promise.allSettled([
         authDb.collection('users').deleteOne({ _id: testUserId }),

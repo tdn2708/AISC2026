@@ -70,6 +70,18 @@ async function enqueue(authDb, { dedupKey, userId, chatId, kind = 'reply', text 
       status = 'skipped';
       lastError = 'Quá 10 tin trong một giờ, gộp vào bản tin sáng';
     }
+  } else if (kind === 'live' && uid) {
+    const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const count1h = await authDb.collection('butler_outbox').countDocuments({
+      userId: uid,
+      kind: 'live',
+      status: { $in: ['queued', 'sending', 'sent'] },
+      createdAt: { $gte: hourAgo }
+    });
+    if (count1h >= 20) {
+      status = 'skipped';
+      lastError = 'Quá 20 tin live trong một giờ';
+    }
   }
 
   const doc = {

@@ -166,6 +166,32 @@ function viTime(date = new Date()) {
   return vnParts(d).hm;
 }
 
+/**
+ * Giờ hiển thị theo giờ Việt Nam: trả "20:00" nếu cùng ngày với `now`,
+ * "20:00 ngày 18/11" nếu khác ngày.
+ */
+function vnTime(date, now = new Date()) {
+  if (!date) return '—';
+  const d = date instanceof Date ? date : new Date(date);
+  const n = now instanceof Date ? now : new Date(now);
+  if (Number.isNaN(d.getTime()) || Number.isNaN(n.getTime())) return '—';
+  const p = vnParts(d);
+  const np = vnParts(n);
+  if (p.ymd === np.ymd) return p.hm;
+  return `${p.hm} ngày ${p.day}/${p.month}`;
+}
+
+/** Đổi thời lượng mili giây sang chữ tiếng Việt ("2 giờ 15 phút"), null nếu không hợp lệ */
+function formatDurationWords(ms) {
+  if (ms == null || !Number.isFinite(Number(ms)) || Number(ms) <= 0) return null;
+  const totalMin = Math.max(1, Math.round(Number(ms) / 60000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h > 0 && m > 0) return `${h} giờ ${m} phút`;
+  if (h > 0) return `${h} giờ`;
+  return `${m} phút`;
+}
+
 /** Cắt phần đầu của dòng mô tả (`why`) nếu lặp lại đúng tiêu đề (`title`) */
 function stripTitlePrefix(title, why) {
   const t = String(title || '').trim();
@@ -189,5 +215,7 @@ module.exports = {
   ago,
   viDate,
   viTime,
+  vnTime,
+  formatDurationWords,
   stripTitlePrefix
 };

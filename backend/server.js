@@ -165,6 +165,7 @@ async function startServer() {
     // Từ đây mọi API dữ liệu cần phiên đăng nhập (ngoại lệ và lý do: services/auth.js requireSession)
     app.use('/api', auth.requireSession(authDb));
     if (String(process.env.AUTH_REQUIRED) === '0') console.log('Đăng nhập: TẮT kiểm phiên (AUTH_REQUIRED=0).');
+    app.use('/api/live/schedule', require('./routes/live_schedule'));
     app.use('/api/live', require('./routes/live'));
     let butler = { inbound: null };
     app.use('/api/butler', require('./routes/butler')({ authDb, workspaces, getInbound: () => butler.inbound }));

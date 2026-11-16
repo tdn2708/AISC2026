@@ -6,6 +6,7 @@ import { PageHeader, GlassPanel, PanelHeader, Button, IconButton, Badge, EmptySt
 import { fmtInt, fmtDateTime, fmtPct } from '../lib/format';
 import StartSession from './live/StartSession';
 import LiveConsole from './live/LiveConsole';
+import Schedule from './live/Schedule';
 import { StatusPill, PLATFORM_LABEL, duration } from './live/shared';
 import { PageEnter } from './motion';
 
@@ -91,6 +92,7 @@ const Live = () => {
   const sessionId = params.get('session');
   const [sessions, setSessions] = useState(null);
   const [starting, setStarting] = useState(false);
+  const [startInitial, setStartInitial] = useState(null);
   const [error, setError] = useState(null);
 
   const load = useCallback(() => {
@@ -117,12 +119,31 @@ const Live = () => {
       <PageHeader
         title="Livestream"
         subtitle="Thu bình luận trực tiếp từ phiên live bán hàng. Câu hỏi được gom kèm gợi ý trả lời, khách chốt đơn được ghi lại, khiếu nại được đẩy lên đầu."
-        actions={!starting && <Button icon={Radio} onClick={() => setStarting(true)}>Mở phiên live</Button>}
+        actions={
+          !starting && (
+            <Button
+              icon={Radio}
+              onClick={() => {
+                setStartInitial(null);
+                setStarting(true);
+              }}
+            >
+              Mở phiên live
+            </Button>
+          )
+        }
       />
 
       {starting && (
         <div className="mb-6">
-          <StartSession onStarted={(s) => open(s.id)} onCancel={() => setStarting(false)} />
+          <StartSession
+            initial={startInitial}
+            onStarted={(s) => open(s.id)}
+            onCancel={() => {
+              setStarting(false);
+              setStartInitial(null);
+            }}
+          />
         </div>
       )}
 
@@ -149,6 +170,15 @@ const Live = () => {
           />
         )}
       </GlassPanel>
+
+      <Schedule
+        onStartFromSchedule={(init) => {
+          setStartInitial(init);
+          setStarting(true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenSession={open}
+      />
     </PageEnter>
   );
 };

@@ -6,6 +6,7 @@ const QUICK_COMMANDS = [
   { label: 'Việc hôm nay', cmd: 'việc' },
   { label: 'Tình hình', cmd: 'tình hình' },
   { label: 'Livestream', cmd: 'live' },
+  { label: 'Lịch live', cmd: 'lịch' },
   { label: 'Tạm im 2 giờ', cmd: 'im 2 giờ' },
   { label: 'Lệnh', cmd: 'giúp' }
 ];

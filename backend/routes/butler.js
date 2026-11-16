@@ -13,9 +13,11 @@ const zalo = require('../services/butler/zalo');
 const store = require('../services/butler/store');
 const outbox = require('../services/butler/outbox');
 const { watchStatus } = require('../services/butler/watcher');
+const { liveWatchStatus } = require('../services/butler/live_watch');
 const { SEV_RANK } = require('../services/butler/incidents');
 const engine = require('../services/butler/engine');
 const { isButlerEnabled } = require('../services/butler');
+const hub = require('../services/live/hub');
 
 const webhookLimit = rateLimit({ max: 120, windowMs: 60 * 1000, name: 'webhook Zalo' });
 const commandLimit = rateLimit({ max: 30, windowMs: 60 * 1000, name: 'lệnh quản gia' });
@@ -75,8 +77,9 @@ module.exports = ({ authDb, workspaces, getInbound }) => {
       }
     }
 
-    const [watcherMeta, link, openIncidents, outboxStats] = await Promise.all([
+    const [watcherMeta, liveWatchMeta, link, openIncidents, outboxStats] = await Promise.all([
       watchStatus(authDb),
+      liveWatchStatus(authDb),
       store.getLink(authDb, req.user._id),
       authDb
         .collection('butler_incidents')
@@ -87,6 +90,24 @@ module.exports = ({ authDb, workspaces, getInbound }) => {
       outbox.stats(authDb, req.user._id)
     ]);
 
+    const watchWs = (link?.settings?.workspace || 'real') === 'demo' ? 'demo' : 'real';
+    const watchDb = workspaces[watchWs] || req.db;
+    const nextSched = watchDb
+      ? await watchDb
+          .collection('live_schedule')
+          .findOne({ status: 'scheduled', startAt: { $gte: new Date() } }, { sort: { startAt: 1 } })
+          .catch(() => null)
+      : null;
+    const nextLive = nextSched
+      ? {
+          title: nextSched.title,
+          startAt: nextSched.startAt,
+          platformLabel: Object.hasOwn(hub.PLATFORMS, nextSched.platform)
+            ? hub.PLATFORMS[nextSched.platform].label
+            : nextSched.platform
+        }
+      : null;
+
     openIncidents.sort((a, b) => (SEV_RANK[b.severity] || 1) - (SEV_RANK[a.severity] || 1));
 
     res.json({
@@ -96,12 +117,14 @@ module.exports = ({ authDb, workspaces, getInbound }) => {
         botName
       },
       watcher: watcherMeta,
+      liveWatch: liveWatchMeta,
+      nextLive,
       link: {
         linked: Boolean(link?.chatId),
         zaloName: link?.zaloName || null,
         linkedAt: link?.linkedAt || null
       },
-      settings: link?.settings || store.DEFAULT_SETTINGS,
+      settings: { ...store.DEFAULT_SETTINGS, ...(link?.settings || {}) },
       incidents: openIncidents.map((inc) => ({
         _id: inc._id,
         key: inc.key,
@@ -115,7 +138,10 @@ module.exports = ({ authDb, workspaces, getInbound }) => {
       })),
       outbox: outboxStats,
       ...(process.env.NODE_ENV !== 'production'
-        ? { rssMb: Number((process.memoryUsage().rss / (1024 * 1024)).toFixed(2)) }
+        ? {
+            rssMb: Number((process.memoryUsage().rss / (1024 * 1024)).toFixed(2)),
+            ctxCalls: global.__butlerCtxCalls || 0
+          }
         : {})
     });
   }));

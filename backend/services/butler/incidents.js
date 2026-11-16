@@ -7,7 +7,7 @@
 
 const { pendingAlerts, buildInboxItems } = require('../work_items');
 const metrics = require('../metrics');
-const { vnParts, inQuiet, severityWord, fromAlertSeverity, ago, viDate, stripTitlePrefix } = require('./text');
+const { vnParts, inQuiet, severityWord, fromAlertSeverity, ago, viDate, viTime, stripTitlePrefix } = require('./text');
 
 const SEV_RANK = { critical: 3, high: 2, medium: 1 };
 
@@ -87,7 +87,7 @@ async function collectIncidents(db, workspace, ctx, { collectorStatus } = {}) {
 /**
  * Quyết định có gửi báo sự cố này cho tài khoản `link` lúc `now` hay không (hàm thuần).
  */
-function shouldNotify(incident, link, now = new Date()) {
+function shouldNotify(incident, link, now = new Date(), { ignoreQuiet = false } = {}) {
   if (!incident || !link || !link.chatId) return false;
   const nowDate = now instanceof Date ? now : new Date(now);
   const settings = link.settings || {};
@@ -102,11 +102,13 @@ function shouldNotify(incident, link, now = new Date()) {
   const minRank = level === 'critical' ? 3 : level === 'all' ? 1 : 2;
   if (incRank < minRank) return false;
 
-  const quietFrom = settings.quietFrom ?? 22;
-  const quietTo = settings.quietTo ?? 7;
-  const { hour } = vnParts(nowDate);
-  if (inQuiet(hour, quietFrom, quietTo) && incident.severity !== 'critical') {
-    return false;
+  if (!ignoreQuiet) {
+    const quietFrom = settings.quietFrom ?? 22;
+    const quietTo = settings.quietTo ?? 7;
+    const { hour } = vnParts(nowDate);
+    if (inQuiet(hour, quietFrom, quietTo) && incident.severity !== 'critical') {
+      return false;
+    }
   }
 
   const notified = Array.isArray(incident.notified) ? incident.notified : [];
@@ -161,8 +163,15 @@ function summarizeContext(ctx) {
   return { counted, health, freshAt };
 }
 
+const SHORT_PLATFORM_DIGEST = {
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+  manual: 'Nhập tay',
+  simulator: 'Mô phỏng'
+};
+
 /** Dựng bản tin sáng và câu trả lời cho lệnh "tình hình" (hàm thuần) */
-function buildDigest({ workspaceLabel = 'Dữ liệu thật', ctxSummary = {}, incidents, appUrl: _appUrl, now = new Date() } = {}) {
+function buildDigest({ workspaceLabel = 'Dữ liệu thật', ctxSummary = {}, incidents, todaySchedules, appUrl: _appUrl, now = new Date() } = {}) {
   const lines = [`Bản tin sáng ${viDate(now)}, kho ${workspaceLabel}.`];
 
   const metricParts = [];
@@ -190,6 +199,22 @@ function buildDigest({ workspaceLabel = 'Dữ liệu thật', ctxSummary = {}, i
       if (parts.length > 0) {
         lines.push(`Việc đang chờ: ${parts.join(', ')}.`);
       }
+    }
+  }
+
+  if (Array.isArray(todaySchedules) && todaySchedules.length > 0) {
+    const todayYmd = vnParts(now).ymd;
+    const sameDay = todaySchedules
+      .filter((s) => s && (!s.status || s.status === 'scheduled') && s.startAt && vnParts(new Date(s.startAt)).ymd === todayYmd)
+      .slice(0, 3);
+    if (sameDay.length > 0) {
+      const itemsText = sameDay
+        .map((s) => {
+          const plat = SHORT_PLATFORM_DIGEST[s.platform] || s.platformLabel || s.platform || 'Livestream';
+          return `${viTime(s.startAt)} "${s.title}" trên ${plat}`;
+        })
+        .join('; ');
+      lines.push(`Lịch live hôm nay: ${itemsText}.`);
     }
   }
 
