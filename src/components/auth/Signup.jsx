@@ -157,9 +157,6 @@ const Signup = () => {
         </Button>
       </form>
 
-      <p className="mt-6 text-xs leading-relaxed text-ink-lo">
-        Mật khẩu được băm một chiều trước khi lưu; cả nhóm phát triển cũng không đọc được.
-      </p>
     </Pane>
   );
 };

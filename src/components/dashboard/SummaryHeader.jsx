@@ -67,8 +67,8 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
   } else if (top) {
     sentence = (
       <>
-        Hôm nay có {todo.length} việc cần làm{urgentCount ? `, ${urgentCount} việc khẩn` : ''}.{' '}
-        {hasUrgent ? 'Việc gấp nhất ở ngay bên dưới.' : <>Gấp nhất: {topWords(top)}.</>}
+        Hôm nay có {todo.length} việc cần làm{urgentCount ? `, ${urgentCount} việc khẩn` : ''}.
+        {!hasUrgent && <>{' '}Gấp nhất: {topWords(top)}.</>}
       </>
     );
   } else {

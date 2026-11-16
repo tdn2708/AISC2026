@@ -269,7 +269,7 @@ const DataSources = () => {
           <GlassPanel>
             <EmptyState
               title="Chưa có gian hàng nào"
-              description="Kết nối trực tiếp với API của sàn (để lấy cả mã đơn hàng) đang được phát triển. Hiện tại, thêm đường dẫn sản phẩm Tiki để thu thập đánh giá."
+              description="Thêm đường dẫn sản phẩm Tiki để thu thập đánh giá."
               action={<Button icon={Plus} onClick={() => setShowAdd(true)}>Thêm gian hàng</Button>}
             />
           </GlassPanel>
@@ -392,7 +392,7 @@ const DataSources = () => {
         onClose={() => setShowAdd(false)}
         icon={Boxes}
         title="Thêm gian hàng"
-        description="Dán đường dẫn sản phẩm Tiki để thu thập ngay. Kết nối trực tiếp API của sàn (lấy cả mã đơn hàng) đang được phát triển."
+        description="Dán đường dẫn sản phẩm Tiki để thu thập ngay."
       >
         <form id="add-shop" onSubmit={addShop} className="flex flex-col gap-4">
           <Select

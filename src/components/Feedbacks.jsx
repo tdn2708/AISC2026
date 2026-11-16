@@ -113,7 +113,7 @@ const Feedbacks = () => {
 
   return (
     <PageEnter className="cx">
-      <PageHeader title="Phản hồi" subtitle="Bấm vào một dòng để xem nội dung đầy đủ và vì sao phản hồi được tính." />
+      <PageHeader title="Phản hồi" subtitle="Bấm một dòng để xem chi tiết." />
 
       <FilterBar
         timeFilter={timeFilter} setTimeFilter={setTimeFilter}

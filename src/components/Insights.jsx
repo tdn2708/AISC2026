@@ -405,7 +405,7 @@ const Insights = () => {
   const header = (
     <PageHeader
       title="Bảng số liệu"
-      subtitle="Bấm một cột, một ô hay một dòng sản phẩm để lọc mọi khối còn lại. Bấm lần nữa để bỏ lọc."
+      subtitle="Bấm một cột, ô hay sản phẩm để lọc cả trang."
     />
   );
 
@@ -550,7 +550,7 @@ const Insights = () => {
             <GlassPanel tone="strong" className="p-6">
               <PanelHeader
                 title="Kênh nào, vấn đề gì"
-                subtitle="Mỗi ô là số phản hồi tiêu cực; ô càng đậm càng nhiều. Bấm một ô để lọc theo cả kênh và nhóm."
+                subtitle="Số phản hồi tiêu cực"
               />
               <Heatmap rows={view.heatCats} cols={view.heatSrcs} cells={view.cells} sel={pick} onPick={(p) => setParam(p)} />
             </GlassPanel>
@@ -580,7 +580,6 @@ const Insights = () => {
             <GlassPanel tone="strong" className="reveal col-span-12 p-6">
               <PanelHeader
                 title="Sản phẩm"
-                subtitle="12 sản phẩm theo cột đang sắp xếp. Bấm tên để lọc, bấm tiêu đề cột để đổi cách sắp."
                 right={pick.prod && <Link to={`/feedbacks?product=${encodeURIComponent(pick.prod)}${pick.src ? `&source=${encodeURIComponent(pick.src)}` : ''}`} className="text-sm font-medium whitespace-nowrap text-accent-hi hover:underline">Đọc phản hồi</Link>}
               />
               <ProductTable groups={view.byProduct} names={view.dicts.product} selected={pick.prod} onPick={(k) => setParam({ prod: k })} />
@@ -594,10 +593,6 @@ const Insights = () => {
             )}
 
           </div>
-
-          <p className="mt-6 text-sm text-ink-lo">
-            Chỉ gồm phản hồi được tính vào chỉ số (đã qua Trust Layer). Tỉ lệ tiêu cực tính theo trọng số tin cậy, khớp với trang Tổng quan.
-          </p>
         </>
       )}
     </PageEnter>

@@ -1,17 +1,10 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import { EvidenceSwatch, Button } from '../ui';
-import { fmtInt, fmtDate } from '../../lib/format';
+import { fmtDate } from '../../lib/format';
 import { Stagger, prefersReducedMotion } from '../motion';
 
 // Câu trả lời về trong khoảng này (tính từ lúc nhận) thì coi là mới, được hiện theo đoạn
 const FRESH_MS = 3000;
-
-const PROVIDER = {
-  gemini: 'Gemini diễn đạt lại từ số liệu hệ thống tính',
-  groq: 'Groq diễn đạt lại từ số liệu hệ thống tính',
-  openrouter: 'Mô hình ngôn ngữ diễn đạt lại từ số liệu hệ thống tính',
-  deterministic: 'Tính trực tiếp từ dữ liệu, không qua mô hình ngôn ngữ'
-};
 
 /** Markdown tối giản: **đậm**, _nghiêng_, gạch đầu dòng, tiêu đề ###, trích dẫn [n] */
 const Inline = ({ text, onCite, maxCite = 0 }) => {
@@ -71,7 +64,6 @@ export const Answer = ({ msg, index = 0, onOpenFeedback }) => {
   const listRef = useRef(null);
   const facts = msg.facts || msg.reply?.facts;
   const evidence = msg.evidence || msg.reply?.evidence;
-  const meta = msg.meta || msg.reply?.meta;
 
   // Mới về thì hiện theo đoạn: đổi runKey ngay trong layout effect (trước khi vẽ)
   // để Stagger giấu các đoạn rồi cho hiện lần lượt, không nháy
@@ -157,11 +149,6 @@ export const Answer = ({ msg, index = 0, onOpenFeedback }) => {
         </div>
       )}
 
-      {meta && meta.validFeedbacks != null && (
-        <p className="mt-3 text-xs leading-relaxed text-ink-lo">
-          {PROVIDER[meta.provider] || PROVIDER.deterministic}. Dựa trên {fmtInt(meta.validFeedbacks)} phản hồi được tính, cùng số liệu với Tổng quan.
-        </p>
-      )}
     </Stagger>
   );
 };

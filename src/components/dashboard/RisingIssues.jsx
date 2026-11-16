@@ -59,7 +59,7 @@ const RisingIssues = ({ alerts = [], cadence = null, loading, failed, onRetry })
           variant="calm"
           className="flex-1"
           title="Không có vấn đề nào đang tăng"
-          description="Chưa có biến động nào đủ lớn để chắc chắn không phải ngẫu nhiên."
+          description="Chưa có vấn đề nào tăng bất thường."
         />
       ) : (
         <ol className="flex list-none flex-col gap-4">

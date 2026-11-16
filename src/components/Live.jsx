@@ -118,7 +118,7 @@ const Live = () => {
     <PageEnter className="cx">
       <PageHeader
         title="Livestream"
-        subtitle="Thu bình luận trực tiếp từ phiên live bán hàng. Câu hỏi được gom kèm gợi ý trả lời, khách chốt đơn được ghi lại, khiếu nại được đẩy lên đầu."
+        subtitle="Thu và phân loại bình luận trong phiên live bán hàng."
         actions={
           !starting && (
             <Button
@@ -155,7 +155,7 @@ const Live = () => {
       )}
 
       <GlassPanel tone="strong" className="p-4 sm:p-5">
-        <PanelHeader title={running.length ? "Các phiên đã kết thúc" : "Các phiên live"} subtitle="Bình luận đã chuẩn hóa của mọi phiên được lưu lại, mở lại và xuất được bất cứ lúc nào." />
+        <PanelHeader title={running.length ? "Các phiên đã kết thúc" : "Các phiên live"} />
         {error ? (
           <EmptyState variant="error" compact title={error} />
         ) : sessions === null ? (

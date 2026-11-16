@@ -179,7 +179,7 @@ const Settings = () => {
                   { value: 'dark', label: 'Tối', description: 'Dịu mắt khi làm việc buổi tối', preview: <Swatches theme="dark" /> }
                 ]}
               />
-              <PanelHeader title="Hiệu ứng kính" subtitle="Thanh bên, lớp nổi và panel mờ nhẹ trên nền không khí. Tắt thì mọi bề mặt về nền đặc, nhẹ hơn cho máy yếu." className="mt-8" />
+              <PanelHeader title="Hiệu ứng kính" subtitle="Tắt để nhẹ hơn cho máy yếu." className="mt-8" />
               <RadioCards
                 name="Hiệu ứng kính"
                 value={glass ? 'on' : 'off'}

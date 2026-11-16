@@ -94,7 +94,7 @@ const StartSession = ({ onStarted, onCancel, initial = null }) => {
 
   return (
     <GlassPanel tone="strong" className="p-5 sm:p-6">
-      <PanelHeader title="Mở phiên live mới" subtitle="Bình luận được phân loại ngay khi đến: câu hỏi, chốt đơn, khiếu nại. Câu hỏi giống nhau được gom lại kèm gợi ý trả lời." />
+      <PanelHeader title="Mở phiên live mới" />
 
       <RadioCards name="Nền tảng" value={platform} onChange={setPlatform} options={options} />
 

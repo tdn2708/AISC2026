@@ -98,7 +98,7 @@ const ImportCsv = () => {
     <GlassPanel tone="strong" className="max-w-4xl p-6">
       <PanelHeader
         title="Nạp file phản hồi của shop"
-        subtitle="File CSV xuất từ sàn, Google Form hay bảng tự ghi. Tên khách và số điện thoại được che trước khi lưu; dòng đã nạp rồi sẽ tự bỏ qua."
+        subtitle="File CSV xuất từ sàn, Google Form hay bảng tự ghi. Tên và số điện thoại được che trước khi lưu."
       />
       {!real && (
         <p className="paper mb-4 px-3 py-3 text-sm leading-relaxed text-ink-mid">

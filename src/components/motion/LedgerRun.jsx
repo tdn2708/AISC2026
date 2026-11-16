@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 import { fmtInt } from '../../lib/format';
 import { normalizeLedger, buildLedgerRun, ledgerStateAt, rollerPositions, digitCount } from '../../lib/ledgerRun';
 import { useReducedMotion } from './useReducedMotion';
@@ -237,22 +237,16 @@ export const LedgerRun = ({
         </div>
       </dl>
       <div ref={checkRef}>
-        <p className={`mt-3 flex items-start gap-2 text-sm leading-snug ${run.matches ? 'text-ink-mid' : 'text-crit'}`}>
-          {run.matches ? (
-            <>
-              <Check size={16} strokeWidth={2.5} className="mt-0.5 shrink-0 text-accent" aria-hidden="true" />
-              <span>
-                Phép trừ khớp: {fmtInt(run.raw)} trừ {fmtInt(run.removed)} đúng bằng {fmtInt(run.counted)}.
-                {run.pendingCounted > 0 && ` ${fmtInt(run.pendingCounted)} phản hồi chờ duyệt vẫn được tính tạm theo trọng số.`}
-              </span>
-            </>
-          ) : (
-            <>
-              <TriangleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-              <span>Phép trừ lệch {fmtInt(Math.abs(run.diff))} phản hồi so với số được tính.</span>
-            </>
-          )}
-        </p>
+        {!run.matches ? (
+          <p className="mt-3 flex items-start gap-2 text-sm leading-snug text-crit">
+            <TriangleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <span>Phép trừ lệch {fmtInt(Math.abs(run.diff))} phản hồi so với số được tính.</span>
+          </p>
+        ) : run.pendingCounted > 0 && (
+          <p className="mt-3 text-sm leading-snug text-ink-mid">
+            {fmtInt(run.pendingCounted)} phản hồi chờ duyệt vẫn được tính tạm theo trọng số.
+          </p>
+        )}
         {pct != null && (
           <div className="mt-4">
             <div className="flex h-2 overflow-hidden rounded-xs bg-raised">

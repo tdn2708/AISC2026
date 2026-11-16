@@ -73,7 +73,7 @@ const ReplyDraft = ({ feedbackId }) => {
         <div className="mt-3">
           <Button size="sm" icon={PenLine} loading={loading} onClick={() => generate()}>Soạn nháp</Button>
           <p className="mt-2 text-xs leading-relaxed text-ink-lo">
-            Nháp bám đúng vấn đề khách nêu và chỉ nhắc tới hướng xử lý đã được duyệt. Bạn đọc, sửa rồi tự gửi trên sàn.
+            Bạn đọc, sửa rồi tự gửi trên sàn.
           </p>
         </div>
       ) : (

@@ -118,7 +118,7 @@ const Compare = () => {
     verdict = !d.valid
       ? `Chưa đủ dữ liệu để kết luận (${d.reason ? d.reason.toLowerCase() : 'mẫu quá nhỏ'}).`
       : d.significant
-        ? `Sản phẩm ${higher} bị chê nhiều hơn rõ rệt: chênh ${gap} điểm phần trăm, đủ lớn để không phải do ngẫu nhiên.`
+        ? `Sản phẩm ${higher} bị chê nhiều hơn rõ rệt: chênh ${gap} điểm phần trăm.`
         : `Chênh ${gap} điểm phần trăm, nhưng chưa đủ chắc để nói sản phẩm nào bị chê nhiều hơn.`;
   }
 

@@ -109,7 +109,7 @@ After any write, call `invalidate(req.db)`.
   - returns `facts`, `evidence` and `meta.provider`;
   - without an LLM, `deterministicAnswer` still answers.
 - **`services/insights.js`** holds the pure logic for:
-  - human random audit: `audit_labels` collection, Wilson 95% CI, `/api/audit/*`;
+  - human label review: `audit_labels` collection, `/api/audit/*` (the Wilson 95% CI summary still exists in the API but the UI no longer shows it, since 2026-11-16);
   - before/after effect of accepted decisions: `recommendation_log`, `/api/decisions`;
   - product comparison with a two-proportion test: `/api/compare`;
   - grounded reply drafts: `/api/reply/draft`, with a template fallback.
@@ -138,7 +138,7 @@ After any write, call `invalidate(req.db)`.
 - **Trust Layer:** `starTextMismatch` does not penalise suspected or confirmed sarcasm. Before this, real sarcastic complaints were down-weighted as fake.
 - **Human labels:** stored in `audit_labels`. `analysis_context.applyHumanLabels` applies them to the items BEFORE the Trust Layer runs, so they override machine labels everywhere. The old label is kept in `machineLabel`.
 - **Audit queues** (`?mode=`):
-  - `random`: the only queue counted in the accuracy CI;
+  - `random`: the only queue counted in the accuracy CI (API only; the random-check tab and its accuracy panel were removed from the UI on 2026-11-16, the real workspace had 0 labels);
   - `sarcasm`;
   - `review`.
 - **Blind test set:** `insights.isBlindTest(id)`, a stable 15% chosen by SHA-1 of the id. Never use these items for training.
@@ -199,7 +199,7 @@ Real-time comment intake for live-selling sessions (TikTok Live, YouTube Live, m
 - Touch screens: controls are at least 40px tall under `pointer-coarse:` (see DESIGN.md section 6); mouse layouts are unchanged.
 - Tabs are driven by `?tab=` in the URL:
   - Cảnh báo: `?tab=log`;
-  - Tin cậy dữ liệu: `?tab=audit`;
+  - Tin cậy dữ liệu: `?tab=audit` (tab "Duyệt nhãn": queues Cần duyệt and Nghi mỉa mai);
   - Phân tích: `?tab=compare|segments`;
   - Nguồn dữ liệu: `?tab=url|file|shops|history` (read once on mount).
 - The assistant drawer (`shell/Assistant.jsx`) is opened from anywhere with `askAssistant(q)` / `openAssistant()` in `lib/assistant.js`, which uses a window event. `MainLayout` remounts on every route change, so the chat history lives in sessionStorage.
@@ -220,6 +220,7 @@ UI conventions agreed with the user:
 - No z, p or EWMA in manager-facing text; keep them behind a "Số liệu kiểm định" disclosure.
 - No middle-dot `·` separators in visible copy.
 - No controls that do nothing: fake toggles and sample shops were removed on purpose.
+- No explanatory small print: no disclaimers ("Hệ thống chỉ đề xuất..."), no self-checks ("Phép trừ khớp"), no "bấm để..." hints that repeat what the control shows, no sentence that restates a number already on screen (cleaned 2026-11-16).
 
 ### Dashboard (data to action, plain language)
 
@@ -330,7 +331,7 @@ UI conventions agreed with the user:
 ### Người dùng
 - Sinh viên UIT, nhóm LDS; xưng "ta", gọi Claude là "mày". Trả lời tiếng Việt, văn nói, ngắn, có ví dụ đời thường.
 - Thích Claude tự làm hết; chỉ hỏi khi thật sự là quyết định của người dùng, hỏi bằng danh sách đánh số trong văn bản (KHÔNG dùng hộp thoại AskUserQuestion).
-- Gán nhãn (trang Kiểm tra ngẫu nhiên) và finetune ViSoBERT v4 là việc của một bạn cùng nhóm, không phải của người dùng.
+- Gán nhãn (tab Duyệt nhãn ở trang Tin cậy dữ liệu) và finetune ViSoBERT v4 là việc của một bạn cùng nhóm, không phải của người dùng.
 - Việc giao diện thì người dùng gọi skill `/hallmark` (cài tại `C:\Users\DELL\.claude\skills\hallmark`, ảnh chụp trong `.hallmark/`, đã gitignore).
 
 ### Chữ trong giao diện và văn bản sản phẩm

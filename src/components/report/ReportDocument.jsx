@@ -190,9 +190,7 @@ function buildBlocks(model) {
             </tfoot>
           </table>
           <p className={`rpt-check ${ledger.diff === 0 ? '' : 'rpt-bad'}`}>
-            {ledger.diff === 0
-              ? <>Phép trừ khớp: {fmtInt(ledger.raw)} trừ {fmtInt(ledger.removed)} đúng bằng {fmtInt(ledger.counted)}.</>
-              : <>Phép trừ lệch {fmtInt(Math.abs(ledger.diff))} phản hồi so với số được tính.</>}
+            {ledger.diff !== 0 && <>Phép trừ lệch {fmtInt(Math.abs(ledger.diff))} phản hồi so với số được tính.</>}
             {ledger.pendingCounted > 0 && <> {fmtInt(ledger.pendingCounted)} phản hồi chờ duyệt vẫn được tính tạm theo trọng số.</>}
             {model.verifiedShare != null && <> {pctVi(model.verifiedShare, 0)} số được tính có chứng từ mua hàng hoặc đã được người duyệt.</>}
           </p>

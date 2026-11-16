@@ -73,7 +73,7 @@ const Conversation = ({
       {messages.length === 0 && !busy ? (
         <div className="my-auto py-8">
           <p className="max-w-[54ch] text-base leading-relaxed text-ink-mid">
-            Quản gia canh kho dữ liệu và báo bạn qua Zalo khi có việc gấp. Bắt đầu bằng một lệnh bên dưới.
+            Chọn một lệnh bên dưới hoặc gõ câu hỏi.
           </p>
         </div>
       ) : (

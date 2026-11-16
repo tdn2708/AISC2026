@@ -121,7 +121,7 @@ export default function BatchDemo() {
       <GlassPanel tone="strong" className="p-5">
         <PanelHeader
           title="Chạy cả lô phản hồi, đo tốc độ thật"
-          subtitle="Mỗi phản hồi đi qua đúng đường chạy thật: che thông tin cá nhân, lọc rác, rồi ViSoBERT phân loại đa nhãn. Thời gian là thời gian đo được của chính lô này; máy chủ tắt bộ đệm cho phép đo nên không đọc lại kết quả cũ."
+          subtitle="Che thông tin cá nhân, lọc rác, rồi ViSoBERT phân loại. Thời gian đo trên chính lô này."
         />
 
         <div className="flex flex-wrap items-center gap-2">

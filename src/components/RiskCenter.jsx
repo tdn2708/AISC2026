@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Check, CircleSlash, Clock, FileSearch, RotateCcw, ShieldCheck, MessageSquareText, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
+import { Check, CircleSlash, Clock, FileSearch, RotateCcw, MessageSquareText, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import { askAssistant } from '../lib/assistant';
 import {
   PageHeader, GlassPanel, SeverityBadge, Button, ChipGroup, Drawer, EmptyState, Badge, SentimentFace, Toast, Tabs,
@@ -178,11 +178,6 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
         </Button>
         <Button variant="secondary" icon={FileSearch} onClick={onEvidence}>Xem phản hồi gốc</Button>
       </div>
-
-      <p className="mt-4 flex gap-2 text-xs leading-relaxed text-ink-lo">
-        <ShieldCheck size={14} className="mt-0.5 shrink-0" />
-        Hệ thống chỉ đề xuất. Việc tốn chi phí hoặc chạm tới khách hàng luôn cần người có thẩm quyền duyệt.
-      </p>
     </GlassPanel>
     </Pulse>
   );
@@ -284,7 +279,7 @@ const DecisionLog = () => {
   if (!rows.length) {
     return (
       <GlassPanel>
-        <EmptyState title="Chưa có quyết định nào" description="Khi ai đó chấp nhận hoặc bỏ qua một đề xuất, quyết định sẽ được ghi lại ở đây cùng người quyết và lý do." />
+        <EmptyState title="Chưa có quyết định nào" description="Quyết định chấp nhận hay bỏ qua đề xuất sẽ ghi ở đây." />
       </GlassPanel>
     );
   }
@@ -292,8 +287,7 @@ const DecisionLog = () => {
   return (
     <GlassPanel tone="strong" className="overflow-hidden">
       <p className="border-b border-line-soft px-5 py-3 text-xs leading-relaxed text-ink-lo">
-        Hiệu quả là tỉ lệ khiếu nại đúng vấn đề đó trước và sau khi chấp nhận (sau: 7 ngày; trước: cùng độ dài, kho ít phản hồi thì lấy dài hơn để đủ câu, cần ít nhất 30 phản hồi mỗi bên). Đây là so sánh trước và sau,
-        chưa loại trừ các yếu tố khác như mùa vụ hay khuyến mãi.
+        Hiệu quả: tỉ lệ khiếu nại vấn đề đó 7 ngày trước và sau khi chấp nhận, chưa loại trừ mùa vụ hay khuyến mãi.
       </p>
       <div className="paper mx-3 mb-3"><div className="table-responsive">
         <table className="data-table">
@@ -449,7 +443,7 @@ const RiskCenter = () => {
     <PageEnter className="cx">
       <PageHeader
         title="Cảnh báo"
-        subtitle="Những biến động đủ lớn để chắc chắn không phải ngẫu nhiên, kèm kế hoạch chờ bạn quyết định."
+        subtitle="Biến động bất thường và kế hoạch chờ bạn duyệt."
         actions={tab === 'alerts' && <Button variant="secondary" icon={RotateCcw} onClick={load} loading={loading}>Làm mới</Button>}
       />
 
@@ -484,7 +478,7 @@ const RiskCenter = () => {
               <EmptyState
                 variant="calm"
                 title={statusFilter === 'open' ? 'Không còn cảnh báo nào chờ quyết định' : 'Không có cảnh báo khớp bộ lọc'}
-                description="Chưa có biến động nào vừa đủ lớn về số liệu vừa đáng kể về kinh doanh trong phạm vi này."
+                description="Không có cảnh báo nào trong phạm vi này."
               />
             </GlassPanel>
           ) : (

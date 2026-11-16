@@ -1,52 +1,24 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { Check, X, SkipForward } from 'lucide-react';
-import { GlassPanel, PanelHeader, Button, ProgressBar, EmptyState, Chip, Select, Toast, Segmented, Skeleton } from '../ui';
-import { fmtInt, fmtDate, fmtPct, SENTIMENT_MAP, LABELLER_LABEL } from '../../lib/format';
+import { GlassPanel, PanelHeader, Button, EmptyState, Chip, Select, Toast, Segmented, Skeleton } from '../ui';
+import { fmtInt, fmtDate, SENTIMENT_MAP, LABELLER_LABEL } from '../../lib/format';
 import { reportRefreshing } from '../../lib/dataVersion';
 import { currentUser } from '../../hooks/useDecisions';
 
 /**
- * DUYỆT NHÃN DO NGƯỜI LÀM — ba hàng đợi
+ * DUYỆT NHÃN DO NGƯỜI LÀM — hai hàng đợi
  * ------------------------------------------------------------------
- *   Ngẫu nhiên     lấy đều từ cả kho. CHỈ hàng này dùng để đo độ chính xác
- *                  của AI (khoảng tin cậy 95% Wilson) — đại diện cho cả kho.
- *   Nghi mỉa mai   câu luật/mô hình nghi là mỉa mai: nguồn dữ liệu huấn luyện
- *                  mỉa mai thật, thứ dự án chưa có.
  *   Cần duyệt      hai mô hình bất đồng và số sao không phân xử được.
- *
- * Nhãn người GHI ĐÈ nhãn máy trong mọi chỉ số ngay sau khi lưu; câu thuộc bộ
- * test mù (15%) được giữ riêng để đo mô hình, không bao giờ dùng huấn luyện.
+ *   Nghi mỉa mai   câu luật/mô hình nghi là mỉa mai.
+ * Nhãn người GHI ĐÈ nhãn máy trong mọi chỉ số ngay sau khi lưu.
  */
 
 const SENTS = ['Positive', 'Neutral', 'Negative'];
 const MODES = [
-  { value: 'random', label: 'Ngẫu nhiên' },
-  { value: 'sarcasm', label: 'Nghi mỉa mai' },
-  { value: 'review', label: 'Cần duyệt' }
+  { value: 'review', label: 'Cần duyệt' },
+  { value: 'sarcasm', label: 'Nghi mỉa mai' }
 ];
-const MODE_HINT = {
-  random: 'Lấy ngẫu nhiên đều từ cả kho. Chỉ hàng này được dùng để đo độ chính xác của AI.',
-  sarcasm: 'Câu bị nghi là mỉa mai. Nhãn ở đây là dữ liệu huấn luyện mỉa mai thật, và sửa luôn nhãn trên web.',
-  review: 'Hai mô hình bất đồng và số sao không phân xử được. Nhãn của bạn là nhãn cuối.'
-};
-
-
-const Result = ({ label, r }) => (
-  <div className="min-w-0 border-t border-line pt-3">
-    <p className="text-sm text-ink-mid">{label}</p>
-    {r?.n ? (
-      <>
-        <p className="mt-1.5 tabular-nums text-metric leading-none font-semibold text-ink-hi">{fmtPct(r.p, 0)}</p>
-        <p className="mt-1.5 text-xs text-ink-lo">
-          Khoảng tin cậy 95%: <span className="tabular-nums text-ink-mid">từ {fmtPct(r.low, 0)} đến {fmtPct(r.high, 0)}</span>
-        </p>
-      </>
-    ) : (
-      <p className="mt-1.5 text-sm text-ink-lo">Chưa có kết quả</p>
-    )}
-  </div>
-);
 
 const YesNo = ({ value, onChange, label, yes = 'Đúng', no = 'Sai' }) => (
   <div role="group" aria-label={label} className="flex gap-2">
@@ -81,8 +53,7 @@ const MachineVotes = ({ item, categories }) => {
 const EMPTY = { sent: null, cat: null, sarcasm: null, correctSentiment: null, correctCategory: '', correctCause: '' };
 
 const Audit = () => {
-  const [mode, setMode] = useState('random');
-  const [summary, setSummary] = useState(null);
+  const [mode, setMode] = useState('review');
   const [queue, setQueue] = useState([]);
   const [categories, setCategories] = useState([]);
   const [remaining, setRemaining] = useState(null);
@@ -99,10 +70,6 @@ const Audit = () => {
     setRemaining(data.remaining);
     setQueues(data.queues || {});
     setCategories(data.categories || []);
-  }, []);
-
-  useEffect(() => {
-    axios.get('/audit/summary').then((s) => setSummary(s.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -131,7 +98,7 @@ const Audit = () => {
     if (!ready || !item) return;
     setSaving(true);
     try {
-      const { data } = await axios.post('/audit/label', {
+      await axios.post('/audit/label', {
         feedbackId: item._id,
         sentimentCorrect: ans.sent,
         categoryCorrect: ans.cat,
@@ -142,7 +109,6 @@ const Audit = () => {
         sampleMode: mode,
         by: currentUser()
       });
-      setSummary(data.summary);
       reportRefreshing(true);
       setToast(true);
       setTimeout(() => setToast(false), 1500);
@@ -155,61 +121,21 @@ const Audit = () => {
   };
 
   const aiCat = item ? (item.category && item.category !== 'Other' ? item.categoryLabel : 'Không nêu vấn đề') : '';
-  const modeOptions = MODES.map((m) => ({ ...m, label: m.value === 'random' ? m.label : `${m.label} (${fmtInt(queues[m.value] ?? 0)})` }));
+  const modeOptions = MODES.map((m) => ({ ...m, label: `${m.label} (${fmtInt(queues[m.value] ?? 0)})` }));
 
   return (
-    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-      <GlassPanel tone="strong" className="p-6">
-        <PanelHeader title="Kết quả kiểm tra" subtitle="Người đọc phản hồi lấy ngẫu nhiên và chấm AI đúng hay sai." />
-        <ProgressBar
-          value={summary ? summary.n / summary.target : 0}
-          label={`Đã kiểm tra ngẫu nhiên ${fmtInt(summary?.n)} trên mục tiêu ${fmtInt(summary?.target)} phản hồi`}
-          showValue
-        />
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <Result label="AI xếp đúng nhóm vấn đề" r={summary?.category} />
-          <Result label="AI đoán đúng cảm xúc" r={summary?.sentiment} />
-        </div>
-        {summary?.n > 0 && summary.n < 30 && (
-          <p className="mt-3 text-xs leading-relaxed text-high">Mới {summary.n} phản hồi nên khoảng tin cậy còn rộng. Từ khoảng 100 phản hồi trở lên con số mới đủ chắc để trình bày.</p>
-        )}
-        {summary?.totalReviewed > 0 && (
-          <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-            <dt className="text-ink-mid">Tổng câu người đã duyệt</dt><dd className="text-right tabular-nums text-ink-hi">{fmtInt(summary.totalReviewed)}</dd>
-            <dt className="text-ink-mid">Câu mỉa mai đã xác nhận</dt><dd className="text-right tabular-nums text-ink-hi">{fmtInt(summary.sarcasm?.sarcastic)} / {fmtInt(summary.sarcasm?.labelled)}</dd>
-            <dt className="text-ink-mid">Thuộc bộ test mù</dt><dd className="text-right tabular-nums text-ink-hi">{fmtInt(summary.blindTest)}</dd>
-          </dl>
-        )}
-        {summary?.topConfusions?.length > 0 && (
-          <div className="mt-5">
-            <p className="text-sm font-semibold text-ink-hi">AI hay nhầm ở đâu</p>
-            <ul className="mt-2 flex list-none flex-col gap-1.5 text-sm text-ink-mid">
-              {summary.topConfusions.map((c) => (
-                <li key={`${c.from}-${c.to}`} className="flex justify-between gap-3">
-                  <span>AI xếp “{c.from}”, người sửa thành “{c.to}”</span>
-                  <span className="tabular-nums text-ink-hi">{c.count}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <p className="mt-5 border-t border-line-soft pt-3 text-xs leading-relaxed text-ink-lo">
-          {summary?.method} {summary?.reviewers ? `${summary.reviewers} người đã tham gia kiểm tra.` : ''}
-        </p>
-      </GlassPanel>
-
+    <div className="max-w-3xl">
       <GlassPanel tone="strong" className="p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <Segmented label="Hàng đợi" options={modeOptions} value={mode} onChange={setMode} />
         </div>
-        <p className="mb-4 text-xs leading-relaxed text-ink-lo">{MODE_HINT[mode]}</p>
 
         {loading ? (
           <Skeleton as="div" className="h-[360px] rounded-ctrl bg-raised" />
         ) : error && !item ? (
           <EmptyState variant="error" title="Không tải được" description={error} />
         ) : !item ? (
-          <EmptyState title="Hàng đợi này đã trống" description={mode === 'random' ? 'Không còn phản hồi nào chưa được kiểm tra trong kho này.' : 'Không còn câu nào chờ duyệt ở hàng này.'} />
+          <EmptyState title="Hàng đợi này đã trống" description="Không còn câu nào chờ duyệt ở hàng này." />
         ) : (
           <>
             <PanelHeader
@@ -281,7 +207,6 @@ const Audit = () => {
             <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-line-soft pt-5">
               <Button icon={Check} onClick={save} loading={saving} disabled={!ready}>Lưu và sang phản hồi tiếp</Button>
               <Button variant="ghost" icon={SkipForward} onClick={next} disabled={saving}>Bỏ qua</Button>
-              <span className="ml-auto text-xs text-ink-lo">AI gán: {LABELLER_LABEL[item.labelledBy] || item.labelledBy}</span>
             </div>
             {error && <p className="mt-2 text-sm text-crit">{error}</p>}
           </>

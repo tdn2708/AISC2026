@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, CircleSlash, ChevronDown, ShieldCheck, RotateCw } from 'lucide-react';
+import { Check, CircleSlash, ChevronDown, RotateCw } from 'lucide-react';
 import { Button, EmptyState } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { Pulse, useReducedMotion, MOTION, EASE } from '../motion';
@@ -224,7 +224,6 @@ const TodayInbox = ({ alerts = [], items = [], loading, failed, onRetry, skip = 
             {loading && !todo.length ? <Skeleton as="span" className="mt-1 h-3.5 w-44" /> : failed && !todo.length ? 'Chưa gom được việc' : remaining ? (skip ? `Còn ${remaining} việc khác, ${skip === 1 ? 'việc gấp nhất' : `${skip} việc gấp nhất`} ở đầu trang` : `${remaining} việc cần làm, việc gấp ở trên`) : 'Đã xử lý hết'}
           </p>
         </div>
-        <p className="hidden text-xs text-ink-mid sm:block">Gộp từ cảnh báo, livestream, đơn hàng và hàng đợi duyệt</p>
       </header>
 
       {todo.length === 0 && loading ? (
@@ -255,10 +254,6 @@ const TodayInbox = ({ alerts = [], items = [], loading, failed, onRetry, skip = 
               </Button>
             </div>
           )}
-          <p className="flex gap-2 border-t border-line-soft px-5 py-3 text-xs leading-relaxed text-ink-mid sm:px-6">
-            <ShieldCheck size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
-            Hệ thống chỉ đề xuất. Việc tốn chi phí hoặc chạm tới khách hàng luôn cần người có thẩm quyền duyệt.
-          </p>
         </>
       )}
 

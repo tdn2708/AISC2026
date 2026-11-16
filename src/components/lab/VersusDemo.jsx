@@ -142,7 +142,7 @@ const VersusDemo = () => {
       <GlassPanel tone="strong" className="p-5 sm:p-6">
         <PanelHeader
           title={<span className="inline-flex items-center gap-2"><Swords size={18} className="text-accent" aria-hidden="true" />Cùng một câu, hai cách đọc</span>}
-          subtitle="Bên trái là cách các nền tảng CRM phổ biến đang làm: gán một nhãn cảm xúc cho cả câu. Bên phải là Customer Radar. Chọn một thử thách hoặc gõ câu của bạn."
+          subtitle="Chọn một thử thách hoặc gõ câu của bạn."
         />
 
         <div className="mb-4 flex flex-wrap gap-2">
@@ -188,7 +188,7 @@ const VersusDemo = () => {
           <GlassPanel className="flex flex-col p-5 sm:p-6">
             <p className="eyebrow mb-1">Công cụ thông thường</p>
             <p className="mb-5 text-xs leading-relaxed text-ink-lo">
-              Một nhãn cảm xúc cho cả câu (baseline B2 trong thực nghiệm)
+              Một nhãn cảm xúc cho cả câu
             </p>
             <div className="flex items-center gap-3">
               <SentimentFace sentiment={generic?.sentiment} size={44} />
@@ -339,9 +339,7 @@ const VersusDemo = () => {
             <MetricBar label="Đoán đúng cảm xúc" generic={mB2.sentimentMacroF1} ours={mM.sentimentMacroF1} note="hai bên gần nhau" />
           </div>
           <p className="mt-4 text-xs leading-relaxed text-ink-lo">
-            Về cảm xúc, hai cách gần ngang nhau. Đó chính là điểm đáng nói: biết khách “không vui” thì công cụ nào cũng làm được.
-            Thứ doanh nghiệp cần là biết khách không vui <b className="text-ink-mid">vì cái gì</b> và <b className="text-ink-mid">ai phải xử lý</b>.
-            Số liệu đầy đủ, kể cả các chỉ số chưa đạt mục tiêu, ở tab Kết quả.
+            Về cảm xúc hai cách gần ngang nhau. Khác biệt nằm ở chỗ biết khách chê <b className="text-ink-mid">cái gì</b> và <b className="text-ink-mid">ai phải xử lý</b>.
           </p>
         </GlassPanel>
       )}

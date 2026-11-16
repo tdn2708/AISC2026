@@ -35,7 +35,7 @@ const FeedbackTable = ({ timeFilter, sourceFilter, productFilter }) => {
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-line-soft px-5 py-4 sm:px-6">
         <div>
           <h2 className="text-heading font-semibold text-ink-hi">Phản hồi gần đây</h2>
-          <p className="mt-0.5 text-sm text-ink-mid">Mới nhất trước, chỉ gồm phản hồi được tính vào chỉ số. Bấm một dòng để xem chi tiết.</p>
+          <p className="mt-0.5 text-sm text-ink-mid">Mới nhất trước.</p>
         </div>
         {total > 0 && (
           <Button as={Link} variant="link" to={allHref}>

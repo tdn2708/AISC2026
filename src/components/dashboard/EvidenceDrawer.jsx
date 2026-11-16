@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { Drawer, Button, EvidenceBar, EvidenceLegend } from '../ui';
@@ -109,12 +108,6 @@ const sampleBadge = (s) => {
 };
 
 const EvidenceDrawer = ({ metric, stats, onClose }) => {
-  // Kết quả kiểm tra ngẫu nhiên do người làm: bằng chứng độc lập với AI
-  const [audit, setAudit] = useState(null);
-  useEffect(() => {
-    if (!metric) return;
-    axios.get('/audit/summary').then((r) => setAudit(r.data)).catch(() => setAudit(null));
-  }, [metric]);
   const navigate = useNavigate();
   const m = METRICS[metric];
   const ev = stats?.evidence;
@@ -148,32 +141,12 @@ const EvidenceDrawer = ({ metric, stats, onClose }) => {
           <Section title="Đứng trên những phản hồi nào">
             <EvidenceBar mix={mix} height={10} showCaption={false} className="mb-4" />
             <EvidenceLegend mix={mix} />
-            <p className="mt-4 text-xs leading-relaxed text-ink-lo">
-              {mix?.human
-                ? `Người kiểm duyệt đã đọc lại ${fmtInt(mix.human)} phản hồi trong phạm vi này.`
-                : 'Chưa có phản hồi nào trong phạm vi này được người kiểm duyệt đọc lại. Duyệt ở hàng chờ để phần gạch chéo nhỏ lại.'}
-            </p>
-          </Section>
-
-          <Section title="Người kiểm tra lại AI">
-            {audit?.n ? (
-              <p className="text-sm leading-relaxed text-ink-mid">
-                Người đã đọc <b className="text-ink-hi">{fmtInt(audit.n)}</b> phản hồi lấy ngẫu nhiên: AI xếp đúng nhóm vấn đề{' '}
-                <b className="text-ink-hi">{fmtPct(audit.category.p, 0)}</b> (khoảng tin cậy 95%: từ {fmtPct(audit.category.low, 0)} đến {fmtPct(audit.category.high, 0)}),
-                đoán đúng cảm xúc <b className="text-ink-hi">{fmtPct(audit.sentiment.p, 0)}</b> (từ {fmtPct(audit.sentiment.low, 0)} đến {fmtPct(audit.sentiment.high, 0)}).
-              </p>
-            ) : (
-              <p className="text-sm leading-relaxed text-ink-mid">Chưa có đợt kiểm tra nào. Người kiểm tra phản hồi ngẫu nhiên ở trang Tin cậy dữ liệu, tab Kiểm tra ngẫu nhiên.</p>
+            {mix?.human > 0 && (
+              <p className="mt-4 text-xs leading-relaxed text-ink-lo">Người đã đọc lại {fmtInt(mix.human)} phản hồi trong phạm vi này.</p>
             )}
-            <Button variant="link" size="sm" onClick={() => go('/trust?tab=audit')} className="mt-2">
-              Mở trang kiểm tra ngẫu nhiên
-            </Button>
           </Section>
 
           <Section title="Ai gán nhãn nội dung">
-            <p className="mb-3 text-xs leading-relaxed text-ink-lo">
-              Phần trên trả lời “phản hồi có thật không”. Phần này trả lời “phản hồi nói về vấn đề gì”: ai đã đọc và xếp nó vào khiếu nại, cảm xúc, nguyên nhân.
-            </p>
             <ul className="flex list-none flex-col gap-1.5">
               {labels.map(([by, n]) => (
                 <li key={by} className="flex items-baseline justify-between gap-3 text-sm">

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CircleAlert } from 'lucide-react';
 import { GlassPanel, Button, Select, Switch, Modal, SELECTED } from '../ui';
-import { fmtRelative } from '../../lib/format';
 
 const OptionBar = ({ label, options, value, onChange }) => (
   <div
@@ -200,9 +199,6 @@ const WatchPanel = ({
           value={settings.workspace || 'real'}
           onChange={(workspace) => onSaveSettings?.({ workspace })}
         />
-        <p className="mt-1.5 text-xs leading-relaxed text-ink-lo">
-          Áp dụng cho tin Zalo. Trên web, quản gia trả lời theo kho đang mở.
-        </p>
       </section>
 
       {/* 4. Giờ yên lặng */}
@@ -346,12 +342,8 @@ const WatchPanel = ({
 
       {/* 8. Trạng thái nhịp canh */}
       <section className="pt-4">
-        <p className="text-xs leading-relaxed text-ink-lo">
-          Quản gia kiểm mỗi {watcher.everyMinutes || 5} phút. Lần gần nhất:{' '}
-          {watcher.lastRunAt ? fmtRelative(watcher.lastRunAt) : 'chưa chạy'}.
-        </p>
         {watcher.lastError && (
-          <p className="mt-1 text-xs text-crit">
+          <p className="text-xs text-crit">
             Lần kiểm gần nhất bị lỗi, đang thử lại.
           </p>
         )}

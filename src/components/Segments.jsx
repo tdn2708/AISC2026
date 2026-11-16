@@ -110,12 +110,6 @@ const Segments = () => {
         })}
       </div>
 
-      {!loading && data.oneTime > 0 && (
-        <p className="-mt-2 mb-6 text-sm text-ink-mid">
-          Còn <span className="font-semibold text-ink-hi tabular-nums">{fmtInt(data.oneTime)}</span> khách chỉ để lại một phản hồi không chê: chưa đủ để gọi là trung thành hay trung lập, nên không xếp vào nhóm nào.
-        </p>
-      )}
-
       <GlassPanel tone="strong" className="overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 border-b border-line-soft p-5">
           <div className="relative min-w-[220px] flex-1">

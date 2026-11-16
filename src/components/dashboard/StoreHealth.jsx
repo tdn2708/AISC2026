@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Minus, TriangleAlert } from 'lucide-react';
 import { RotateCw } from 'lucide-react';
-import { AnimatedNumber, EvidenceBar, EmptyState, Button } from '../ui';
+import { AnimatedNumber, EmptyState, Button } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { useInView, useReducedMotion } from '../motion';
 import { fmtInt, fmtPct, fmtSignedPct, timesWords, cadenceWords, upFirst } from '../../lib/format';
@@ -149,7 +149,6 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry, countStart =
 
   const spark = trend.slice(-14).map((t) => ({ name: t.name, v: t.complaints || 0 }));
   const [open, setOpen] = useState(null);
-  const ev = stats?.evidence;
   const wcr = stats?.weightedComplaintRate;
   const cmp = stats?.comparison;
   const son = stats?.shareOfNegative;
@@ -207,11 +206,6 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry, countStart =
           {trust ? <span className={trust[0]}>{trust[1]}</span> : <span className="text-heading font-medium text-ink-mid">Chưa có dữ liệu</span>}
         </Metric>
       </div>
-      )}
-      {ev?.all && (
-        <div className="border-t border-line-soft px-5 py-3.5 sm:px-6">
-          <EvidenceBar mix={ev.all} />
-        </div>
       )}
       <EvidenceDrawer metric={open} stats={stats} onClose={() => setOpen(null)} />
     </section>

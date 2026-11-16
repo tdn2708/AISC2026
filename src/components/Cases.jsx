@@ -324,7 +324,7 @@ const CaseFile = ({ caseKey, filterQuery }) => {
           )}
         </Step>
 
-        <Step n={3} title="Đồ làm sẵn" subtitle="Soạn sẵn từ số liệu thật. Bạn đọc, sửa rồi tự gửi; hệ thống không gửi gì.">
+        <Step n={3} title="Đồ làm sẵn" subtitle="Bạn đọc, sửa rồi tự gửi.">
           <div className="grid gap-6 xl:grid-cols-2">
             <div className="min-w-0">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">

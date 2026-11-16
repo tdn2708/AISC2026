@@ -192,12 +192,11 @@ const PainPoints = () => {
       <p className="mb-5 max-w-3xl text-sm leading-relaxed text-ink-mid">
         Máy tìm được <span className="tabular-nums font-semibold text-ink-hi">{fmtInt(total)}</span> điểm đau trong{' '}
         <span className="tabular-nums font-semibold text-ink-hi">{fmtInt(groupCount)}</span> mảng hàng, từ{' '}
-        <span className="tabular-nums">{fmtInt(data.counted)}</span> phản hồi được tính. Một điểm đau là chuyện mà ít nhất{' '}
-        {fmtInt(data.thresholds.minCustomers)} khách khác nhau cùng nhắc, vào ít nhất {fmtInt(data.thresholds.minDays)} ngày khác nhau.
+        <span className="tabular-nums">{fmtInt(data.counted)}</span> phản hồi được tính.
       </p>
       <div className={`grid items-start gap-6 transition-opacity lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] ${loading ? 'opacity-60' : ''}`}>
         <GlassPanel tone="strong" className="p-5 lg:sticky lg:top-[calc(var(--topbar-h,5rem)+var(--filter-h,0px))]">
-          <PanelHeader title="Mảng hàng" subtitle={current.scope === 'shop' ? 'Chuyện lặp lại ở nhiều mảng' : `Mảng hàng lấy từ: ${current.sourceLabel}`} />
+          <PanelHeader title="Mảng hàng" subtitle={current.scope === 'shop' ? undefined : `Mảng hàng lấy từ: ${current.sourceLabel}`} />
           <div className="flex max-h-[60vh] flex-col gap-1 overflow-y-auto">
             {groups.map((g, i) => (
               <GroupRow key={g.key} g={g} index={i} max={g.scope === 'shop' ? g.negatives : maxNeg} active={g.key === current.key} onClick={() => setSelected(g.key)} />
@@ -233,11 +232,6 @@ const PainPoints = () => {
               <ul className="mt-4 flex list-none flex-col divide-y divide-line-soft">
                 {current.painPoints.map((p) => <PainRow key={p.key} p={p} negatives={current.negatives} onOpen={open} />)}
               </ul>
-              {current.uncovered > 0 && (
-                <p className="mt-4 border-t border-line-soft pt-3 text-xs leading-relaxed text-ink-lo">
-                  <span className="tabular-nums text-ink-mid">{fmtInt(current.uncovered)}</span> câu chê khác của mảng này không lặp lại đủ để gom thành điểm đau.
-                </p>
-              )}
             </>
           )}
         </GlassPanel>

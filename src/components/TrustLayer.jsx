@@ -240,7 +240,7 @@ const TrustOverview = () => {
         </GlassPanel>
 
         <GlassPanel tone="strong" className="p-5">
-          <PanelHeader title="Cụm đánh giá giống nhau" subtitle="Nội dung gần như trùng nhau, đăng dồn trong thời gian ngắn: dấu vết của đánh giá được đặt hàng." />
+          <PanelHeader title="Cụm đánh giá giống nhau" subtitle="Nội dung gần như trùng nhau, đăng dồn trong thời gian ngắn." />
           {clusters.length === 0 ? (
             <EmptyState compact variant="calm" title="Không có cụm nào" description="Chưa thấy nhóm đánh giá nào giống nhau bất thường." />
           ) : (
@@ -288,7 +288,7 @@ const TrustOverview = () => {
       <GlassPanel tone="strong" className="reveal p-5">
         <PanelHeader
           title="Hàng đợi kiểm duyệt"
-          subtitle={`Phản hồi hệ thống phân vân nhất được xếp lên đầu; mỗi nhãn của bạn giúp mô hình học đúng hơn.${health.humanLabelCount > 0 ? ` Đã duyệt ${fmtInt(health.humanLabelCount)} phản hồi.` : ''}`}
+          subtitle={health.humanLabelCount > 0 ? `Đã duyệt ${fmtInt(health.humanLabelCount)} phản hồi.` : undefined}
           right={queue.length > 0 && <Badge tone="med">{queue.length} đang chờ</Badge>}
         />
         {labelError && <p className="mb-3 rounded-ctrl bg-crit/10 px-3 py-2 text-sm text-crit">{labelError}</p>}
@@ -334,7 +334,7 @@ const TrustOverview = () => {
   );
 };
 
-/** Trang Tin cậy dữ liệu: tab tổng quan và tab kiểm tra ngẫu nhiên do người làm */
+/** Trang Tin cậy dữ liệu: tab tổng quan và tab người duyệt nhãn AI */
 const TrustLayerPage = () => {
   const [params, setParams] = useSearchParams();
   const tab = params.get('tab') === 'audit' ? 'audit' : 'overview';
@@ -343,7 +343,7 @@ const TrustLayerPage = () => {
       <PageHeader
         title="Tin cậy dữ liệu"
         subtitle={tab === 'audit'
-          ? 'Người kiểm tra lại nhãn AI trên phản hồi lấy ngẫu nhiên, để biết AI đúng tới đâu.'
+          ? 'Sửa nhãn cho những câu AI chưa chắc.'
           : 'Phản hồi nào được tính vào chỉ số, phản hồi nào bị loại, và vì sao.'}
       />
       <Tabs
@@ -352,7 +352,7 @@ const TrustLayerPage = () => {
         onChange={(v) => setParams(v === 'audit' ? { tab: 'audit' } : {}, { replace: true })}
         tabs={[
           { value: 'overview', label: 'Tổng quan' },
-          { value: 'audit', label: 'Kiểm tra ngẫu nhiên' }
+          { value: 'audit', label: 'Duyệt nhãn' }
         ]}
       />
       {tab === 'audit' ? <Audit /> : <TrustOverview />}

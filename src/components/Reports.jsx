@@ -261,7 +261,7 @@ const Reports = () => {
       {previewMode ? (
         <PageHeader
           title="Bản in báo cáo"
-          subtitle="Các tờ A4 đúng như tệp PDF sẽ tải về, tự dàn trang theo dữ liệu. Đổi bộ lọc bên dưới thì bản in dựng lại theo."
+          subtitle="Đúng như tệp PDF sẽ tải về."
           actions={
             <>
               <Button variant="ghost" icon={ArrowLeft} onClick={() => window.location.assign('/reports')}>Quay lại</Button>
@@ -272,7 +272,7 @@ const Reports = () => {
       ) : (
         <PageHeader
           title="Báo cáo"
-          subtitle="Tệp xuất ra theo đúng bộ lọc bên dưới và chỉ gồm phản hồi được tính vào chỉ số."
+          subtitle="Tệp xuất ra theo bộ lọc bên dưới."
           actions={<Button variant="secondary" icon={Eye} onClick={() => window.location.assign('/reports?preview=1')}>Xem trước bản in</Button>}
         />
       )}
@@ -303,7 +303,7 @@ const Reports = () => {
             icon: FileText,
             title: 'Báo cáo điều hành',
             ext: 'PDF, khổ A4',
-            text: 'Khổ A4, tự dàn trang theo dữ liệu: tóm tắt điều hành và chỉ số chính, diễn biến khiếu nại, nhóm vấn đề, nguyên nhân, kế hoạch hành động, phụ lục về độ tin cậy dữ liệu. Hành động lấy từ thư viện hành động đã chuẩn hoá, không có đoạn nào do AI viết tự do.',
+            text: 'Tóm tắt, chỉ số chính, diễn biến khiếu nại, nguyên nhân và kế hoạch hành động.',
             loading: generatingPdf,
             cta: generatingPdf ? 'Đang dựng PDF…' : 'Tạo báo cáo PDF'
           },

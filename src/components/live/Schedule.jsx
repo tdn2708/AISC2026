@@ -290,7 +290,6 @@ const Schedule = ({ onStartFromSchedule, onOpenSession, refreshSignal = 0 }) => 
     <GlassPanel tone="strong" className="mt-4 p-4 sm:p-5">
       <PanelHeader
         title="Lịch live"
-        subtitle="Hẹn trước phiên live để quản gia tự nhắc qua Zalo trước giờ lên sóng và khi quá giờ chưa mở phiên."
         right={
           <Button
             variant="secondary"
@@ -311,7 +310,7 @@ const Schedule = ({ onStartFromSchedule, onOpenSession, refreshSignal = 0 }) => 
       ) : items.length === 0 ? (
         <EmptyState
           title="Chưa có phiên nào được hẹn"
-          description="Chưa có phiên nào được hẹn. Thêm lịch để quản gia nhắc qua Zalo trước giờ live."
+          description="Thêm lịch để quản gia nhắc qua Zalo trước giờ live."
           action={
             <Button icon={CalendarPlus} className="pointer-coarse:min-h-11" onClick={openAddModal}>
               Thêm lịch
