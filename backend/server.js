@@ -159,6 +159,11 @@ async function startServer() {
       }
     });
 
+    /** Sức khỏe tiến trình, không hỏi cơ sở dữ liệu: bộ nhớ và độ khựng event loop */
+    app.get('/health/live', (req, res) => {
+      res.json({ ok: true, ...require('./services/process_health').snapshot({ reset: req.query.reset === '1' }) });
+    });
+
     // Livestream: phiên live, bình luận thời gian thực (SSE), hàng đợi trả lời
     // Đăng ký, đăng nhập, phiên (routes/auth.js)
     app.use('/api/auth', require('./routes/auth')(authDb));
@@ -211,6 +216,11 @@ async function startServer() {
       if (workspaces.real.databaseName !== workspaces.demo.databaseName) {
         require('./services/real_collector').startAutoCollect(workspaces.real);
       }
+      // Phiên live đang chạy dở trước lần khởi động này (Render triển khai, tự khởi
+      // động lại): nối lại ngay để không đứt giữa giờ live
+      require('./services/live/hub').autoResume(workspaces)
+        .then((list) => { if (list.length) console.log(`[LIVE] Tự nối lại ${list.length} phiên: ${list.map((x) => x.title).join(', ')}`); })
+        .catch((e) => console.warn('[LIVE] Tự nối lại lỗi:', e.message));
       require('./services/butler').startButler({ authDb, workspaces })
         .then((b) => { butler = b; })
         .catch((e) => console.warn('[QUẢN GIA] Không bật được:', e.message));
@@ -221,10 +231,14 @@ async function startServer() {
   }
 }
 
-process.on('SIGINT', async () => {
-  console.log('\nĐang đóng kết nối MongoDB...');
-  await client.close();
+// Render gửi SIGTERM khi triển khai bản mới: ghi nốt bình luận live đang chờ rồi mới tắt
+async function shutdown(signal) {
+  console.log(`${signal}: ghi nốt bình luận live, đóng kết nối MongoDB...`);
+  try { await require('./services/live/hub').flushAll(8000); } catch { /* vẫn tắt */ }
+  await client.close().catch(() => {});
   process.exit(0);
-});
+}
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 startServer();

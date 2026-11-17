@@ -8,6 +8,8 @@
  *      dùng chung _id sự cố với vòng canh 5 phút để không báo trùng).
  *   3. Gửi báo cáo tóm tắt ngay khi phiên live kết thúc.
  *   4. Nhắc trước giờ hẹn live và nhắc khi quá giờ hẹn 10 phút chưa mở phiên.
+ *   5. Báo sự cố kỹ thuật giữa phiên (mất kết nối, không ghi được, quá tải,
+ *      bị ngắt) và báo khi đã ổn lại (live_tech.js).
  */
 
 const crypto = require('crypto');
@@ -17,6 +19,10 @@ const { withTimeout } = require('../real_collector');
 const { severityWord, vnTime, formatDurationWords, stripTitlePrefix } = require('./text');
 const { SEV_RANK, shouldNotify } = require('./incidents');
 const outbox = require('./outbox');
+const { detectProblems, TechTracker, buildTechText, buildTechOkText } = require('./live_tech');
+const procHealth = require('../process_health');
+
+const techTracker = new TechTracker();
 
 const STATE_ID = 'butler_live_watch';
 const LOCK_TTL_MS = 2 * 60 * 1000;
@@ -181,6 +187,13 @@ function buildLiveReportText(session, report, { appUrl: customUrl, durationMs } 
     lines.push(`Chốt nhiều nhất: ${best.name} (${Math.round(Number(best.quantity)).toLocaleString('vi-VN')} sản phẩm).`);
   }
 
+  // Từ số liệu tới việc làm: ba việc ưu tiên nhất cho phiên sau (report.js đã xếp theo mức ưu tiên)
+  const todo = Array.isArray(report?.todo) ? report.todo.filter((t) => t && t.title).slice(0, 3) : [];
+  if (todo.length) {
+    lines.push('Việc cho phiên sau:');
+    todo.forEach((t, i) => lines.push(`${i + 1}. ${t.title}.`));
+  }
+
   const sid = String(session?._id || session?.id || report?.session?.id || '');
   const base = appUrl(customUrl);
   lines.push(`Báo cáo đầy đủ: ${base}/live${sid ? `?session=${sid}` : ''}`);
@@ -293,6 +306,8 @@ async function runLiveTickInner({ authDb, workspaces, now = new Date(), onSchedu
 
     const incCol = authDb.collection('butler_incidents');
     const wsData = {};
+    const proc = procHealth.snapshot({ reset: true });
+    const techProblems = [];
 
     for (const ws of neededWorkspaces) {
       const db = workspaces[ws];
@@ -333,17 +348,31 @@ async function runLiveTickInner({ authDb, workspaces, now = new Date(), onSchedu
             .toArray()
         ]);
 
+        // Sự cố kỹ thuật: phiên còn "đang live" mà không chạy trong tiến trình này, phiên lỗi kết nối gần đây
+        const recentCut = now.getTime() - 30 * MIN_MS;
+        const activeRef = (s) => new Date(s.lastActiveAt || s.createdAt || 0).getTime();
+        const errored = (await db.collection('live_sessions')
+          .find({ status: 'error', createdAt: { $gte: twoDaysAgo } })
+          .sort({ createdAt: -1 }).limit(5).toArray())
+          .filter((s) => activeRef(s) >= recentCut);
+
         if (schedules.some((s) => new Date(s.startAt).getTime() >= now.getTime())) {
           hasUpcoming2h = true;
         }
 
         const running = [];
+        const orphans = [];
         for (const s of recentSessions) {
           const r = hub.runtimeFor(s._id, ws);
           if (r && r.status !== 'ended') {
             running.push({ session: s, runtime: r, snapshot: r.snapshot() });
+          } else if (!r && activeRef(s) >= recentCut) {
+            orphans.push(s);
           }
         }
+        techProblems.push(...detectProblems({
+          ws, running, orphans, errored, proc, now: now.getTime(), uptimeSec: process.uptime()
+        }));
 
         // Upsert các việc gấp đang mở trong phiên live vào butler_incidents (cùng _id với vòng canh 5 phút)
         const activeIncidentIdsBySession = new Map();
@@ -416,6 +445,7 @@ async function runLiveTickInner({ authDb, workspaces, now = new Date(), onSchedu
     }
 
     const baseAppUrl = appUrl();
+    const tech = techTracker.update(techProblems, now.getTime());
 
     for (const link of links) {
       const ws = link.settings?.workspace === 'demo' ? 'demo' : 'real';
@@ -438,6 +468,10 @@ async function runLiveTickInner({ authDb, workspaces, now = new Date(), onSchedu
         const iso = new Date(sched.startAt).toISOString();
         candidateKeys.push(`live_remind|${link.userId}|${sched._id}|${iso}`, `live_late|${link.userId}|${sched._id}|${iso}`);
       }
+      const techFor = (list) => list.filter((p) => p.key.startsWith(`${ws}|`));
+      const techKey = (p, ok) => `${ok ? 'live_tech_ok' : 'live_tech'}|${link.userId}|${p.key}|${p.since}`;
+      for (const p of techFor(tech.due)) candidateKeys.push(techKey(p, false));
+      for (const p of techFor(tech.recovered)) candidateKeys.push(techKey(p, true));
       const sentKeys = candidateKeys.length
         ? new Set(
           (await authDb
@@ -446,6 +480,22 @@ async function runLiveTickInner({ authDb, workspaces, now = new Date(), onSchedu
             .toArray()).map((d) => d.dedupKey)
         )
         : new Set();
+
+      // 0. Sự cố kỹ thuật giữa phiên: báo ngay, bỏ qua giờ yên lặng và nhịp 3 phút
+      for (const p of techFor(tech.due)) {
+        const key = techKey(p, false);
+        if (sentKeys.has(key) || p.notified.has(String(link.userId))) {
+          techTracker.markNotified(p.key, link.userId);
+          continue;
+        }
+        await outbox.enqueue(authDb, { dedupKey: key, userId: link.userId, chatId: link.chatId, kind: 'live', text: buildTechText(p, { appUrl: baseAppUrl, now: now.getTime() }) });
+        techTracker.markNotified(p.key, link.userId);
+      }
+      for (const p of techFor(tech.recovered)) {
+        const key = techKey(p, true);
+        if (!p.notified.has(String(link.userId)) || sentKeys.has(key)) continue;
+        await outbox.enqueue(authDb, { dedupKey: key, userId: link.userId, chatId: link.chatId, kind: 'live', text: buildTechOkText(p, { now: now.getTime() }) });
+      }
 
       // 1. Phiên bắt đầu trong 30 phút gần nhất (các phiên ghi song song, mỗi phiên một tin riêng)
       await Promise.all(data.running.map(async ({ session }) => {

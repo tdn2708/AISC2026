@@ -70,7 +70,7 @@ const ORDER = words([
 ]);
 
 const PRAISE = words([
-  'dep( qua| the| ghe| xiu)?', 'xinh( qua| xiu)?', 'xin( qua| xo)?', 'ung( qua)?', 'thich( qua)?', 'tuyet( voi)?',
+  'dep( qua| the| ghe| xiu)?', 'xinh( qua| xiu)?', 'xin (qua|xo)', 'ung( qua)?', 'thich( qua)?', 'tuyet( voi)?',
   'chat luong', 'xuat sac', 'dinh( cao)?', 'iu shop', 'yeu shop', 'ung ho shop', 'uy tin',
   'da nhan (hang|duoc)', 'hang dep', 'ok shop', 'oke shop', 'mlem', 'ngon', 're qua', 'hoi re'
 ]);

@@ -64,6 +64,13 @@ export default function useLiveSession(id, epoch = 0) {
       const items = JSON.parse(e.data);
       setFeed(items.slice().reverse().slice(0, FEED_MAX));
     });
+    // Máy chủ đẩy bình luận theo lô (cũ trước, mới sau): một lần vẽ cho cả lô
+    es.addEventListener('comments', (e) => {
+      const list = JSON.parse(e.data);
+      if (!list.length) return;
+      const fresh = list.slice(-FEED_MAX).reverse();
+      setFeed((f) => [...fresh, ...f].slice(0, FEED_MAX));
+    });
     es.addEventListener('comment', (e) => {
       const c = JSON.parse(e.data);
       setFeed((f) => (f.length >= FEED_MAX ? [c, ...f.slice(0, FEED_MAX - 1)] : [c, ...f]));

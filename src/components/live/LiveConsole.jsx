@@ -171,6 +171,16 @@ const LiveConsole = ({ sessionId, onBack }) => {
             {connection === 'reconnecting' && live && <span className="text-high">, đang nối lại luồng dữ liệu</span>}
           </p>
           {session.error && <p role="alert" className="mt-1.5 text-sm text-crit">{session.error}</p>}
+          {live && stats?.health?.writeFailures > 0 && (
+            <p role="alert" className="mt-1.5 text-sm text-high">
+              Chưa ghi được {fmtInt(stats.health.pendingWrites)} bình luận vào kho, đang thử lại. Bình luận vẫn hiện và vẫn được tính.
+            </p>
+          )}
+          {stats?.health?.dropped > 0 && (
+            <p role="alert" className="mt-1.5 text-sm text-crit">
+              Đã phải bỏ {fmtInt(stats.health.dropped)} bình luận cũ nhất vì không ghi được vào kho quá lâu.
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {(session.platform === 'manual' || !live) && (

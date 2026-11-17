@@ -1454,6 +1454,8 @@ test('Live: phân loại ý định bình luận, kể cả gõ không dấu', (
     ['đơn hôm trước chưa nhận được hàng', 'complaint', null],
     ['nhắn tin không ai trả lời', 'complaint', null],
     ['đẹp quáaaa', 'praise', null],
+    ['xin chào cả nhà', 'chatter', null],
+    ['áo xin quá shop ơi', 'praise', null],
     ['❤️❤️❤️', 'chatter', null]
   ];
   for (const [text, intent, topic] of cases) {
@@ -1976,6 +1978,60 @@ test('Sổ đối chiếu: phản hồi chờ duyệt còn trọng số được
 // Test bất đồng bộ (cần await): chạy lần lượt sau các test đồng bộ
 // ==================================================================
 const asyncTests = [];
+test('Quản gia live: sự cố kỹ thuật báo khi quá ngưỡng, báo "đã ổn lại" đúng người đã nhận tin lỗi', () => {
+  const { detectProblems, TechTracker, buildTechText, buildTechOkText } = require('../services/butler/live_tech');
+  const session = { _id: 's1', title: 'Live tối thứ sáu', platform: 'tiktok' };
+  const t0 = Date.parse('2026-11-17T12:00:00Z');
+  const rt = (status, health = {}) => ({
+    status, error: status === 'reconnecting' ? 'DEVICE_BLOCKED' : null,
+    healthInfo: () => ({ statusSince: new Date(t0), writeFailures: 0, dropped: 0, pendingWrites: 0, ...health })
+  });
+  const tr = new TechTracker();
+  // Mất kết nối 30 giây: chưa báo
+  let probs = detectProblems({ ws: 'real', running: [{ session, runtime: rt('reconnecting') }], now: t0 + 30000 });
+  assert.strictEqual(probs.length, 1);
+  let out = tr.update(probs, t0 + 30000);
+  assert.strictEqual(out.due.length, 0, 'chưa quá 1 phút thì chưa báo');
+  // 70 giây: báo
+  probs = detectProblems({ ws: 'real', running: [{ session, runtime: rt('reconnecting') }], now: t0 + 70000 });
+  out = tr.update(probs, t0 + 70000);
+  assert.strictEqual(out.due.length, 1);
+  const text = buildTechText(out.due[0], { appUrl: 'https://app', now: t0 + 70000 });
+  assert.ok(/mất kết nối với TikTok/.test(text) && /DEVICE_BLOCKED/.test(text) && /https:\/\/app\/live\?session=s1/.test(text), text);
+  tr.markNotified(out.due[0].key, 'u1');
+  // Nối lại: báo đã ổn lại cho u1, một lần
+  out = tr.update([], t0 + 130000);
+  assert.strictEqual(out.recovered.length, 1);
+  assert.ok(out.recovered[0].notified.has('u1'));
+  assert.ok(/Đã ổn lại: phiên "Live tối thứ sáu" đã nối lại sau 2 phút/.test(buildTechOkText(out.recovered[0], { now: t0 + 130000 })));
+  assert.strictEqual(tr.update([], t0 + 190000).recovered.length, 0, 'không báo ổn lại hai lần');
+  // Sự cố chưa từng báo thì hết cũng không nhắn
+  tr.update(detectProblems({ ws: 'real', running: [{ session, runtime: rt('live', { writeFailures: 1, failingSince: new Date(t0) }) }], now: t0 }), t0);
+  assert.strictEqual(tr.update([], t0 + 5000).recovered.length, 0);
+  // Ghi lỗi quá 30 giây, quá tải, phiên bị ngắt sau khi khởi động lại đủ lâu
+  probs = detectProblems({
+    ws: 'demo',
+    running: [{ session, runtime: rt('live', { writeFailures: 3, failingSince: new Date(t0), pendingWrites: 1200 }) }],
+    orphans: [{ _id: 's2', title: 'Phiên cũ' }],
+    proc: { rssMb: 470, loop: { p99Ms: 30 } },
+    now: t0 + 40000, uptimeSec: 300
+  });
+  assert.deepStrictEqual(probs.map((p) => p.kind).sort(), ['interrupted', 'overload', 'write']);
+  assert.strictEqual(detectProblems({ ws: 'demo', orphans: [{ _id: 's2' }], uptimeSec: 30 }).length, 0, 'vừa khởi động thì chờ tự nối lại');
+});
+
+test('Báo cáo Zalo cuối phiên live có ba việc ưu tiên cho phiên sau', () => {
+  const { buildLiveReportText } = require('../services/butler/live_watch');
+  const text = buildLiveReportText(
+    { _id: 's9', title: 'Live 11.11' },
+    { totals: { comments: 1200, byIntent: { order: 80 }, orderQuantity: 95 }, revenue: { estimated: 12000000, lostTotal: 900000 },
+      todo: [{ title: 'Lên đơn cho 12 lượt chốt chưa xử lý' }, { title: 'Xử lý 4 khiếu nại trước phiên sau' }, { title: 'Nhập thêm Áo thun size M' }, { title: 'Việc thứ tư' }] },
+    { appUrl: 'https://app', durationMs: 3600000 }
+  );
+  assert.ok(/Việc cho phiên sau:\n1\. Lên đơn cho 12 lượt chốt chưa xử lý\.\n2\. Xử lý 4 khiếu nại trước phiên sau\.\n3\. Nhập thêm Áo thun size M\./.test(text), text);
+  assert.ok(!/Việc thứ tư/.test(text), 'chỉ ba việc');
+});
+
 function testAsync(name, fn) {
   asyncTests.push({ name, fn });
 }
@@ -3399,6 +3455,75 @@ testAsync('Tài khoản: băm mật khẩu scrypt có muối riêng, đúng thì
     );
   });
 }
+
+testAsync('Livestream: Atlas lỗi giữa phiên thì giữ bình luận để ghi lại, không mất cái nào; lượt ghi chồng nhau gộp làm một', async () => {
+  const { Runtime } = require('../services/live/hub');
+  const stored = new Map();
+  let failNext = 1;
+  let calls = 0;
+  const fakeDb = {
+    collection: () => ({
+      insertMany: async (docs) => {
+        calls += 1;
+        await new Promise((r) => setTimeout(r, 15));
+        if (failNext > 0) { failNext -= 1; throw new Error('mất kết nối Atlas'); }
+        for (const d of docs) {
+          const k = String(d._id);
+          if (stored.has(k)) { const e = new Error('trùng'); e.code = 11000; throw e; }
+          stored.set(k, d);
+        }
+      },
+      updateOne: async () => ({})
+    })
+  };
+  const r = new Runtime({ _id: 'sess1', platform: 'manual', products: [] }, fakeDb, 'demo');
+  try {
+    for (let i = 0; i < 30; i += 1) r.ingest({ type: 'comment', platformMsgId: `m${i}`, author: { handle: `k${i}` }, text: `còn size M không ${i}`, ts: new Date() });
+    await assert.rejects(r.flush(), /mất kết nối/);
+    assert.strictEqual(r.pending.length, 30, 'lô ghi lỗi phải quay lại hàng chờ');
+    assert.strictEqual(r.healthInfo().writeFailures, 1);
+    // Nhiều lời gọi cùng lúc: một lượt đang chạy + đúng một lượt nối tiếp
+    calls = 0;
+    const p1 = r.flush();
+    for (let i = 30; i < 40; i += 1) r.ingest({ type: 'comment', platformMsgId: `m${i}`, author: { handle: `k${i}` }, text: `chốt 1 cái ${i}`, ts: new Date() });
+    const waiters = Array.from({ length: 20 }, () => r.flush());
+    await Promise.all([p1, ...waiters]);
+    assert.strictEqual(stored.size, 40, `kho phải có đủ 40, có ${stored.size}`);
+    assert.ok(calls <= 2, `20 lời gọi chồng nhau chỉ được 2 lượt ghi, đã ghi ${calls} lượt`);
+    assert.strictEqual(r.healthInfo().writeFailures, 0, 'ghi lại được thì xóa trạng thái lỗi');
+    assert.strictEqual(r.pending.length, 0);
+  } finally {
+    clearInterval(r.flushTimer); clearInterval(r.statsTimer); clearInterval(r.heartbeat); clearInterval(r.pushTimer);
+  }
+});
+
+testAsync('Livestream: kết nối TikTok treo im lặng quá 3 phút thì tự nối lại và ghi nhận để báo', async () => {
+  const { Runtime } = require('../services/live/hub');
+  const fakeDb = { collection: () => ({ insertMany: async () => {}, updateOne: async () => ({}) }) };
+  const r = new Runtime({ _id: 'st1', platform: 'tiktok', target: 'shop', products: [] }, fakeDb, 'demo');
+  let starts = 0;
+  let stops = 0;
+  r.connectorFor = () => ({ start: async (emit) => { starts += 1; emit({ type: 'connected', info: null }); }, stop: () => { stops += 1; } });
+  try {
+    await r.start();
+    assert.strictEqual(r.status, 'live');
+    const t = Date.now();
+    assert.strictEqual(r.checkStall(t + 60 * 1000), false, 'mới im 1 phút thì chưa nối lại');
+    assert.strictEqual(r.checkStall(t + 4 * 60 * 1000), true, 'im quá 3 phút thì nối lại');
+    await new Promise((res) => setTimeout(res, 20));
+    assert.strictEqual(stops, 1);
+    assert.strictEqual(starts, 2);
+    assert.strictEqual(r.status, 'live', 'nối lại xong thì về live');
+    assert.strictEqual(r.healthInfo().reconnects, 1);
+    // Phiên nhập tay (webhook) im lặng là bình thường, không đụng tới
+    const m = new Runtime({ _id: 'st2', platform: 'manual', products: [] }, fakeDb, 'demo');
+    await m.start();
+    assert.strictEqual(m.checkStall(Date.now() + 60 * 60 * 1000), false);
+    [m.flushTimer, m.statsTimer, m.heartbeat, m.pushTimer].forEach(clearInterval);
+  } finally {
+    [r.flushTimer, r.statsTimer, r.heartbeat, r.pushTimer].forEach(clearInterval);
+  }
+});
 
 (async () => {
   for (const t of asyncTests) {

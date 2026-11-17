@@ -321,7 +321,10 @@ function parseCsv(text) {
  * phiên (X-Ingest-Key) để người ngoài không đổ rác vào được.
  */
 router.post('/sessions/:id/comments', wrap(async (req, res) => {
-  const s = await sessionOr404(req);
+  // Phiên đang chạy thì lấy từ bộ nhớ: giờ cao điểm webhook gọi hàng trăm lần mỗi
+  // giây, đọc lại phiên từ Atlas mỗi lần vừa chậm vừa làm rơi cả lô khi mạng chập chờn
+  const live = hub.runtimeFor(req.params.id, req.workspace);
+  const s = live ? live.session : await sessionOr404(req);
   const key = req.get('X-Ingest-Key') || req.body?.key || req.query.key;
   if (!key || key !== s.ingestKey) throw bad('Sai khóa nhập của phiên', 403);
   const b = req.body || {};
@@ -336,11 +339,21 @@ router.post('/sessions/:id/comments', wrap(async (req, res) => {
     ts: c.ts && !Number.isNaN(Date.parse(c.ts)) ? new Date(c.ts) : new Date(Date.now() - (items.length - i))
   })).filter((c) => c.text);
 
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = live || hub.runtimeFor(s._id, req.workspace);
   let accepted = 0;
+  let queued = false;
   if (r) {
     for (const ev of items) if (r.ingest(ev)) accepted += 1;
-    await r.flush();
+    // Nhận vào bộ nhớ là đã hiện trên màn hình và đã vào số liệu; ghi kho chạy nền
+    // (tối đa FLUSH_INTERVAL_MS sau, máy chủ tắt thì ghi nốt). Giờ cao điểm không bắt
+    // hệ thống của shop chờ Atlas. Cần chắc đã ghi xong thì gửi ?wait=1.
+    // Ghi lỗi thì bình luận vẫn nằm trong hàng chờ và được ghi lại ở lượt sau.
+    if (req.query.wait === '1') {
+      try { await r.flush(); } catch { queued = true; }
+    } else {
+      queued = true;
+      r.flush().catch(() => {});
+    }
   } else {
     // Phiên đã kết thúc: nhập bổ sung (ví dụ tệp xuất sau live)
     const docs = items.map((ev) => hub.buildCommentDoc(s, ev));
@@ -356,7 +369,7 @@ router.post('/sessions/:id/comments', wrap(async (req, res) => {
       await req.db.collection('live_sessions').updateOne({ _id: s._id }, { $set: { summary: hub.summarize(snap) } });
     }
   }
-  res.json({ received: items.length, accepted, duplicates: items.length - accepted });
+  res.json({ received: items.length, accepted, duplicates: items.length - accepted, ...(queued ? { queued: true } : {}) });
 }));
 
 /** Sửa nhãn ý định của một bình luận (nhãn người, dùng được cho huấn luyện) */

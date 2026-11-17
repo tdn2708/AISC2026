@@ -41,6 +41,12 @@ const PLATFORMS = {
 
 const STATS_INTERVAL_MS = 1500;
 const FLUSH_INTERVAL_MS = 700;
+const FLUSH_MAX_BATCH = 2000;
+const COMMENT_PUSH_MS = 200;
+const COACH_EVERY_MS = 3000;
+// TikTok/YouTube im lặng quá lâu (kết nối treo, không báo ngắt): tự nối lại
+const STALL_MS = Number(process.env.LIVE_STALL_MS) || 3 * 60 * 1000;
+const PENDING_MAX = 100000;
 const HEARTBEAT_MS = 15000;
 
 const runtimes = new Map();
@@ -181,6 +187,7 @@ function publicSession(s, runtime) {
     // Thời lượng đã live không tính lúc bị ngắt; null nếu phiên cũ không đủ dữ liệu
     liveMs: liveDurationMs(s, runtime),
     summary: s.summary || null,
+    health: runtime ? runtime.healthInfo() : null,
     ingestKey: s.ingestKey
   };
 }
@@ -257,9 +264,16 @@ class Runtime {
       this.flush().catch((e) => console.warn('[LIVE] Ghi lỗi:', e.message));
       this.touch().catch(() => {});
     }, FLUSH_INTERVAL_MS);
-    this.statsTimer = setInterval(() => this.pushStats(), STATS_INTERVAL_MS);
+    this.statsTimer = setInterval(() => { this.pushStats(); this.checkStall(); }, STATS_INTERVAL_MS);
+    this.lastEventAt = Date.now();
+    this.outBuf = [];
+    this.pushTimer = setInterval(() => this.pushComments(), COMMENT_PUSH_MS);
     this.heartbeat = setInterval(() => this.broadcastRaw(': ping\n\n'), HEARTBEAT_MS);
     this.dirty = false;
+    this.flushing = null;
+    this.flushNext = null;
+    this.statusSince = Date.now();
+    this.health = { failingSince: null, writeFailures: 0, lastWriteError: null, lastWriteErrorAt: null, dropped: 0, reconnects: 0, recoveredAt: null };
     // Việc đã làm hoặc bỏ qua: ẩn trong ACTION_COOLDOWN_MS rồi mới được gợi ý lại
     this.suppressed = new Map((session.actions || []).map((a) => [a.id, new Date(a.at).getTime() + ACTION_COOLDOWN_MS]));
     this.lastActions = [];
@@ -268,8 +282,14 @@ class Runtime {
   /** Việc cần làm ngay theo dữ liệu hiện tại (coach.js), bỏ các việc vừa xử lý */
   activeActions() {
     const now = Date.now();
-    const list = coach({ agg: this.agg, session: this.session, suggestionFor: (g) => withSuggestion(g, this.session).suggestion, now })
-      .filter((a) => !(this.suppressed.get(a.id) > now));
+    // Việc gấp đổi chậm: tính lại tối đa mỗi COACH_EVERY_MS, các lượt đẩy số liệu
+    // ở giữa dùng lại kết quả (ghi nhận làm/bỏ qua thì tính lại ngay)
+    if (this.coachAt && now - this.coachAt < COACH_EVERY_MS && this.coachRaw) {
+      return this.coachRaw.filter((a) => !(this.suppressed.get(a.id) > now));
+    }
+    this.coachRaw = coach({ agg: this.agg, session: this.session, suggestionFor: (g) => withSuggestion(g, this.session).suggestion, now });
+    this.coachAt = now;
+    const list = this.coachRaw.filter((a) => !(this.suppressed.get(a.id) > now));
     this.lastActions = list;
     return list;
   }
@@ -289,6 +309,7 @@ class Runtime {
     };
     this.session.actions = [...(this.session.actions || []), entry];
     this.suppressed.set(a.id, entry.at.getTime() + ACTION_COOLDOWN_MS);
+    this.coachAt = 0;
     await this.db.collection('live_sessions').updateOne({ _id: this.session._id }, { $push: { actions: entry } });
     if (status === 'done' && a.do?.kind === 'switch_product') await this.setCurrentProduct(a.do.productId);
     if (status === 'done' && a.type === 'question_burst' && a.groupKey) {
@@ -374,6 +395,7 @@ class Runtime {
   }
 
   async setStatus(status, extra = {}) {
+    if (status !== this.status) this.statusSince = Date.now();
     this.status = status;
     const set = { status, ...extra };
     if (status === 'live' && !this.session.startedAt) {
@@ -398,6 +420,7 @@ class Runtime {
   }
 
   onEvent(ev) {
+    this.lastEventAt = Date.now();
     switch (ev.type) {
       case 'comment':
         this.ingest(ev);
@@ -419,6 +442,7 @@ class Runtime {
         this.setStatus('live').catch(() => {});
         break;
       case 'reconnecting':
+        this.health.reconnects += 1;
         this.setStatus('reconnecting').catch(() => {});
         break;
       case 'end':
@@ -430,6 +454,27 @@ class Runtime {
         break;
       default:
     }
+  }
+
+  /**
+   * Kết nối nền tảng treo: vẫn "mở" nhưng không còn sự kiện nào (bình luận, số
+   * người xem, lượt thích) trong STALL_MS. Đóng kết nối cũ, mở lại từ đầu.
+   */
+  checkStall(now = Date.now()) {
+    if (!this.connector || this.status !== 'live' || this.restarting) return false;
+    if (this.session.platform !== 'tiktok' && this.session.platform !== 'youtube') return false;
+    if (now - this.lastEventAt < STALL_MS) return false;
+    this.restarting = true;
+    this.health.stalls = (this.health.stalls || 0) + 1;
+    this.health.reconnects += 1;
+    this.error = `Không nhận được dữ liệu từ ${PLATFORMS[this.session.platform]?.label || 'nền tảng'} trong ${Math.round(STALL_MS / 60000)} phút, đang nối lại`;
+    this.setStatus('reconnecting').catch(() => {});
+    try { this.connector.stop(); } catch { /* đã đóng */ }
+    this.lastEventAt = now;
+    this.start()
+      .catch(() => {})
+      .finally(() => { this.restarting = false; });
+    return true;
   }
 
   /** Phiên mô phỏng đã chạm trần bình luận */
@@ -458,24 +503,105 @@ class Runtime {
     this.pending.push(doc);
     this.recent.push(doc);
     if (this.recent.length > 300) this.recent.splice(0, this.recent.length - 200);
-    this.broadcast('comment', publicComment(doc, this.agg.productName(doc.productId)));
+    // Gom bình luận, đẩy theo lô mỗi COMMENT_PUSH_MS: giờ cao điểm 500 bình luận/giây
+    // với 50 màn hình xem là 25.000 lượt ghi SSE mỗi giây nếu đẩy từng cái
+    if (this.subscribers.size) this.outBuf.push(publicComment(doc, this.agg.productName(doc.productId)));
     this.dirty = true;
     return doc;
   }
 
-  async flush() {
-    if (!this.pending.length) return;
-    const batch = this.pending.splice(0);
-    try {
-      await this.db.collection('live_comments').insertMany(batch, { ordered: false });
-    } catch (e) {
-      // Trùng khóa (bình luận đã có từ lần kết nối trước) thì bỏ qua
-      if (e.code !== 11000 && !e.writeErrors?.every((w) => w.code === 11000)) throw e;
+  /**
+   * Ghi các bình luận đang chờ. Mỗi lời gọi chỉ chờ tới lượt ghi có chứa bình
+   * luận của chính nó: đang có lượt ghi thì xếp đúng MỘT lượt nối tiếp, lượt đó
+   * lấy hết bình luận đến trong lúc chờ (webhook dồn dập không sinh hàng trăm
+   * lượt ghi, cũng không bắt yêu cầu nào chờ hàng chờ cạn).
+   * Ghi lỗi (mạng, Atlas chập chờn) thì trả phần chưa ghi về đầu hàng chờ để
+   * lượt sau ghi tiếp, không bỏ bình luận nào: tài liệu đã có _id nên phần đã
+   * vào rồi chỉ báo trùng khóa, được bỏ qua.
+   */
+  flush() {
+    if (this.flushing) {
+      if (!this.flushNext) {
+        this.flushNext = this.flushing.catch(() => {}).then(() => {
+          this.flushNext = null;
+          return this.flushOnce();
+        });
+      }
+      return this.flushNext;
     }
+    return this.flushOnce();
+  }
+
+  flushOnce() {
+    if (!this.pending.length) return Promise.resolve();
+    const batch = this.pending.splice(0);
+    this.flushing = (async () => {
+      try {
+        for (let i = 0; i < batch.length; i += FLUSH_MAX_BATCH) {
+          const part = batch.slice(i, i + FLUSH_MAX_BATCH);
+          try {
+            await this.db.collection('live_comments').insertMany(part, { ordered: false });
+          } catch (e) {
+            const dupOnly = e.code === 11000 || (Array.isArray(e.writeErrors) && e.writeErrors.length && e.writeErrors.every((w) => w.code === 11000));
+            if (dupOnly) continue;
+            const failed = Array.isArray(e.writeErrors) && e.writeErrors.length
+              ? part.filter((_, k) => e.writeErrors.some((w) => w.index === k && w.code !== 11000))
+              : part;
+            this.pending.unshift(...failed, ...batch.slice(i + FLUSH_MAX_BATCH));
+            if (this.pending.length > PENDING_MAX) {
+              // Atlas mất quá lâu: giữ phần mới nhất để không hết RAM, đếm phần bỏ để báo
+              const drop = this.pending.length - PENDING_MAX;
+              this.pending.splice(0, drop);
+              this.health.dropped += drop;
+            }
+            if (!this.health.writeFailures) this.health.failingSince = new Date();
+            this.health.writeFailures += 1;
+            this.health.lastWriteError = e.message;
+            this.health.lastWriteErrorAt = new Date();
+            this.dirty = true;
+            throw e;
+          }
+        }
+        if (this.health.writeFailures) {
+          this.health.recoveredAt = new Date();
+          this.health.writeFailures = 0;
+          this.health.failingSince = null;
+          this.dirty = true;
+        }
+      } finally {
+        this.flushing = null;
+      }
+    })();
+    return this.flushing;
+  }
+
+  /** Tình trạng kỹ thuật của phiên, cho giao diện và quản gia báo Zalo */
+  healthInfo() {
+    return {
+      pendingWrites: this.pending.length,
+      writeFailures: this.health.writeFailures,
+      failingSince: this.health.failingSince,
+      status: this.status,
+      statusSince: new Date(this.statusSince),
+      lastWriteError: this.health.lastWriteError,
+      lastWriteErrorAt: this.health.lastWriteErrorAt,
+      dropped: this.health.dropped,
+      reconnects: this.health.reconnects,
+      subscribers: this.subscribers.size
+    };
   }
 
   snapshot() {
-    return decorateSnapshot(this.agg.snapshot(), this.session, this.agg, this.status === 'ended' ? [] : this.activeActions());
+    const snap = decorateSnapshot(this.agg.snapshot(), this.session, this.agg, this.status === 'ended' ? [] : this.activeActions());
+    snap.health = this.healthInfo();
+    return snap;
+  }
+
+  pushComments() {
+    if (!this.outBuf.length) return;
+    const batch = this.outBuf;
+    this.outBuf = [];
+    this.broadcast('comments', batch);
   }
 
   pushStats() {
@@ -552,6 +678,8 @@ class Runtime {
   dispose() {
     clearInterval(this.flushTimer);
     clearInterval(this.statsTimer);
+    clearInterval(this.pushTimer);
+    this.pushComments();
     // Giữ kết nối SSE thêm một nhịp để trình duyệt nhận trạng thái cuối
     setTimeout(() => {
       clearInterval(this.heartbeat);
@@ -592,6 +720,47 @@ function runtimeFor(id, workspace) {
 async function loadSession(db, id) {
   if (!ObjectId.isValid(id)) return null;
   return db.collection('live_sessions').findOne({ _id: new ObjectId(id) });
+}
+
+/**
+ * TỰ NỐI LẠI SAU KHI MÁY CHỦ KHỞI ĐỘNG LẠI
+ * Render triển khai bản mới hay tự khởi động lại giữa giờ live thì phiên mất
+ * runtime trong bộ nhớ. Phiên còn hoạt động trong AUTO_RESUME_MIN phút gần
+ * nhất được nối lại ngay (nạp bình luận cũ rồi kết nối lại nền tảng); phiên
+ * mô phỏng đã đủ trần thì để yên. Trả về danh sách phiên đã nối lại.
+ */
+async function autoResume(workspaces, { minutes = Number(process.env.LIVE_AUTO_RESUME_MIN) || 20, now = new Date() } = {}) {
+  const since = new Date(now.getTime() - minutes * 60000);
+  const resumed = [];
+  for (const [ws, db] of Object.entries(workspaces)) {
+    const list = await db.collection('live_sessions').find({
+      status: { $in: ['connecting', 'live', 'reconnecting'] },
+      $or: [{ lastActiveAt: { $gte: since } }, { lastActiveAt: null, createdAt: { $gte: since } }]
+    }).limit(10).toArray();
+    for (const s of list) {
+      if (runtimeFor(s._id, ws)) continue;
+      if (s.platform === 'simulator' && ws !== 'demo') continue;
+      try {
+        if (s.platform === 'simulator') {
+          const n = await db.collection('live_comments').countDocuments({ sessionId: s._id });
+          if (n >= SIM_MAX_COMMENTS) continue;
+        }
+        const resumes = (Number(s.autoResumes) || 0) + 1;
+        await db.collection('live_sessions').updateOne({ _id: s._id }, { $set: { status: 'connecting', error: null, autoResumedAt: now, autoResumes: resumes } });
+        await startSession(db, ws, { ...s, status: 'connecting', error: null, autoResumedAt: now, autoResumes: resumes });
+        resumed.push({ workspace: ws, id: String(s._id), title: s.title });
+      } catch (e) {
+        console.warn(`[LIVE] Không tự nối lại được phiên ${s._id}:`, e.message);
+      }
+    }
+  }
+  return resumed;
+}
+
+/** Ghi nốt bình luận đang chờ của mọi phiên, trước khi tiến trình tắt */
+async function flushAll(timeoutMs = 8000) {
+  const all = [...runtimes.values()].map((r) => r.flush().catch((e) => console.warn('[LIVE] Ghi nốt lỗi:', e.message)));
+  await Promise.race([Promise.all(all), new Promise((r) => setTimeout(r, timeoutMs))]);
 }
 
 async function startSession(db, workspace, session) {
@@ -679,6 +848,7 @@ async function refreshRuntime(runtime) {
 }
 
 module.exports = {
+  Runtime,
   PLATFORMS,
   platformInfo,
   ensureIndexes,
@@ -690,6 +860,8 @@ module.exports = {
   runtimeFor,
   loadSession,
   startSession,
+  autoResume,
+  flushAll,
   rebuildSnapshot,
   reportFor,
   dropMemo,

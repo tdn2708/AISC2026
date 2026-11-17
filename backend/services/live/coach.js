@@ -64,6 +64,24 @@ function alternativeFor(p, key, orders) {
   return keys[0];
 }
 
+/**
+ * Sự kiện từ mốc `from` tới nay. Sự kiện được thêm theo thứ tự đến (gần đúng thứ
+ * tự thời gian), nên tìm nhị phân điểm bắt đầu rồi lùi thêm một đoạn đệm cho
+ * bình luận đến lệch giờ, thay vì quét cả phiên (tới 60 nghìn sự kiện) mỗi lượt.
+ */
+function eventsSince(events, from) {
+  let lo = 0;
+  let hi = events.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (events[mid].t < from) lo = mid + 1; else hi = mid;
+  }
+  const start = Math.max(0, lo - 2000);
+  const out = [];
+  for (let i = start; i < events.length; i += 1) if (events[i].t >= from) out.push(events[i]);
+  return out;
+}
+
 const rate = (events, from, to, pred = () => true) =>
   events.filter((e) => e.t >= from && e.t < to && pred(e)).length / Math.max(1, (to - from) / MIN);
 
@@ -78,9 +96,48 @@ function coach({ agg, session, suggestionFor, now = Date.now() }) {
   const policy = session.policy || {};
   // Mốc là giờ hiện tại: phiên đang live mà im lặng thì chính sự im lặng là tín hiệu
   const end = now;
-  const ev = agg.events.filter((e) => e.t >= end - 15 * MIN);
-  const last = (mins) => ev.filter((e) => e.t >= end - mins * MIN);
+  const ev = eventsSince(agg.events, end - 15 * MIN);
+  // Mỗi khung thời gian chỉ lọc một lần; đơn và nhu cầu chia theo sản phẩm một lần.
+  // Trước đây mỗi biến thể quét lại cả phiên: 35 nghìn bình luận mất ~200 ms mỗi
+  // lượt (1,5 giây một lượt), trên CPU Render gần như ăn hết máy chủ giữa giờ live.
+  const lastMemo = new Map();
+  const last = (mins) => {
+    if (!lastMemo.has(mins)) lastMemo.set(mins, ev.filter((e) => e.t >= end - mins * MIN));
+    return lastMemo.get(mins);
+  };
   const orders = agg.orders;
+  const ordersBy = new Map();
+  for (const o of orders) {
+    if (!ordersBy.has(o.productId)) ordersBy.set(o.productId, []);
+    ordersBy.get(o.productId).push(o);
+  }
+  const ordersOf = (pid) => ordersBy.get(pid) || [];
+  // Số đã chốt theo biến thể, tính một lần cho mỗi sản phẩm (cùng quy tắc orderedQty)
+  const qtyIndex = new Map(); // pid -> { total, bySize, byColor, same }
+  const qtyOf = (pid, key) => {
+    if (!qtyIndex.has(pid)) {
+      const ix = { total: 0, bySize: new Map(), byColor: new Map(), same: new Map() };
+      for (const o of ordersOf(pid)) {
+        if (o.status === 'cancelled') continue;
+        const q = o.quantity || 1;
+        const sz = o.variant?.size;
+        const co = o.variant?.color;
+        ix.total += q;
+        if (sz != null) ix.bySize.set(sz, (ix.bySize.get(sz) || 0) + q);
+        if (co != null) ix.byColor.set(co, (ix.byColor.get(co) || 0) + q);
+        if (sz != null && sz === co) ix.same.set(sz, (ix.same.get(sz) || 0) + q);
+      }
+      qtyIndex.set(pid, ix);
+    }
+    const ix = qtyIndex.get(pid);
+    if (key == null) return ix.total;
+    return (ix.bySize.get(key) || 0) + (ix.byColor.get(key) || 0) - (ix.same.get(key) || 0);
+  };
+  const last10By = new Map();
+  for (const e of last(10)) {
+    if (!last10By.has(e.productId)) last10By.set(e.productId, []);
+    last10By.get(e.productId).push(e);
+  }
 
   // ---------- 1. Khiếu nại dồn dập ----------
   {
@@ -103,13 +160,13 @@ function coach({ agg, session, suggestionFor, now = Date.now() }) {
   // ---------- 2 + 4. Tồn kho: đã hết mà vẫn có cầu / sắp hết ----------
   for (const p of products) {
     for (const k of stockKeys(p)) {
-      const left = k.initial - orderedQty(orders, p.id, k.key);
+      const left = k.initial - qtyOf(p.id, k.key);
       const label = k.key ? `${p.name} ${/^[A-Z0-9]+$/.test(k.key) ? `size ${k.key}` : k.key}` : p.name;
-      const demand = last(10).filter((e) => e.productId === p.id && matchesKey(e, k.key) && (e.intent === 'order' || (e.intent === 'question' && e.topic === 'stock')));
+      const demand = (last10By.get(p.id) || []).filter((e) => matchesKey(e, k.key) && (e.intent === 'order' || (e.intent === 'question' && e.topic === 'stock')));
       const demandOrders = demand.filter((e) => e.intent === 'order');
       const unitPrice = p.salePrice ?? p.price;
       if (left <= 0 && demand.length >= 2) {
-        const alt = k.key ? alternativeFor(p, k.key, orders) : null;
+        const alt = k.key ? alternativeFor(p, k.key, ordersOf(p.id)) : null;
         const lostQty = demandOrders.reduce((s, e) => s + (e.qty || 1), 0);
         out.push({
           type: 'soldout_demand',
@@ -147,8 +204,10 @@ function coach({ agg, session, suggestionFor, now = Date.now() }) {
   // đông thì nhóm nào cũng vượt 5 người, gợi ý hết là thành nhiễu.
   const openGroups = [...agg.groups.values()].filter((g) => g.status === 'open' && g.intent === 'question');
   const recentQuestions = last(3).filter((e) => e.intent === 'question').length;
+  const askBy = new Map();
+  for (const e of last(3)) if (e.groupKey) askBy.set(e.groupKey, (askBy.get(e.groupKey) || 0) + 1);
   const bursts = openGroups
-    .map((g) => ({ g, recentAsk: last(3).filter((e) => e.groupKey === g.key).length }))
+    .map((g) => ({ g, recentAsk: askBy.get(g.key) || 0 }))
     .filter((x) => x.recentAsk >= 5 && x.recentAsk >= recentQuestions * 0.08)
     .sort((a, b) => b.recentAsk - a.recentAsk)
     .slice(0, 2);

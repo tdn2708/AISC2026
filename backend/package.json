@@ -9,6 +9,8 @@
     "seed": "node seed_realistic_data.js",
     "test": "node test/run_tests.js",
     "eval": "node evaluation/run_evaluation.js",
+    "live:load": "node scripts/live_load.js",
+    "live:resilience": "node scripts/live_resilience.js",
     "check": "node test/requirements_check.js",
     "verify": "node data/verify_detection.js",
     "demo:rec": "node test/recommender_demo.js",
