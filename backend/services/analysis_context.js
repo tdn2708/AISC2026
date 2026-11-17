@@ -173,17 +173,13 @@ async function getContext(db, opts = {}) {
   if (!opts.force && valid) {
     if (Date.now() - st.cache.at >= CACHE_TTL_MS) {
       // Hết hạn: trả bản đang có ngay, làm mới ở nền
-      refresh(db, { onlyIfChanged: true }).catch((e) =>
-        console.warn('[CONTEXT] Làm mới nền thất bại, giữ bản cũ:', e.message)
-      );
+      backgroundRefresh(db, { onlyIfChanged: true });
     }
     return st.cache.value;
   }
 
   if (!opts.force && !opts.fresh && st.stale) {
-    refresh(db, { onlyIfChanged: false }).catch((e) =>
-      console.warn('[CONTEXT] Tính lại sau khi ghi thất bại, giữ bản cũ:', e.message)
-    );
+    backgroundRefresh(db, { onlyIfChanged: false });
     return st.stale;
   }
 
@@ -194,6 +190,36 @@ async function getContext(db, opts = {}) {
 function isRefreshing(db) {
   const st = stateFor(db);
   return !(st.cache.value && st.cache.generation === st.generation);
+}
+
+/**
+ * Làm mới ở nền, nhường CPU cho livestream. Trên Render (~0,1 CPU) luồng phụ
+ * tính lại ngữ cảnh mất hàng chục giây và giành hết CPU của luồng chính, nên
+ * bình luận live đứng hình (đo 17/11: khựng 14 giây lúc khởi động). Đang có
+ * phiên live thì hoãn, kiểm lại mỗi phút, tối đa LIVE_DEFER_MAX_MS; trong lúc
+ * đó các trang vẫn dùng bản đang có (cờ `refreshing` nếu vừa có thao tác ghi).
+ */
+const LIVE_DEFER_MAX_MS = Number(process.env.LIVE_DEFER_MAX_MS) || 30 * 60 * 1000;
+function liveBusy() {
+  try { return require('./live/hub').activeCount() > 0; } catch { return false; }
+}
+function backgroundRefresh(db, opts) {
+  const st = stateFor(db);
+  if (liveBusy()) {
+    if (!st.deferredSince) st.deferredSince = Date.now();
+    if (Date.now() - st.deferredSince < LIVE_DEFER_MAX_MS) {
+      if (!st.deferTimer) {
+        st.deferTimer = setTimeout(() => {
+          st.deferTimer = null;
+          backgroundRefresh(db, opts);
+        }, 60 * 1000);
+        if (st.deferTimer.unref) st.deferTimer.unref();
+      }
+      return;
+    }
+  }
+  st.deferredSince = null;
+  refresh(db, opts).catch((e) => console.warn('[CONTEXT] Làm mới nền thất bại, giữ bản cũ:', e.message));
 }
 
 /** Một lần nạp duy nhất cho mỗi thế hệ dữ liệu; các request đồng thời dùng chung */
@@ -207,7 +233,7 @@ function refresh(db, { onlyIfChanged }) {
     // Có thao tác ghi xảy ra trong lúc đang tính: tính tiếp bản mới hơn ở nền,
     // nếu không cờ `refreshing` treo tới tận request kế tiếp
     if (st.generation !== gen && st.stale) {
-      refresh(db, { onlyIfChanged: false }).catch((e) => console.warn('[CONTEXT] Tính lại thất bại:', e.message));
+      backgroundRefresh(db, { onlyIfChanged: false });
     }
   });
   st.ongoing = { generation: gen, promise };

@@ -712,6 +712,13 @@ function summarize(snap) {
 // API cho routes
 // ==================================================================
 
+/** Số phiên live đang chạy trong tiến trình này (để việc nặng khác nhường CPU) */
+function activeCount() {
+  let n = 0;
+  for (const r of runtimes.values()) if (r.status !== 'ended') n += 1;
+  return n;
+}
+
 function runtimeFor(id, workspace) {
   const r = runtimes.get(String(id));
   return r && r.workspace === workspace ? r : null;
@@ -858,6 +865,7 @@ module.exports = {
   liveDurationMs,
   withSuggestion,
   runtimeFor,
+  activeCount,
   loadSession,
   startSession,
   autoResume,
