@@ -223,8 +223,16 @@ async function main() {
     const endHealth = await rssOf(false);
     const rssEnd = endHealth.rssMb ?? null;
 
+    // Ghi kho chạy nền sau khi webhook trả lời: chờ tới khi kho đủ (tối đa 20 giây)
     const c = await MongoClient.connect(process.env.MONGODB_URI);
-    const stored = await c.db(DB_NAME).collection('live_comments').countDocuments({ sessionId: sessDoc._id, 'author.handle': { $regex: `^${mark}` } });
+    let stored = 0;
+    const tw = Date.now();
+    for (let i = 0; i < 40; i += 1) {
+      stored = await c.db(DB_NAME).collection('live_comments').countDocuments({ sessionId: sessDoc._id, 'author.handle': { $regex: `^${mark}` } });
+      if (stored >= sent) break;
+      await sleep(500);
+    }
+    const storeWaitMs = Date.now() - tw;
     await c.close();
 
     const minGot = Math.min(...viewers.map((v) => v.got));
@@ -236,7 +244,7 @@ async function main() {
     const right = labelled.filter((l) => exp.get(l.text) === l.intent).length;
 
     const res = {
-      sent, accepted, stored, errors,
+      sent, accepted, stored, storeWaitMs, errors,
       viewersMinReceived: minGot,
       postP50: pct(postLat, 50), postP95: pct(postLat, 95), postP99: pct(postLat, 99),
       lagP50: pct(lags, 50), lagP95: pct(lags, 95), lagMax: pct(lags, 100),
