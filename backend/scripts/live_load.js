@@ -79,14 +79,17 @@ const LABELLED = [
 
 function startServer() {
   let logs = '';
-  const proc = spawn(process.execPath, ['server.js'], {
+  // THROTTLE=0.1: bóp CPU máy chủ thử còn khoảng 10% để giả lập Render gói miễn phí
+  const preload = process.env.THROTTLE ? ['-r', './scripts/cpu_throttle.js'] : [];
+  const proc = spawn(process.execPath, [...preload, 'server.js'], {
     cwd: path.join(__dirname, '..'),
     env: {
       ...process.env,
       MONGODB_DB: DB_NAME,
       MONGODB_REAL_DB: 'customer_radar_ui_test_real',
       AUTO_COLLECT: '0', BUTLER: '0', AUTH_REQUIRED: '0', WRITE_KEY: '',
-      PORT: String(PORT), NODE_ENV: 'development'
+      PORT: String(PORT), NODE_ENV: 'development',
+      ...(process.env.THROTTLE ? { CPU_SHARE: process.env.THROTTLE } : {})
     },
     stdio: ['ignore', 'pipe', 'pipe']
   });
@@ -253,7 +256,9 @@ async function main() {
     if (minGot !== sent) fail.push(`có màn hình chỉ nhận ${minGot}/${sent}`);
     if (res.lagP95 > LAG_P95) fail.push(`độ trễ hiển thị p95 ${res.lagP95} ms > ${LAG_P95}`);
     if (res.healthP95 > 250) fail.push(`máy chủ khựng: /health/live p95 ${res.healthP95} ms`);
-    if (res.loopP99 > 200) fail.push(`event loop khựng p99 ${res.loopP99} ms`);
+    // Khi bóp CPU, chính bộ bóp đã chặn máy chủ (1 - THROTTLE) x 100 ms mỗi chu kỳ
+    const LOOP_P99 = process.env.THROTTLE ? 400 : 200;
+    if (res.loopP99 > LOOP_P99) fail.push(`event loop khựng p99 ${res.loopP99} ms`);
     if (rssStart != null && rssEnd != null && rssEnd - rssStart > 150) fail.push(`RSS tăng ${(rssEnd - rssStart).toFixed(0)} MB`);
     if (labelled.length && right / labelled.length < 0.9) fail.push(`phân loại đúng ${right}/${labelled.length}`);
 
