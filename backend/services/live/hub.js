@@ -879,7 +879,6 @@ async function refreshRuntime(runtime) {
 }
 
 module.exports = {
-  Runtime,
   PLATFORMS,
   platformInfo,
   ensureIndexes,

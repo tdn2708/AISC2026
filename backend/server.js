@@ -49,7 +49,7 @@ process.on('uncaughtException', (err) => {
   console.error('[UNCAUGHT EXCEPTION]', err);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
   try { require('./services/process_health').recordError('unhandled', reason && reason.message ? reason.message : String(reason).slice(0, 120)); } catch { /* bỏ qua */ }
   console.error('[UNHANDLED REJECTION]', reason);
 });

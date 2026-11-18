@@ -64,6 +64,13 @@ module.exports = ({ authDb, workspaces, getInbound }) => {
     if (deferTimer.unref) deferTimer.unref();
   });
 
+  // Mọi API còn lại gắn với tài khoản đang đăng nhập. Không có tài khoản (tắt
+  // AUTH_REQUIRED khi thử, hoặc phiên hết hạn) thì trả 401 thay vì lỗi 500
+  router.use((req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: 'Cần đăng nhập để dùng quản gia', code: 'auth_required' });
+    next();
+  });
+
   // 2. Trạng thái tổng thể của quản gia và kết nối Zalo của tài khoản hiện tại
   router.get('/status', wrap(async (req, res) => {
     const enabled = isButlerEnabled();

@@ -293,12 +293,13 @@ req('T3', 'Che thông tin cá nhân ngay ở tiền xử lý', () => {
 console.log('\nPHẦN 8 + 9 — DEMO VÀ KINH DOANH');
 // ==================================================================
 
-req('D1', 'Tài khoản demo in sẵn trên màn hình đăng nhập', () => {
+req('D1', 'Tài khoản demo dùng được ngay trên màn hình đăng nhập', () => {
+  // Từ 16/11 đăng nhập thật: tài khoản demo khai báo một chỗ (lib/auth.js DEMO_LOGIN), nút điền sẵn trên trang đăng nhập
+  const auth = readFile('src/lib/auth.js');
   const login = readFile('src/components/Login.jsx');
-  // Tài khoản demo khai báo một chỗ (hằng DEMO) và điền sẵn vào ô đăng nhập
-  assert.ok(/const DEMO(_ACCOUNT)? = {[^}]*email:[^}]*password:/.test(login), 'thiếu khai báo tài khoản demo');
-  assert.ok(/useState\(DEMO(_ACCOUNT)?\.email\)/.test(login) && /useState\(DEMO(_ACCOUNT)?\.password\)/.test(login), 'ô đăng nhập không điền sẵn tài khoản demo');
-  assert.ok(/Tài khoản dùng thử|Điền sẵn/.test(login), 'không hiển thị tài khoản demo cho người xem');
+  assert.ok(/export const DEMO_LOGIN = {[^}]*email:[^}]*password:/.test(auth), 'thiếu khai báo tài khoản demo trong lib/auth.js');
+  assert.ok(/DEMO_LOGIN\.email/.test(login) && /DEMO_LOGIN\.password/.test(login), 'trang đăng nhập không điền được tài khoản demo');
+  assert.ok(/Điền tài khoản mẫu|Tài khoản dùng thử/.test(login), 'không có nút cho người xem dùng tài khoản demo');
 });
 
 req('D2', 'Có màn hình phân tích trực tiếp một câu', () => {
