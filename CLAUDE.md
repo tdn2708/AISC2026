@@ -369,7 +369,7 @@ UI conventions agreed with the user:
 - Trang so sánh trước/sau + đối thủ: https://claude.ai/artifact/4vZXq73mA1MUpvJFrNJid9. Bảng đối thủ CHƯA kiểm chứng với Sapo, phần mềm chốt đơn livestream, kênh người bán sàn: chưa đưa lên slide.
 
 ### Lịch
-- Dữ liệu replay của kho demo hết khoảng 17/11: nếu chưa nạp lại thì người dùng chạy `npm run seed` trong `backend`, rồi tạo hoặc bật lại phiên live.
+- 18/11/2026 đã nạp lại kho demo (`npm run seed` mặc định: 12.000 phản hồi, 120 ngày quá khứ, 30 ngày phát lại), dữ liệu phát lại hết khoảng 18/12. Lệnh nạp xóa luôn nhật ký quyết định (`recommendation_log`) của kho demo.
 - Khi đồng đội gửi `model_int8.onnx`, `tokenizer.json`, `meta.json`: đẩy HF, gắn web, chạy lại 4 tab Lab, chỉ báo số trên bộ test mù.
 - 8 đến 9/12: người dùng chạy `npm run seed -- --anchor=2026-12-10T09:00:00+07:00`.
 - 10/12/2026: chung kết.
