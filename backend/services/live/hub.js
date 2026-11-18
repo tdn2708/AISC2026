@@ -770,10 +770,34 @@ async function flushAll(timeoutMs = 8000) {
   await Promise.race([Promise.all(all), new Promise((r) => setTimeout(r, timeoutMs))]);
 }
 
+/**
+ * GIỮ MÁY CHỦ THỨC KHI ĐANG LIVE
+ * Render gói miễn phí ngủ sau 15 phút không có request vào. Phiên TikTok mà
+ * không ai mở trang web và không có webhook thì máy chủ có thể ngủ giữa phiên.
+ * Còn phiên nào đang chạy thì tự gọi địa chỉ công khai của chính mình mỗi
+ * LIVE_KEEPALIVE_MS (Render coi đó là request vào); hết phiên thì thôi.
+ */
+const LIVE_KEEPALIVE_MS = Number(process.env.LIVE_KEEPALIVE_MS) || 10 * 60 * 1000;
+let keepAliveTimer = null;
+function ensureLiveKeepAlive() {
+  const base = String(process.env.RENDER_EXTERNAL_URL || process.env.LIVE_KEEPALIVE_URL || '').replace(/\/+$/, '');
+  if (!base || keepAliveTimer) return;
+  keepAliveTimer = setInterval(() => {
+    if (activeCount() === 0) {
+      clearInterval(keepAliveTimer);
+      keepAliveTimer = null;
+      return;
+    }
+    fetch(`${base}/health/live`, { signal: AbortSignal.timeout(15000) }).catch(() => {});
+  }, LIVE_KEEPALIVE_MS);
+  if (keepAliveTimer.unref) keepAliveTimer.unref();
+}
+
 async function startSession(db, workspace, session) {
   await ensureIndexes(db);
   const r = new Runtime(session, db, workspace);
   runtimes.set(r.id, r);
+  ensureLiveKeepAlive();
   if (session.startedAt) await r.preload();
   if (r.overCap()) {
     await r.stop(SIM_CAP_REASON);
@@ -866,6 +890,8 @@ module.exports = {
   withSuggestion,
   runtimeFor,
   activeCount,
+  ensureLiveKeepAlive,
+  liveKeepAliveOn: () => Boolean(keepAliveTimer),
   loadSession,
   startSession,
   autoResume,
