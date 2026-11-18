@@ -107,6 +107,9 @@ async function startButler({ authDb, workspaces }) {
     const secret = String(process.env.ZALO_WEBHOOK_SECRET || '');
     if (secret.length < 8 || secret.length > 256) {
       console.warn('[QUẢN GIA] Chế độ webhook thiếu ZALO_WEBHOOK_SECRET (8 đến 256 ký tự); đường webhook sẽ trả 503.');
+    } else if (!/^[A-Za-z0-9_-]+$/.test(secret)) {
+      // Zalo từ chối secret có ký tự khác (dấu chấm, dấu cách, @, chữ có dấu...)
+      console.warn('[QUẢN GIA] ZALO_WEBHOOK_SECRET chỉ được dùng chữ không dấu A-Z a-z, số 0-9, dấu _ và -. Sửa biến này trên Render rồi triển khai lại.');
     } else if (renderBase) {
       zalo.setWebhook(`${renderBase}/api/butler/zalo/webhook`, secret).catch((e) => {
         console.warn('[QUẢN GIA] Không đặt được webhook Zalo:', e.message);
