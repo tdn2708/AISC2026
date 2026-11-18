@@ -9,6 +9,7 @@
     "seed": "node seed_realistic_data.js",
     "test": "node test/run_tests.js",
     "eval": "node evaluation/run_evaluation.js",
+    "model:check": "node scripts/check_model.js",
     "demo:check": "node scripts/demo_check.js",
     "demo:prep": "node scripts/demo_prep.js",
     "live:load": "node scripts/live_load.js",
