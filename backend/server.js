@@ -45,10 +45,12 @@ const client = new MongoClient(process.env.MONGODB_URI, {
 });
 
 process.on('uncaughtException', (err) => {
+  try { require('./services/process_health').recordError('uncaught', err && err.message); } catch { /* bỏ qua */ }
   console.error('[UNCAUGHT EXCEPTION]', err);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
+  try { require('./services/process_health').recordError('unhandled', reason && reason.message ? reason.message : String(reason).slice(0, 120)); } catch { /* bỏ qua */ }
   console.error('[UNHANDLED REJECTION]', reason);
 });
 
@@ -147,6 +149,14 @@ async function startServer() {
           'GET  /api/nlp/status'
         ]
       });
+    });
+
+    // Đếm yêu cầu lỗi 5xx để quản gia báo Zalo khi lỗi dồn dập (process_health)
+    app.use((req, res, next) => {
+      res.on('finish', () => {
+        if (res.statusCode >= 500) require('./services/process_health').recordError('http', `${req.method} ${req.baseUrl || ''}${req.path}`);
+      });
+      next();
     });
 
     /** Kiểm tra sức khỏe dịch vụ, dùng cho giám sát triển khai */

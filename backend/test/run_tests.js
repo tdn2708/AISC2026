@@ -2149,6 +2149,19 @@ test('Hiệu quả quyết định có đối chứng: trừ phần giảm chung
   assert.strictEqual(noCtl.adjustedChange, noCtl.change);
 });
 
+test('Lỗi máy chủ: đếm lỗi 5 phút gần nhất, từ 5 lỗi hoặc bộ nhớ sát trần thì thành sự cố báo Zalo', () => {
+  const ph = require('../services/process_health');
+  const { detectSystemProblems } = require('../services/butler/live_tech');
+  for (let i = 0; i < 4; i += 1) ph.recordError('http', 'GET /api/stats');
+  ph.recordError('http', 'GET /api/alerts');
+  const r = ph.recentErrors(5 * 60 * 1000);
+  assert.ok(r.count >= 5);
+  assert.strictEqual(r.top[0].where, 'GET /api/stats');
+  assert.deepStrictEqual(detectSystemProblems({ errors: { count: 4 }, proc: { rssMb: 300 } }), [], 'dưới ngưỡng thì im');
+  const p = detectSystemProblems({ errors: r, proc: { rssMb: 480 } });
+  assert.deepStrictEqual(p.map((x) => x.key), ['sys|errors', 'sys|memory']);
+});
+
 function testAsync(name, fn) {
   asyncTests.push({ name, fn });
 }

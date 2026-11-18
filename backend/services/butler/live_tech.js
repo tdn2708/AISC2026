@@ -19,8 +19,28 @@ const THRESHOLD_MS = {
   connection: 60 * SEC,
   write: 30 * SEC,
   overload: 20 * SEC,
-  interrupted: 0
+  interrupted: 0,
+  server_errors: 0,
+  memory: 60 * SEC
 };
+const SYS_ERRORS_MIN = Number(process.env.SYS_ERRORS_ALERT_MIN || 5);
+const SYS_RSS_MB = Number(process.env.SYS_RSS_ALERT_MB || 470);
+
+/**
+ * Sự cố cấp máy chủ, báo cả ngoài giờ live: lỗi 5xx / lỗi không bắt được dồn dập
+ * trong 5 phút, hoặc bộ nhớ sát trần Render. Khóa bắt đầu bằng "sys|" để vòng canh
+ * gửi cho mọi tài khoản đã nối Zalo, không phụ thuộc kho.
+ */
+function detectSystemProblems({ errors = null, proc = null, now = Date.now() } = {}) {
+  const out = [];
+  if (errors && errors.count >= SYS_ERRORS_MIN) {
+    out.push({ key: 'sys|errors', kind: 'server_errors', session: null, since: now, detail: errors });
+  }
+  if (proc && proc.rssMb >= SYS_RSS_MB) {
+    out.push({ key: 'sys|memory', kind: 'memory', session: null, since: now, detail: { rssMb: proc.rssMb } });
+  }
+  return out;
+}
 const OVERLOAD_LOOP_MS = Number(process.env.LIVE_OVERLOAD_LOOP_MS || 500);
 const OVERLOAD_RSS_MB = Number(process.env.LIVE_OVERLOAD_RSS_MB || 450);
 
@@ -140,6 +160,18 @@ function buildTechText(p, { appUrl, now = Date.now() } = {}) {
         'Màn hình live có thể chậm. Nên dừng các phiên mô phỏng hoặc phiên không cần.',
         `Mở trang Livestream: ${appUrl}/live`
       ].join('\n');
+    case 'server_errors':
+      return [
+        `Máy chủ Customer Radar gặp ${p.detail?.count ?? 'nhiều'} lỗi trong 5 phút gần nhất.`,
+        (p.detail?.top || []).length ? `Nhiều nhất: ${p.detail.top.map((t) => `${t.where} (${t.n})`).join(', ')}.` : null,
+        'Một số trang có thể không tải được. Mở Render, mục Logs để xem chi tiết.',
+        `Trang web: ${appUrl}`
+      ].filter(Boolean).join('\n');
+    case 'memory':
+      return [
+        `Máy chủ Customer Radar đang dùng ${p.detail?.rssMb ?? '—'} MB bộ nhớ, sát giới hạn 512 MB của Render.`,
+        'Nếu vượt, Render sẽ khởi động lại máy chủ; phiên live đang chạy tự nối lại sau khoảng 1 phút.'
+      ].join('\n');
     case 'interrupted':
       return [
         `Phiên live "${title}" bị ngắt vì máy chủ khởi động lại và chưa tự nối lại được.`,
@@ -157,9 +189,11 @@ function buildTechOkText(p, { now = Date.now() } = {}) {
     connection: `phiên "${title}" đã nối lại`,
     write: `phiên "${title}" đã ghi lại được bình luận`,
     overload: 'máy chủ đã hết quá tải',
+    server_errors: 'máy chủ không còn lỗi dồn dập',
+    memory: 'bộ nhớ máy chủ đã về mức bình thường',
     interrupted: `phiên "${title}" đã chạy lại`
   }[p.kind] || `phiên "${title}" đã bình thường`;
   return `Đã ổn lại: ${what}${lasted}.`;
 }
 
-module.exports = { detectProblems, TechTracker, buildTechText, buildTechOkText, THRESHOLD_MS };
+module.exports = { detectProblems, detectSystemProblems, TechTracker, buildTechText, buildTechOkText, THRESHOLD_MS };

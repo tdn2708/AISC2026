@@ -41,4 +41,23 @@ function snapshot({ reset = false } = {}) {
   };
 }
 
-module.exports = { snapshot, loopDelay, lastWindow: () => last };
+// ------------------------------------------------------------------
+// Lỗi máy chủ: yêu cầu trả 5xx và lỗi không bắt được, giữ trong 15 phút gần nhất
+// để quản gia báo Zalo khi lỗi dồn dập (live_tech.detectSystemProblems)
+// ------------------------------------------------------------------
+const ERR_KEEP_MS = 15 * 60 * 1000;
+const errors = [];
+function recordError(kind, where) {
+  const now = Date.now();
+  errors.push({ at: now, kind, where: String(where || '').slice(0, 120) });
+  while (errors.length && now - errors[0].at > ERR_KEEP_MS) errors.shift();
+  if (errors.length > 500) errors.splice(0, errors.length - 500);
+}
+function recentErrors(windowMs = 5 * 60 * 1000, now = Date.now()) {
+  const list = errors.filter((e) => now - e.at <= windowMs);
+  const byWhere = new Map();
+  for (const e of list) byWhere.set(e.where, (byWhere.get(e.where) || 0) + 1);
+  return { count: list.length, top: [...byWhere.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([where, n]) => ({ where, n })) };
+}
+
+module.exports = { snapshot, loopDelay, lastWindow: () => last, recordError, recentErrors };

@@ -19,7 +19,7 @@ const { withTimeout } = require('../real_collector');
 const { severityWord, vnTime, formatDurationWords, stripTitlePrefix } = require('./text');
 const { SEV_RANK, shouldNotify } = require('./incidents');
 const outbox = require('./outbox');
-const { detectProblems, TechTracker, buildTechText, buildTechOkText } = require('./live_tech');
+const { detectProblems, detectSystemProblems, TechTracker, buildTechText, buildTechOkText } = require('./live_tech');
 const procHealth = require('../process_health');
 
 const techTracker = new TechTracker();
@@ -454,6 +454,7 @@ async function runLiveTickInner({ authDb, workspaces, now = new Date(), onSchedu
     }
 
     const baseAppUrl = appUrl();
+    techProblems.push(...detectSystemProblems({ errors: procHealth.recentErrors(5 * MIN_MS), proc, now: now.getTime() }));
     const tech = techTracker.update(techProblems, now.getTime());
 
     for (const link of links) {
@@ -477,7 +478,7 @@ async function runLiveTickInner({ authDb, workspaces, now = new Date(), onSchedu
         const iso = new Date(sched.startAt).toISOString();
         candidateKeys.push(`live_remind|${link.userId}|${sched._id}|${iso}`, `live_late|${link.userId}|${sched._id}|${iso}`);
       }
-      const techFor = (list) => list.filter((p) => p.key.startsWith(`${ws}|`));
+      const techFor = (list) => list.filter((p) => p.key.startsWith(`${ws}|`) || p.key.startsWith('sys|'));
       const techKey = (p, ok) => `${ok ? 'live_tech_ok' : 'live_tech'}|${link.userId}|${p.key}|${p.since}`;
       for (const p of techFor(tech.due)) candidateKeys.push(techKey(p, false));
       for (const p of techFor(tech.recovered)) candidateKeys.push(techKey(p, true));
