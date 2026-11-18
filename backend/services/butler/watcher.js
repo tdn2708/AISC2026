@@ -13,6 +13,7 @@ const { withTimeout, collectorStatus } = require('../real_collector');
 const { vnParts } = require('./text');
 const { SEV_RANK, collectIncidents, shouldNotify, buildAlertMessage, summarizeContext, buildDigest } = require('./incidents');
 const outbox = require('./outbox');
+const store = require('./store');
 
 const STATE_ID = 'butler_watch';
 const LOCK_TTL_MS = 10 * 60 * 1000;
@@ -102,6 +103,12 @@ async function runTickInner({ authDb, workspaces, now = new Date() }) {
     const ctxByWs = {};
     // Giá trị 30 ngày cho bản tin sáng: chỉ tính khi tới giờ gửi, mỗi kho một lần mỗi nhịp
     const valueMemo = {};
+    const tasksMemo = {};
+    const tasksFor = (ws) => {
+      if (!ctxByWs[ws]) return Promise.resolve([]);
+      if (!tasksMemo[ws]) tasksMemo[ws] = require('./engine').buildTaskItems(ctxByWs[ws].db, ws, ctxByWs[ws].ctx).catch(() => []);
+      return tasksMemo[ws];
+    };
     const valueFor = (ws) => {
       if (!ctxByWs[ws]) return Promise.resolve(null);
       if (!valueMemo[ws]) valueMemo[ws] = require('../value_summary').valueForContext(ctxByWs[ws].db, ctxByWs[ws].ctx).catch(() => null);
@@ -286,9 +293,13 @@ async function runTickInner({ authDb, workspaces, now = new Date() }) {
       const digestEnabled = link.settings?.digest !== false;
       const digestHour = Number.isInteger(link.settings?.digestHour) ? link.settings.digestHour : 8;
       if (digestEnabled && vnHour >= digestHour && link.lastDigestOn !== vnYmd && !isMuted) {
+        // Bản tin là danh sách việc đánh số: lưu như lệnh "việc" để "duyệt 1" chạy ngay
+        const tasks = await tasksFor(ws);
+        if (tasks.length) await store.saveLastList(authDb, link.userId, { workspace: ws, at: now, items: tasks }).catch(() => {});
         const digestText = buildDigest({
           workspaceLabel: wsLabel,
           ctxSummary: { ...(summaryByWs[ws] || {}), value: await valueFor(ws) },
+          tasks,
           incidents: open,
           todaySchedules: schedulesByWs[ws] || [],
           appUrl: baseAppUrl,

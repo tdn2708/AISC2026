@@ -67,6 +67,58 @@ function validLastList(link) {
   return link.lastList;
 }
 
+
+const vndWords = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1).replace('.', ',')} tỉ đ` : n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} triệu đ` : `${Math.round(n / 1000).toLocaleString('vi-VN')} nghìn đ`);
+
+/**
+ * Danh sách việc đánh số, dùng chung cho lệnh "việc" và bản tin sáng (để "duyệt 1"
+ * sau bản tin trỏ đúng việc). Cảnh báo chờ quyết định trước, rồi việc trong hộp
+ * việc; cảnh báo kèm doanh thu rủi ro khi tính được (evidence_profile).
+ */
+async function buildTaskItems(db, ws, ctx) {
+  const alerts = (await pendingAlerts(db, ctx)).slice(0, 5);
+  const inboxRaw = await buildInboxItems(db, ws, ctx);
+  const inboxSorted = [...inboxRaw].sort((a, b) => (SEV_RANK[b.severity] || 1) - (SEV_RANK[a.severity] || 1));
+  let riskById = new Map();
+  try {
+    const { detectAlertsCached, buildRecommendationsCached } = require('../work_items');
+    const decisions = await db.collection('recommendation_log').find({}).toArray();
+    const built = buildRecommendationsCached(ctx, {}, {}, detectAlertsCached(ctx, {}), decisions);
+    riskById = new Map(built.recommendations.map((r) => {
+      const rev = r.dataProfile?.revenue;
+      return [r.alertId, rev?.measurable ? (rev.extrapolatedVnd || rev.atRiskVnd || 0) : 0];
+    }));
+  } catch {
+    // thiếu doanh thu thì danh sách vẫn đủ việc
+  }
+
+  const combined = [];
+  for (const a of alerts) {
+    const title = a.title + (a.productName ? ` trên ${a.productName}` : '');
+    combined.push({
+      kind: 'alert',
+      id: a.id,
+      severity: fromAlertSeverity(a.severity),
+      title,
+      why: stripTitlePrefix(title, a.summary || ''),
+      riskVnd: riskById.get(a.id) || null,
+      to: '/risk'
+    });
+  }
+  for (const it of inboxSorted) {
+    if (combined.length >= 8) break;
+    combined.push({
+      kind: 'inbox',
+      id: it.id,
+      severity: it.severity || 'medium',
+      title: it.title,
+      why: stripTitlePrefix(it.title, it.why || ''),
+      to: it.actions?.[0]?.to || '/dashboard'
+    });
+  }
+  return combined.slice(0, 8).map((it, idx) => ({ ...it, n: idx + 1 }));
+}
+
 async function handle({ authDb, workspaces, user, link: initialLink, text, channel = 'web', workspace }) {
   const cmd = parseCommand(text);
   const link = initialLink || (await store.getLink(authDb, user._id));
@@ -91,37 +143,7 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
           };
         }
 
-        const alerts = (await pendingAlerts(db, ctx)).slice(0, 5);
-        const inboxRaw = await buildInboxItems(db, ws, ctx);
-        const inboxSorted = [...inboxRaw].sort(
-          (a, b) => (SEV_RANK[b.severity] || 1) - (SEV_RANK[a.severity] || 1)
-        );
-
-        const combined = [];
-        for (const a of alerts) {
-          const title = a.title + (a.productName ? ` trên ${a.productName}` : '');
-          combined.push({
-            kind: 'alert',
-            id: a.id,
-            severity: fromAlertSeverity(a.severity),
-            title,
-            why: stripTitlePrefix(title, a.summary || ''),
-            to: '/risk'
-          });
-        }
-        for (const it of inboxSorted) {
-          if (combined.length >= 8) break;
-          combined.push({
-            kind: 'inbox',
-            id: it.id,
-            severity: it.severity || 'medium',
-            title: it.title,
-            why: stripTitlePrefix(it.title, it.why || ''),
-            to: it.actions?.[0]?.to || '/dashboard'
-          });
-        }
-
-        const items = combined.slice(0, 8).map((it, idx) => ({ ...it, n: idx + 1 }));
+        const items = await buildTaskItems(db, ws, ctx);
         await store.saveLastList(authDb, user._id, {
           workspace: ws,
           at: new Date(),
@@ -139,7 +161,7 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
 
         const lines = [
           `Việc đang chờ ở kho ${wsLabel}, ${items.length.toLocaleString('vi-VN')} việc:`,
-          ...items.map((it) => `${it.n}. [${severityWord(it.severity)}] ${it.title}`),
+          ...items.map((it) => `${it.n}. [${severityWord(it.severity)}] ${it.title}${it.riskVnd ? `, rủi ro ${vndWords(it.riskVnd)}` : ''}`),
           'Nhắn "xem <số>" để xem kế hoạch, "duyệt <số>" để chấp nhận.'
         ];
         return {
@@ -557,5 +579,6 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
 
 module.exports = {
   HELP_TEXT,
-  handle
+  handle,
+  buildTaskItems
 };

@@ -171,7 +171,7 @@ const SHORT_PLATFORM_DIGEST = {
 };
 
 /** Dựng bản tin sáng và câu trả lời cho lệnh "tình hình" (hàm thuần) */
-function buildDigest({ workspaceLabel = 'Dữ liệu thật', ctxSummary = {}, incidents, todaySchedules, appUrl: _appUrl, now = new Date() } = {}) {
+function buildDigest({ workspaceLabel = 'Dữ liệu thật', ctxSummary = {}, incidents, tasks, todaySchedules, appUrl: _appUrl, now = new Date() } = {}) {
   const lines = [`Bản tin sáng ${viDate(now)}, kho ${workspaceLabel}.`];
 
   const metricParts = [];
@@ -196,7 +196,17 @@ function buildDigest({ workspaceLabel = 'Dữ liệu thật', ctxSummary = {}, i
     if (parts.length) lines.push(`${v.windowDays || 30} ngày qua: ${parts.join(', ')}.`);
   }
 
-  if (Array.isArray(incidents)) {
+  const taskVnd = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1).replace('.', ',')} tỉ đ` : n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} triệu đ` : `${Math.round(n / 1000).toLocaleString('vi-VN')} nghìn đ`);
+  if (Array.isArray(tasks) && tasks.length) {
+    // Danh sách việc đánh số (engine.buildTaskItems, đã lưu cho lệnh "duyệt <số>")
+    const top = tasks.slice(0, 3);
+    lines.push(tasks.length > 3 ? `Việc hôm nay, ${tasks.length.toLocaleString('vi-VN')} việc, 3 việc gấp nhất:` : `Việc hôm nay, ${tasks.length.toLocaleString('vi-VN')} việc:`);
+    for (const t of top) lines.push(`${t.n}. [${severityWord(t.severity)}] ${t.title}${t.riskVnd ? `, rủi ro ${taskVnd(t.riskVnd)}` : ''}`);
+    const firstAlert = top.find((t) => t.kind === 'alert');
+    lines.push(firstAlert
+      ? `Nhắn "duyệt ${firstAlert.n}" để chấp nhận kế hoạch, "xem ${firstAlert.n}" để xem kế hoạch${tasks.length > 3 ? ', "việc" để xem đủ danh sách' : ''}.`
+      : `Nhắn "việc" để xem đủ danh sách.`);
+  } else if (Array.isArray(incidents)) {
     if (incidents.length === 0) {
       lines.push('Việc đang chờ: không có việc gấp.');
     } else {
@@ -236,7 +246,7 @@ function buildDigest({ workspaceLabel = 'Dữ liệu thật', ctxSummary = {}, i
     }
   }
 
-  lines.push('Nhắn "việc" để xem danh sách.');
+  if (!(Array.isArray(tasks) && tasks.length)) lines.push('Nhắn "việc" để xem danh sách.');
   return lines.join('\n');
 }
 
