@@ -381,6 +381,7 @@ UI conventions agreed with the user:
 - Trang so sánh trước/sau + đối thủ: https://claude.ai/artifact/4vZXq73mA1MUpvJFrNJid9. Bảng đối thủ CHƯA kiểm chứng với Sapo, phần mềm chốt đơn livestream, kênh người bán sàn: chưa đưa lên slide.
 
 ### Lịch
+- Demo (2026-11-18): `cd backend && npm run demo:prep -- --anchor=<giờ demo> --yes` (ghi đè kho demo, rồi kiểm), `npm run demo:check` (chỉ đọc web thật, 25 giây giữa hai lần gọi, in số cho slide). Kịch bản 3 màn: [KICH-BAN-DEMO.md](KICH-BAN-DEMO.md).
 - 18/11/2026 đã nạp lại kho demo (`npm run seed` mặc định: 12.000 phản hồi, 120 ngày quá khứ, 30 ngày phát lại), dữ liệu phát lại hết khoảng 18/12. Lệnh nạp xóa luôn nhật ký quyết định (`recommendation_log`) của kho demo.
 - Khi đồng đội gửi `model_int8.onnx`, `tokenizer.json`, `meta.json`: đẩy HF, gắn web, chạy lại 4 tab Lab, chỉ báo số trên bộ test mù.
 - 8 đến 9/12: người dùng chạy `npm run seed -- --anchor=2026-12-10T09:00:00+07:00`.
