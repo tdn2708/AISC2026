@@ -99,12 +99,21 @@ async function runTickInner({ authDb, workspaces, now = new Date() }) {
     const schedulesByWs = {};
     const incCol = authDb.collection('butler_incidents');
 
+    const ctxByWs = {};
+    // Giá trị 30 ngày cho bản tin sáng: chỉ tính khi tới giờ gửi, mỗi kho một lần mỗi nhịp
+    const valueMemo = {};
+    const valueFor = (ws) => {
+      if (!ctxByWs[ws]) return Promise.resolve(null);
+      if (!valueMemo[ws]) valueMemo[ws] = require('../value_summary').valueForContext(ctxByWs[ws].db, ctxByWs[ws].ctx).catch(() => null);
+      return valueMemo[ws];
+    };
     for (const ws of neededWorkspaces) {
       const db = workspaces[ws];
       if (!db) continue;
       try {
         const ctx = await withTimeout(getContext(db), 60000, `Nạp ngữ cảnh kho ${ws}`);
         summaryByWs[ws] = summarizeContext(ctx);
+        ctxByWs[ws] = { db, ctx };
         const colStat = ws === 'real' ? await collectorStatus(db).catch(() => null) : null;
         const [list, todayScheds] = await Promise.all([
           collectIncidents(db, ws, ctx, { collectorStatus: colStat }),
@@ -279,7 +288,7 @@ async function runTickInner({ authDb, workspaces, now = new Date() }) {
       if (digestEnabled && vnHour >= digestHour && link.lastDigestOn !== vnYmd && !isMuted) {
         const digestText = buildDigest({
           workspaceLabel: wsLabel,
-          ctxSummary: summaryByWs[ws] || {},
+          ctxSummary: { ...(summaryByWs[ws] || {}), value: await valueFor(ws) },
           incidents: open,
           todaySchedules: schedulesByWs[ws] || [],
           appUrl: baseAppUrl,

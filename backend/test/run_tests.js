@@ -2073,6 +2073,60 @@ test('Đề xuất: việc bổ sung dữ liệu tách ra mục riêng; kết qu
   assert.strictEqual(learned.components.measuredOutcomes, 1);
 });
 
+test('Giá trị cho shop: doanh thu rủi ro chỉ của cảnh báo chưa xử lý, khiếu nại tránh được đo trước sau, livestream 30 ngày', () => {
+  const { computeValue } = require('../services/value_summary');
+  const day = 86400000;
+  const now = new Date('2026-11-18T12:00:00Z');
+  const at = now.getTime() - 10 * day;
+  const mk = (t, hit) => ({ _id: `${t}-${Math.random()}`, timestamp: new Date(t), category: hit ? 'Delivery' : 'Product', subCategory: hit ? 'Late' : null, productName: 'A', trust: { weight: 1 } });
+  const items = [];
+  for (let i = 0; i < 60; i += 1) items.push(mk(at - (i % 7) * day - 1000, i % 3 === 0)); // trước: 20/60
+  for (let i = 0; i < 60; i += 1) items.push(mk(at + (i % 7) * day + 1000, i % 12 === 0)); // sau: 5/60
+  const v = computeValue({
+    recs: [
+      { status: 'PROPOSED', dataProfile: { revenue: { measurable: true, extrapolatedVnd: 5000000, isLowerBound: true } } },
+      { status: 'ACCEPTED', dataProfile: { revenue: { measurable: true, extrapolatedVnd: 9000000 } } },
+      { status: 'PROPOSED', dataProfile: { revenue: { measurable: false, extrapolatedVnd: 0 } } }
+    ],
+    decisions: [
+      { alertId: 'Delivery|Late|A|*|x', decision: 'ACCEPTED', at: new Date(at) },
+      { alertId: 'Delivery|Late|A|*|y', decision: 'ACCEPTED', at: new Date(now.getTime() - 2 * day) },
+      { alertId: 'Delivery|Late|A|*|z', decision: 'ACCEPTED', at: new Date(now.getTime() - 60 * day) }
+    ],
+    items,
+    transactions: [{ amount: 200000 }, { amount: 400000 }, { amount: 0 }],
+    liveSessions: [
+      { endedAt: new Date(now.getTime() - 3 * day), summary: { revenue: 12000000, lostRevenue: 900000 }, actions: [{ status: 'done' }, { status: 'dismissed' }] },
+      { endedAt: new Date(now.getTime() - 40 * day), summary: { revenue: 99999999 } }
+    ],
+    now,
+    cadenceDays: 7
+  });
+  assert.deepStrictEqual(v.atRisk, { amount: 5000000, alerts: 1, lowerBound: true }, 'chỉ cảnh báo chưa xử lý và đo được tiền');
+  assert.strictEqual(v.saved.measured, 1);
+  assert.strictEqual(v.saved.pending, 1, 'quyết định 2 ngày trước chưa đủ 7 ngày đo');
+  assert.strictEqual(v.saved.complaintsAvoided, 15, '(20/60 - 5/60) x 60 = 15 khiếu nại');
+  assert.strictEqual(v.saved.avgOrderValue, 300000);
+  assert.strictEqual(v.saved.amount, 4500000);
+  assert.deepStrictEqual(v.live, { sessions: 1, revenue: 12000000, lostFlagged: 900000, actionsDone: 1 });
+});
+
+test('Giá trị cho shop: phản hồi nằm trong hai cảnh báo chỉ được tính tiền một lần', () => {
+  const { computeValue } = require('../services/value_summary');
+  const rev = (v) => ({ measurable: true, extrapolatedVnd: v });
+  const v = computeValue({
+    recs: [
+      { status: 'PROPOSED', dataProfile: { revenue: rev(10000000) }, evidence: { evidenceIds: ['a', 'b', 'c', 'd'] } },
+      { status: 'PROPOSED', dataProfile: { revenue: rev(4000000) }, evidence: { evidenceIds: ['c', 'd'] } },
+      { status: 'PROPOSED', dataProfile: { revenue: rev(6000000) }, evidence: { evidenceIds: ['d', 'e', 'f'] } }
+    ],
+    now: new Date('2026-11-18T12:00:00Z')
+  });
+  // 10 triệu (a-d) + 6 triệu x 2/3 (e, f mới) ; cảnh báo c-d trùng hẳn nên bỏ
+  assert.strictEqual(v.atRisk.amount, 14000000);
+  assert.strictEqual(v.atRisk.alerts, 2);
+});
+
 function testAsync(name, fn) {
   asyncTests.push({ name, fn });
 }

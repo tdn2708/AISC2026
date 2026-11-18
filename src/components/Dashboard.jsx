@@ -15,6 +15,7 @@ import SentimentTrendChart from './dashboard/SentimentTrendChart';
 import SentimentShare from './dashboard/SentimentShare';
 import RisingIssues from './dashboard/RisingIssues';
 import LiveDigest from './dashboard/LiveDigest';
+import ValueCard from './dashboard/ValueCard';
 import { Button } from './ui';
 import { StartGuide } from './shell/StartGuide';
 import { useReducedMotion, MOTION, PageEnter, usePageEntered } from './motion';
@@ -194,6 +195,7 @@ const Dashboard = () => {
       {/* Tải lại thì giữ khung cũ ở độ mờ thấp: không nháy, không nhảy bố cục */}
       <div className={`transition-opacity duration-short ease-out ${loading && stats ? 'opacity-60' : ''}`} aria-busy={loading}>
         <TodayInbox alerts={alerts} items={inbox} loading={loading} failed={failed || inboxFailed} onRetry={retryAll} skip={lifted.length} decisions={decisions} />
+        <ValueCard />
 
         <StoreHealth stats={stats} trend={trend} loading={loading} failed={failed} onRetry={reload} countStart={reduced || (entered && ledgerDone)} />
 

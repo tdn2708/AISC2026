@@ -1042,6 +1042,12 @@ router.get('/alerts/:id/evidence', wrap(async (req, res) => {
 // KHUYẾN NGHỊ — LUÔN LÀ ĐỀ XUẤT, KHÔNG BAO GIỜ TỰ THỰC THI
 // ==================================================================
 
+/** Customer Radar giúp shop được bao nhiêu trong 30 ngày (services/value_summary.js) */
+router.get('/value', wrap(async (req, res) => {
+  const ctx = await getContext(req.db);
+  res.json(await require('../services/value_summary').valueForContext(req.db, ctx, { windowDays: 30 }));
+}));
+
 router.get('/recommendations', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const result = detectAlertsCached(ctx, req.query);

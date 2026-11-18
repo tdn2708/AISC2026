@@ -185,6 +185,17 @@ function buildDigest({ workspaceLabel = 'Dữ liệu thật', ctxSummary = {}, i
     lines.push(metricParts.join(' '));
   }
 
+  // Customer Radar giúp shop được bao nhiêu (value_summary.js)
+  const v = ctxSummary?.value;
+  if (v) {
+    const vnd = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} triệu đ` : `${Math.round(n / 1000).toLocaleString('vi-VN')} nghìn đ`);
+    const parts = [];
+    if (v.saved?.complaintsAvoided > 0) parts.push(`tránh được ${v.saved.complaintsAvoided.toLocaleString('vi-VN')} khiếu nại${v.saved.amount ? ` (khoảng ${vnd(v.saved.amount)})` : ''}`);
+    if (v.live?.lostFlagged > 0) parts.push(`báo kịp ${vnd(v.live.lostFlagged)} lỡ vì hết hàng khi live`);
+    if (v.atRisk?.amount > 0) parts.push(`doanh thu đang có rủi ro ${vnd(v.atRisk.amount)}`);
+    if (parts.length) lines.push(`${v.windowDays || 30} ngày qua: ${parts.join(', ')}.`);
+  }
+
   if (Array.isArray(incidents)) {
     if (incidents.length === 0) {
       lines.push('Việc đang chờ: không có việc gấp.');

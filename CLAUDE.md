@@ -242,6 +242,8 @@ UI conventions agreed with the user:
 
 ### Dashboard (data to action, plain language)
 
+- **Value for the shop (2026-11-18):** `GET /api/value` (`services/value_summary.js`, `valueForContext` shared with the Zalo digest) returns 30-day `atRisk` (revenue behind open alerts, each evidence feedback counted once across overlapping alerts, `lowerBound` flag), `saved` (accepted plans with a finished before/after window: complaints avoided = (rate before - rate after) x feedbacks after, money = that x average order value; plus `measured/improved/pending`), and `live` (sessions, estimated revenue, lost-to-stockout revenue flagged, urgent actions done). `dashboard/ValueCard.jsx` shows it under Việc hôm nay with the method in a "Cách tính" disclosure; it hides itself when all three are empty. The morning digest adds one line ("30 ngày qua: tránh được ... khiếu nại ..."), computed only when the digest is due.
+
 - Order: summary sentence (built from the merged to-do list) -> filters -> **Việc hôm nay** (`TodayInbox.jsx`) -> **Cửa hàng đang thế nào** (`StoreHealth.jsx`, three metrics in one block, one shared evidence line) -> charts -> recent feedback.
 - `TodayInbox.buildTodo` merges pending alerts (expand inline for the plan + accept/dismiss via `useDecisions`) with `GET /api/inbox` items: urgent live actions, live orders not yet confirmed, live complaints not pushed, suspicious feedback queue, `needsReview` labels, stale real data. Only critical/high rows get a primary button.
 - Vocabulary for shop owners: "Có chứng từ" (not "Đối soát được"), "AI đoán", "Đã mua thật", "Khách không hài lòng", "Độ tin số liệu", "AI chế độ cơ bản". Empty category shows "—".
