@@ -29,7 +29,7 @@ const realWays = [
   {
     icon: FileUp,
     title: 'Nạp file phản hồi của shop',
-    text: 'File CSV xuất từ sàn, Google Form hay bảng tự ghi. Chỉ cần cột nội dung; tên và số điện thoại được che trước khi lưu.',
+    text: 'File CSV hoặc Excel xuất từ sàn, Google Form hay bảng tự ghi, cả file đơn hàng của trang người bán. Tên và số điện thoại được che trước khi lưu.',
     action: 'Nạp file CSV',
     to: '/data?tab=file'
   },

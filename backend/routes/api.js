@@ -1646,6 +1646,86 @@ router.post('/import/feedbacks', importLimit, wrap(async (req, res) => {
   });
 }));
 
+/**
+ * NẠP ĐƠN HÀNG TỪ FILE XUẤT CỦA TRANG NGƯỜI BÁN (Shopee, TikTok Shop, Lazada)
+ * Đơn hàng là mẫu số của tỉ lệ khiếu nại trên đơn và là sổ đối soát: phản hồi
+ * có mã đơn khớp được Trust Layer kiểm (đánh giá viết trước ngày giao...).
+ * Ghi đè theo mã đơn nên nạp lại cả file không sinh bản trùng. Đơn đã hủy bỏ qua.
+ */
+const ORDER_IMPORT_MAX = 500;
+function normRegion(v) {
+  const t = String(v || '').trim();
+  if (!t) return null;
+  const f = foldVi(t).replace(/^(thanh pho|tp\.?|tinh)\s*/, '').trim();
+  if (/^(ho chi minh|hcm|sai gon)/.test(f)) return 'TP.HCM';
+  if (/^ha noi/.test(f)) return 'Hà Nội';
+  if (/^da nang/.test(f)) return 'Đà Nẵng';
+  if (/^hai phong/.test(f)) return 'Hải Phòng';
+  if (/^can tho/.test(f)) return 'Cần Thơ';
+  return t.replace(/^(Thành phố|Thành Phố|TP\.?|Tỉnh)\s*/i, '').slice(0, 60);
+}
+const toDate = (v) => {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) || d.getTime() > Date.now() + 86400000 ? null : d;
+};
+const CANCELLED = /(huy|cancel|that bai|failed|tra hang hoan tien toan bo)/;
+
+router.post('/import/orders', importLimit, wrap(async (req, res) => {
+  if (req.workspace !== 'real') return res.status(403).json({ error: 'Chỉ nạp file vào kho Dữ liệu thật. Chọn kho ở góc trên thanh bên.' });
+  const rows = Array.isArray(req.body?.rows) ? req.body.rows : null;
+  if (!rows || !rows.length) return res.status(400).json({ error: 'Cần ít nhất một dòng' });
+  if (rows.length > ORDER_IMPORT_MAX) return res.status(400).json({ error: `Mỗi lần gửi tối đa ${ORDER_IMPORT_MAX} dòng` });
+  const channel = IMPORT_SOURCES.includes(req.body?.source) ? req.body.source : 'Khác';
+  const skipped = [];
+  const byOrder = new Map();
+  rows.forEach((r, i) => {
+    const orderId = typeof r?.orderId === 'string' || typeof r?.orderId === 'number' ? String(r.orderId).trim().slice(0, 60) : '';
+    if (!orderId) { skipped.push({ row: r?.row ?? i, reason: 'Không có mã đơn' }); return; }
+    if (r?.status && CANCELLED.test(foldVi(r.status))) { skipped.push({ row: r?.row ?? i, reason: 'Đơn đã hủy' }); return; }
+    const amount = Number(r?.amount);
+    const quantity = Number(r?.quantity);
+    const prev = byOrder.get(orderId);
+    // File Shopee ghi mỗi sản phẩm trong đơn một dòng: gộp về một đơn, giữ sản phẩm đầu
+    if (prev) {
+      if (Number.isFinite(quantity) && quantity > 0) prev.quantity = (prev.quantity || 0) + Math.round(quantity);
+      if (!prev.amount && Number.isFinite(amount) && amount > 0) prev.amount = amount;
+      return;
+    }
+    byOrder.set(orderId, {
+      orderId,
+      productName: typeof r?.product === 'string' && r.product.trim() ? r.product.trim().slice(0, 200) : null,
+      productCategory: typeof r?.category === 'string' && r.category.trim() ? r.category.trim().slice(0, 80) : null,
+      region: normRegion(r?.region),
+      orderedAt: toDate(r?.orderedAt),
+      deliveredAt: toDate(r?.deliveredAt),
+      amount: Number.isFinite(amount) && amount > 0 ? Math.round(amount) : null,
+      quantity: Number.isFinite(quantity) && quantity > 0 ? Math.round(quantity) : 1,
+      channel,
+      status: typeof r?.status === 'string' ? r.status.trim().slice(0, 60) : null
+    });
+  });
+  const docs = [...byOrder.values()];
+  if (!docs.length) return res.json({ upserted: 0, updated: 0, skipped });
+  await req.db.collection('transactions').createIndex({ orderId: 1 }, { unique: true }).catch(() => {});
+  const now = new Date();
+  const out = await req.db.collection('transactions').bulkWrite(docs.map((d) => ({
+    updateOne: {
+      filter: { orderId: d.orderId },
+      update: { $set: { ...Object.fromEntries(Object.entries(d).filter(([, v]) => v != null)), importedAt: now }, $setOnInsert: { collectedVia: 'import' } },
+      upsert: true
+    }
+  })), { ordered: false });
+  invalidate(req.db);
+  res.json({
+    upserted: out.upsertedCount,
+    updated: out.modifiedCount,
+    skipped,
+    withDelivery: docs.filter((d) => d.deliveredAt).length,
+    withAmount: docs.filter((d) => d.amount).length
+  });
+}));
+
 const { seedRouteCheck } = require('../services/write_guard');
 
 router.post('/seed', wrap(async (req, res) => {
