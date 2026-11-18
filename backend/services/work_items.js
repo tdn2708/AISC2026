@@ -73,7 +73,7 @@ function buildRecommendationsCached(ctx, query, opts, result, decisions) {
     .join(',');
   const key = `build|${ctx.dbName}|${ctx.computedAt}|${filterKey(query)}|${JSON.stringify(opts)}|${decisionSig}`;
   return memo(key, () =>
-    recommender.buildAll(result.alerts, { items: ctx.items, transactions: ctx.transactions, decisions, now: ctxNow(ctx) })
+    recommender.buildAll(result.alerts, { items: ctx.items, transactions: ctx.transactions, decisions, now: ctxNow(ctx), windowDays: cadenceOf(ctx).windowDays })
   );
 }
 

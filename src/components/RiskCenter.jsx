@@ -114,6 +114,20 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
           )}
         </div>
         <Fold open={planOpen}>
+        {rec?.aiDraft?.actions?.length > 0 && (
+          <div className="mb-4">
+            <p className="mb-2 text-sm font-semibold text-ink-hi">Việc cụ thể nên làm</p>
+            <ol className="paper flex list-none flex-col divide-y divide-line-soft p-3">
+              {rec.aiDraft.actions.map((a, i) => (
+                <li key={i} className="py-2.5 first:pt-0 last:pb-0">
+                  <p className="text-sm leading-snug text-ink-hi">{i + 1}. {a.text}</p>
+                  {a.why && <p className="mt-1 text-xs leading-relaxed text-ink-lo">Vì: {a.why}</p>}
+                </li>
+              ))}
+            </ol>
+            <p className="mt-1.5 text-xs text-ink-lo">AI viết từ số liệu của cảnh báo, mọi con số đã đối chiếu với dữ liệu.</p>
+          </div>
+        )}
         {steps.length === 0 ? (
           <p className="text-sm text-ink-lo">Chưa có hành động nào khớp với dữ liệu của cảnh báo này.</p>
         ) : (
@@ -135,6 +149,16 @@ const Detail = ({ alert, rec, status, saving, onAccept, onDismiss, onEvidence })
               </li>
             ))}
           </ol>
+        )}
+        {rec?.dataGaps?.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-1.5 text-sm font-semibold text-ink-hi">Cần thêm dữ liệu</p>
+            <ul className="flex list-none flex-col gap-1.5">
+              {rec.dataGaps.map((g) => (
+                <li key={g.actionId} className="text-sm leading-snug text-ink-mid">{g.text}</li>
+              ))}
+            </ul>
+          </div>
         )}
         <ConfidenceMeter value={confidence} className="mt-4" />
         </Fold>

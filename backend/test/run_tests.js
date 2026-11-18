@@ -2032,6 +2032,47 @@ test('Báo cáo Zalo cuối phiên live có ba việc ưu tiên cho phiên sau',
   assert.ok(!/Việc thứ tư/.test(text), 'chỉ ba việc');
 });
 
+test('Đề xuất AI: cổng kiểm loại số bịa, tên ngoài bằng chứng, tự nhận đã làm; giữ bản đúng', () => {
+  const { verifyDraft } = require('../services/rec_drafter');
+  const pack = {
+    allowedNumbers: ['32', '186', '202', '284040831', '96', '1', '2', '3'],
+    forbidden: ['Nồi chiên không dầu Lock&Lock 5.5L', 'Hà Nội']
+  };
+  const ok = verifyDraft('{"actions":[{"text":"Báo trễ hẹn cho 202 khách tại TP.HCM (cần duyệt).","why":"96% phản hồi ở TP.HCM, tỉ lệ từ 3,2% lên 18,6%."}]}', pack);
+  assert.ok(ok.ok, JSON.stringify(ok));
+  assert.strictEqual(ok.draft.actions.length, 1);
+  const badNum = verifyDraft('{"actions":[{"text":"Báo cho 350 khách.","why":"ước tính"}]}', pack);
+  assert.ok(!badNum.ok && /350/.test(badNum.reason), 'số 350 không có trong bằng chứng phải bị loại');
+  const stray = verifyDraft('{"actions":[{"text":"Chuyển kho sang Hà Nội.","why":"x"}]}', pack);
+  assert.ok(!stray.ok && /Hà Nội/.test(stray.reason));
+  const claim = verifyDraft('{"actions":[{"text":"Hệ thống sẽ tự động hoàn tiền cho khách.","why":"x"}]}', pack);
+  assert.ok(!claim.ok, 'không được hứa tự động làm');
+  assert.ok(!verifyDraft('không phải json', pack).ok);
+  assert.ok(!verifyDraft('{"actions":[]}', pack).ok);
+});
+
+test('Đề xuất: việc bổ sung dữ liệu tách ra mục riêng; kết quả đo thật kéo điểm hiệu quả', () => {
+  const rec = require('../services/recommender');
+  // Học từ kết quả: hai lần chấp nhận, khiếu nại giảm thật thì hiệu quả tăng so với kỳ vọng
+  const day = 86400000;
+  const at = Date.parse('2026-11-01T00:00:00Z');
+  const mk = (t, hit) => ({ _id: `${t}-${Math.random()}`, timestamp: new Date(t), category: hit ? 'Delivery' : 'Product', subCategory: hit ? 'Late' : null, productName: 'A', trust: { weight: 1 } });
+  const items = [];
+  for (let i = 0; i < 60; i += 1) items.push(mk(at - (i % 7) * day - 1000, i % 3 === 0)); // trước: 1/3 khiếu nại
+  for (let i = 0; i < 60; i += 1) items.push(mk(at + (i % 7) * day + 1000, i % 12 === 0)); // sau: 1/12
+  const decisions = [{ alertId: 'Delivery|Late|A|*|x', decision: 'ACCEPTED', at: new Date(at), actionIds: ['ACT_X'] }];
+  const out = rec.learnOutcomes(decisions, items, new Date(at + 10 * day), 7);
+  const o = out.get('ACT_X');
+  assert.ok(o && o.n === 1 && o.improved === 1 && o.sumRel > 0.5, JSON.stringify(o));
+  const learning = { byAction: new Map(), suppressed: [], totalDecisions: 1, outcomes: out };
+  const alert = { category: 'Delivery', severity: 'High', statistics: { currentRate: 0.3, baselineRate: 0.1, sampleCurrent: 100 }, affectedCustomers: 50 };
+  const profile = { evidenceCount: 100, weightedCount: 80, revenue: { measurable: false }, focusedDimensions: [], concentration: 'DIFFUSE' };
+  const base = rec.scoreAction({ id: 'ACT_Y', expectedReduction: 0.2, kind: 'INTERNAL_FIX' }, alert, profile, learning);
+  const learned = rec.scoreAction({ id: 'ACT_X', expectedReduction: 0.2, kind: 'INTERNAL_FIX' }, alert, profile, learning);
+  assert.ok(learned.components.expectedEffect > base.components.expectedEffect, 'đo được giảm thật thì hiệu quả cao hơn kỳ vọng');
+  assert.strictEqual(learned.components.measuredOutcomes, 1);
+});
+
 function testAsync(name, fn) {
   asyncTests.push({ name, fn });
 }

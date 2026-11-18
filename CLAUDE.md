@@ -100,6 +100,10 @@ After any write, call `invalidate(req.db)`.
   - Benjamini–Hochberg FDR correction;
   - de-duplication of alerts.
 - `playbook.js` / `playbook_library.js` / `recommender.js` map (cause × severity) to actions. The LLM only rephrases; it never adds facts.
+- Recommendation upgrade (2026-11-18):
+  - Instrumentation actions ("Bổ sung trường ...") go to `rec.dataGaps`, not `steps`, unless nothing else is eligible; RiskCenter shows them under "Cần thêm dữ liệu".
+  - `recommender.learnOutcomes` turns accepted decisions whose follow-up window is done (`insights.decisionEffect`, enough data both sides) into a measured relative drop per `actionId`; `scoreAction` blends it into the expected effect with weight n/(n+2). `scoreComponents.measuredOutcomes/measuredImproved`, `engine.outcomesMeasured`.
+  - `services/rec_drafter.js`: for Critical/High PROPOSED recommendations, `/api/recommendations` attaches `aiDraft` ({actions:[{text,why}], provider}) written by `chat_engine.synthesize` from an evidence pack (alert stats, profile facts, revenue, rule steps, up to 6 verbatim complaints). Shown only after gates: JSON, 1 to 3 actions, every number of 2+ digits present in the pack, no product/region/channel outside the pack, no "đã làm / tự động" claims. Background, never awaited; cached per db + alert + `ctx.computedAt`; at most 3 new per request and `REC_DRAFT_MAX_PER_HOUR` (12) per hour. RiskCenter shows "Việc cụ thể nên làm" above the rule plan.
 - `metrics.buildEvidence` returns, for each dashboard card, how many counted feedbacks are verified (P1/P2), human-reviewed, or only inferred. `/api/stats` exposes it as `evidence`, and the UI draws it as the "evidence bar".
 
 ### Features built on the context

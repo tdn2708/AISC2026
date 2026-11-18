@@ -1052,13 +1052,7 @@ router.get('/recommendations', wrap(async (req, res) => {
   const built = buildRecommendationsCached(ctx, req.query, {}, result, decisions);
   const alertById = new Map(result.alerts.map((a) => [a.id, a]));
 
-  res.json({
-    safetyPolicy:
-      'Hệ thống không tự thực thi bất kỳ hành động nào phát sinh chi phí hoặc tác động tới khách hàng cuối. Mọi hành động đều ở dạng đề xuất kèm bằng chứng và độ tin cậy, và phải được người có thẩm quyền phê duyệt.',
-    playbookCount: playbook.PLAYBOOK_COUNT,
-    engine: built.meta,
-    bundles: built.bundles,
-    recommendations: built.recommendations.map((rec) => {
+  const recommendations = built.recommendations.map((rec) => {
       const a = alertById.get(rec.alertId);
       const decision = findDecision(rec.alertId, decisions, nowMs);
       return {
@@ -1078,7 +1072,22 @@ router.get('/recommendations', wrap(async (req, res) => {
         decidedAt: decision ? decision.at : null,
         dismissReason: decision ? decision.reason : null
       };
-    })
+    });
+  // Cảnh báo nặng: bản đề xuất cụ thể do mô hình viết, đã qua cổng kiểm số liệu
+  // (rec_drafter.js). Không chờ mô hình: chưa có thì lần tải sau mới hiện.
+  require('../services/rec_drafter').attachDrafts(
+    recommendations.filter((r) => r.status === 'PROPOSED'),
+    alertById,
+    ctx,
+    { dbName: req.db.databaseName }
+  );
+  res.json({
+    safetyPolicy:
+      'Hệ thống không tự thực thi bất kỳ hành động nào phát sinh chi phí hoặc tác động tới khách hàng cuối. Mọi hành động đều ở dạng đề xuất kèm bằng chứng và độ tin cậy, và phải được người có thẩm quyền phê duyệt.',
+    playbookCount: playbook.PLAYBOOK_COUNT,
+    engine: built.meta,
+    bundles: built.bundles,
+    recommendations
   });
 }));
 

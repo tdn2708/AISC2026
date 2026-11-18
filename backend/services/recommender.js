@@ -315,9 +315,17 @@ function scoreAction(action, alert, profile, learning) {
   const impact = impactScore(alert, profile);
   const confidence = confidenceScore(alert, profile);
   const targeting = targetingScore(action, profile);
-  const effect = action.isInstrumentation
-    ? (action.strategicValue ?? 0.5)
-    : (action.observedReduction ?? action.expectedReduction ?? 0.1);
+  // Hiệu quả: kỳ vọng của thư viện, trộn dần với mức giảm khiếu nại ĐO ĐƯỢC
+  // sau những lần hành động này được chấp nhận (learnOutcomes). Càng nhiều
+  // lần đo thì số đo càng nặng ký; một lần đo duy nhất chỉ chiếm 1/3.
+  const outcome = learning.outcomes?.get(action.id);
+  const expected = action.observedReduction ?? action.expectedReduction ?? 0.1;
+  let effect = action.isInstrumentation ? (action.strategicValue ?? 0.5) : expected;
+  if (!action.isInstrumentation && outcome?.n) {
+    const observed = Math.min(0.9, Math.max(0.01, outcome.sumRel / outcome.n));
+    const w = outcome.n / (outcome.n + 2);
+    effect = (1 - w) * expected + w * observed;
+  }
   const prior = learnedPrior(action.id, learning);
 
   const effortPenalty = (action.effortDays ?? 1) * SCORE.effortPenaltyPerDay;
@@ -346,6 +354,8 @@ function scoreAction(action, alert, profile, learning) {
       expectedEffect: Number(effect.toFixed(3)),
       learnedAcceptance: Number(prior.value.toFixed(3)),
       learnedFrom: prior.observations,
+      measuredOutcomes: outcome?.n || 0,
+      measuredImproved: outcome?.improved || 0,
       effortPenalty: Number(effortPenalty.toFixed(3)),
       riskPenalty: Number((kindPenalty + reversePenalty).toFixed(3))
     }
@@ -383,6 +393,34 @@ function learnFromDecisions(decisions = []) {
   }
 
   return { byAction, suppressed, totalDecisions: decisions.length };
+}
+
+/**
+ * HỌC TỪ KẾT QUẢ THẬT, KHÔNG CHỈ TỪ NÚT BẤM
+ * Với mỗi kế hoạch đã được chấp nhận và đã đủ ngày đo (insights.decisionEffect:
+ * tỉ lệ khiếu nại đúng phạm vi cảnh báo trước và sau lúc chấp nhận, đủ 30 phản
+ * hồi mỗi bên), lấy mức giảm tương đối và quy cho các hành động trong kế hoạch.
+ * Đây là so sánh trước/sau, chưa loại trừ mùa vụ hay khuyến mãi, nên chỉ trộn
+ * vào hiệu quả kỳ vọng chứ không thay hẳn (scoreAction).
+ */
+function learnOutcomes(decisions = [], items = [], now = new Date(), windowDays = 7) {
+  const outcomes = new Map();
+  if (!items.length) return outcomes;
+  const insights = require('./insights');
+  for (const d of decisions) {
+    if (d.decision !== 'ACCEPTED' || !Array.isArray(d.actionIds) || !d.actionIds.length) continue;
+    const eff = insights.decisionEffect(items, d, now, windowDays);
+    if (!eff || eff.status !== 'done' || !eff.enough || !eff.before?.rate || eff.after?.rate == null) continue;
+    const rel = Math.max(-1, Math.min(1, (eff.before.rate - eff.after.rate) / eff.before.rate));
+    for (const id of d.actionIds) {
+      if (!outcomes.has(id)) outcomes.set(id, { n: 0, improved: 0, sumRel: 0 });
+      const o = outcomes.get(id);
+      o.n += 1;
+      o.sumRel += rel;
+      if (rel >= 0.1) o.improved += 1;
+    }
+  }
+  return outcomes;
 }
 
 function isSuppressed(actionId, scopeKey, action, learning, now) {
@@ -500,7 +538,16 @@ function buildRecommendation(alert, options = {}) {
   }
 
   kept.sort((a, b) => b.score.total - a.score.total);
-  const top = kept.slice(0, SCORE.maxActionsPerAlert);
+  // Việc "bổ sung dữ liệu" (thêm trường nhà xe, mã lô...) không giải quyết được
+  // sự cố trước mắt: tách ra mục riêng thay vì để chiếm bước 1 của kế hoạch
+  // (trước đây cảnh báo giao chậm Nghiêm trọng có bước 1 là "Bổ sung trường
+  // đơn vị vận chuyển"). Chỉ khi không còn việc nào khác mới giữ trong kế hoạch.
+  const actionable = kept.filter((k) => !k.action.isInstrumentation);
+  const instrumentation = kept.filter((k) => k.action.isInstrumentation);
+  const top = (actionable.length ? actionable : instrumentation).slice(0, SCORE.maxActionsPerAlert);
+  const dataGaps = actionable.length
+    ? instrumentation.map(({ action }) => ({ actionId: action.id, text: action.text, effortDays: action.effortDays ?? 1 }))
+    : [];
 
   const steps = top.map(({ action, score }, i) => {
     const kind = ACTION_KIND[action.kind] || ACTION_KIND.INVESTIGATE;
@@ -554,6 +601,7 @@ function buildRecommendation(alert, options = {}) {
     confidence: Number(confidenceScore(alert, profile).toFixed(3)),
     severityScore: alert.severityScore,
     steps,
+    dataGaps,
     requiresApproval: steps.some((s) => s.requiresApproval),
 
     // Minh bạch về những gì đã bị loại, để người vận hành phản biện được
@@ -617,6 +665,7 @@ function bundle(recommendations) {
  */
 function buildAll(alerts, options = {}) {
   const learning = learnFromDecisions(options.decisions || []);
+  learning.outcomes = learnOutcomes(options.decisions || [], options.items || [], options.now || new Date(), options.windowDays || 7);
   const recommendations = alerts.map((a) => buildRecommendation(a, { ...options, learning }));
 
   // Thứ tự trình bày là thứ tự giá trị kỳ vọng của hành động tốt nhất
@@ -631,6 +680,7 @@ function buildAll(alerts, options = {}) {
       actionLibrarySize: library.ACTION_COUNT,
       causesCovered: Object.keys(library.LIBRARY).length,
       decisionsLearnedFrom: learning.totalDecisions,
+      outcomesMeasured: [...learning.outcomes.values()].reduce((s, o) => s + o.n, 0),
       generatedAt: new Date(options.now || Date.now()).toISOString()
     }
   };
@@ -666,6 +716,7 @@ module.exports = {
   eligibleActions,
   scoreAction,
   learnFromDecisions,
+  learnOutcomes,
   buildEffectCheck,
   measureEffect,
   bundle,
