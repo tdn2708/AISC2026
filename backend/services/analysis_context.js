@@ -40,6 +40,8 @@ const MAX_AGE_MS = 3 * 60 * 60 * 1000;
 // Kho có dữ liệu phát lại (seed với --future): phản hồi "tới giờ" liên tục nên
 // tính lại mỗi giờ. Độ tươi đạt tối đa khi phản hồi mới nhất trễ dưới 1 giờ.
 const REPLAY_MAX_AGE_MS = 60 * 60 * 1000;
+// Ngưỡng RSS để bỏ bản ngữ cảnh cũ trước khi tính bản mới (xem doFetch)
+const CTX_DROP_STALE_RSS_MB = Number(process.env.CTX_DROP_STALE_RSS_MB) || 250;
 const FETCH_BATCH = 5000;
 
 /**
@@ -268,6 +270,20 @@ async function doFetch(db, gen, onlyIfChanged) {
   ) {
     cache.at = Date.now();
     return cache.value;
+  }
+
+  // Bộ nhớ chật (Render miễn phí 512 MB): dựng bản mới trong khi còn giữ bản cũ
+  // để phục vụ là hai bản cùng lúc, cộng bản sao khi chuyển giữa hai luồng. Sau
+  // khi nạp lại kho demo 18/11 (15,8 nghìn phản hồi) đúng lúc đó máy chủ vượt
+  // 512 MB và bị Render khởi động lại; kho đang phát lại thì việc này lặp mỗi
+  // giờ. Quá ngưỡng thì bỏ bản cũ trước: các trang chờ bản mới vài chục giây,
+  // nhưng máy chủ (và phiên live đang chạy) không sập.
+  const rssMb = process.memoryUsage().rss / 1048576;
+  if (rssMb > CTX_DROP_STALE_RSS_MB && (cache.value || st.stale)) {
+    console.warn(`[CONTEXT] ${db.databaseName}: bộ nhớ ${Math.round(rssMb)} MB, bỏ bản cũ trước khi tính lại để không vượt giới hạn`);
+    cache.value = null;
+    cache.key = null;
+    st.stale = null;
   }
 
   // batchSize lớn: mặc định driver kéo 101 tài liệu mỗi lượt, mỗi lượt là
