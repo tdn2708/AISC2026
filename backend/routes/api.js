@@ -1042,6 +1042,16 @@ router.get('/alerts/:id/evidence', wrap(async (req, res) => {
 // KHUYẾN NGHỊ — LUÔN LÀ ĐỀ XUẤT, KHÔNG BAO GIỜ TỰ THỰC THI
 // ==================================================================
 
+/** Hướng dẫn bắt đầu: kho đã có đánh giá, đơn hàng, phiên live chưa (đếm nhanh, không dựng ngữ cảnh) */
+router.get('/onboarding', wrap(async (req, res) => {
+  const [feedbacks, orders, liveSessions] = await Promise.all([
+    req.db.collection('feedbacks').estimatedDocumentCount(),
+    req.db.collection('transactions').estimatedDocumentCount(),
+    req.db.collection('live_sessions').countDocuments({ simulated: { $ne: true } }, { limit: 1 })
+  ]);
+  res.json({ workspace: req.workspace, feedbacks, orders, liveSessions });
+}));
+
 /** Customer Radar giúp shop được bao nhiêu trong 30 ngày (services/value_summary.js) */
 router.get('/value', wrap(async (req, res) => {
   const ctx = await getContext(req.db);

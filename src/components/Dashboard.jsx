@@ -16,6 +16,7 @@ import SentimentShare from './dashboard/SentimentShare';
 import RisingIssues from './dashboard/RisingIssues';
 import LiveDigest from './dashboard/LiveDigest';
 import ValueCard from './dashboard/ValueCard';
+import Onboarding from './dashboard/Onboarding';
 import { useOwnerMode } from '../lib/ownerMode';
 import { Button } from './ui';
 import { StartGuide } from './shell/StartGuide';
@@ -197,6 +198,7 @@ const Dashboard = () => {
 
       {/* Tải lại thì giữ khung cũ ở độ mờ thấp: không nháy, không nhảy bố cục */}
       <div className={`transition-opacity duration-short ease-out ${loading && stats ? 'opacity-60' : ''}`} aria-busy={loading}>
+        <Onboarding />
         <TodayInbox alerts={alerts} items={inbox} loading={loading} failed={failed || inboxFailed} onRetry={retryAll} skip={lifted.length} decisions={decisions} />
         <ValueCard />
 
