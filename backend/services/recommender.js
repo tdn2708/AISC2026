@@ -411,7 +411,9 @@ function learnOutcomes(decisions = [], items = [], now = new Date(), windowDays 
     if (d.decision !== 'ACCEPTED' || !Array.isArray(d.actionIds) || !d.actionIds.length) continue;
     const eff = insights.decisionEffect(items, d, now, windowDays);
     if (!eff || eff.status !== 'done' || !eff.enough || !eff.before?.rate || eff.after?.rate == null) continue;
-    const rel = Math.max(-1, Math.min(1, (eff.before.rate - eff.after.rate) / eff.before.rate));
+    // Dùng thay đổi đã trừ nhịp chung của các sản phẩm khác khi có đối chứng
+    const delta = eff.adjustedChange ?? (eff.after.rate - eff.before.rate);
+    const rel = Math.max(-1, Math.min(1, -delta / eff.before.rate));
     for (const id of d.actionIds) {
       if (!outcomes.has(id)) outcomes.set(id, { n: 0, improved: 0, sumRel: 0 });
       const o = outcomes.get(id);

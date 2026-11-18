@@ -2127,6 +2127,28 @@ test('Giá trị cho shop: phản hồi nằm trong hai cảnh báo chỉ đư�
   assert.strictEqual(v.atRisk.alerts, 2);
 });
 
+test('Hiệu quả quyết định có đối chứng: trừ phần giảm chung của sản phẩm khác cùng kỳ', () => {
+  const insights = require('../services/insights');
+  const day = 86400000;
+  const at = Date.parse('2026-11-01T00:00:00Z');
+  const mk = (t, prod, hit) => ({ _id: `${prod}${t}${Math.random()}`, timestamp: new Date(t), productName: prod, category: hit ? 'Delivery' : 'Product', subCategory: hit ? 'Late' : null, trust: { weight: 1 } });
+  const items = [];
+  for (let i = 0; i < 60; i += 1) {
+    items.push(mk(at - (i % 7) * day - 1000, 'A', i % 3 === 0)); // A trước 20/60
+    items.push(mk(at + (i % 7) * day + 1000, 'A', i % 12 === 0)); // A sau 5/60
+    items.push(mk(at - (i % 7) * day - 2000, 'B', i % 3 === 0)); // B trước 20/60
+    items.push(mk(at + (i % 7) * day + 2000, 'B', i % 4 === 0)); // B sau 15/60
+  }
+  const eff = insights.decisionEffect(items, { alertId: 'Delivery|Late|A|*|x', decision: 'ACCEPTED', at: new Date(at) }, new Date(at + 10 * day), 7);
+  assert.ok(eff.control, 'có nhóm đối chứng');
+  assert.ok(Math.abs(eff.change - (-15 / 60)) < 1e-9);
+  assert.ok(Math.abs(eff.control.change - (-5 / 60)) < 1e-9);
+  assert.ok(Math.abs(eff.adjustedChange - (-10 / 60)) < 1e-9, 'giảm nhờ việc đã làm = 15/60 - 5/60');
+  const noCtl = insights.decisionEffect(items.filter((f) => f.productName === 'A'), { alertId: 'Delivery|Late|A|*|x', decision: 'ACCEPTED', at: new Date(at) }, new Date(at + 10 * day), 7);
+  assert.strictEqual(noCtl.control, null);
+  assert.strictEqual(noCtl.adjustedChange, noCtl.change);
+});
+
 function testAsync(name, fn) {
   asyncTests.push({ name, fn });
 }

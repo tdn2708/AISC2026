@@ -63,7 +63,7 @@ const ValueCard = () => {
         <summary className="cursor-pointer list-none rounded-ctrl pt-3 text-sm font-medium text-ink-mid hover:text-ink-hi">Cách tính</summary>
         <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm leading-relaxed text-ink-mid">
           <li>Doanh thu rủi ro: tổng giá trị đơn đứng sau các cảnh báo chưa xử lý; phần không có mã đơn được ngoại suy từ phần có.</li>
-          <li>Khiếu nại tránh được: với kế hoạch đã chấp nhận và đủ ngày đo, lấy tỉ lệ khiếu nại trước trừ sau, nhân số phản hồi sau. Quy ra tiền bằng giá trị đơn trung bình{saved.avgOrderValue ? ` (${money(saved.avgOrderValue)})` : ''}. Đây là so trước và sau, chưa loại trừ mùa vụ hay khuyến mãi.</li>
+          <li>Khiếu nại tránh được: với kế hoạch đã chấp nhận và đủ ngày đo, lấy tỉ lệ khiếu nại trước trừ sau, nhân số phản hồi sau. Quy ra tiền bằng giá trị đơn trung bình{saved.avgOrderValue ? ` (${money(saved.avgOrderValue)})` : ''}. Cảnh báo gắn một sản phẩm thì chỉ tính phần giảm vượt nhịp chung của các sản phẩm khác cùng kỳ{saved.controlled ? ` (${fmtInt(saved.controlled)}/${fmtInt(saved.measured)} kế hoạch có đối chứng)` : ''}.</li>
           <li>Livestream: doanh thu ước tính từ lượt chốt trên bình luận; doanh thu lỡ là lượt chốt đến sau khi biến thể đã hết, đã được báo trong phiên.</li>
         </ul>
       </details>

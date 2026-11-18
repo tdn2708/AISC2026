@@ -270,8 +270,11 @@ const Effect = ({ e }) => {
     return <span className="text-ink-lo">Còn {e.daysLeft} ngày nữa mới đủ 7 ngày để đo</span>;
   }
   if (e.change == null || e.enough === false) return <span className="text-ink-lo">Chưa đủ phản hồi để so (trước {fmtInt(e.before?.n)}, sau {fmtInt(e.after?.n)})</span>;
-  const better = e.change < -0.0005;
-  const worse = e.change > 0.0005;
+  // Có đối chứng (sản phẩm khác cùng kỳ) thì đánh giá theo phần thay đổi đã trừ nhịp chung
+  const delta = e.control ? e.adjustedChange : e.change;
+  const better = delta < -0.0005;
+  const worse = delta > 0.0005;
+  const pts = (v) => `${Math.abs(v * 100).toFixed(1).replace('.', ',')} điểm phần trăm`;
   const Icon = better ? ArrowDownRight : worse ? ArrowUpRight : Minus;
   return (
     <span className="inline-flex flex-col">
@@ -280,7 +283,9 @@ const Effect = ({ e }) => {
         từ {pctSmart(e.before.rate)} sang {pctSmart(e.after.rate)}
       </span>
       <span className="text-xs text-ink-lo">
-        {better ? 'Giảm' : worse ? 'Tăng' : 'Gần như không đổi'}, trên {fmtInt(e.before.n)} và {fmtInt(e.after.n)} phản hồi
+        {e.control
+          ? <>Sản phẩm khác cùng kỳ: {pctSmart(e.control.before.rate)} sang {pctSmart(e.control.after.rate)}. {better ? `Giảm nhờ việc đã làm ${pts(delta)}` : worse ? `Tăng hơn nhịp chung ${pts(delta)}` : 'Không khác nhịp chung'}</>
+          : <>{better ? 'Giảm' : worse ? 'Tăng' : 'Gần như không đổi'}, trên {fmtInt(e.before.n)} và {fmtInt(e.after.n)} phản hồi</>}
       </span>
     </span>
   );
@@ -311,7 +316,7 @@ const DecisionLog = () => {
   return (
     <GlassPanel tone="strong" className="overflow-hidden">
       <p className="border-b border-line-soft px-5 py-3 text-xs leading-relaxed text-ink-lo">
-        Hiệu quả: tỉ lệ khiếu nại vấn đề đó 7 ngày trước và sau khi chấp nhận, chưa loại trừ mùa vụ hay khuyến mãi.
+        Hiệu quả: tỉ lệ khiếu nại vấn đề đó 7 ngày trước và sau khi chấp nhận. Cảnh báo gắn một sản phẩm thì đã trừ thay đổi chung của các sản phẩm khác cùng kỳ.
       </p>
       <div className="paper mx-3 mb-3"><div className="table-responsive">
         <table className="data-table">

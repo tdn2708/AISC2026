@@ -141,12 +141,39 @@ function decisionEffect(items, decision, now, windowDays = 7, beforeDays = windo
   const after = windowStats(at, afterEnd);
   const daysElapsed = Math.max(0, (nowMs - at) / DAY);
   const status = daysElapsed >= windowDays ? 'done' : 'pending';
+  const change = before.rate != null && after.rate != null ? after.rate - before.rate : null;
+
+  // Đối chứng: cùng nhóm vấn đề trên các sản phẩm KHÁC (không được xử lý), cùng hai
+  // khoảng thời gian. Mức thay đổi của nhóm đối chứng là phần do mùa vụ, khuyến mãi,
+  // nhịp chung của shop; trừ đi thì còn phần gắn với việc đã làm (khác biệt kép).
+  // Chỉ có khi cảnh báo gắn một sản phẩm và nhóm đối chứng đủ 30 phản hồi mỗi bên.
+  let control = null;
+  if (product && product !== '*') {
+    const others = items.filter((f) => metrics.isCountable(f) && f.productName && f.productName !== product);
+    const ctlStats = (from, to) => {
+      const list = others.filter((f) => {
+        const t = new Date(f.timestamp).getTime();
+        return t >= from && t < to;
+      });
+      const hits = list.filter(isHit).length;
+      return { n: list.length, hits, rate: list.length ? hits / list.length : null };
+    };
+    const cb = ctlStats(at - beforeSpan, at);
+    const ca = ctlStats(at, afterEnd);
+    if (cb.n >= 30 && ca.n >= 30 && cb.rate != null && ca.rate != null) {
+      control = { before: cb, after: ca, change: ca.rate - cb.rate };
+    }
+  }
+
   return {
     status,
     daysLeft: status === 'pending' ? Math.ceil(windowDays - daysElapsed) : 0,
     before,
     after,
-    change: before.rate != null && after.rate != null ? after.rate - before.rate : null,
+    change,
+    control,
+    // Thay đổi sau khi trừ nhịp chung (âm là giảm); không có đối chứng thì bằng change
+    adjustedChange: change != null && control ? change - control.change : change,
     beforeDays: Math.round(beforeSpan / DAY),
     enough: before.n >= 30 && after.n >= 30
   };

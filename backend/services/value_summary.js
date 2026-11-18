@@ -60,13 +60,16 @@ function computeValue({ recs = [], decisions = [], items = [], transactions = []
   let measured = 0;
   let improved = 0;
   let pending = 0;
+  let controlled = 0;
   for (const d of decisions) {
     if (d.decision !== 'ACCEPTED' || !d.at || new Date(d.at).getTime() < since) continue;
     const eff = insights.decisionEffect(items, d, now, cadenceDays);
     if (!eff) continue;
     if (eff.status !== 'done' || !eff.enough) { pending += 1; continue; }
     measured += 1;
-    const drop = (eff.before.rate ?? 0) - (eff.after.rate ?? 0);
+    // Có đối chứng (sản phẩm khác cùng kỳ) thì chỉ tính phần giảm vượt nhịp chung
+    const drop = -(eff.adjustedChange ?? ((eff.after.rate ?? 0) - (eff.before.rate ?? 0)));
+    if (eff.control) controlled += 1;
     if (drop > 0) {
       improved += 1;
       avoided += drop * eff.after.n;
@@ -97,7 +100,8 @@ function computeValue({ recs = [], decisions = [], items = [], transactions = []
       avgOrderValue: aov,
       measured,
       improved,
-      pending
+      pending,
+      controlled
     },
     live: { sessions, revenue: Math.round(liveRevenue), lostFlagged: Math.round(lostFlagged), actionsDone }
   };
