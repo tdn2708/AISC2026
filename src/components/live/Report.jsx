@@ -107,6 +107,19 @@ const Report = ({ sessionId }) => {
         <Big label="Khiếu nại" value={fmtInt(r.complaints.total)} sub={r.complaints.byCategory[0] ? `Nhiều nhất: ${r.complaints.byCategory[0].label.toLowerCase()}` : 'Không có'} tone={r.complaints.total ? 'crit' : undefined} />
       </div>
 
+      {r.opportunity?.total > 0 && (
+        <div className="paper flex flex-wrap items-baseline gap-x-4 gap-y-1 px-4 py-3">
+          <p className="text-sm text-ink-mid">Phiên sau có thể giữ thêm khoảng</p>
+          <p className="tabular-nums text-heading font-semibold text-ink-hi">{money(r.opportunity.total)}</p>
+          <p className="text-sm text-ink-mid">
+            {[
+              r.opportunity.stockout > 0 && `${money(r.opportunity.stockout)} lỡ vì hết hàng`,
+              r.opportunity.missedQuestions?.value > 0 && `${money(r.opportunity.missedQuestions.value)} từ ${fmtInt(r.opportunity.missedQuestions.people)} người hỏi chưa được trả lời`
+            ].filter(Boolean).join(', ')}
+          </p>
+        </div>
+      )}
+
       {/* Việc cần làm */}
       <GlassPanel tone="strong" className="p-4 sm:p-5">
         <PanelHeader title="Việc cần làm cho phiên sau" />

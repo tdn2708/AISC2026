@@ -240,8 +240,35 @@ async function buildReport(db, session) {
     todo.push({ priority: 'low', kind: 'opening', title: `Mở đầu phiên sau bằng ${best.name}`, detail: `Chốt nhiều nhất phiên này (${fmtVi(best.quantity)} sản phẩm).${bestMinuteProduct && bestMinute ? ` Phút chốt dồn nhất có ${bestMinute.order} lượt, chủ yếu ${bestMinuteProduct}.` : ''}` });
   }
 
+  // ---------- Phiên sau có thể giữ thêm bao nhiêu ----------
+  // Lỡ vì hết hàng: đã tính ở trên. Câu hỏi bỏ sót: người hỏi chưa được trả lời x
+  // tỉ lệ hỏi rồi chốt của chính sản phẩm đó trong phiên (thiếu thì tỉ lệ cả phiên)
+  // x giá bán. Ước tính để ưu tiên việc, không phải doanh thu chắc chắn.
+  const convById = new Map(productRows.map((p) => [p.id, p.conversion]));
+  const totalQ = productRows.reduce((s, p) => s + (p.questions || 0), 0);
+  const totalO = productRows.reduce((s, p) => s + (p.orders || 0), 0);
+  const sessionConv = totalQ ? Math.min(1, totalO / totalQ) : 0;
+  let missedPeople = 0;
+  let missedValue = 0;
+  for (const g of groups) {
+    if (g.status !== 'open' || g.intent === 'complaint') continue;
+    const p = byId.get(g.productId);
+    const price = p ? (p.salePrice ?? p.price) : null;
+    if (!price) continue;
+    const conv = Math.min(1, convById.get(g.productId) ?? sessionConv);
+    missedPeople += g.count;
+    missedValue += g.count * conv * price;
+  }
+  const stockoutLost = money.lost.reduce((s, l) => s + l.value, 0);
+  const opportunity = {
+    stockout: stockoutLost,
+    missedQuestions: { people: missedPeople, value: Math.round(missedValue) },
+    total: Math.round(stockoutLost + missedValue)
+  };
+
   return {
     session: { id: String(session._id), title: session.title, platform: session.platform, simulated: Boolean(session.simulated), startedAt: session.startedAt || null, endedAt: session.endedAt || null },
+    opportunity,
     totals: snap.totals,
     funnel,
     revenue: { estimated: money.revenue, confirmed: money.revenueConfirmed, unpricedOrders: money.unpricedOrders, lost: money.lost, lostTotal: money.lost.reduce((s, l) => s + l.value, 0) },

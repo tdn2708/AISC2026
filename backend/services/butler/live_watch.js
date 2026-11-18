@@ -163,6 +163,15 @@ function buildLiveReportText(session, report, { appUrl: customUrl, durationMs } 
     lines.push(revParts.join(' '));
   }
 
+  // Phiên sau có thể giữ thêm bao nhiêu (report.opportunity)
+  const opp = report?.opportunity;
+  if (opp?.total > 0) {
+    const parts = [];
+    if (opp.stockout > 0) parts.push(`${money(opp.stockout)} lỡ vì hết hàng`);
+    if (opp.missedQuestions?.value > 0) parts.push(`${money(opp.missedQuestions.value)} từ ${Math.round(opp.missedQuestions.people).toLocaleString('vi-VN')} người hỏi chưa được trả lời`);
+    lines.push(`Phiên sau có thể giữ thêm khoảng ${money(opp.total)}: ${parts.join(', ')}.`);
+  }
+
   const answeredShare = report?.response?.answeredShare ?? session?.summary?.answeredShare;
   const complaintsTotal = report?.complaints?.total ?? session?.summary?.byIntent?.complaint;
   const complaintsPushed = report?.complaints?.pushed;
