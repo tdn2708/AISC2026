@@ -425,6 +425,17 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
 .lp-work.is-static .lp-rail__note { width: auto; }
 
 /* ---------- 6. người làm ra ---------- */
+.lp-price { background: var(--canvas); padding-block: var(--lp-section); }
+.lp-price .lp-h2 { max-width: 20ch; }
+.lp-price__lead { margin-top: 1rem; color: var(--text-mid); font-size: 1.0625rem; }
+.lp-price__grid { margin-top: 2.5rem; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; list-style: none; padding: 0; }
+.lp-price__card { border: 1px solid var(--border); border-radius: var(--r-surf); padding: 1.5rem; background: var(--surface, var(--canvas)); min-width: 0; }
+.lp-price__name { font-size: 1.125rem; font-weight: 600; }
+.lp-price__amount { margin-top: 0.75rem; font-size: clamp(1.75rem, 1.4rem + 1vw, 2.25rem); font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: break-word; }
+.lp-price__amount span { font-size: 1rem; font-weight: 500; color: var(--text-mid); }
+.lp-price__for { margin-top: 0.5rem; color: var(--text-mid); }
+.lp-price__list { margin-top: 1.25rem; display: grid; gap: 0.5rem; padding-left: 1.1rem; list-style: disc; }
+@media (max-width: 900px) { .lp-price__grid { grid-template-columns: minmax(0, 1fr); } }
 .lp-team { background: var(--canvas); padding-block: var(--lp-section); }
 .lp-team__grid {
   display: grid;

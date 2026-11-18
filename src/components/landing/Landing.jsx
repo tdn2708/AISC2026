@@ -43,6 +43,14 @@ import './landing.css';
  * thì sửa luôn SNAPSHOT và SNAPSHOT_DATE trong data.js cho cùng ngày.
  */
 
+
+// Giá dự kiến (chưa có khách trả tiền): ghi đúng như vậy trên trang
+const PLANS = [
+  { name: 'Thử', price: '0 đ', unit: '', for: 'Shop mới bắt đầu, muốn xem thử', items: ['Tới 500 phản hồi mỗi tháng', 'Cảnh báo và việc hôm nay', 'Bản tin Zalo buổi sáng'] },
+  { name: 'Shop', price: '199.000 đ', unit: ' mỗi tháng', for: 'Shop bán trên nhiều sàn', items: ['Không giới hạn phản hồi', 'Nạp file đơn hàng Shopee, TikTok Shop, Lazada', 'Kế hoạch xử lý kèm bằng chứng', 'Quản gia Zalo báo sự cố và nhận lệnh'] },
+  { name: 'Shop có live', price: '499.000 đ', unit: ' mỗi tháng', for: 'Shop bán hàng qua livestream', items: ['Mọi thứ của gói Shop', 'Phân loại bình luận live ngay khi tới', 'Việc gấp trong phiên và báo cáo cuối phiên', 'Báo Zalo khi live gặp sự cố'] }
+];
+
 const SHOTS = {
   overview: { base: 'tong-quan', w: 1600, h: 1000 },
   insights: { base: 'bang-so-lieu', w: 1400, h: 972 },
@@ -469,6 +477,26 @@ const Landing = ({ isAuthenticated = false }) => {
             </figure>
             <p className="lp-rail__note">Ảnh chụp ứng dụng thật, kho mô phỏng, ngày {SNAPSHOT_DATE}.</p>
           </div>
+        </div>
+      </section>
+
+      {/* 5b. GÓI DÙNG: ai trả tiền, trả bao nhiêu (giá dự kiến, chưa có khách trả tiền) */}
+      <section className="lp-price" aria-labelledby="lp-price-h">
+        <div className="lp-wrap">
+          <h2 id="lp-price-h" className="lp-h2">Dành cho chủ shop bán online, nhất là shop có livestream.</h2>
+          <p className="lp-price__lead">Giá dự kiến cho giai đoạn thử nghiệm với shop thật.</p>
+          <ul className="lp-price__grid">
+            {PLANS.map((p) => (
+              <li key={p.name} className="lp-price__card">
+                <h3 className="lp-price__name">{p.name}</h3>
+                <p className="lp-price__amount">{p.price}<span>{p.unit}</span></p>
+                <p className="lp-price__for">{p.for}</p>
+                <ul className="lp-price__list">
+                  {p.items.map((it) => <li key={it}>{it}</li>)}
+                </ul>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
