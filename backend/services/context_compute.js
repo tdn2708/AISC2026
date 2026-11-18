@@ -148,6 +148,14 @@ function computeContext(input) {
     pain = null;
   }
 
+  // Trường nội bộ của Trust Layer (văn bản đã chuẩn hóa, khoảng 600 byte mỗi
+  // phản hồi): không trang nào dùng, bỏ trước khi gửi về luồng chính để không
+  // giữ thêm hàng chục MB và tốn thêm công sao chép giữa hai luồng
+  for (const it of result.items) {
+    delete it._norm;
+    delete it._normalized;
+  }
+
   return {
     cadence,
     pain,

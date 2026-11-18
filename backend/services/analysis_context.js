@@ -39,9 +39,12 @@ const CACHE_TTL_MS = 30 * 1000;
 const MAX_AGE_MS = 3 * 60 * 60 * 1000;
 // Kho có dữ liệu phát lại (seed với --future): phản hồi "tới giờ" liên tục nên
 // tính lại mỗi giờ. Độ tươi đạt tối đa khi phản hồi mới nhất trễ dưới 1 giờ.
-const REPLAY_MAX_AGE_MS = 60 * 60 * 1000;
+const REPLAY_MAX_AGE_MS = 3 * 60 * 60 * 1000;
 // Ngưỡng RSS để bỏ bản ngữ cảnh cũ trước khi tính bản mới (xem doFetch)
 const CTX_DROP_STALE_RSS_MB = Number(process.env.CTX_DROP_STALE_RSS_MB) || 250;
+// Kho từ chừng này phản hồi trở lên thì luôn bỏ bản cũ: một lượt tính cỡ 12 nghìn
+// phản hồi đã tốn vài trăm MB, giữ thêm bản cũ là vượt 512 MB của Render
+const CTX_DROP_STALE_ITEMS = Number(process.env.CTX_DROP_STALE_ITEMS) || 4000;
 const FETCH_BATCH = 5000;
 
 /**
@@ -110,26 +113,52 @@ function stateFor(db) {
 let worker = null;
 let seq = 0;
 const pending = new Map();
+// Luồng tính xong thì nghỉ sau WORKER_IDLE_MS: V8 không trả vùng nhớ đã dùng
+// lúc tính về cho hệ điều hành, nên luồng sống mãi giữ thêm vài trăm MB (đo
+// 18/11: dữ liệu JS luồng chính 94 MB, cả tiến trình 473 MB). Đóng hẳn thì
+// trả lại hết; lần tính sau mở luồng mới (tốn chưa tới 1 giây).
+const WORKER_IDLE_MS = Number(process.env.CONTEXT_WORKER_IDLE_MS) || 15000;
+let idleTimer = null;
+function scheduleIdleStop() {
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    idleTimer = null;
+    if (worker && pending.size === 0) {
+      const w = worker;
+      worker = null;
+      w.terminate().catch(() => {});
+    }
+  }, WORKER_IDLE_MS);
+  if (idleTimer.unref) idleTimer.unref();
+}
 
 function getWorker() {
   if (worker) return worker;
   const { Worker } = require('worker_threads');
-  worker = new Worker(path.join(__dirname, 'context_worker.js'));
+  // Trần heap cho luồng tính: V8 trên máy nhiều RAM để heap phình rất lớn rồi mới
+  // dọn, cộng với luồng chính là vượt 512 MB của Render. Có trần thì dọn sớm hơn.
+  const maxOld = Number(process.env.CONTEXT_WORKER_HEAP_MB) || 0;
+  worker = new Worker(path.join(__dirname, 'context_worker.js'), maxOld ? { resourceLimits: { maxOldGenerationSizeMb: maxOld } } : undefined);
   worker.unref(); // không giữ tiến trình sống (script chạy một lần vẫn thoát được)
   const fail = (err) => {
     for (const { reject } of pending.values()) reject(err);
     pending.clear();
     worker = null;
   };
+  const self = worker;
   worker.on('message', (msg) => {
     const job = pending.get(msg.id);
     if (!job) return;
     pending.delete(msg.id);
     if (msg.ok) job.resolve(msg);
     else job.reject(new Error(msg.error));
+    if (pending.size === 0) scheduleIdleStop();
   });
   worker.on('error', fail);
-  worker.on('exit', (code) => fail(new Error(`Luồng tính dừng (mã ${code})`)));
+  worker.on('exit', (code) => {
+    // Luồng tự nghỉ (scheduleIdleStop) thì không có việc nào dở dang
+    if (worker === self) fail(new Error(`Luồng tính dừng (mã ${code})`));
+  });
   return worker;
 }
 
@@ -141,6 +170,7 @@ async function compute(input) {
       const id = ++seq;
       pending.set(id, { resolve, reject });
       try {
+        if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
         getWorker().postMessage({ id, input });
       } catch (e) {
         pending.delete(id);
@@ -279,8 +309,9 @@ async function doFetch(db, gen, onlyIfChanged) {
   // giờ. Quá ngưỡng thì bỏ bản cũ trước: các trang chờ bản mới vài chục giây,
   // nhưng máy chủ (và phiên live đang chạy) không sập.
   const rssMb = process.memoryUsage().rss / 1048576;
-  if (rssMb > CTX_DROP_STALE_RSS_MB && (cache.value || st.stale)) {
-    console.warn(`[CONTEXT] ${db.databaseName}: bộ nhớ ${Math.round(rssMb)} MB, bỏ bản cũ trước khi tính lại để không vượt giới hạn`);
+  const prevItems = (cache.value || st.stale)?.items?.length || 0;
+  if ((cache.value || st.stale) && (rssMb > CTX_DROP_STALE_RSS_MB || prevItems >= CTX_DROP_STALE_ITEMS)) {
+    console.warn(`[CONTEXT] ${db.databaseName}: bộ nhớ ${Math.round(rssMb)} MB, ${prevItems} phản hồi; bỏ bản cũ trước khi tính lại để không vượt giới hạn`);
     cache.value = null;
     cache.key = null;
     st.stale = null;
