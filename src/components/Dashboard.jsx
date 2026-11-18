@@ -16,6 +16,7 @@ import SentimentShare from './dashboard/SentimentShare';
 import RisingIssues from './dashboard/RisingIssues';
 import LiveDigest from './dashboard/LiveDigest';
 import ValueCard from './dashboard/ValueCard';
+import { useOwnerMode } from '../lib/ownerMode';
 import { Button } from './ui';
 import { StartGuide } from './shell/StartGuide';
 import { useReducedMotion, MOTION, PageEnter, usePageEntered } from './motion';
@@ -38,6 +39,8 @@ import { useReducedMotion, MOTION, PageEnter, usePageEntered } from './motion';
 const nowLabel = () => new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
 const Dashboard = () => {
+  const [owner] = useOwnerMode();
+  const [showDetail, setShowDetail] = React.useState(false);
   const [timeFilter, setTimeFilter] = useState(readStorage('timeFilter') || 'All');
   const [sourceFilter, setSourceFilter] = useState(readStorage('sourceFilter') || 'All');
   const [productFilter, setProductFilter] = useState(readStorage('productFilter') || 'All');
@@ -197,6 +200,17 @@ const Dashboard = () => {
         <TodayInbox alerts={alerts} items={inbox} loading={loading} failed={failed || inboxFailed} onRetry={retryAll} skip={lifted.length} decisions={decisions} />
         <ValueCard />
 
+        {owner && !showDetail && (
+          <>
+            <LiveDigest />
+            <div className="mt-6 flex justify-center">
+              <Button variant="secondary" onClick={() => setShowDetail(true)}>Xem số liệu chi tiết</Button>
+            </div>
+          </>
+        )}
+
+        {(!owner || showDetail) && (
+        <>
         <StoreHealth stats={stats} trend={trend} loading={loading} failed={failed} onRetry={reload} countStart={reduced || (entered && ledgerDone)} />
 
         <div className="mb-8 grid grid-cols-12 items-start gap-6">
@@ -217,6 +231,8 @@ const Dashboard = () => {
         <section aria-label="Phản hồi gần đây" className="reveal">
           <FeedbackTable timeFilter={timeFilter} sourceFilter={sourceFilter} productFilter={productFilter} />
         </section>
+        </>
+        )}
       </div>
     </PageEnter>
   );

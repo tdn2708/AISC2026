@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X, Database, Check, ShieldCheck } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X, Database, Check, ShieldCheck, ChevronDown, LayoutList } from 'lucide-react';
 import { Popover, MenuItem } from './ui';
 import Logo, { LogoMark } from './Logo';
-import { NAV } from '../lib/nav';
+import { NAV, navFor } from '../lib/nav';
+import { useOwnerMode } from '../lib/ownerMode';
 import { useWorkspaceEmpty } from '../lib/workspaceEmpty';
 import { WORKSPACES, getWorkspace, switchWorkspace } from '../lib/workspace';
 import { DEFAULT_USER, currentUser } from '../hooks/useDecisions';
@@ -235,6 +236,12 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
   const [nlp, setNlp] = useState(undefined);
   const menuRef = useRef(null);
   const navigate = useNavigate();
+  const { pathname: currentPath } = useLocation();
+  const [owner, setOwner] = useOwnerMode();
+  const onAdvancedPage = NAV.some((g) => g.items.some((i) => i.advanced && currentPath.startsWith(i.to)));
+  const [advancedOpen, setAdvancedOpen] = useState(onAdvancedPage);
+  useEffect(() => { if (onAdvancedPage) setAdvancedOpen(true); }, [onAdvancedPage]);
+  const nav = navFor(owner, advancedOpen || onAdvancedPage);
 
   // Tên, email, cửa hàng của tài khoản đang đăng nhập (lib/auth.js); đổi tên ở Cài đặt thì cập nhật ngay
   const readProfile = () => {
@@ -335,8 +342,8 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
         {/* Điều hướng: ba nhóm trong MỘT danh sách để dấu "đang ở trang này" trượt được qua nhóm */}
         <nav aria-label="Trang" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-3">
           <div className="mt-2">
-            <NavList items={NAV}>
-              {NAV.map((g) => (
+            <NavList items={nav}>
+              {nav.map((g) => (
                 <React.Fragment key={g.group}>
                   {!g.hideLabel &&
                     (collapsed ? (
@@ -357,6 +364,30 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
                 </React.Fragment>
               ))}
             </NavList>
+            {!collapsed && (
+              <div className="mt-3 flex flex-col gap-0.5">
+                {owner && (
+                  <button
+                    type="button"
+                    aria-expanded={advancedOpen || onAdvancedPage}
+                    onClick={() => setAdvancedOpen((o) => !o)}
+                    disabled={onAdvancedPage}
+                    className="flex min-h-9 w-full items-center gap-2 rounded-ctrl px-3 text-left text-sm text-ink-mid hover:bg-raised hover:text-ink-hi focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-60 pointer-coarse:min-h-10"
+                  >
+                    <ChevronDown size={16} className={`transition-transform duration-short ${advancedOpen || onAdvancedPage ? 'rotate-180' : ''}`} aria-hidden="true" />
+                    Nâng cao
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setOwner(!owner)}
+                  className="flex min-h-9 w-full items-center gap-2 rounded-ctrl px-3 text-left text-sm text-ink-lo hover:bg-raised hover:text-ink-hi focus-visible:outline-2 focus-visible:outline-accent pointer-coarse:min-h-10"
+                >
+                  <LayoutList size={16} aria-hidden="true" />
+                  {owner ? 'Hiện đủ các trang' : 'Chế độ chủ shop'}
+                </button>
+              </div>
+            )}
           </div>
         </nav>
 

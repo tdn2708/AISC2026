@@ -25,25 +25,40 @@ export const NAV = [
       { to: '/feedbacks', label: 'Phản hồi', icon: MessagesSquare },
       { to: '/risk', label: 'Cảnh báo', icon: Siren, badge: 'alerts' },
       // Từ dữ liệu tới hành động: hồ sơ mở từ điểm đau phải tìm được ngay, không chỉ qua Ctrl+K
-      { to: '/cases', label: 'Hồ sơ xử lý', icon: FolderKanban },
+      { to: '/cases', label: 'Hồ sơ xử lý', icon: FolderKanban, advanced: true },
       { to: '/live', label: 'Livestream', icon: Radio }
     ]
   },
   {
     group: 'Phân tích',
     items: [
-      { to: '/insights', label: 'Bảng số liệu', icon: ChartColumnBig },
-      { to: '/analytics', label: 'Phân tích nguyên nhân', icon: ScanSearch }
+      { to: '/insights', label: 'Bảng số liệu', icon: ChartColumnBig, advanced: true },
+      { to: '/analytics', label: 'Phân tích nguyên nhân', icon: ScanSearch, advanced: true }
     ]
   },
   {
     group: 'Dữ liệu',
     items: [
-      { to: '/trust', label: 'Tin cậy dữ liệu', icon: ShieldCheck, badge: 'queue' },
+      { to: '/trust', label: 'Tin cậy dữ liệu', icon: ShieldCheck, badge: 'queue', advanced: true },
       { to: '/data', label: 'Nguồn dữ liệu', icon: DatabaseZap }
     ]
   }
 ];
+
+/**
+ * Chế độ chủ shop (lib/ownerMode.js): một nhóm việc hằng ngày gồm mọi trang không
+ * đánh dấu `advanced`, rồi nhóm "Nâng cao" chỉ hiện khi người dùng mở ra.
+ */
+export function navFor(owner, advancedOpen) {
+  if (!owner) return NAV;
+  const all = NAV.flatMap((g) => g.items);
+  const daily = all.filter((i) => !i.advanced);
+  const advanced = all.filter((i) => i.advanced);
+  return [
+    { group: 'Hằng ngày', hideLabel: true, items: daily },
+    ...(advancedOpen ? [{ group: 'Nâng cao', items: advanced }] : [])
+  ];
+}
 
 /** Trang không nằm trên thanh bên nhưng vẫn tìm được qua bảng lệnh */
 export const HIDDEN_PAGES = [
