@@ -19,11 +19,30 @@ export const GlassPanel = ({ as: Tag = 'div', tone = 'soft', glow = null, classN
   );
 };
 
-export const PanelHeader = ({ title, subtitle, right, id, className = '' }) => (
+/**
+ * Ô biểu tượng đứng trước tiêu đề khu vực: mốc nhìn để mắt tách tiêu đề khỏi nội dung
+ * (cùng với cỡ 20 px đậm 700 so với chữ thân 14 px thường). tone theo nghĩa của khu vực.
+ */
+const TITLE_TONE = {
+  accent: 'bg-accent-dim text-accent-hi',
+  crit: 'bg-crit/15 text-crit',
+  high: 'bg-high/15 text-high',
+  ok: 'bg-ok/15 text-ok'
+};
+export const TitleIcon = ({ icon: Icon, tone = 'accent', className = '' }) => (
+  <span className={`grid size-9 shrink-0 place-items-center rounded-ctrl ${TITLE_TONE[tone] || TITLE_TONE.accent} ${className}`} aria-hidden="true">
+    <Icon size={18} strokeWidth={2.25} />
+  </span>
+);
+
+export const PanelHeader = ({ title, subtitle, right, id, icon, iconTone, className = '' }) => (
   <header className={`mb-4 flex items-start justify-between gap-x-4 gap-y-2 ${right ? 'flex-wrap sm:flex-nowrap' : ''} ${className}`}>
-    <div className="min-w-0 flex-[1_1_12rem]">
-      <h2 id={id} className="text-heading font-semibold tracking-tight text-ink-hi">{title}</h2>
-      {subtitle && <p className="mt-0.5 text-sm leading-relaxed text-ink-mid">{subtitle}</p>}
+    <div className="flex min-w-0 flex-[1_1_12rem] items-start gap-3">
+      {icon && <TitleIcon icon={icon} tone={iconTone} />}
+      <div className="min-w-0">
+        <h2 id={id} className="text-heading font-bold tracking-tight text-ink-hi">{title}</h2>
+        {subtitle && <p className="mt-0.5 text-sm leading-relaxed text-ink-mid">{subtitle}</p>}
+      </div>
     </div>
     {right}
   </header>

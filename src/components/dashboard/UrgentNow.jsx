@@ -1,11 +1,10 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Check, CircleSlash, RotateCw } from 'lucide-react';
-import { Button } from '../ui';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { RotateCw, Flame } from 'lucide-react';
+import { Button, TitleIcon } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
-import { Pulse, prefersReducedMotion } from '../motion';
-import { SEV } from './TodayInbox';
-import { upFirst } from '../../lib/format';
+import { prefersReducedMotion } from '../motion';
+import TaskCard from './TaskCard';
 
 /**
  * VIỆC GẤP NHẤT — hai việc đầu của "Việc hôm nay", ngay dưới câu tóm tắt
@@ -21,8 +20,6 @@ import { upFirst } from '../../lib/format';
  * không tô). Màn mở đầu của trang vẫn là phép trừ ở sổ đối chiếu.
  */
 
-const SOURCE = { alert: 'Cảnh báo', pain: 'Điểm đau', case: 'Hồ sơ', live: 'Livestream', orders: 'Đơn hàng', review: 'Duyệt phản hồi', data: 'Dữ liệu' };
-
 /** Mã cảnh báo có dạng Nhóm|Nguyên nhân|Sản phẩm|Khu vực|ngày; lấy tên sản phẩm (nếu có) để mở đúng mảng ở tab điểm đau */
 const painLink = (alertId) => {
   const product = String(alertId || '').split('|')[2];
@@ -32,54 +29,6 @@ const painLink = (alertId) => {
 
 const scrollToToday = () =>
   document.getElementById('today')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
-
-const Row = ({ t, state, onAccept, onDismiss }) => {
-  const navigate = useNavigate();
-  const sev = SEV[t.severity];
-  const decided = state === 'ACCEPTED' || state === 'DISMISSED';
-  const alert = t.alert;
-  const step = alert?.recommendation?.steps?.[0];
-  // Nút đậm chỉ cho việc khẩn và gấp, như khối "Việc hôm nay"
-  const strong = t.severity !== 'medium';
-
-  return (
-    <Pulse as="li" trigger={decided ? state : null} className={`border-b border-line-soft px-5 py-4 last:border-b-0 sm:px-8 ${decided ? 'opacity-70' : ''}`}>
-      <p className="flex flex-wrap items-baseline gap-x-3 text-sm">
-        <span className={`font-semibold ${sev.text}`}>{sev.label}</span>
-        <span className="text-xs text-ink-mid">{SOURCE[t.source] || 'Việc khác'}</span>
-      </p>
-      <p className="mt-1 text-base leading-snug font-semibold text-ink-hi">{t.title}</p>
-      <p className="mt-1 text-sm leading-relaxed text-ink-mid">{upFirst(t.why)}</p>
-      {step && <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-hi">Đề xuất: {step.text}</p>}
-
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {alert ? (
-          state === 'ACCEPTED' ? (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-ok"><Check size={15} aria-hidden="true" />Đã chấp nhận, hệ thống theo dõi lại sau 7 ngày</span>
-          ) : state === 'DISMISSED' ? (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-mid"><CircleSlash size={15} aria-hidden="true" />Đã bỏ qua, lý do đã được ghi lại</span>
-          ) : (
-            <>
-              {step && (
-                <>
-                  <Button size="sm" variant={strong ? 'primary' : 'secondary'} icon={Check} onClick={onAccept} loading={state === 'saving'}>Chấp nhận</Button>
-                  <Button size="sm" variant="ghost" onClick={onDismiss} disabled={state === 'saving'}>Bỏ qua</Button>
-                </>
-              )}
-              <Button size="sm" variant={step ? 'ghost' : strong ? 'primary' : 'secondary'} onClick={() => navigate(`/risk?alert=${encodeURIComponent(alert.id)}`)}>Xem bằng chứng</Button>
-              <Button size="sm" variant="ghost" as={Link} to={painLink(alert.id)}>Khách đang than chuyện gì</Button>
-            </>
-          )
-        ) : (
-          (t.actions || []).map((a, i) => (
-            <Button key={a.label} as={Link} to={a.to} size="sm" variant={i === 0 && strong ? 'primary' : 'secondary'}>{a.label}</Button>
-          ))
-        )}
-        {state === 'error' && <span className="w-full text-sm text-crit">Không lưu được quyết định. Thử lại.</span>}
-      </div>
-    </Pulse>
-  );
-};
 
 /** Khung xương đúng hình MỘT hàng việc (trường hợp thường gặp, K7-02 lỗi 15: hai hàng làm khối co lại ~120 px khi dữ liệu về chỉ có một việc), để nhận dữ liệu không nhảy bố cục */
 const UrgentSkeleton = () => (
@@ -101,10 +50,11 @@ const UrgentSkeleton = () => (
  */
 const UrgentNow = ({ lifted = [], rest = 0, ready, failed, onRetry, statusOf, accept, onDismiss }) => {
   const empty = ready && lifted.length === 0;
+  const [openId, setOpenId] = useState(null);
   return (
     <section aria-labelledby="urgent-title">
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line-soft px-5 pt-5 pb-3 sm:px-8">
-        <h2 id="urgent-title" className="text-heading font-semibold tracking-[-0.01em] text-ink-hi">Việc gấp nhất</h2>
+        <h2 id="urgent-title" className="inline-flex items-center gap-3 text-heading font-bold tracking-[-0.01em] text-ink-hi"><TitleIcon icon={Flame} tone="crit" />Việc gấp nhất</h2>
         {rest > 0 && (
           <Button variant="link" size="sm" onClick={scrollToToday}>Xem {rest} việc khác</Button>
         )}
@@ -123,14 +73,19 @@ const UrgentNow = ({ lifted = [], rest = 0, ready, failed, onRetry, statusOf, ac
           {rest > 0 && <p className="mt-1 text-sm text-ink-mid">{`Có ${rest} việc nên làm, nằm ở danh sách bên dưới.`}</p>}
         </div>
       ) : (
-        <ol className="list-none">
+        <ol className="grid list-none items-start gap-3 px-5 py-4 sm:grid-cols-2 sm:px-8">
           {lifted.map((t) => (
-            <Row
+            <TaskCard
               key={t.id}
               t={t}
+              open={openId === t.id}
+              onToggle={() => setOpenId(openId === t.id ? null : t.id)}
               state={t.kind === 'alert' ? statusOf(t.alert) : undefined}
               onAccept={() => accept(t.alert)}
               onDismiss={() => onDismiss(t.alert)}
+              extra={t.kind === 'alert' && t.alert ? (
+                <Button size="sm" variant="link" as={Link} to={painLink(t.alert.id)} className="mt-2">Khách đang than chuyện gì</Button>
+              ) : null}
             />
           ))}
         </ol>

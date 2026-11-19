@@ -101,7 +101,7 @@
        text-heading 18px  tiêu đề khối (panel, section)
        text-display 26px  tiêu đề trang, câu tóm tắt đầu trang
        text-metric 32px   con số chính của một chỉ số */
-  --text-heading: 1.125rem;
+  --text-heading: 1.25rem;
   --text-heading--line-height: 1.4;
   --text-display: 1.625rem;
   --text-display--line-height: 1.25;

@@ -1,4 +1,4 @@
-export { GlassPanel, PanelHeader, SeverityBadge, MethodHint } from './Glass';
+export { GlassPanel, PanelHeader, TitleIcon, SeverityBadge, MethodHint } from './Glass';
 export { Button, IconButton } from './Button';
 export { TextField, TextArea, Select } from './Field';
 export { fieldClass } from './fieldClass';

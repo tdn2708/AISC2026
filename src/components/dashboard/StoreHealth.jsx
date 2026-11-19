@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Minus, TriangleAlert } from 'lucide-react';
-import { RotateCw } from 'lucide-react';
-import { AnimatedNumber, EmptyState, Button } from '../ui';
+import { RotateCw, Activity } from 'lucide-react';
+import { AnimatedNumber, EmptyState, Button, TitleIcon } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { useInView, useReducedMotion } from '../motion';
 import { fmtInt, fmtPct, fmtSignedPct, timesWords, cadenceWords, upFirst } from '../../lib/format';
@@ -165,7 +165,7 @@ const StoreHealth = ({ stats, trend = [], loading, failed, onRetry, countStart =
 
   return (
     <section ref={sectionRef} aria-labelledby="health-title" className="reveal mb-8 overflow-hidden glass-strong rounded-surf">
-      <h2 id="health-title" className="px-5 pt-5 text-heading font-semibold tracking-[-0.01em] text-ink-hi sm:px-6">Cửa hàng đang thế nào</h2>
+      <h2 id="health-title" className="flex items-center gap-3 px-5 pt-5 text-heading font-bold tracking-[-0.01em] text-ink-hi sm:px-6"><TitleIcon icon={Activity} />Cửa hàng đang thế nào</h2>
       {!stats && failed ? (
         <EmptyState variant="error" compact title="Không tải được chỉ số" description="Máy chủ phân tích chưa trả lời. Số liệu sẽ hiện khi kết nối lại." action={onRetry && <Button size="sm" variant="secondary" icon={RotateCw} onClick={onRetry}>Thử lại</Button>} />
       ) : !stats && loading ? (

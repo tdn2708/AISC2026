@@ -1,5 +1,5 @@
 import React from 'react';
-import { RotateCw } from 'lucide-react';
+import { ChartColumn, RotateCw } from 'lucide-react';
 import { GlassPanel, PanelHeader, EmptyState, Button } from '../ui';
 import { Skeleton, SkeletonBlock } from '../ui/Skeleton';
 import { fmtInt, fmtPct, SENTIMENT } from '../../lib/format';
@@ -19,7 +19,7 @@ const SentimentShare = ({ data = [], loading, failed, onRetry }) => {
 
   return (
     <GlassPanel className="flex h-full flex-col p-6">
-      <PanelHeader title="Phân bổ cảm xúc" subtitle={loading && total === 0 ? 'Đang đếm phản hồi hợp lệ' : failed && total === 0 ? '— phản hồi hợp lệ' : `${fmtInt(total)} phản hồi hợp lệ`} />
+      <PanelHeader title="Phân bổ cảm xúc" icon={ChartColumn} subtitle={loading && total === 0 ? 'Đang đếm phản hồi hợp lệ' : failed && total === 0 ? '— phản hồi hợp lệ' : `${fmtInt(total)} phản hồi hợp lệ`} />
 
       {total === 0 && loading ? (
         <SkeletonBlock label="Đang tải phân bổ cảm xúc" className="flex flex-col">

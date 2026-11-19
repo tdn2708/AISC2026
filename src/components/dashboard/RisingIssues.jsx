@@ -31,6 +31,8 @@ const RisingIssues = ({ alerts = [], cadence = null, loading, failed, onRetry })
     <GlassPanel className="flex h-full flex-col p-6">
       <PanelHeader
         title="Vấn đề đang tăng nhanh"
+        icon={TrendingUp}
+        iconTone="high"
         subtitle={`Mức tăng tỉ lệ khiếu nại ${spanWords(winDays)} gần nhất so với ${spanWords(baseDays)} trước đó`}
         right={
           spikes.length > MAX_ROWS && (

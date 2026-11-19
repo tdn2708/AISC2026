@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { Radio } from 'lucide-react';
-import { Badge, Button } from '../ui';
+import { Badge, Button, TitleIcon } from '../ui';
 import { fmtInt, fmtDec, fmtPct, fmtRelative } from '../../lib/format';
 
 /**
@@ -42,8 +42,8 @@ const LiveDigest = () => {
   return (
     <div className="glass-strong mt-6 rounded-surf p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="inline-flex items-center gap-2 text-heading font-semibold text-ink-hi">
-          <Radio size={16} className="text-accent" aria-hidden="true" />Livestream
+        <h2 className="inline-flex items-center gap-3 text-heading font-bold text-ink-hi">
+          <TitleIcon icon={Radio} />Livestream
         </h2>
         {now ? <Badge tone="crit" icon={Radio}>Đang live</Badge> : null}
       </div>

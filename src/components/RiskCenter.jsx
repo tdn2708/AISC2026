@@ -22,6 +22,18 @@ import { alertTitle, alertInWords, upFirst, fmtInt, fmtPct, fmtDateTime, SEVERIT
  * nghiệp cần để kiểm toán.
  */
 
+// Nền theo trạng thái: còn chờ thì theo mức độ, đã chấp nhận xanh, đã bỏ qua xám
+const ROW_TONE = {
+  Critical: 'bg-crit/10 border-crit/35',
+  High: 'bg-high/8 border-high/30',
+  Medium: 'bg-raised border-med/45',
+  Low: 'bg-raised border-line-soft'
+};
+const rowTone = (alert, status) =>
+  status === 'ACCEPTED' ? 'bg-ok/8 border-ok/30'
+    : status === 'DISMISSED' ? 'bg-raised border-line-soft opacity-75'
+      : ROW_TONE[alert.severity] || ROW_TONE.Low;
+
 const AlertRow = ({ alert, status, active, onClick }) => {
   return (
     <Pulse as="li" trigger={status} className="lift rounded-ctrl">
@@ -29,8 +41,8 @@ const AlertRow = ({ alert, status, active, onClick }) => {
         type="button"
         onClick={onClick}
         aria-current={active || undefined}
-        className={`relative w-full rounded-ctrl p-4 text-left transition-colors duration-micro ${
-          active ? 'bg-accent-dim' : 'hover:bg-raised'
+        className={`relative w-full rounded-ctrl border p-4 text-left transition-colors duration-micro ${rowTone(alert, status)} ${
+          active ? 'outline-2 outline-offset-1 outline-accent' : 'hover:border-ink-lo'
         }`}
       >
         <div className="flex items-start justify-between gap-3">
@@ -513,7 +525,7 @@ const RiskCenter = () => {
           ) : (
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
               {/* Cuộn riêng chỉ trên màn rộng; trên điện thoại cuộn lồng trong trang cuộn rất khó dùng */}
-              <ul ref={listRef} className="flex list-none flex-col gap-1 rounded-surf border border-line bg-surface p-2 lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto" aria-label="Danh sách cảnh báo">
+              <ul ref={listRef} className="flex list-none flex-col gap-2 rounded-surf border border-line bg-surface p-2 lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto" aria-label="Danh sách cảnh báo">
                 {visible.map((a) => (
                   <AlertRow key={a.id} alert={a} status={statusOf(a)} active={selected?.id === a.id} onClick={() => select(a.id)} />
                 ))}

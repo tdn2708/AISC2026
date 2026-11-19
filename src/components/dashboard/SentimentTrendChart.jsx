@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
-import { RotateCw } from 'lucide-react';
+import { RotateCw, ChartLine } from 'lucide-react';
 import { GlassPanel, PanelHeader, Segmented, ChartTooltip, EmptyState, Button } from '../ui';
 import { Skeleton } from '../ui/Skeleton';
 import { ChartReveal } from '../motion';
@@ -84,6 +84,7 @@ const SentimentTrendChart = ({ data = [], loading, failed, onRetry }) => {
     <GlassPanel className="p-6">
       <PanelHeader
         title="Cảm xúc theo thời gian"
+        icon={ChartLine}
         subtitle={trendSubtitle(data)}
         right={toggle}
       />

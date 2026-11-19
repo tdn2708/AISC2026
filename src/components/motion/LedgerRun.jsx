@@ -35,9 +35,15 @@ import { MOTION } from './tokens';
 
 const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
 
-const Row = React.forwardRef(({ label, value, sign, note }, ref) => (
+// Màu từng phần trên thanh xếp chồng, dùng lại làm ô màu ở đầu mỗi dòng (chú thích)
+const SEG = { counted: 'bg-accent', spam: 'bg-crit', inauthentic: 'bg-high', pending: 'bg-med', aged: 'bg-ink-lo' };
+
+const Row = React.forwardRef(({ label, value, sign, note, swatch }, ref) => (
   <div ref={ref} className="grid grid-cols-[minmax(0,1fr)_1rem_auto] items-baseline gap-x-2 border-b border-(--sheet-rule) py-2">
-    <dt className="min-w-0 text-ink-mid">{label}</dt>
+    <dt className="flex min-w-0 items-center gap-2 text-ink-mid">
+      {swatch && <span className={`size-2.5 shrink-0 rounded-xs ${swatch}`} aria-hidden="true" />}
+      {label}
+    </dt>
     <dd className="text-right font-mono text-ink-lo" aria-hidden={!sign}>{sign || ''}</dd>
     <dd className="text-right font-mono tabular-nums text-ink-hi">{fmtInt(value)}</dd>
     {/* Ví dụ đi kèm dòng (trang giới thiệu): nằm dưới dòng, cùng hiện và cùng ẩn với dòng */}
@@ -198,17 +204,31 @@ export const LedgerRun = ({
         )}
       </figcaption>
       )}
-      <dl className={`text-sm ${title || showLink ? 'mt-2' : ''}`}>
+      {/* Biểu đồ: cả thanh là mọi phản hồi thu về, mỗi phần một màu; dòng bên dưới là chú thích kèm số */}
+      {run.raw > 0 && (
+        <div className={`${title || showLink ? 'mt-3' : ''}`}>
+          <div className="flex h-3 w-full overflow-hidden rounded-xs bg-raised" role="img" aria-label={`${fmtInt(run.arithmetic)} trên ${fmtInt(run.raw)} phản hồi được tính; ${subs.map((x) => `${x.label} ${fmtInt(x.value)}`).join(', ')}`}>
+            {[{ key: 'counted', value: run.arithmetic }, ...subs].filter((x) => x.value > 0).map((x) => (
+              <span key={x.key} className={`${SEG[x.key] || 'bg-ink-lo'} h-full`} style={{ width: `${(x.value / run.raw) * 100}%` }} />
+            ))}
+          </div>
+          <p className="mt-1.5 flex items-center gap-2 text-xs text-ink-mid">
+            <span className="size-2.5 shrink-0 rounded-xs bg-accent" aria-hidden="true" />
+            Được tính {Math.round((run.arithmetic / run.raw) * 100)}% số phản hồi thu về
+          </p>
+        </div>
+      )}
+      <dl className="mt-2 text-sm">
         <Row ref={(el) => { rowRefs.current.raw = el; }} label={run.steps[0].label} value={run.raw} />
         {subs.map((s) => (
-          <Row key={s.key} ref={(el) => { rowRefs.current[s.key] = el; }} label={s.label} value={s.value} sign={s.sign} note={rowNotes?.[s.key]} />
+          <Row key={s.key} ref={(el) => { rowRefs.current[s.key] = el; }} label={s.label} value={s.value} sign={s.sign} note={rowNotes?.[s.key]} swatch={SEG[s.key]} />
         ))}
         {/* Gạch đôi trên dòng tổng, như sổ kế toán */}
         <div
           ref={(el) => { rowRefs.current.counted = el; }}
           className="mt-px grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2 border-0 border-t-[3px] border-double border-ink-lo pt-2.5"
         >
-          <dt className="font-semibold text-ink-hi">{run.steps.at(-1).label}</dt>
+          <dt className="flex items-center gap-2 font-semibold text-ink-hi"><span className="size-2.5 shrink-0 rounded-xs bg-accent" aria-hidden="true" />{run.steps.at(-1).label}</dt>
           <dd className={`text-right font-mono ${numberClass} font-semibold tabular-nums text-ink-hi`}>
             <span
               ref={numberRef}

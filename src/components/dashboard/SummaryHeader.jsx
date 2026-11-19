@@ -76,7 +76,7 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
   }
 
   const asOfLine = real
-    ? `Dữ liệu thật thu thập từ sàn, tên người mua đã che. Tính đến đánh giá mới nhất ngày ${fmtDate(stats.asOf)}${stats.ingestedAt ? `, thu thập lần gần nhất ${fmtDateTime(stats.ingestedAt)}` : ''}.`
+    ? `Dữ liệu thật từ sàn, đã che tên người mua. Cập nhật ${stats.ingestedAt ? fmtDateTime(stats.ingestedAt) : fmtDate(stats.asOf)}.`
     : `Dữ liệu mô phỏng, cập nhật lúc ${lastUpdated}.`;
 
   const asOf = !stats && error ? null : loading && !stats

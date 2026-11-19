@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { HandCoins } from 'lucide-react';
+import { TitleIcon } from '../ui';
 import { fmtInt, fmtDec } from '../../lib/format';
 
 /**
@@ -35,7 +37,7 @@ const ValueCard = () => {
 
   return (
     <section aria-labelledby="value-title" className="glass-strong mb-8 rounded-surf p-5 sm:p-6">
-      <h2 id="value-title" className="text-heading font-semibold text-ink-hi">Customer Radar giúp shop trong {v.windowDays} ngày</h2>
+      <h2 id="value-title" className="flex items-center gap-3 text-heading font-bold text-ink-hi"><TitleIcon icon={HandCoins} tone="ok" />Customer Radar giúp shop trong {v.windowDays} ngày</h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         <Col
           label="Doanh thu đang có rủi ro"

@@ -116,7 +116,7 @@ Thang 6 bậc (`@theme` trong `tailwind.css`):
 | `text-xs` | 13px | 18px | chú thích, nhãn, huy hiệu, trục biểu đồ |
 | `text-sm` | 14px | 20px | thân trong bảng, thẻ, mô tả |
 | `text-base` | 16px | 24px | tiêu đề một dòng việc, đoạn đọc chính |
-| `text-heading` | 18px | 1,4 | tiêu đề panel, section |
+| `text-heading` | 20px | 1,4 | tiêu đề panel, section (đậm 700, kèm `TitleIcon` ô biểu tượng 36 px, từ 19/11) |
 | `text-display` | 26px | 1,25 | tiêu đề trang, câu tóm tắt, số trong `Stat` |
 | `text-metric` | 32px | 1 | con số chính của một chỉ số |
 | `text-cover` | 2,6rem | 1,12 | **chỉ** tiêu đề khối mực ở đăng nhập (trang giới thiệu có thang riêng trong `landing.css`) |
@@ -273,3 +273,5 @@ Trạng thái mọi control (xem `/ui-kit`, 8 trạng thái): mặc định, rê
 | 5 | Component mới: đặt ở `src/components/ui` hoặc `motion`, xuất qua `index.js`, thêm đủ 8 trạng thái vào `/ui-kit`. |
 | 6 | Cập nhật file này trong cùng commit. Token không còn ai dùng thì xóa (cách đếm và danh sách đã xóa ở F1-06: `.hallmark/F1-06-token-xoa.md`). |
 | 7 | Kiểm: `npm run lint`, `npm run build`, `node C:/Users/DELL/.claude/skills/hallmark/scripts/sloplint.mjs src --genre modern-minimal --scope app` (bỏ kết quả `src/vendor`), ảnh sáng, tối, 390px. |
+
+**Góp ý nhóm 19/11 (bớt chữ, nhìn là hiểu):** (1) Việc gấp nhất và Việc hôm nay dùng chung `dashboard/TaskCard.jsx`: thẻ gập chỉ còn nhãn mức độ (biểu tượng + chữ), tên vấn đề và mũi tên `ChevronDown` (mở ra xoay 180 độ thành mũi tên lên); bấm cả đầu thẻ mới hiện số liệu, đề xuất, nút Chấp nhận / Bỏ qua. Nền cả thẻ nhuộm theo mức độ (Khẩn `bg-crit/12`, Gấp `bg-high/12`, Nên làm `bg-raised`), không sọc trái, không bóng. Việc hôm nay chia nhóm theo nguồn, mỗi nhóm một tiêu đề dạng nhãn nền `bg-raised` có biểu tượng và số đếm, thẻ xếp lưới 1, 2, 3 cột. (2) Sổ đối chiếu có thanh xếp chồng ngang (phần được tính, rác, nghi ảo, chờ duyệt, quá cũ) với ô màu làm chú giải ở từng dòng; vẫn không dùng biểu đồ tròn. (3) Danh sách cảnh báo ở /risk nhuộm theo trạng thái: chờ xử lý theo mức độ (Nghiêm trọng đỏ, Cao cam, Trung bình viền vàng), đã chấp nhận xanh, đã bỏ qua xám mờ; dòng đang chọn có viền ngoài `outline-accent`. (4) Tiêu đề khu vực tách khỏi nội dung bằng ba tín hiệu cùng lúc: cỡ 20 px so với thân 14 px, đậm 700 so với 400, và ô biểu tượng màu đứng trước.
