@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Check, CircleSlash, Clock, FileSearch, RotateCcw, MessageSquareText, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
+import { Check, CircleSlash, Clock, Siren, TriangleAlert, CircleAlert, Info, Hourglass, CircleCheck, FileSearch, RotateCcw, MessageSquareText, ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import { askAssistant } from '../lib/assistant';
 import {
   PageHeader, GlassPanel, SeverityBadge, Button, ChipGroup, Drawer, EmptyState, Badge, SentimentFace, Toast, Tabs,
@@ -23,6 +23,8 @@ import { alertTitle, alertInWords, upFirst, fmtInt, fmtPct, fmtDateTime, SEVERIT
  */
 
 // Nền theo trạng thái: còn chờ thì theo mức độ, đã chấp nhận xanh, đã bỏ qua xám
+const SEV_CHIP = { Critical: { tone: 'crit', icon: Siren }, High: { tone: 'high', icon: TriangleAlert }, Medium: { tone: 'med', icon: CircleAlert }, Low: { icon: Info } };
+
 const ROW_TONE = {
   Critical: 'bg-crit/10 border-crit/35',
   High: 'bg-high/8 border-high/30',
@@ -471,13 +473,13 @@ const RiskCenter = () => {
 
   const open = sorted.filter((a) => !statusOf(a));
   const statusOptions = [
-    { value: 'open', label: 'Đang chờ', count: open.length },
-    { value: 'decided', label: 'Đã quyết định', count: sorted.length - open.length },
+    { value: 'open', label: 'Đang chờ', count: open.length, tone: open.length ? 'high' : undefined, icon: Hourglass },
+    { value: 'decided', label: 'Đã quyết định', count: sorted.length - open.length, tone: 'ok', icon: CircleCheck },
     { value: 'all', label: 'Tất cả', count: sorted.length }
   ];
   const sevOptions = [
     { value: 'all', label: 'Mọi mức' },
-    ...SEVERITY_ORDER.map((k) => ({ value: k, label: SEVERITY[k].label, count: sorted.filter((a) => a.severity === k).length })).filter((o) => o.count > 0)
+    ...SEVERITY_ORDER.map((k) => ({ value: k, label: SEVERITY[k].label, count: sorted.filter((a) => a.severity === k).length, tone: SEV_CHIP[k]?.tone, icon: SEV_CHIP[k]?.icon })).filter((o) => o.count > 0)
   ];
 
   return (

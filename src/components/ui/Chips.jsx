@@ -11,20 +11,31 @@ import React from 'react';
  */
 export const SELECTED = 'border-accent bg-accent-dim text-accent-hi';
 
-export const Chip = ({ active, onClick, icon: Icon, count, children, className = '', ...rest }) => (
+/**
+ * Chip mang màu trạng thái (lọc mức độ, trạng thái cảnh báo): chưa chọn thì viền và chữ
+ * nhạt theo màu, chọn thì nền màu đậm hơn. Luôn đi kèm biểu tượng + chữ, không chỉ dựa vào màu.
+ */
+const TONE = {
+  crit: { on: 'border-crit bg-crit/15 text-crit', off: 'border-crit/35 bg-crit/5 text-crit hover:border-crit' },
+  high: { on: 'border-high bg-high/15 text-high', off: 'border-high/35 bg-high/5 text-high hover:border-high' },
+  med: { on: 'border-med bg-med/15 text-med', off: 'border-med/40 bg-med/5 text-med hover:border-med' },
+  ok: { on: 'border-ok bg-ok/15 text-ok', off: 'border-ok/35 bg-ok/5 text-ok hover:border-ok' }
+};
+
+export const Chip = ({ active, onClick, icon: Icon, count, tone, children, className = '', ...rest }) => (
   <button
     type="button"
     aria-pressed={active}
     onClick={onClick}
     className={`inline-flex h-8 pointer-coarse:h-10 shrink-0 items-center gap-1.5 rounded-ctrl border px-3 text-xs font-medium whitespace-nowrap transition-[background-color,border-color,color] duration-micro ease-out disabled:cursor-not-allowed disabled:opacity-55 ${
-      active ? SELECTED : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'
+      TONE[tone] ? (active ? `${TONE[tone].on} font-semibold` : TONE[tone].off) : active ? SELECTED : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'
     } ${className}`}
     {...rest}
   >
     {Icon && <Icon size={14} aria-hidden="true" />}
     {children}
     {count != null && (
-      <span className={`text-xs tabular-nums ${active ? 'text-accent-hi' : 'text-ink-lo'}`}>{typeof count === 'number' ? count.toLocaleString('vi-VN') : count}</span>
+      <span className={`text-xs tabular-nums ${TONE[tone] ? '' : active ? 'text-accent-hi' : 'text-ink-lo'}`}>{typeof count === 'number' ? count.toLocaleString('vi-VN') : count}</span>
     )}
   </button>
 );
@@ -33,7 +44,7 @@ export const Chip = ({ active, onClick, icon: Icon, count, children, className =
 export const ChipGroup = ({ options, value, onChange, label, className = '' }) => (
   <div role="group" aria-label={label} className={`flex flex-wrap items-center gap-2 ${className}`}>
     {options.map((o) => (
-      <Chip key={o.value} active={value === o.value} onClick={() => onChange(o.value)} icon={o.icon} count={o.count} disabled={o.disabled}>
+      <Chip key={o.value} active={value === o.value} onClick={() => onChange(o.value)} icon={o.icon} count={o.count} tone={o.tone} disabled={o.disabled}>
         {o.label}
       </Chip>
     ))}
