@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Search, CornerDownLeft, Moon, Sun, LogOut, MessageSquareText, ArrowRight, Sparkles } from 'lucide-react';
 import { askAssistant } from '../../lib/assistant';
-import { NAV, HIDDEN_PAGES } from '../../lib/nav';
+import { NAV, HIDDEN_PAGES, ADMIN_PAGE } from '../../lib/nav';
+import { isAdmin } from '../../lib/auth';
 import { useTheme } from '../../hooks/useTheme';
 import { foldVi } from '../../lib/format';
 import { Backdrop } from '../ui';
@@ -29,7 +30,14 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
   const { theme, setTheme } = useTheme();
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
+  const [adminUser, setAdminUser] = useState(() => isAdmin());
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    const sync = () => setAdminUser(isAdmin());
+    window.addEventListener('cr-auth', sync);
+    return () => window.removeEventListener('cr-auth', sync);
+  }, []);
   const listRef = useRef(null);
   const panelRef = useRef(null);
   const reduced = useReducedMotion();
@@ -66,7 +74,8 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
   }, [open]);
 
   const items = useMemo(() => {
-    const pages = [...NAV.flatMap((g) => g.items.map((i) => ({ ...i, group: g.group }))), ...HIDDEN_PAGES].map((p) => ({
+    const extraPages = adminUser ? [...HIDDEN_PAGES, ADMIN_PAGE] : HIDDEN_PAGES;
+    const pages = [...NAV.flatMap((g) => g.items.map((i) => ({ ...i, group: g.group }))), ...extraPages].map((p) => ({
       id: `page:${p.to}`,
       section: 'Đi tới trang',
       label: p.label,
@@ -105,7 +114,7 @@ const CommandPalette = ({ open, onClose, onLogout }) => {
       });
     }
     return list;
-  }, [query, navigate, theme, setTheme, onLogout]);
+  }, [query, navigate, theme, setTheme, onLogout, adminUser]);
 
   useEffect(() => setActive(0), [query]);
 

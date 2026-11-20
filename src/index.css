@@ -650,6 +650,22 @@ html.vt-auth .auth-corner-b { view-transition-name: auth-corner-b; }
   animation-timing-function: var(--ease-out);
 }
 
+/* Lưới kẻ ngang 28px cho khối mực trang đăng nhập quản trị (AdminInk.jsx) */
+.admin-ink-grid {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 27px,
+    color-mix(in srgb, var(--sheet-rule) 18%, transparent) 27px 28px
+  );
+}
+[data-theme='dark'] .admin-ink-grid {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 27px,
+    var(--sheet-rule) 27px 28px
+  );
+}
+
 /* Giảm chuyển động: mọi token thời lượng về 0, mọi animation và transition
    kết thúc ngay ở trạng thái cuối (fill both giữ trạng thái cuối, delay bỏ,
    vòng lặp còn một lần). Phần tử nào buộc phải chạy (vòng xoay đang tải) đặt

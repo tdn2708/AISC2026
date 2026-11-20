@@ -4,12 +4,12 @@ import axios from 'axios';
 import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X, Database, Check, ShieldCheck, ChevronDown, LayoutList } from 'lucide-react';
 import { Popover, MenuItem } from './ui';
 import Logo, { LogoMark } from './Logo';
-import { NAV, navFor } from '../lib/nav';
+import { NAV, ADMIN_PAGE, navFor } from '../lib/nav';
 import { useOwnerMode } from '../lib/ownerMode';
 import { useWorkspaceEmpty } from '../lib/workspaceEmpty';
 import { WORKSPACES, getWorkspace, switchWorkspace } from '../lib/workspace';
 import { DEFAULT_USER, currentUser } from '../hooks/useDecisions';
-import { currentAccount } from '../lib/auth';
+import { currentAccount, isAdmin } from '../lib/auth';
 import { useBrowserModelStatus } from '../lib/analyze';
 import { useRefreshing, useDataVersion, reportRefreshing } from '../lib/dataVersion';
 import { useReducedMotion } from './motion';
@@ -250,8 +250,12 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
     return { name: currentUser(), email: '—', role: 'Chưa đăng nhập' };
   };
   const [profile, setProfile] = useState(readProfile);
+  const [adminUser, setAdminUser] = useState(() => isAdmin());
   useEffect(() => {
-    const onChange = () => setProfile(readProfile());
+    const onChange = () => {
+      setProfile(readProfile());
+      setAdminUser(isAdmin());
+    };
     window.addEventListener('cr-settings', onChange);
     window.addEventListener('cr-auth', onChange);
     window.addEventListener('storage', onChange);
@@ -363,6 +367,16 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
                   ))}
                 </React.Fragment>
               ))}
+              {adminUser && (
+                <>
+                  {collapsed ? (
+                    <hr aria-hidden="true" className="mx-2 my-2 border-line" />
+                  ) : (
+                    <p className="mt-3 mb-1 px-3 text-xs text-ink-lo">{ADMIN_PAGE.group}</p>
+                  )}
+                  <NavItem item={ADMIN_PAGE} collapsed={collapsed} onNavigate={onClose} />
+                </>
+              )}
             </NavList>
             {!collapsed && (
               <div className="mt-3 flex flex-col gap-0.5">

@@ -220,3 +220,39 @@ export const foldVi = (s = '') =>
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .replace(/đ/g, 'd');
+
+/** Thời gian chạy liên tục bằng lời: "3 giờ 12 phút", "2 ngày 4 giờ" */
+export const fmtUptime = (sec) => {
+  if (sec == null || !Number.isFinite(sec) || sec < 0) return 'Chưa đo được';
+  const s = Math.floor(sec);
+  if (s < 60) return `${s} giây`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} phút`;
+  const h = Math.floor(m / 60);
+  const remM = m % 60;
+  if (h < 24) return remM ? `${h} giờ ${remM} phút` : `${h} giờ`;
+  const d = Math.floor(h / 24);
+  const remH = h % 24;
+  return remH ? `${d} ngày ${remH} giờ` : `${d} ngày`;
+};
+
+/** Rút gọn User-Agent thành trình duyệt và hệ điều hành; đọc không ra thì "Máy không rõ" */
+export const describeUa = (ua) => {
+  if (!ua || typeof ua !== 'string') return 'Máy không rõ';
+  let browser = '';
+  if (/Edg\//i.test(ua)) browser = 'Edge';
+  else if (/OPR\/|Opera/i.test(ua)) browser = 'Opera';
+  else if (/Firefox\//i.test(ua)) browser = 'Firefox';
+  else if (/Chrome\/|Chromium\/|CriOS\//i.test(ua)) browser = 'Chrome';
+  else if (/Safari\//i.test(ua)) browser = 'Safari';
+
+  let os = '';
+  if (/Windows/i.test(ua)) os = 'Windows';
+  else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+  else if (/Android/i.test(ua)) os = 'Android';
+  else if (/Mac OS X|Macintosh/i.test(ua)) os = 'macOS';
+  else if (/Linux/i.test(ua)) os = 'Linux';
+
+  if (browser && os) return `${browser} trên ${os}`;
+  return browser || os || 'Máy không rõ';
+};

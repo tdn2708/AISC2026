@@ -4,6 +4,7 @@ import { UserRound, Palette, Database, Save, Mail, FlaskConical, FileText, Store
 import { currentAccount, updateAccount, authError } from '../lib/auth';
 import { useTheme, useGlass } from '../hooks/useTheme';
 import { PageHeader, GlassPanel, PanelHeader, Button, TextField, Select, RadioCards, Toast } from './ui';
+import { PasswordChangeForm } from './auth/ForcePasswordChange';
 import { DEFAULT_USER, currentUser } from '../hooks/useDecisions';
 import { PageEnter } from './motion';
 
@@ -71,12 +72,17 @@ const Settings = () => {
   const { glass, setGlass } = useGlass();
   const [tab, setTab] = useState('general');
   const [form, setForm] = useState(load);
-  const [saved, setSaved] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   // Tài khoản đang đăng nhập: tên và cửa hàng lưu ở máy chủ, email là tên đăng nhập (không đổi ở đây)
   const account = currentAccount();
   const [acct, setAcct] = useState(() => ({ name: account?.name || '', shop: account?.shop || '' }));
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg((cur) => (cur === msg ? '' : cur)), 2400);
+  };
 
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v?.target ? v.target.value : v }));
 
@@ -96,8 +102,7 @@ const Settings = () => {
     localStorage.setItem(KEY, JSON.stringify({ ...load(), ...form }));
     // Thanh bên đọc tên từ đây và từ tài khoản: báo cho nó cập nhật ngay
     window.dispatchEvent(new Event('cr-settings'));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2200);
+    showToast('Đã lưu cài đặt');
   };
 
   return (
@@ -164,6 +169,22 @@ const Settings = () => {
                   options={[{ value: 'Asia/Ho_Chi_Minh', label: '(GMT+07:00) Giờ Việt Nam' }, { value: 'UTC', label: 'UTC' }]}
                 />
               </div>
+
+              <div className="mt-8 border-t border-line-soft pt-6">
+                <PanelHeader
+                  title="Đổi mật khẩu"
+                  subtitle="Sau khi đổi, các phiên ở thiết bị khác sẽ tự đăng xuất."
+                />
+                {!account || account.isDemo ? (
+                  <p className="text-sm text-ink-mid">
+                    Tài khoản mẫu dùng chung nên không đổi mật khẩu được. Tạo tài khoản riêng để đặt mật khẩu.
+                  </p>
+                ) : (
+                  <div className="max-w-md">
+                    <PasswordChangeForm onSuccess={() => showToast('Đã đổi mật khẩu')} />
+                  </div>
+                )}
+              </div>
             </>
           )}
 
@@ -213,7 +234,7 @@ const Settings = () => {
         </GlassPanel>
       </div>
 
-      <Toast show={saved}>Đã lưu cài đặt</Toast>
+      <Toast show={Boolean(toastMsg)}>{toastMsg}</Toast>
     </PageEnter>
   );
 };

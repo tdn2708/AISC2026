@@ -116,6 +116,10 @@ async function startServer() {
     const authDb = client.db(process.env.MONGODB_AUTH_DB || `${db.databaseName}_auth`);
     await auth.ensureAuthIndexes(authDb);
     if (await auth.ensureDemoAccount(authDb)) console.log('Đã tạo tài khoản mẫu cho người xem thử.');
+    const adminInfo = await auth.ensureAdminAccount(authDb);
+    if (adminInfo) console.log(`Tài khoản quản trị: sẵn sàng (${adminInfo.email}).`);
+    else if (process.env.ADMIN_EMAIL || process.env.ADMIN_PASSWORD) console.log('Tài khoản quản trị: cấu hình chưa hợp lệ nên chưa tạo (xem cảnh báo ngay trên).');
+    else console.log('Tài khoản quản trị: chưa cấu hình ADMIN_EMAIL, ADMIN_PASSWORD.');
     console.log(`Tài khoản: database ${authDb.databaseName}.`);
 
     // Muối băm mã khách: từ biến môi trường, không có thì từ kho thật (services/pii_salt.js)
@@ -180,6 +184,7 @@ async function startServer() {
     // Từ đây mọi API dữ liệu cần phiên đăng nhập (ngoại lệ và lý do: services/auth.js requireSession)
     app.use('/api', auth.requireSession(authDb));
     if (String(process.env.AUTH_REQUIRED) === '0') console.log('Đăng nhập: TẮT kiểm phiên (AUTH_REQUIRED=0).');
+    app.use('/api/admin', auth.requireAdmin, require('./routes/admin')({ authDb, workspaces }));
     app.use('/api/live/schedule', require('./routes/live_schedule'));
     app.use('/api/live', require('./routes/live'));
     let butler = { inbound: null };

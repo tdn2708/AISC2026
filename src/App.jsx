@@ -11,7 +11,8 @@ import Login from './components/Login';
 import AuthShell from './components/auth/AuthShell';
 import AuthChoice from './components/auth/AuthChoice';
 import Signup from './components/auth/Signup';
-import { applyAuthHeader, getSession, logout, refreshAccount, safeNext } from './lib/auth';
+import ForcePasswordChange from './components/auth/ForcePasswordChange';
+import { applyAuthHeader, currentAccount, getSession, logout, refreshAccount, safeNext } from './lib/auth';
 // Bộ giao diện chỉ có ở bản dev: lazy để bản build bỏ hẳn trang này
 const UiKit = import.meta.env.DEV ? lazy(() => import('./components/UiKit')) : null;
 import { API_URL } from './config';
@@ -27,6 +28,8 @@ import './hooks/useTheme';
 
 // Trang giới thiệu công khai (F3): chunk riêng, chỉ tải khi mở `/`
 const Landing = lazy(() => import('./components/landing/Landing'));
+// Bàn điều khiển máy chủ (/admin/*): chunk riêng, người thường không tải mã quản trị
+const AdminApp = lazy(() => import('./components/admin/AdminApp'));
 
 // Tổng quan nằm trong gói chính (trang mở đầu tiên sau đăng nhập). Các trang
 // còn lại là gói riêng, tải ngầm khi trình duyệt rảnh (lib/lazyPage.js).
@@ -64,11 +67,11 @@ const ProtectedRoute = ({ isAuthenticated, children }) => {
   return <Navigate to={here === '/dashboard' ? '/auth' : `/auth?next=${encodeURIComponent(here)}`} replace />;
 };
 
-/** Ba trang tài khoản: đã đăng nhập thì đi tiếp tới trang đang chờ (?next=) */
+/** Ba trang tài khoản: đã đăng nhập thì đi tiếp tới trang đang chờ (?next=) hoặc trang nhà theo vai trò */
 const AuthGate = ({ isAuthenticated }) => {
   const location = useLocation();
   if (!isAuthenticated) return <AuthShell />;
-  return <Navigate to={safeNext(new URLSearchParams(location.search).get('next'))} replace />;
+  return <Navigate to={safeNext(new URLSearchParams(location.search).get('next'), currentAccount())} replace />;
 };
 
 /**
@@ -132,6 +135,7 @@ const MainLayout = ({ children, onLogout }) => {
       </div>
       <CommandPalette open={commandOpen} onClose={closeCommand} onLogout={onLogout} />
       <Assistant />
+      <ForcePasswordChange />
     </>
   );
 };
@@ -167,6 +171,14 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Route>
+        <Route
+          path="/admin/*"
+          element={
+            <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
+              <AdminApp />
+            </Suspense>
+          }
+        />
         <Route
           path="/"
           element={

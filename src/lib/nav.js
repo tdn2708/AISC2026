@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, ChartColumnBig, Siren, MessagesSquare, ScanSearch, ShieldCheck, FlaskConical,
-  DatabaseZap, FileText, Settings, Palette, Radio, FolderKanban, ConciergeBell
+  DatabaseZap, FileText, Settings, Palette, Radio, FolderKanban, ConciergeBell, ServerCog
 } from 'lucide-react';
 
 /**
@@ -68,6 +68,14 @@ export const HIDDEN_PAGES = [
   // Trang nội bộ cho người làm giao diện: chỉ hiện ở bản dev, giám khảo không thấy trong Ctrl+K
   ...(import.meta.env.DEV ? [{ to: '/ui-kit', label: 'Bộ giao diện (UI kit)', icon: Palette, group: 'Khác' }] : [])
 ];
+
+/** Lối vào bàn điều khiển máy chủ — chỉ hiển thị khi tài khoản có vai trò quản trị */
+export const ADMIN_PAGE = {
+  to: '/admin',
+  label: 'Bàn điều khiển máy chủ',
+  icon: ServerCog,
+  group: 'Quản trị'
+};
 
 export const findPage = (pathname) => {
   for (const g of NAV) {

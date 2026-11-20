@@ -17,6 +17,7 @@ let last = { p99Ms: 0, maxMs: 0, meanMs: 0 };
 function loopDelay({ reset = false } = {}) {
   const ms = (ns) => Math.round(ns / 1e6);
   const cur = {
+    p95Ms: ms(histogram.percentile(95)),
     p99Ms: ms(histogram.percentile(99)),
     maxMs: ms(histogram.max),
     meanMs: ms(histogram.mean || 0),

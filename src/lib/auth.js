@@ -85,6 +85,14 @@ export const applyAuthHeader = () => {
   intercepted = true;
   axios.interceptors.response.use(undefined, (err) => {
     if (err?.response?.status === 401 && err.response.data?.code === 'auth_required' && getSession()) clear();
+    // Máy chủ chặn vì còn dùng mật khẩu tạm: bật cờ để hộp "Đặt mật khẩu mới" hiện ra
+    if (err?.response?.status === 403 && err.response.data?.code === 'password_change_required') {
+      const s = getSession();
+      if (s && !s.user?.mustChangePassword) {
+        const keep = (() => { try { return Boolean(window.localStorage.getItem(KEY)); } catch { return false; } })();
+        save({ ...s, user: { ...s.user, mustChangePassword: true } }, keep);
+      }
+    }
     return Promise.reject(err);
   });
 };
@@ -99,10 +107,28 @@ export const authError = (e) => {
   return { message: data.error || 'Có lỗi ở máy chủ. Thử lại sau ít phút.', fields: data.fields || {}, status: e.response.status };
 };
 
-export async function login({ email, password, remember = true }) {
-  const { data } = await axios.post('/auth/login', { email, password, remember });
-  save({ token: data.token, user: data.user, expiresAt: data.expiresAt }, remember);
+export const isAdmin = (u = currentAccount()) => u?.role === 'admin';
+
+export const homeFor = (u = currentAccount()) => (isAdmin(u) ? '/admin' : '/dashboard');
+
+export async function login({ email, password, remember = true, scope }) {
+  const payload = { email, password, remember };
+  if (scope) payload.scope = scope;
+  const { data } = await axios.post('/auth/login', payload);
+  save({ token: data.token, user: data.user, expiresAt: data.expiresAt }, scope === 'admin' ? false : remember);
   return data.user;
+}
+
+export async function changePassword({ current, next }) {
+  const s = getSession();
+  const { data } = await axios.post('/auth/password', { current, next });
+  const keep = (() => { try { return Boolean(window.localStorage.getItem(KEY)); } catch { return false; } })();
+  if (s) {
+    const nextUser = data.user || { ...s.user, mustChangePassword: false };
+    save({ ...s, user: nextUser }, keep);
+    return nextUser;
+  }
+  return data.user || null;
 }
 
 export async function signup({ name, shop, email, password, remember = true }) {
@@ -152,7 +178,19 @@ export const PASSWORD_RULES = [
 export const DEMO_LOGIN = { email: 'demo@customerradar.vn', password: 'demo2026' };
 
 /** Chỉ nhận đường dẫn nội bộ cho ?next=, tránh bị dẫn sang trang ngoài */
-export const safeNext = (v) => {
+export const safeNext = (v, user = currentAccount()) => {
   const s = String(v || '');
-  return s.startsWith('/') && !s.startsWith('//') && !s.startsWith('/auth') && !s.startsWith('/login') && !s.startsWith('/signup') ? s : '/dashboard';
+  const fallback = homeFor(user);
+  if (
+    !s.startsWith('/') ||
+    s.startsWith('//') ||
+    s.startsWith('/auth') ||
+    s.startsWith('/login') ||
+    s.startsWith('/signup') ||
+    s.startsWith('/admin/login')
+  ) {
+    return fallback;
+  }
+  if (s.startsWith('/admin') && !isAdmin(user)) return '/dashboard';
+  return s;
 };

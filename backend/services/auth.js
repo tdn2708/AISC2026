@@ -17,16 +17,32 @@
  */
 const crypto = require('crypto');
 const { ObjectId } = require('mongodb');
+const { saltReady } = require('./pii_salt');
 
 const SCRYPT = { N: 16384, r: 8, p: 1, keylen: 64 };
 const SESSION_DAYS = 30; // "Giữ đăng nhập": 30 ngày
 const SHORT_SESSION_HOURS = 12; // không giữ: phiên của tab, máy chủ vẫn giới hạn 12 giờ
+const ADMIN_SESSION_HOURS = 8; // phiên quản trị luôn hết hạn sau 8 giờ, không có "giữ đăng nhập"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PASSWORD_MIN = 8;
+const ADMIN_PASSWORD_MIN = 12;
 const PASSWORD_MAX = 128;
 const NAME_MAX = 80;
 const SHOP_MAX = 120;
+const UA_MAX = 160;
+const ADMIN_AUDIT_TTL_SECONDS = 180 * 86400; // giữ nhật ký quản trị tối đa 180 ngày
+
+const ADMIN_AUDIT_ACTIONS = new Set([
+  'login',
+  'lock',
+  'unlock',
+  'revoke_sessions',
+  'revoke_session',
+  'reset_password',
+  'set_role',
+  'delete_user'
+]);
 
 const DEMO_ACCOUNT = {
   email: 'demo@customerradar.vn',
@@ -93,12 +109,18 @@ function validateSignup(body = {}) {
 const hashToken = (token) => crypto.createHash('sha256').update(String(token)).digest('hex');
 const newToken = () => crypto.randomBytes(32).toString('base64url');
 
+const roleOf = (u) => (u && u.role === 'admin' ? 'admin' : 'user');
+const isLocked = (u) => Boolean(u && u.status === 'locked');
+
 /** Thông tin tài khoản được phép gửi về trình duyệt (không bao giờ có passwordHash) */
 const publicUser = (u) => (u ? {
   id: String(u._id),
   email: u.email,
   name: u.name,
   shop: u.shop || '',
+  role: roleOf(u),
+  status: isLocked(u) ? 'locked' : 'active',
+  mustChangePassword: Boolean(u.mustChangePassword),
   createdAt: u.createdAt,
   isDemo: u.email === DEMO_ACCOUNT.email
 } : null);
@@ -108,9 +130,16 @@ async function ensureAuthIndexes(authDb) {
     authDb.collection('users').createIndex({ email: 1 }, { unique: true }),
     authDb.collection('auth_sessions').createIndex({ tokenHash: 1 }, { unique: true }),
     authDb.collection('auth_sessions').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
-    authDb.collection('auth_sessions').createIndex({ userId: 1 })
+    authDb.collection('auth_sessions').createIndex({ userId: 1 }),
+    authDb.collection('admin_audit').createIndex({ at: 1 }, { expireAfterSeconds: ADMIN_AUDIT_TTL_SECONDS }),
+    authDb.collection('admin_audit').createIndex({ targetId: 1, at: -1 })
   ]);
 }
+
+const warnAdmin = (msg) => {
+  console.warn(msg);
+  return null;
+};
 
 /** Tài khoản mẫu cho người xem thử: tạo nếu chưa có, không bao giờ ghi đè */
 async function ensureDemoAccount(authDb) {
@@ -118,14 +147,111 @@ async function ensureDemoAccount(authDb) {
   if (await users.findOne({ email: DEMO_ACCOUNT.email }, { projection: { _id: 1 } })) return false;
   await users.updateOne(
     { email: DEMO_ACCOUNT.email },
-    { $setOnInsert: { email: DEMO_ACCOUNT.email, name: DEMO_ACCOUNT.name, shop: DEMO_ACCOUNT.shop, passwordHash: await hashPassword(DEMO_ACCOUNT.password), createdAt: new Date(), lastLoginAt: null } },
+    {
+      $setOnInsert: {
+        email: DEMO_ACCOUNT.email,
+        name: DEMO_ACCOUNT.name,
+        shop: DEMO_ACCOUNT.shop,
+        passwordHash: await hashPassword(DEMO_ACCOUNT.password),
+        role: 'user',
+        status: 'active',
+        lockedAt: null,
+        lockedReason: null,
+        lockedBy: null,
+        mustChangePassword: false,
+        passwordChangedAt: null,
+        createdAt: new Date(),
+        lastLoginAt: null
+      }
+    },
     { upsert: true }
   );
   return true;
 }
 
+/**
+ * Tài khoản quản trị máy chủ từ biến môi trường.
+ * Không lưu mật khẩu quản trị trong mã nguồn; không bao giờ in mật khẩu ra log.
+ */
+async function ensureAdminAccount(authDb, env = process.env) {
+  const rawEmail = env && typeof env.ADMIN_EMAIL === 'string' ? env.ADMIN_EMAIL : '';
+  const password = env && typeof env.ADMIN_PASSWORD === 'string' ? env.ADMIN_PASSWORD : '';
+  if (!rawEmail.trim() && !password) return null;
+  if (!rawEmail.trim() || !password) {
+    return warnAdmin('Tài khoản quản trị: cần đặt cả ADMIN_EMAIL lẫn ADMIN_PASSWORD, đang thiếu một biến nên bỏ qua.');
+  }
+
+  const email = normalizeEmail(rawEmail);
+  if (!EMAIL_RE.test(email) || email.length > 254) {
+    return warnAdmin('Tài khoản quản trị: email cấu hình chưa đúng định dạng, bỏ qua.');
+  }
+  if (email === DEMO_ACCOUNT.email) {
+    return warnAdmin('Tài khoản quản trị: không được dùng email của tài khoản mẫu, bỏ qua.');
+  }
+  if (password.length < ADMIN_PASSWORD_MIN || passwordProblems(password).length > 0) {
+    return warnAdmin(`Tài khoản quản trị: mật khẩu cần ít nhất ${ADMIN_PASSWORD_MIN} ký tự có cả chữ và số, bỏ qua.`);
+  }
+
+  const users = authDb.collection('users');
+  const existing = await users.findOne({ email });
+  const resetPassword = String(env.ADMIN_PASSWORD_RESET) === '1';
+
+  if (existing) {
+    const patch = { role: 'admin', status: 'active' };
+    if (isLocked(existing)) {
+      patch.lockedAt = null;
+      patch.lockedReason = null;
+      patch.lockedBy = null;
+    }
+    if (resetPassword) {
+      patch.passwordHash = await hashPassword(password);
+      patch.passwordChangedAt = new Date();
+      patch.mustChangePassword = false;
+    }
+    await users.updateOne({ _id: existing._id }, { $set: patch });
+    if (resetPassword) {
+      await authDb.collection('auth_sessions').deleteMany({ userId: existing._id });
+    }
+    forgetUser(existing._id);
+    return { email, created: false, passwordReset: resetPassword };
+  }
+
+  const doc = {
+    email,
+    name: 'Quản trị máy chủ',
+    shop: '',
+    passwordHash: await hashPassword(password),
+    role: 'admin',
+    status: 'active',
+    lockedAt: null,
+    lockedReason: null,
+    lockedBy: null,
+    mustChangePassword: false,
+    passwordChangedAt: null,
+    createdAt: new Date(),
+    lastLoginAt: null
+  };
+  await users.updateOne({ email }, { $setOnInsert: doc }, { upsert: true });
+  return { email, created: true, passwordReset: false };
+}
+
 async function createUser(authDb, { name, shop, email, password }) {
-  const doc = { email, name, shop, passwordHash: await hashPassword(password), createdAt: new Date(), lastLoginAt: null };
+  const doc = {
+    email,
+    name,
+    shop,
+    passwordHash: await hashPassword(password),
+    role: 'user',
+    status: 'active',
+    lockedAt: null,
+    lockedReason: null,
+    lockedBy: null,
+    mustChangePassword: false,
+    passwordChangedAt: null,
+    createdAt: new Date(),
+    // Đăng ký xong là đăng nhập luôn (routes/auth.js tạo phiên ngay), nên đây là lần đăng nhập đầu
+    lastLoginAt: new Date()
+  };
   try {
     const r = await authDb.collection('users').insertOne(doc);
     return { user: { ...doc, _id: r.insertedId } };
@@ -139,12 +265,30 @@ async function findByEmail(authDb, email) {
   return authDb.collection('users').findOne({ email: normalizeEmail(email) });
 }
 
+/** Băm IP bằng muối bí mật nếu có, cắt 12 ký tự; không bao giờ lưu IP thô */
+function hashIp(ip) {
+  const raw = String(ip || '').trim();
+  if (!raw || !saltReady()) return null;
+  return crypto.createHash('sha256').update(`${raw}${process.env.PII_SALT}`).digest('hex').slice(0, 12);
+}
+
 /** Tạo phiên cho `user` (cả bản ghi người dùng, để ghi luôn vào bộ đệm: trang đầu sau đăng nhập không phải đọc lại) */
-async function createSession(authDb, user, { remember: keep = true } = {}) {
+async function createSession(authDb, user, { remember: keep = true, admin = false, ua = '', ip = '' } = {}) {
   const token = newToken();
   const now = new Date();
-  const ms = keep ? SESSION_DAYS * 864e5 : SHORT_SESSION_HOURS * 36e5;
-  const session = { tokenHash: hashToken(token), userId: new ObjectId(String(user._id)), createdAt: now, expiresAt: new Date(now.getTime() + ms) };
+  const isAdminSession = Boolean(admin);
+  const ms = isAdminSession
+    ? ADMIN_SESSION_HOURS * 36e5
+    : (keep ? SESSION_DAYS * 864e5 : SHORT_SESSION_HOURS * 36e5);
+  const session = {
+    tokenHash: hashToken(token),
+    userId: new ObjectId(String(user._id)),
+    kind: isAdminSession ? 'admin' : 'user',
+    ua: cleanText(ua, UA_MAX),
+    ipHash: hashIp(ip),
+    createdAt: now,
+    expiresAt: new Date(now.getTime() + ms)
+  };
   await authDb.collection('auth_sessions').insertOne(session);
   remember(session.tokenHash, user, session);
   return { token, expiresAt: session.expiresAt };
@@ -187,7 +331,10 @@ async function lookupSession(authDb, key) {
     return null;
   }
   const user = await authDb.collection('users').findOne({ _id: s.userId });
-  if (!user) return null;
+  if (!user || isLocked(user)) {
+    cache.delete(key);
+    return null;
+  }
   remember(key, user, s);
   return { user, session: s };
 }
@@ -197,7 +344,13 @@ async function sessionUser(authDb, token) {
   const key = hashToken(token);
   const now = Date.now();
   const hit = cache.get(key);
-  if (hit && now - hit.at < CACHE_MS && hit.session.expiresAt.getTime() > now) return { user: hit.user, session: hit.session };
+  if (hit && now - hit.at < CACHE_MS && hit.session.expiresAt.getTime() > now) {
+    if (isLocked(hit.user)) {
+      cache.delete(key);
+      return null;
+    }
+    return { user: hit.user, session: hit.session };
+  }
   if (inflight.has(key)) return inflight.get(key);
   const p = lookupSession(authDb, key).finally(() => inflight.delete(key));
   inflight.set(key, p);
@@ -249,13 +402,20 @@ function requestToken(req, path) {
 
 function requireSession(authDb, env = process.env) {
   return async (req, res, next) => {
-    if (String(env.AUTH_REQUIRED) === '0') return next();
     const path = String(req.originalUrl || req.url || '').split('?')[0];
+    // Phần quản trị luôn cần phiên thật, không bị bỏ qua khi AUTH_REQUIRED=0
+    if (String(env.AUTH_REQUIRED) === '0' && !/^\/api\/admin(\/|$)/.test(path)) return next();
     if (isPublicApi(req.method, path)) return next();
     try {
       const found = await sessionUser(authDb, requestToken(req, path));
       if (!found) return res.status(401).json({ error: 'Cần đăng nhập để xem dữ liệu này.', code: 'auth_required' });
       req.user = found.user;
+      req.session = found.session;
+      // Mật khẩu tạm do quản trị viên cấp: chưa đổi thì chỉ dùng được /api/auth/* (đổi mật khẩu, đăng xuất, /me).
+      // Chặn ở máy chủ chứ không chỉ ở hộp thoại, để gọi API thẳng bằng mật khẩu tạm cũng không dùng được.
+      if (found.user.mustChangePassword) {
+        return res.status(403).json({ error: 'Cần đặt mật khẩu mới trước khi dùng tiếp.', code: 'password_change_required' });
+      }
       // Nhật ký (quyết định, nhãn duyệt, câu trả lời live) ghi tên tài khoản thật, không tin tên trình duyệt gửi
       if (req.body && typeof req.body === 'object' && typeof req.body.by === 'string') req.body.by = found.user.name;
       return next();
@@ -265,9 +425,23 @@ function requireSession(authDb, env = process.env) {
   };
 }
 
+/** Chỉ cho phép tài khoản có vai trò quản trị đi qua; luôn chặn dù AUTH_REQUIRED=0 */
+function requireAdmin(req, res, next) {
+  if (!req.user || isLocked(req.user)) {
+    return res.status(401).json({ error: 'Cần đăng nhập để xem dữ liệu này.', code: 'auth_required' });
+  }
+  if (roleOf(req.user) !== 'admin') {
+    return res.status(403).json({ error: 'Tài khoản này không có quyền quản trị.', code: 'admin_required' });
+  }
+  return next();
+}
+
 module.exports = {
   DEMO_ACCOUNT,
   PASSWORD_MIN,
+  ADMIN_PASSWORD_MIN,
+  ADMIN_SESSION_HOURS,
+  ADMIN_AUDIT_ACTIONS,
   NAME_MAX,
   SHOP_MAX,
   normalizeEmail,
@@ -277,9 +451,13 @@ module.exports = {
   passwordProblems,
   validateSignup,
   hashToken,
+  hashIp,
+  roleOf,
+  isLocked,
   publicUser,
   ensureAuthIndexes,
   ensureDemoAccount,
+  ensureAdminAccount,
   createUser,
   findByEmail,
   createSession,
@@ -289,5 +467,6 @@ module.exports = {
   forgetUser,
   isPublicApi,
   requestToken,
-  requireSession
+  requireSession,
+  requireAdmin
 };

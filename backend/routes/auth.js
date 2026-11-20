@@ -33,8 +33,14 @@ module.exports = function authRouter(authDb) {
     if (fails.size > 5000) for (const [k] of fails) if (!recentFails(k).length) fails.delete(k);
   };
 
-  const issue = async (res, status, user, remember) => {
-    const { token, expiresAt } = await auth.createSession(authDb, user, { remember });
+  const issue = async (req, res, status, user, remember) => {
+    const isAdmin = auth.roleOf(user) === 'admin';
+    const { token, expiresAt } = await auth.createSession(authDb, user, {
+      remember,
+      admin: isAdmin,
+      ua: req.get('User-Agent') || '',
+      ip: req.ip || ''
+    });
     res.status(status).json({ user: auth.publicUser(user), token, expiresAt });
   };
 
@@ -46,7 +52,7 @@ module.exports = function authRouter(authDb) {
       if (made.taken) {
         return res.status(409).json({ error: 'Email này đã có tài khoản.', fields: { email: 'Email này đã có tài khoản. Hãy đăng nhập.' } });
       }
-      return issue(res, 201, made.user, req.body?.remember !== false);
+      return issue(req, res, 201, made.user, req.body?.remember !== false);
     } catch (e) {
       return next(e);
     }
@@ -69,8 +75,30 @@ module.exports = function authRouter(authDb) {
         return res.status(401).json({ error: 'Email hoặc mật khẩu chưa đúng.' });
       }
       fails.delete(email);
-      await authDb.collection('users').updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
-      return issue(res, 200, user, req.body?.remember !== false);
+      // Chỉ báo bị khóa sau khi mật khẩu đúng để không lộ trạng thái cho người đoán mật khẩu
+      if (auth.isLocked(user)) {
+        return res.status(403).json({ error: 'Tài khoản đã bị khóa. Liên hệ quản trị viên để mở lại.', code: 'account_locked' });
+      }
+      const scope = req.body?.scope === 'admin' ? 'admin' : 'user';
+      const isAdmin = auth.roleOf(user) === 'admin';
+      if (scope === 'admin' && !isAdmin) {
+        return res.status(403).json({ error: 'Tài khoản này không có quyền quản trị.', code: 'admin_required' });
+      }
+      const now = new Date();
+      await authDb.collection('users').updateOne({ _id: user._id }, { $set: { lastLoginAt: now } });
+      if (isAdmin) {
+        await authDb.collection('admin_audit').insertOne({
+          at: now,
+          adminId: user._id,
+          adminEmail: user.email,
+          action: 'login',
+          targetId: user._id,
+          targetEmail: user.email,
+          detail: { scope },
+          ok: true
+        }).catch(() => {});
+      }
+      return issue(req, res, 200, { ...user, lastLoginAt: now }, req.body?.remember !== false);
     } catch (e) {
       return next(e);
     }
@@ -90,6 +118,7 @@ module.exports = function authRouter(authDb) {
       const found = await auth.sessionUser(authDb, auth.bearerToken(req));
       if (!found) return res.status(401).json({ error: 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.' });
       req.user = found.user;
+      req.session = found.session;
       return next();
     } catch (e) {
       return next(e);
@@ -119,6 +148,62 @@ module.exports = function authRouter(authDb) {
       return next(e);
     }
   });
+
+  router.post(
+    '/password',
+    requireUser,
+    rateLimit({ max: 5, windowMs: 10 * 60 * 1000, name: 'đổi mật khẩu' }),
+    async (req, res, next) => {
+      try {
+        if (req.user.email === auth.DEMO_ACCOUNT.email) {
+          return res.status(403).json({ error: 'Tài khoản mẫu dùng chung nên không đổi được mật khẩu.' });
+        }
+        const current = typeof req.body?.current === 'string' ? req.body.current : '';
+        const nextPw = typeof req.body?.next === 'string' ? req.body.next : '';
+        if (!current || !nextPw) {
+          return res.status(400).json({ error: 'Nhập mật khẩu hiện tại và mật khẩu mới.' });
+        }
+        const ok = await auth.verifyPassword(current, req.user.passwordHash);
+        if (!ok) {
+          return res.status(401).json({
+            error: 'Mật khẩu hiện tại chưa đúng.',
+            fields: { current: 'Mật khẩu hiện tại chưa đúng.' }
+          });
+        }
+        const problems = auth.passwordProblems(nextPw);
+        // Quản trị viên giữ cùng mức tối thiểu với mật khẩu quản trị đặt qua biến môi trường
+        if (auth.roleOf(req.user) === 'admin' && nextPw.length < auth.ADMIN_PASSWORD_MIN) {
+          problems.unshift(`Mật khẩu quản trị cần ít nhất ${auth.ADMIN_PASSWORD_MIN} ký tự.`);
+        }
+        if (problems.length > 0) {
+          return res.status(400).json({ error: problems[0], fields: { next: problems[0] } });
+        }
+        if (nextPw === current) {
+          return res.status(400).json({
+            error: 'Mật khẩu mới phải khác mật khẩu hiện tại.',
+            fields: { next: 'Mật khẩu mới phải khác mật khẩu hiện tại.' }
+          });
+        }
+        const now = new Date();
+        const passwordHash = await auth.hashPassword(nextPw);
+        await authDb.collection('users').updateOne(
+          { _id: req.user._id },
+          { $set: { passwordHash, passwordChangedAt: now, mustChangePassword: false } }
+        );
+        // Xóa mọi phiên khác của người này, giữ nguyên phiên đang dùng
+        await authDb.collection('auth_sessions').deleteMany({
+          userId: req.user._id,
+          tokenHash: { $ne: req.session.tokenHash }
+        });
+        auth.forgetUser(req.user._id);
+        return res.json({
+          user: auth.publicUser({ ...req.user, passwordHash, passwordChangedAt: now, mustChangePassword: false })
+        });
+      } catch (e) {
+        return next(e);
+      }
+    }
+  );
 
   return router;
 };

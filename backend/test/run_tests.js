@@ -3655,6 +3655,228 @@ testAsync('Livestream: kết nối TikTok treo im lặng quá 3 phút thì tự 
   }
 });
 
+// ==================================================================
+// QUẢN TRỊ MÁY CHỦ: VAI TRÒ, ĐĂNG NHẬP QUẢN TRỊ, ENSURE ADMIN
+// ==================================================================
+test('Quản trị: publicUser có role (mặc định user), status, mustChangePassword và không có passwordHash', () => {
+  const auth = require('../services/auth');
+  const legacy = { _id: 'u1', email: 'a@shop.vn', name: 'Lan', passwordHash: 'scrypt$secret' };
+  const pubLegacy = auth.publicUser(legacy);
+  assert.strictEqual(pubLegacy.role, 'user');
+  assert.strictEqual(pubLegacy.status, 'active');
+  assert.strictEqual(pubLegacy.mustChangePassword, false);
+  assert.strictEqual('passwordHash' in pubLegacy, false);
+
+  const adm = {
+    _id: 'u2',
+    email: 'admin@shop.vn',
+    name: 'Quản trị',
+    role: 'admin',
+    status: 'locked',
+    mustChangePassword: true,
+    passwordHash: 'scrypt$secret2'
+  };
+  const pubAdm = auth.publicUser(adm);
+  assert.strictEqual(pubAdm.role, 'admin');
+  assert.strictEqual(pubAdm.status, 'locked');
+  assert.strictEqual(pubAdm.mustChangePassword, true);
+  assert.strictEqual('passwordHash' in pubAdm, false);
+});
+
+test('Quản trị: requireAdmin chặn không phiên (401), người thường (403), cho admin qua kể cả khi AUTH_REQUIRED=0', () => {
+  const auth = require('../services/auth');
+  const prevAuthReq = process.env.AUTH_REQUIRED;
+  process.env.AUTH_REQUIRED = '0';
+  try {
+    const run = (user) => {
+      let status = 200;
+      let body = null;
+      let nextCalled = false;
+      const req = user ? { user } : {};
+      const res = {
+        status(code) {
+          status = code;
+          return {
+            json(obj) {
+              body = obj;
+              return this;
+            }
+          };
+        }
+      };
+      auth.requireAdmin(req, res, () => {
+        nextCalled = true;
+      });
+      return { status, body, nextCalled };
+    };
+
+    const rNoUser = run(null);
+    assert.strictEqual(rNoUser.status, 401);
+    assert.strictEqual(rNoUser.body.code, 'auth_required');
+    assert.strictEqual(rNoUser.nextCalled, false);
+
+    const rUser = run({ _id: 'u1', role: 'user', status: 'active' });
+    assert.strictEqual(rUser.status, 403);
+    assert.strictEqual(rUser.body.code, 'admin_required');
+    assert.strictEqual(rUser.nextCalled, false);
+
+    const rLockedAdmin = run({ _id: 'u2', role: 'admin', status: 'locked' });
+    assert.strictEqual(rLockedAdmin.status, 401);
+    assert.strictEqual(rLockedAdmin.nextCalled, false);
+
+    const rAdmin = run({ _id: 'u3', role: 'admin', status: 'active' });
+    assert.strictEqual(rAdmin.nextCalled, true);
+  } finally {
+    if (prevAuthReq === undefined) delete process.env.AUTH_REQUIRED;
+    else process.env.AUTH_REQUIRED = prevAuthReq;
+  }
+});
+
+testAsync('Quản trị: ensureAdminAccount thiếu biến trả null, mật khẩu 9 ký tự bị từ chối, hợp lệ thì tạo mới', async () => {
+  const auth = require('../services/auth');
+  const docs = [];
+  const fakeAuthDb = {
+    collection: () => ({
+      findOne: async (q) => docs.find((d) => d.email === q.email) || null,
+      updateOne: async (q, u, opts) => {
+        const idx = docs.findIndex((d) => (q.email ? d.email === q.email : d._id === q._id));
+        if (idx >= 0) {
+          if (u.$set) docs[idx] = { ...docs[idx], ...u.$set };
+        } else if (opts && opts.upsert && u.$setOnInsert) {
+          docs.push({ _id: `id_${docs.length + 1}`, ...u.$setOnInsert });
+        }
+        return { acknowledged: true };
+      },
+      deleteMany: async () => ({ deletedCount: 0 })
+    })
+  };
+
+  assert.strictEqual(await auth.ensureAdminAccount(fakeAuthDb, {}), null, 'thiếu biến phải trả null');
+  assert.strictEqual(
+    await auth.ensureAdminAccount(fakeAuthDb, { ADMIN_EMAIL: 'adm@customerradar.local', ADMIN_PASSWORD: 'Abcdef123' }),
+    null,
+    'mật khẩu 9 ký tự phải bị từ chối'
+  );
+  assert.strictEqual(
+    await auth.ensureAdminAccount(fakeAuthDb, { ADMIN_EMAIL: auth.DEMO_ACCOUNT.email, ADMIN_PASSWORD: 'MatKhauAdmin2026' }),
+    null,
+    'email tài khoản mẫu phải bị từ chối'
+  );
+
+  const created = await auth.ensureAdminAccount(fakeAuthDb, {
+    ADMIN_EMAIL: 'admin.test@customerradar.local',
+    ADMIN_PASSWORD: 'MatKhauAdmin2026'
+  });
+  assert.ok(created && created.created === true && created.email === 'admin.test@customerradar.local');
+  assert.strictEqual(docs.length, 1);
+  assert.strictEqual(docs[0].role, 'admin');
+  assert.strictEqual(docs[0].status, 'active');
+  assert.ok(await auth.verifyPassword('MatKhauAdmin2026', docs[0].passwordHash));
+});
+
+testAsync('Mật khẩu tạm: chưa đổi thì máy chủ chặn API dữ liệu (403), /api/auth vẫn qua; thiếu một biến admin thì bỏ qua', async () => {
+  const auth = require('../services/auth');
+  const { ObjectId } = require('mongodb');
+  const token = 'tokenmatkhautam_abcdefghijklmnop123';
+  const uid = new ObjectId();
+  const fakeDb = {
+    collection: (name) => ({
+      findOne: async (q) => {
+        if (name === 'auth_sessions') return q.tokenHash === auth.hashToken(token) ? { userId: uid, tokenHash: q.tokenHash, expiresAt: new Date(Date.now() + 6e4) } : null;
+        return { _id: uid, email: 'tam@shop.vn', name: 'Người Dùng Tạm', mustChangePassword: true };
+      }
+    })
+  };
+  const run = async (method, url) => {
+    let code = 200;
+    let payload = null;
+    let passed = false;
+    const req = { method, originalUrl: url, query: {}, get: (h) => (h === 'Authorization' ? `Bearer ${token}` : undefined) };
+    const res = { status: (c) => { code = c; return { json: (p) => { payload = p; } }; } };
+    await auth.requireSession(fakeDb, {})(req, res, () => { passed = true; });
+    return { code: passed ? 200 : code, payload };
+  };
+  const blocked = await run('GET', '/api/stats');
+  assert.strictEqual(blocked.code, 403);
+  assert.strictEqual(blocked.payload.code, 'password_change_required');
+  assert.strictEqual((await run('GET', '/api/admin/overview')).code, 403, 'phần quản trị cũng bị chặn');
+  assert.strictEqual((await run('POST', '/api/auth/password')).code, 200, 'đường đổi mật khẩu phải còn dùng được');
+  assert.strictEqual(
+    await auth.ensureAdminAccount({ collection: () => ({}) }, { ADMIN_EMAIL: 'adm@customerradar.local' }),
+    null,
+    'thiếu ADMIN_PASSWORD thì bỏ qua'
+  );
+});
+
+test('Quản trị: guard chặn tự khóa, tự xóa, hạ admin cuối cùng, đổi tài khoản mẫu; cho phép thu hồi phiên tài khoản mẫu và khóa người thường', () => {
+  const auth = require('../services/auth');
+  const admin = require('../services/admin');
+  const actor = { _id: 'adm1', email: 'adm1@shop.vn', role: 'admin', status: 'active' };
+  const otherAdmin = { _id: 'adm2', email: 'adm2@shop.vn', role: 'admin', status: 'active' };
+  const normal = { _id: 'usr1', email: 'lan@shop.vn', role: 'user', status: 'active' };
+  const demo = { _id: 'demo1', email: auth.DEMO_ACCOUNT.email, role: 'user', status: 'active' };
+
+  assert.ok(admin.guard(actor, actor, 'lock', { adminCount: 2 }), 'tự khóa phải bị chặn');
+  assert.ok(admin.guard(actor, actor, 'delete_user', { adminCount: 2 }), 'tự xóa phải bị chặn');
+  assert.ok(admin.guard(actor, actor, 'set_role', { adminCount: 2 }), 'tự đổi vai trò phải bị chặn');
+
+  assert.ok(admin.guard(actor, otherAdmin, 'set_role', { adminCount: 1 }), 'hạ admin cuối cùng phải bị chặn');
+  assert.ok(admin.guard(actor, otherAdmin, 'delete_user', { adminCount: 1 }), 'xóa admin cuối cùng phải bị chặn');
+  assert.ok(admin.guard(actor, otherAdmin, 'lock', { adminCount: 1 }), 'khóa admin cuối cùng phải bị chặn');
+  assert.strictEqual(admin.guard(actor, otherAdmin, 'set_role', { adminCount: 2 }), null, 'hạ admin khi còn từ 2 người trở lên được phép');
+
+  assert.ok(admin.guard(actor, demo, 'lock', { adminCount: 2 }), 'khóa tài khoản mẫu bị chặn');
+  assert.ok(admin.guard(actor, demo, 'delete_user', { adminCount: 2 }), 'xóa tài khoản mẫu bị chặn');
+  assert.ok(admin.guard(actor, demo, 'reset_password', { adminCount: 2 }), 'đổi mật khẩu tài khoản mẫu bị chặn');
+  assert.ok(admin.guard(actor, demo, 'set_role', { adminCount: 2 }), 'đổi vai trò tài khoản mẫu bị chặn');
+  assert.strictEqual(admin.guard(actor, demo, 'revoke_sessions', { adminCount: 2 }), null, 'đăng xuất phiên tài khoản mẫu được phép');
+  assert.strictEqual(admin.guard(actor, demo, 'revoke_session', { adminCount: 2 }), null, 'xóa một phiên tài khoản mẫu được phép');
+
+  assert.strictEqual(admin.guard(actor, normal, 'lock', { adminCount: 1 }), null, 'admin khóa người thường được phép');
+  assert.strictEqual(admin.guard(actor, normal, 'delete_user', { adminCount: 1 }), null, 'admin xóa người thường được phép');
+});
+
+test('Quản trị: tempPassword chạy 200 lần luôn 14 ký tự, qua passwordProblems, không có ký tự dễ nhầm và không trùng', () => {
+  const auth = require('../services/auth');
+  const admin = require('../services/admin');
+  const seen = new Set();
+  for (let i = 0; i < 200; i += 1) {
+    const pw = admin.tempPassword();
+    assert.strictEqual(pw.length, 14, `lần ${i}: phải dài 14 ký tự`);
+    assert.deepStrictEqual(auth.passwordProblems(pw), [], `lần ${i}: phải qua passwordProblems`);
+    assert.strictEqual(/[0Oo1lI]/.test(pw), false, `lần ${i}: không được có ký tự dễ nhầm`);
+    assert.strictEqual(seen.has(pw), false, `lần ${i}: không được trùng`);
+    seen.add(pw);
+  }
+});
+
+test('Quản trị: sessionRow ẩn tokenHash, adminUserRow ẩn passwordHash, parseListQuery chuẩn hóa và thoát regex an toàn', () => {
+  const admin = require('../services/admin');
+  const sRow = admin.sessionRow(
+    { _id: 's1', tokenHash: 'secret-hash-xyz', kind: 'admin', ua: 'Chrome', createdAt: new Date(), expiresAt: new Date() },
+    'secret-hash-xyz'
+  );
+  assert.strictEqual('tokenHash' in sRow, false);
+  assert.strictEqual(sRow.current, true);
+
+  const uRow = admin.adminUserRow(
+    { _id: 'u1', email: 'lan@shop.vn', name: 'Lan', passwordHash: 'scrypt$secret', role: 'user', status: 'active' },
+    { sessions: 2, zaloLinked: true }
+  );
+  assert.strictEqual('passwordHash' in uRow, false);
+  assert.strictEqual(uRow.sessions, 2);
+  assert.strictEqual(uRow.zaloLinked, true);
+
+  const pq = admin.parseListQuery({ page: '-3', limit: '999', status: 'xyz', sort: 'bad', q: '.*(test)+$' });
+  assert.strictEqual(pq.page, 1);
+  assert.strictEqual(pq.limit, 50);
+  assert.strictEqual(pq.status, 'all');
+  assert.strictEqual(pq.sort, 'lastLogin');
+  assert.doesNotThrow(() => new RegExp(pq.qEscaped, 'i'));
+  assert.strictEqual(new RegExp(pq.qEscaped, 'i').test('.*(test)+$'), true);
+  assert.strictEqual(new RegExp(pq.qEscaped, 'i').test('anything'), false);
+});
+
 (async () => {
   for (const t of asyncTests) {
     try {

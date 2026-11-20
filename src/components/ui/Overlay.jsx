@@ -44,10 +44,11 @@ export const Backdrop = ({ onClose, leaving = false }) => (
 );
 
 /** Hộp thoại: ô biểu tượng, tiêu đề, mô tả, hai nút */
-export const Modal = ({ open, onClose, title, description, icon: Icon, tone = 'accent', children, footer, size = 'md' }) => {
+export const Modal = ({ open, onClose, dismissible = true, title, description, icon: Icon, tone = 'accent', children, footer, size = 'md' }) => {
   const panelRef = useRef(null);
   const titleId = useId();
-  useOverlay(open, onClose, panelRef);
+  const handleClose = dismissible ? onClose : undefined;
+  useOverlay(open, handleClose, panelRef);
   if (!open) return null;
 
   const width = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-xl' }[size];
@@ -55,7 +56,7 @@ export const Modal = ({ open, onClose, title, description, icon: Icon, tone = 'a
 
   return createPortal(
     <div className="cx fixed inset-0 z-[2000] grid place-items-center p-4">
-      <Backdrop onClose={onClose} />
+      <Backdrop onClose={handleClose} />
       <div
         ref={panelRef}
         role="dialog"
@@ -64,7 +65,9 @@ export const Modal = ({ open, onClose, title, description, icon: Icon, tone = 'a
         tabIndex={-1}
         className={`glass-float relative max-h-[calc(100dvh-2rem)] w-full ${width} overflow-y-auto overscroll-contain rounded-surf p-5 outline-none animate-pop-in sm:p-6`}
       >
-        <IconButton icon={X} label="Đóng" variant="ghost" size="sm" data-close onClick={onClose} className="absolute! top-3 right-3 before:absolute before:-inset-1.5 before:content-[''] sm:top-4 sm:right-4" />
+        {dismissible && (
+          <IconButton icon={X} label="Đóng" variant="ghost" size="sm" data-close onClick={handleClose} className="absolute! top-3 right-3 before:absolute before:-inset-1.5 before:content-[''] sm:top-4 sm:right-4" />
+        )}
         {Icon && (
           <span className={`mb-4 grid size-10 place-items-center rounded-ctrl ${toneCls}`}>
             <Icon size={20} aria-hidden="true" />
