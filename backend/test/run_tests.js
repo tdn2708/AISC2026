@@ -1436,11 +1436,13 @@ test('Các file route nạp được (bắt lỗi cú pháp trước khi máy ch
 // LIVESTREAM
 // ==================================================================
 const liveIntent = require('../services/live/intent');
+/** Chạy riêng bộ luật (tắt mô hình tuyến tính): các test này kiểm luật, không kiểm mô hình */
+const rulesOnly = (fn) => () => { const prev = process.env.LIVE_MODEL; process.env.LIVE_MODEL = '0'; try { fn(); } finally { if (prev === undefined) delete process.env.LIVE_MODEL; else process.env.LIVE_MODEL = prev; } };
 const liveAnswer = require('../services/live/answer');
 const { LiveAggregator, groupKeyOf } = require('../services/live/aggregator');
 const { MEGALIVE_CATALOG, MEGALIVE_POLICY } = require('../services/live/connectors/simulator');
 
-test('Live: phân loại ý định bình luận, kể cả gõ không dấu', () => {
+test('Live (luật): phân loại ý định bình luận, kể cả gõ không dấu', rulesOnly(() => {
   const cases = [
     ['giá bao nhiêu shop', 'question', 'price'],
     ['gia bn v', 'question', 'price'],
@@ -1463,9 +1465,9 @@ test('Live: phân loại ý định bình luận, kể cả gõ không dấu', (
     assert.strictEqual(r.intent, intent, `${text} -> ${r.intent}`);
     if (topic) assert.strictEqual(r.topic, topic, `${text} -> ${r.topic}`);
   }
-});
+}));
 
-test('Live: bình luận thật (YouTube/TikTok 23/11) không bị xếp nhầm vì trùng chữ khi bỏ dấu', () => {
+test('Live (luật): bình luận thật (YouTube/TikTok 23/11) không bị xếp nhầm vì trùng chữ khi bỏ dấu', rulesOnly(() => {
   // Câu lấy nguyên văn từ phiên live thật; trước bản sửa đều bị xếp sai
   const cases = [
     ['lo nghe máy', 'chatter'],                       // "máy" không phải "mấy"
@@ -1501,6 +1503,52 @@ test('Live: bình luận thật (YouTube/TikTok 23/11) không bị xếp nhầm 
   // Gõ không dấu vẫn hiểu như cũ
   assert.strictEqual(liveIntent.classifyComment('ao mau den con ko').variant.color, 'đen');
   assert.strictEqual(liveIntent.classifyComment('bo nay nhieu shop').topic, 'price');
+}));
+
+// Mốc do nlp_service/live/train_linear.py --check in ra: JS phải tính y hệt, không thì trọng số sai
+const LIVE_PY_FEATURES = [{"text":"198","prep":"00","features":["c: 0","c:00","c:0 ","c: 00","c:00 ","c: 00 ","w:00","f:numonly","f:len1"]},{"text":"10x2","prep":"00x0","features":["c: 0","c:00","c:0x","c:x0","c:0 ","c: 00","c:00x","c:0x0","c:x0 ","c: 00x","c:00x0","c:0x0 ","w:00x0","f:numonly","f:len1"]}];
+const LIVE_PY_PREP = [["Còn size M không shop??","còn size m không shop??"],["198","00"],["chốt 2 cái 😍😍😍","chốt 0 cái **"],["[USER] gia bn v","gia bn v"],["10x2","00x0"]];
+
+test('Live: mô hình tuyến tính JS tính đặc trưng y hệt bản Python đã huấn luyện', () => {
+  const lm = require('../services/live/linear_model');
+  assert.ok(lm.available(), 'phải có backend/services/live/linear_model.json');
+  for (const [text, prep] of LIVE_PY_PREP) assert.strictEqual(lm.prep(text), prep, text);
+  for (const f of LIVE_PY_FEATURES) assert.deepStrictEqual(lm.features(f.text), f.features, f.text);
+});
+
+test('Live: luật + mô hình trên tập test gán nhãn (1.345 câu, 35 phiên không trùng train) không tụt điểm', () => {
+  // Số lúc chọn 23/11: macro-F1 5 lớp 0,759, accuracy 0,852, cần trả lời F1 0,931 (luật một mình: 0,388 / 0,407 / 0,471)
+  const rows = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'nlp_service', 'live', 'data', 'test.jsonl'), 'utf8').trim().split(/\r?\n/).map(JSON.parse);
+  const TO5 = { ORDER: 'order', QUESTION: 'question', REQUEST: 'question', NEGOTIATE: 'question', COMPLAINT: 'complaint', PRAISE: 'praise', GIVEAWAY: 'chatter', SOCIAL: 'chatter', OTHER: 'chatter' };
+  const C = ['order', 'question', 'complaint', 'praise', 'chatter'];
+  const pairs = rows.map((r) => [TO5[r.intent], liveIntent.classifyComment(r.text).intent]);
+  const f1 = (c) => { const tp = pairs.filter(([g, q]) => g === c && q === c).length; const fp = pairs.filter(([g, q]) => g !== c && q === c).length; const fn = pairs.filter(([g, q]) => g === c && q !== c).length; return tp ? (2 * tp) / (2 * tp + fp + fn) : 0; };
+  const macro = C.reduce((s2, c) => s2 + f1(c), 0) / C.length;
+  const acc = pairs.filter(([g, q]) => g === q).length / pairs.length;
+  assert.ok(macro >= 0.74, `macro-F1 5 lớp ${macro.toFixed(3)} < 0,74`);
+  assert.ok(acc >= 0.83, `accuracy ${acc.toFixed(3)} < 0,83`);
+  assert.ok(f1('order') >= 0.9, `chốt đơn F1 ${f1('order').toFixed(3)}`);
+});
+
+test('Live: luật vẫn phủ quyết mô hình ở chỗ chắc chắn; tắt được mô hình bằng LIVE_MODEL=0', () => {
+  const c = (t) => liveIntent.classifyComment(t).intent;
+  assert.strictEqual(c('198'), 'order', 'mã số trơn là chốt đơn (kiểu phiên gốm, gia dụng)');
+  assert.strictEqual(c('32/10'), 'order');
+  assert.strictEqual(c('???'), 'chatter', 'không có chữ thì không phải câu hỏi');
+  assert.notStrictEqual(c('đừng nói chốt 240 nha'), 'order', 'chốt bị phủ định');
+  assert.notStrictEqual(c('cho xuống chốt lời giờ cho lên để lấy lời'), 'order', 'chốt lời khi giao dịch');
+  assert.strictEqual(c('sdt 0912345678 lấy cái này'), 'order', 'để lại số điện thoại');
+  assert.strictEqual(c('vào nhóm zalo.me/g/abc để nhận quà'), 'chatter', 'link mời nhóm');
+  assert.strictEqual(c('lo nghe máy'), 'chatter', 'mô hình chưa chắc là khiếu nại thì theo luật');
+  const m = liveIntent.classifyComment('còn size M không shop');
+  assert.ok(m.model && m.model.label, 'có ý kiến của mô hình để soi lại');
+  process.env.LIVE_MODEL = '0';
+  try {
+    assert.strictEqual(liveIntent.classifyComment('198').model, null);
+    assert.strictEqual(c('198'), 'chatter', 'tắt mô hình thì về luật như cũ');
+  } finally {
+    delete process.env.LIVE_MODEL;
+  }
 });
 
 test('Live: trích size, màu, số lượng, số đo và che số điện thoại', () => {

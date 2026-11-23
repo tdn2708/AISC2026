@@ -1,0 +1,605 @@
+[
+ {
+  "item_id": "Yddf51850ae",
+  "final_intent": "OTHER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y781f97eadf",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE",
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "turbo 3",
+  "decision": "new",
+  "certainty": "low",
+  "reason": "\"còn nhiêu\" mơ hồ giá/tồn"
+ },
+ {
+  "item_id": "Y31fc158369",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "đầm gà",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "tên món trơ"
+ },
+ {
+  "item_id": "Y8b33aab4c8",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "lianli case",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y52f87eedf8",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y6b9b4e102b",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Mixer dynacord CMS 1000",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yaec1a6d6da",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "rx 6750xt, rtx 3060ti",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y71b60115c7",
+  "final_intent": "NEGOTIATE",
+  "final_aspects": [
+   "PRICE",
+   "PROMOTION"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "mi 15 mã 8d3",
+  "decision": "new",
+  "certainty": "medium",
+  "reason": "xin giá sau mã rồi mới chốt"
+ },
+ {
+  "item_id": "Yff6824c7c5",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "có thể gõ nhầm \"lên\""
+ },
+ {
+  "item_id": "Yad660b7518",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE",
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "sò 150k",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y4d0b99ea23",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "new",
+  "certainty": "medium",
+  "reason": "số đo ngầm hỏi size"
+ },
+ {
+  "item_id": "Y585d891c4d",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y7e732ac76d",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "12prm",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y10ffd80489",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "hồng",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "màu trơ"
+ },
+ {
+  "item_id": "Y5d510ddb71",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "sup 2trieu",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y2c1a86b0c5",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 0,
+  "final_product_ref": "Trident Z Royal",
+  "decision": "new",
+  "certainty": "medium",
+  "reason": "bàn chuyện hãng/linh kiện, không nhắm shop"
+ },
+ {
+  "item_id": "Y645456390a",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "áo này",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Tcf2fc65b5b",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ya0a54e44ec",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Mainboard Asus PRIME H610M-K D4",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yab75db9d4b",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "red magic 9 pro",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y78294fe362",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y87bde5e264",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "OPPO",
+  "decision": "new",
+  "certainty": "medium",
+  "reason": "bàn chuyện hãng"
+ },
+ {
+  "item_id": "Y62f1ac983e",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "vàng",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "màu trơ"
+ },
+ {
+  "item_id": "T1b84221e13",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "màu nâu",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "màu trơ"
+ },
+ {
+  "item_id": "Y211185449e",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "2 cái",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y25df5f34b0",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "s10 5G",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "\"thì sao\" mơ hồ"
+ },
+ {
+  "item_id": "Y91dcf1f632",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y47d5d20906",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y92f83f77c0",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y077a616fc6",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "chân váy xám",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "tên món trơ"
+ },
+ {
+  "item_id": "Y41f455c96a",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "nhận xét về máy, không rõ nhắm shop"
+ },
+ {
+  "item_id": "Y97cefc99ee",
+  "final_intent": "OTHER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y4cb0924e9c",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT",
+   "SIZE_FIT",
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "ttv585 size M",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y901d4a77bd",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "main z690",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yb1966f3456",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "cái bên",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "mơ hồ"
+ },
+ {
+  "item_id": "Yf7d79d2f48",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y97b6ceb561",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "xin host giới thiệu món lạ"
+ },
+ {
+  "item_id": "Y061f034678",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y799b838d0b",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y16b1c62ea8",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ydd8d0dce2b",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "k90",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y0924adb246",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "áo này",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "chốt có điều kiện vừa size"
+ },
+ {
+  "item_id": "Yb8826fa0aa",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y13ff296b8f",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "QUALITY_TRUST"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "levi",
+  "decision": "new",
+  "certainty": "low",
+  "reason": "mơ hồ"
+ },
+ {
+  "item_id": "Ya73e8132bb",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE",
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "11pro 256",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y37f20a0d2f",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "4060ti 16gb",
+  "decision": "new",
+  "certainty": "low",
+  "reason": "hỏi xác nhận cấu hình"
+ },
+ {
+  "item_id": "Y5eb1fcdc6a",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "than thở, không nhắm shop"
+ },
+ {
+  "item_id": "Y7473be7365",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "11",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": ""
+ },
+ {
+  "item_id": "Y4e49e4c1f7",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "09727",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ }
+]

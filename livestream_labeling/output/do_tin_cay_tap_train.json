@@ -1,0 +1,189 @@
+{
+  "n_items": 8174,
+  "intent": {
+    "percent_agreement_AB": 0.891240518717886,
+    "wilson95": [
+      0.8843063420750221,
+      0.8978071192568775
+    ],
+    "cohen_kappa_AB": 0.8573852557694102,
+    "kappa_AB_boot95": [
+      0.8487425677988015,
+      0.8657040274395807
+    ],
+    "landis_koch": "gần như hoàn toàn",
+    "kripp_alpha_AB": 0.8573810270056027,
+    "kripp_alpha_AB_boot95": [
+      0.8484235622247756,
+      0.8660127029976808
+    ],
+    "kripp_alpha_ABC": 0.4194366805395756,
+    "cohen_kappa_A_vs_rules": 0.22897311044409183,
+    "cohen_kappa_B_vs_rules": 0.24093262530987747
+  },
+  "sentiment": {
+    "percent_agreement_AB": 0.9537558111083925,
+    "wilson95": [
+      0.9489858601993959,
+      0.9580994518956685
+    ],
+    "cohen_kappa_AB": 0.6855912633101888,
+    "kappa_AB_boot95": [
+      0.6551514280476085,
+      0.7157437901429498
+    ],
+    "landis_koch": "khá cao",
+    "kripp_alpha_AB": 0.6856040971010007,
+    "kripp_alpha_AB_boot95": [
+      0.6552168168324388,
+      0.7138137391023619
+    ],
+    "kripp_alpha_ABC": 0.4355123639544355,
+    "cohen_kappa_A_vs_rules": 0.25433888131776317,
+    "cohen_kappa_B_vs_rules": 0.26960673025763465
+  },
+  "needs_reply": {
+    "percent_agreement_AB": 0.9464154636652802,
+    "wilson95": [
+      0.941320382300192,
+      0.9510911312708218
+    ],
+    "cohen_kappa_AB": 0.8610761213539201,
+    "kappa_AB_boot95": [
+      0.8482905443296,
+      0.8743290336055143
+    ],
+    "landis_koch": "gần như hoàn toàn",
+    "kripp_alpha_AB": 0.861083929296083,
+    "kripp_alpha_AB_boot95": [
+      0.8483382710891538,
+      0.8744714428170879
+    ],
+    "kripp_alpha_ABC": 0.22526907050080203,
+    "cohen_kappa_A_vs_rules": 0.09362866738461682,
+    "cohen_kappa_B_vs_rules": 0.0976516090636574
+  },
+  "intent_per_class": {
+    "ORDER": {
+      "n_A": 2904,
+      "n_B": 2812,
+      "kappa_binary": 0.9236137307173217,
+      "F1_A_vs_B": 0.9503149055283415
+    },
+    "QUESTION": {
+      "n_A": 2103,
+      "n_B": 2197,
+      "kappa_binary": 0.9129204390770314,
+      "F1_A_vs_B": 0.935813953488372
+    },
+    "REQUEST": {
+      "n_A": 874,
+      "n_B": 857,
+      "kappa_binary": 0.8365349638349314,
+      "F1_A_vs_B": 0.853841709994223
+    },
+    "NEGOTIATE": {
+      "n_A": 53,
+      "n_B": 51,
+      "kappa_binary": 0.6129230842084094,
+      "F1_A_vs_B": 0.6153846153846154
+    },
+    "COMPLAINT": {
+      "n_A": 181,
+      "n_B": 187,
+      "kappa_binary": 0.688645319007542,
+      "F1_A_vs_B": 0.6956521739130435
+    },
+    "PRAISE": {
+      "n_A": 226,
+      "n_B": 236,
+      "kappa_binary": 0.8396257367055113,
+      "F1_A_vs_B": 0.8441558441558441
+    },
+    "GIVEAWAY": {
+      "n_A": 39,
+      "n_B": 43,
+      "kappa_binary": 0.8038967543041539,
+      "F1_A_vs_B": 0.8048780487804879
+    },
+    "SOCIAL": {
+      "n_A": 1467,
+      "n_B": 1446,
+      "kappa_binary": 0.8258122397768063,
+      "F1_A_vs_B": 0.8568486096807415
+    },
+    "OTHER": {
+      "n_A": 327,
+      "n_B": 345,
+      "kappa_binary": 0.5220334980097954,
+      "F1_A_vs_B": 0.5416666666666666
+    }
+  },
+  "aspects": {
+    "kripp_alpha_MASI_AB": 0.7528769625864713,
+    "mean_jaccard": 0.8152781176086779,
+    "exact_match": 0.7838267678003425,
+    "per_aspect": {
+      "PRICE": {
+        "n_A": 1045,
+        "n_B": 939,
+        "kappa_binary": 0.8165041074856263
+      },
+      "PROMOTION": {
+        "n_A": 64,
+        "n_B": 81,
+        "kappa_binary": 0.6312571178572488
+      },
+      "SIZE_FIT": {
+        "n_A": 592,
+        "n_B": 590,
+        "kappa_binary": 0.8978604296634602
+      },
+      "VARIANT": {
+        "n_A": 2565,
+        "n_B": 2811,
+        "kappa_binary": 0.7508179556585622
+      },
+      "SPEC_MATERIAL": {
+        "n_A": 284,
+        "n_B": 347,
+        "kappa_binary": 0.685279369959631
+      },
+      "USAGE": {
+        "n_A": 69,
+        "n_B": 56,
+        "kappa_binary": 0.5566466999729763
+      },
+      "STOCK": {
+        "n_A": 654,
+        "n_B": 618,
+        "kappa_binary": 0.8653150323329356
+      },
+      "SHIPPING": {
+        "n_A": 108,
+        "n_B": 115,
+        "kappa_binary": 0.7499557832701672
+      },
+      "ORDER_PROCESS": {
+        "n_A": 544,
+        "n_B": 510,
+        "kappa_binary": 0.7059170901713984
+      },
+      "QUALITY_TRUST": {
+        "n_A": 190,
+        "n_B": 188,
+        "kappa_binary": 0.6587770994045723
+      },
+      "HOST_STREAM": {
+        "n_A": 163,
+        "n_B": 176,
+        "kappa_binary": 0.7620343380220453
+      }
+    }
+  },
+  "dawid_skene_estimated_accuracy": {
+    "A": 0.946545834933502,
+    "B": 0.9371630528363665,
+    "C_luat": 0.41350557733573673
+  }
+}

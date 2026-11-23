@@ -1,0 +1,709 @@
+[
+ {
+  "item_id": "Yd333d5ec53",
+  "final_intent": "GIVEAWAY",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "12",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "số tham gia quay số"
+ },
+ {
+  "item_id": "Ya80f843edc",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Samsung a25 5g",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y35c27bfc0a",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "PRICE",
+   "PROMOTION"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "note 20 ultra",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y328b16cd59",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ycda4ab172a",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "áo tím",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "tên món/màu đứng trơ"
+ },
+ {
+  "item_id": "Y0d48f9a6fc",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT",
+   "QUALITY_TRUST"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 1,
+  "final_product_ref": "not20 5g",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "lấy + khen"
+ },
+ {
+  "item_id": "Y71d8716280",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "tầm 5 tr",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "hỏi máy tầm giá"
+ },
+ {
+  "item_id": "Y508d909cba",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "\"nhỏ\" mơ hồ"
+ },
+ {
+  "item_id": "Ycc19c1fe49",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "3060ti",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y3f59c960ec",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ya07e3d3535",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yc8140ddd2e",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "bát 30 .40",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yd7e9cbda4b",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y7289617a2c",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "q be",
+  "decision": "new",
+  "certainty": "low",
+  "reason": "tên món trơ"
+ },
+ {
+  "item_id": "Yf4714d4366",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "s20 ultra",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ye4ddf5fb2c",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "hoả tiễn này 40 hay là 50",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "40/50 có thể là công suất hoặc giá"
+ },
+ {
+  "item_id": "Y09ab322b6f",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Trắng",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "màu trơ"
+ },
+ {
+  "item_id": "Y547b65371c",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE",
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "poco x8 pro bản 512",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "không rõ chê đắt hay so sánh"
+ },
+ {
+  "item_id": "Y4fc2572542",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y9d24cd7802",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y77548da83b",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Đùi lửng 39",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "39 có thể là mã hoặc size"
+ },
+ {
+  "item_id": "Y146391d373",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE",
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "12 pro max",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y1e9886a258",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ye9605093f0",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "QUALITY_TRUST"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "nghi ngờ chất lượng"
+ },
+ {
+  "item_id": "Yab372146a3",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "13 promax",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y0e4bea19f4",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "tag bạn"
+ },
+ {
+  "item_id": "Y86511e068b",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "khen nhưng tiếc size nhỏ"
+ },
+ {
+  "item_id": "Y4e96f949ea",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yd00e43d066",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "T3a2838fce2",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "36",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y21cca3e3e0",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "đen",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "màu trơ"
+ },
+ {
+  "item_id": "Ya1f522f729",
+  "final_intent": "OTHER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "không rõ nghĩa"
+ },
+ {
+  "item_id": "Yeca162e05a",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "3",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "tag + số mã"
+ },
+ {
+  "item_id": "Yeffb2410f2",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "đùi nung",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "tên món trơ"
+ },
+ {
+  "item_id": "Yea52441b54",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "gtx 750 ti",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y713d056af1",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "12mini",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y465cb03e03",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE",
+   "QUALITY_TRUST"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "oneplus 13 9 củ 5",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y8e7ceeef9b",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "new",
+  "certainty": "medium",
+  "reason": "\"chốt\" trơ, quy ước 19/11"
+ },
+ {
+  "item_id": "Yb10dc3abea",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yf1a651e544",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yf3f4aec42e",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT",
+   "PROMOTION"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Note 20 Ultra 5 G",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chốt kèm điều kiện quà"
+ },
+ {
+  "item_id": "Ya62bc49abe",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "bà ba",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "tên món trơ"
+ },
+ {
+  "item_id": "Y8a86f791d4",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "b450m mortar max, b450m tuf gaming plus ii",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ye6c1be15af",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Thun den",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "tên món trơ"
+ },
+ {
+  "item_id": "Y1466f5fe31",
+  "final_intent": "PRAISE",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yd037b5c091",
+  "final_intent": "GIVEAWAY",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "19",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "số tham gia quay số"
+ },
+ {
+  "item_id": "Yc42f5121fa",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "a20s",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y8abbd96482",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "F8 ULTRA",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "không rõ nhắm tới shop"
+ },
+ {
+  "item_id": "Ya11daba4d6",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ye68c30aa51",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "loa 25 triệu gia đình",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": ""
+ },
+ {
+  "item_id": "Y6ed26937a8",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "ao khoac cam",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "tên món trơ"
+ },
+ {
+  "item_id": "Y5140a6185f",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "bơ",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "màu trơ"
+ },
+ {
+  "item_id": "Ya336df2abd",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "chui đầu hay day kéo",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y9f026e543a",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "iphone 13 mini",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y9b2c55c72f",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y84f41ac534",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "số đo ngầm hỏi size"
+ },
+ {
+  "item_id": "Y14eadef23d",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ }
+]

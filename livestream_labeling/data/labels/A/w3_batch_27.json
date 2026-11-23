@@ -1,0 +1,117 @@
+[
+ {
+  "item_id": "Yac8e95a044",
+  "intent": "ORDER",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "91",
+  "note": ""
+ },
+ {
+  "item_id": "Y2200ee59d2",
+  "intent": "ORDER",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "55",
+  "note": ""
+ },
+ {
+  "item_id": "Y31111323ff",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": "không rõ nghĩa"
+ },
+ {
+  "item_id": "Yfc9bb6e5c6",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y520871dbe5",
+  "intent": "ORDER",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "42",
+  "note": ""
+ },
+ {
+  "item_id": "Y2efd092557",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "cái ngũ sắc",
+  "note": "tên món trơ"
+ },
+ {
+  "item_id": "Y87f2ab20f5",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "món hoang dã",
+  "note": ""
+ },
+ {
+  "item_id": "Y1fdf6dcb2c",
+  "intent": "ORDER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "1 cái",
+  "note": ""
+ },
+ {
+  "item_id": "Y0f81ce047e",
+  "intent": "ORDER",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "92",
+  "note": "giành lượt chốt"
+ },
+ {
+  "item_id": "Ybeda421181",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "mã 90",
+  "note": ""
+ },
+ {
+  "item_id": "Y7de2609b6f",
+  "intent": "PRAISE",
+  "aspects": [
+   "USAGE"
+  ],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "Cặp chó",
+  "note": ""
+ }
+]

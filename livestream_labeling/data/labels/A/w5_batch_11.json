@@ -1,0 +1,1538 @@
+[
+{
+"item_id": "Y77e09d8ada",
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y9072fe85d8",
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y8f710ae8c2",
+"intent": "REQUEST",
+"aspects": [
+"SIZE_FIT",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "carô vàng",
+"note": ""
+},
+{
+"item_id": "Y9b5c2b7034",
+"intent": "QUESTION",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "ps5",
+"note": ""
+},
+{
+"item_id": "Y978a358b3f",
+"intent": "QUESTION",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "hỏi luật chơi/mini game"
+},
+{
+"item_id": "Y71580a58ab",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y63e7883b38",
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "magic 8pro",
+"note": ""
+},
+{
+"item_id": "Yddf51850ae",
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "PC 45 Triệu",
+"note": ""
+},
+{
+"item_id": "Y822ab61966",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Ycec191badf",
+"intent": "PRAISE",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y365d0ce259",
+"intent": "REQUEST",
+"aspects": [
+"VARIANT",
+"QUALITY_TRUST"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "con màn mới của VSP Elsa",
+"note": ""
+},
+{
+"item_id": "Y355492d1d0",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y781f97eadf",
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "turbo 3",
+"note": ""
+},
+{
+"item_id": "Yc23c9f0ee1",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yf3b1be22f1",
+"intent": "ORDER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y41f9677b21",
+"intent": "QUESTION",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y31fc158369",
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "đầm gà",
+"note": ""
+},
+{
+"item_id": "Y8b33aab4c8",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "lianli case",
+"note": ""
+},
+{
+"item_id": "Y96e8bba3e2",
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "17",
+"note": ""
+},
+{
+"item_id": "Y58a2b21c88",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y7cb69d7407",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "meta v550 của antec",
+"note": ""
+},
+{
+"item_id": "Y8054a09bd5",
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y7ff2f5d7db",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yc50e1e51a8",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y21e724b14c",
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Súp điện lai",
+"note": ""
+},
+{
+"item_id": "Y52f87eedf8",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yc42e853509",
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "i5 10400f với 2060",
+"note": ""
+},
+{
+"item_id": "Yeec64032e7",
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y651df7c635",
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "vaico",
+"note": ""
+},
+{
+"item_id": "Y6b9b4e102b",
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Mixer dynacord CMS 1000",
+"note": ""
+},
+{
+"item_id": "Y82e7b9f720",
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yaec1a6d6da",
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "rx 6750xt với rtx 3060ti",
+"note": ""
+},
+{
+"item_id": "Y71b60115c7",
+"intent": "NEGOTIATE",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "mi 15",
+"note": ""
+},
+{
+"item_id": "Yff6824c7c5",
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y5517707194",
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "cặp loa cây bass đôi màu đen",
+"note": ""
+},
+{
+"item_id": "Y2a3b3ebe2d",
+"intent": "COMPLAINT",
+"aspects": [
+"QUALITY_TRUST"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "xiaomi",
+"note": ""
+},
+{
+"item_id": "Yad660b7518",
+"intent": "QUESTION",
+"aspects": [
+"VARIANT",
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "con sò nào tầm 150k",
+"note": ""
+},
+{
+"item_id": "Y982e3c1f1c",
+"intent": "ORDER",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "39k",
+"note": "ok + giá: ORDER+PRICE"
+},
+{
+"item_id": "Yc85332c05b",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Ycfff063944",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yb00f59c73d",
+"intent": "QUESTION",
+"aspects": [
+"VARIANT",
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "ip xr",
+"note": ""
+},
+{
+"item_id": "Yae23df99c5",
+"intent": "QUESTION",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y076b280f3f",
+"intent": "QUESTION",
+"aspects": [
+"QUALITY_TRUST"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "ssd cua MSI",
+"note": ""
+},
+{
+"item_id": "Y1441920d49",
+"intent": "PRAISE",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y4d0b99ea23",
+"intent": "ORDER",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "eo 90",
+"note": "eo 90: coi là chọn size, ORDER+SIZE_FIT"
+},
+{
+"item_id": "Y585d891c4d",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y7e732ac76d",
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "12prm",
+"note": ""
+},
+{
+"item_id": "Y39082719f0",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "nothing phone 2",
+"note": ""
+},
+{
+"item_id": "Y5916289255",
+"intent": "ORDER",
+"aspects": [
+"PRICE",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "ultra 2tr2",
+"note": ""
+},
+{
+"item_id": "Y0ceee7d6e4",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y10ffd80489",
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "hồng",
+"note": ""
+},
+{
+"item_id": "Ya25f06c61c",
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "2 cái ly",
+"note": ""
+},
+{
+"item_id": "Ya9f6037980",
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y01658c5fb3",
+"intent": "NEGOTIATE",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "11tr5",
+"note": ""
+},
+{
+"item_id": "Y1f34a118af",
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "vỏ bể cá",
+"note": ""
+},
+{
+"item_id": "Y3af8e25095",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y5e2d4ea38f",
+"intent": "QUESTION",
+"aspects": [
+"USAGE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y7b792bcf81",
+"intent": "QUESTION",
+"aspects": [
+"STOCK",
+"QUALITY_TRUST"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "súp chính hãng nào bas 30",
+"note": ""
+},
+{
+"item_id": "Y7855e1eeed",
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "realme gt 8 pro hay redmi k100 pro max",
+"note": ""
+},
+{
+"item_id": "Y79fb35e5a2",
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Case",
+"note": ""
+},
+{
+"item_id": "Y81526ef285",
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y4114790b4f",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y5d510ddb71",
+"intent": "QUESTION",
+"aspects": [
+"STOCK",
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "sup 2trieu",
+"note": ""
+},
+{
+"item_id": "Y2c1a86b0c5",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "Trident Z Royal",
+"note": ""
+},
+{
+"item_id": "Yf0581986d3",
+"intent": "QUESTION",
+"aspects": [
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "google pixel 4xl",
+"note": ""
+},
+{
+"item_id": "Y645456390a",
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "áo này",
+"note": ""
+},
+{
+"item_id": "Y7dc4443932",
+"intent": "QUESTION",
+"aspects": [
+"QUALITY_TRUST"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "k70e",
+"note": ""
+},
+{
+"item_id": "Tcf2fc65b5b",
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Ya0a54e44ec",
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Mainboard Asus PRIME H610M-K D4",
+"note": ""
+},
+{
+"item_id": "Y2a8cad8cda",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y44d3c1eb26",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yeaf57c199a",
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "dòng Sony",
+"note": ""
+},
+{
+"item_id": "Y3dd6edf68e",
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "khoác",
+"note": ""
+},
+{
+"item_id": "Y40f8c8bf13",
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL",
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "note 20 ultra",
+"note": ""
+},
+{
+"item_id": "Y404f254706",
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yab75db9d4b",
+"intent": "QUESTION",
+"aspects": [
+"QUALITY_TRUST"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "red magic 9 pro",
+"note": ""
+},
+{
+"item_id": "Y78294fe362",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y352d18c85e",
+"intent": "PRAISE",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yff92d8bc28",
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y6faeea85dc",
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y87bde5e264",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "OPPO",
+"note": ""
+},
+{
+"item_id": "Y5420e7c937",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEG",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y62f1ac983e",
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "vàng",
+"note": ""
+},
+{
+"item_id": "T1b84221e13",
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "màu nâu",
+"note": ""
+},
+{
+"item_id": "Y7f9c3d687e",
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "màu trắng",
+"note": ""
+},
+{
+"item_id": "Y3e22f30413",
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y088fe8e2e4",
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "áo vàng",
+"note": ""
+},
+{
+"item_id": "Yb62b9bbed7",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y60ae963ef6",
+"intent": "QUESTION",
+"aspects": [
+"STOCK",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "s21 plus 5g bản Mỹ",
+"note": ""
+},
+{
+"item_id": "Ya1cec9c9e3",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y940fdb53f3",
+"intent": "REQUEST",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "q soc",
+"note": ""
+},
+{
+"item_id": "Y211185449e",
+"intent": "ORDER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "2 cái",
+"note": "mơ hồ: ORDER số lượng?"
+},
+{
+"item_id": "Y25df5f34b0",
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "s10 5G",
+"note": ""
+},
+{
+"item_id": "Y4222aa035b",
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "tablet",
+"note": ""
+},
+{
+"item_id": "Yc82a8d4674",
+"intent": "NEGOTIATE",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yc10dd015dd",
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "11pro max",
+"note": ""
+},
+{
+"item_id": "Yaabc402812",
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "s20 plus 2 sim",
+"note": ""
+},
+{
+"item_id": "Y154377f69a",
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Redmi Note 14 Pro 5g",
+"note": ""
+},
+{
+"item_id": "Y91dcf1f632",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y97b8febf20",
+"intent": "PRAISE",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yeba9f3b168",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y47d5d20906",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y92f83f77c0",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y085263b444",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y61ed5fcacd",
+"intent": "QUESTION",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "mixer xo",
+"note": ""
+},
+{
+"item_id": "Yaef8199edb",
+"intent": "PRAISE",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y10afd85b46",
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y077a616fc6",
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "chân váy xám",
+"note": ""
+},
+{
+"item_id": "Y5ca7b8579d",
+"intent": "ORDER",
+"aspects": [
+"SHIPPING",
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "hai đầm",
+"note": ""
+},
+{
+"item_id": "Y41f455c96a",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Ye5c66c6f03",
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y7714d11d88",
+"intent": "QUESTION",
+"aspects": [
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "maypoco x8pro",
+"note": ""
+},
+{
+"item_id": "Y7e8ad0c1e3",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Ydfc9a2ddbe",
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "hoa dài 62",
+"note": ""
+},
+{
+"item_id": "Y97cefc99ee",
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y6597167b49",
+"intent": "QUESTION",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y4cb0924e9c",
+"intent": "ORDER",
+"aspects": [
+"SIZE_FIT",
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "ttv585 size M",
+"note": ""
+},
+{
+"item_id": "Y97abf68863",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y8bb6654e18",
+"intent": "QUESTION",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yb493b523d6",
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y901d4a77bd",
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "main z690",
+"note": ""
+},
+{
+"item_id": "Yb1966f3456",
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y98f52bb871",
+"intent": "QUESTION",
+"aspects": [
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "iqoo z10 turbo",
+"note": ""
+},
+{
+"item_id": "Yf7d79d2f48",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y97b6ceb561",
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y631eda912c",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y061f034678",
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y799b838d0b",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Ya1a3b96d25",
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Note 20 Ultra 5 G màu vàng",
+"note": ""
+},
+{
+"item_id": "Yaa140728ee",
+"intent": "QUESTION",
+"aspects": [
+"QUALITY_TRUST"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Snapdragon 8 gen 3",
+"note": ""
+},
+{
+"item_id": "Y2ae891eb0d",
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "cặp tẩy đó và cặp full",
+"note": ""
+},
+{
+"item_id": "Ya81d592bc1",
+"intent": "QUESTION",
+"aspects": [
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "honor magic 8",
+"note": ""
+},
+{
+"item_id": "Y16b1c62ea8",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Ydd8d0dce2b",
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "k90",
+"note": ""
+},
+{
+"item_id": "Y0924adb246",
+"intent": "ORDER",
+"aspects": [
+"SIZE_FIT",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "áo này",
+"note": ""
+},
+{
+"item_id": "Y97a0792283",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "10105f",
+"note": ""
+},
+{
+"item_id": "Yb8826fa0aa",
+"intent": "REQUEST",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y13ff296b8f",
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "levi",
+"note": ""
+},
+{
+"item_id": "Y8f3771339b",
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Ya73e8132bb",
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "11pro 256",
+"note": ""
+},
+{
+"item_id": "Y709792b5d2",
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "mơ hồ: hẹn lấy hàng, coi là ORDER"
+},
+{
+"item_id": "Y19cc3f987d",
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y11b0517896",
+"intent": "QUESTION",
+"aspects": [
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "máy massage",
+"note": ""
+},
+{
+"item_id": "Y37f20a0d2f",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "4060ti 16gb",
+"note": ""
+},
+{
+"item_id": "Y5eb1fcdc6a",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEG",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Yd8f2dc2a1b",
+"intent": "QUESTION",
+"aspects": [
+"VARIANT",
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "note 20 ultra",
+"note": ""
+},
+{
+"item_id": "Y7473be7365",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "11",
+"note": ""
+},
+{
+"item_id": "Te9c04e1ad1",
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y4e49e4c1f7",
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+{
+"item_id": "Y468ded4ae4",
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "3060 cũ cũng chỉ 5500k",
+"note": ""
+}
+]

@@ -1,0 +1,1561 @@
+[
+  {
+    "item_id": "Y1ea66c8d5a",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Đầm",
+    "note": "tên món đứng trơ"
+  },
+  {
+    "item_id": "Y2051c0d698",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y64468bdfe0",
+    "intent": "QUESTION",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "i3 12100f hay i3 13100f",
+    "note": ""
+  },
+  {
+    "item_id": "Y7bad3d48bf",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Tfba108514b",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y4b7eb5bc7d",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "khoác len",
+    "note": "tên món đứng trơ"
+  },
+  {
+    "item_id": "Y03e68fadf6",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y0c9c8ac9de",
+    "intent": "QUESTION",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "hoa trắng",
+    "note": "câu mơ hồ"
+  },
+  {
+    "item_id": "Ybe56ed4914",
+    "intent": "PRAISE",
+    "aspects": [],
+    "sentiment": "POS",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y90973bb603",
+    "intent": "QUESTION",
+    "aspects": [
+      "VARIANT",
+      "SIZE_FIT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Xanh",
+    "note": ""
+  },
+  {
+    "item_id": "Ye2b629549e",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "quần giả váy",
+    "note": "tên món đứng trơ"
+  },
+  {
+    "item_id": "Yce41de594e",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "mo qua: có thể là yêu cầu mở quà"
+  },
+  {
+    "item_id": "Y7f407ccb8d",
+    "intent": "QUESTION",
+    "aspects": [
+      "HOST_STREAM"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "hỏi về người mặc mẫu áo"
+  },
+  {
+    "item_id": "Y39b4bd73b4",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y78fdab44d0",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "sharp",
+    "note": ""
+  },
+  {
+    "item_id": "Y6d7de5524e",
+    "intent": "QUESTION",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "T3d9c002f12",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "551k",
+    "note": ""
+  },
+  {
+    "item_id": "Y6d4486d3fd",
+    "intent": "NEGOTIATE",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "redmi turbo 4 pro",
+    "note": ""
+  },
+  {
+    "item_id": "Y782988d361",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "12 mini",
+    "note": "hỏi pin"
+  },
+  {
+    "item_id": "Y8591487b24",
+    "intent": "QUESTION",
+    "aspects": [
+      "PROMOTION",
+      "SHIPPING"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "hỏi ship code"
+  },
+  {
+    "item_id": "Y2a2ca78675",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "sub đôi 50 coli 125",
+    "note": ""
+  },
+  {
+    "item_id": "Tf2aa862f01",
+    "intent": "QUESTION",
+    "aspects": [
+      "SIZE_FIT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "m58 kèm cân nặng"
+  },
+  {
+    "item_id": "Y1e4a887feb",
+    "intent": "OTHER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "tin hướng dẫn đặt hàng của shop"
+  },
+  {
+    "item_id": "Y08e94fc916",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y5d8c14f827",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS",
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "12pro xám 128g",
+    "note": "có hỏi cọc"
+  },
+  {
+    "item_id": "Yd8119173b7",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE",
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "IPhone 12 Pro Max 256 PIN cao",
+    "note": ""
+  },
+  {
+    "item_id": "Y3541816cd6",
+    "intent": "OTHER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Ya86c27d5c7",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "bình luận giá trị, không hỏi"
+  },
+  {
+    "item_id": "Y92cc21715f",
+    "intent": "QUESTION",
+    "aspects": [
+      "SIZE_FIT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Ya9d747b0b3",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "súp hơi bas50",
+    "note": ""
+  },
+  {
+    "item_id": "Y995401e1b1",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "đầm",
+    "note": "tên món đứng trơ"
+  },
+  {
+    "item_id": "Yecea5a2469",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "POS",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y4bfd308c26",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "I3 10105F và GTX 1650 super",
+    "note": ""
+  },
+  {
+    "item_id": "Y57e1293d5f",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y4fd79bf25e",
+    "intent": "QUESTION",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "7 plus quốc tế",
+    "note": ""
+  },
+  {
+    "item_id": "Y11248880a7",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y03ce03abef",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "iqoo neo 10 pro plus h",
+    "note": ""
+  },
+  {
+    "item_id": "Y596435f470",
+    "intent": "QUESTION",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "câu gõ sai, không rõ"
+  },
+  {
+    "item_id": "Y95dcfb8f07",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yf4dfd0a968",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yb7b726aa31",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y3f96706d3f",
+    "intent": "QUESTION",
+    "aspects": [
+      "VARIANT",
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Den",
+    "note": ""
+  },
+  {
+    "item_id": "Yaeb6fcfb43",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "quánh 4sub",
+    "note": "mơ hồ"
+  },
+  {
+    "item_id": "Y2cf87f32d4",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "amply, micro"
+  },
+  {
+    "item_id": "Y9730d5de65",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "26 triệu 399k",
+    "note": "mơ hồ"
+  },
+  {
+    "item_id": "Y7e8ee42a22",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "tản nước custom",
+    "note": ""
+  },
+  {
+    "item_id": "Y9034e12a1e",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y64bb018a1b",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "hỏi giá sỉ"
+  },
+  {
+    "item_id": "Y350fc14dd3",
+    "intent": "QUESTION",
+    "aspects": [
+      "QUALITY_TRUST"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "qu đó",
+    "note": ""
+  },
+  {
+    "item_id": "Y00c6ab0e04",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "mixer unicor 8 link và 12 link",
+    "note": ""
+  },
+  {
+    "item_id": "Ybe8cd2c0e3",
+    "intent": "QUESTION",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "nguồn tuf và cosai rm",
+    "note": ""
+  },
+  {
+    "item_id": "Y7c3cc09cf2",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "trả lời màu"
+  },
+  {
+    "item_id": "Y3191e75717",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yaf8dc4931c",
+    "intent": "PRAISE",
+    "aspects": [],
+    "sentiment": "POS",
+    "needs_reply": 0,
+    "product_ref": "chân váy",
+    "note": ""
+  },
+  {
+    "item_id": "Yc2d8a41b7d",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "note 13 pro",
+    "note": ""
+  },
+  {
+    "item_id": "Yfe875a2380",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "bếp nướng",
+    "note": ""
+  },
+  {
+    "item_id": "Yb8b5148d63",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Iphon 8",
+    "note": ""
+  },
+  {
+    "item_id": "Y2e148fd5b7",
+    "intent": "OTHER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "không rõ"
+  },
+  {
+    "item_id": "Y1546391d5b",
+    "intent": "QUESTION",
+    "aspects": [
+      "SIZE_FIT",
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "q đen",
+    "note": "mơ hồ"
+  },
+  {
+    "item_id": "Y0bd90c3ce3",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "đầm này",
+    "note": ""
+  },
+  {
+    "item_id": "Ye127dd75f5",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yc1b2b1f8f3",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "sup bass 30",
+    "note": ""
+  },
+  {
+    "item_id": "Yaa3520ad29",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Ip 13",
+    "note": ""
+  },
+  {
+    "item_id": "Yc0b8ea7248",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK",
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "note 20ultra 5g bản 2sim",
+    "note": ""
+  },
+  {
+    "item_id": "Ya3d3bdf245",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y155289905f",
+    "intent": "ORDER",
+    "aspects": [
+      "SIZE_FIT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "eo88",
+    "note": ""
+  },
+  {
+    "item_id": "Y565a288181",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yc572212437",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "mấy triệu",
+    "note": ""
+  },
+  {
+    "item_id": "Y0fc491540a",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Sup nay",
+    "note": ""
+  },
+  {
+    "item_id": "Y1018c3236c",
+    "intent": "QUESTION",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Note 20 ultra với iphone 11 pro max",
+    "note": ""
+  },
+  {
+    "item_id": "Ybc1f5b0264",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y9c03692ed2",
+    "intent": "QUESTION",
+    "aspects": [
+      "QUALITY_TRUST"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "hkc",
+    "note": ""
+  },
+  {
+    "item_id": "Yb919c9fe2e",
+    "intent": "COMPLAINT",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEG",
+    "needs_reply": 1,
+    "product_ref": "con này",
+    "note": "chê khoang đi dây"
+  },
+  {
+    "item_id": "Y1c4d2dd94d",
+    "intent": "QUESTION",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "hỏi trả góp"
+  },
+  {
+    "item_id": "Y8bc0cde7fa",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "trả lời màu"
+  },
+  {
+    "item_id": "Yf59cb6b400",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Ycb2c10b0f0",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yb7b09f6fab",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y8bd1f0a0a5",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "199k",
+    "note": "hỏi giá trước đó"
+  },
+  {
+    "item_id": "Yfee4f72a7c",
+    "intent": "QUESTION",
+    "aspects": [
+      "SIZE_FIT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "TTV 801",
+    "note": ""
+  },
+  {
+    "item_id": "Yc2e7d63a48",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "ace 6t",
+    "note": ""
+  },
+  {
+    "item_id": "Yb52f95f1a4",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "3070",
+    "note": "PC 27 triệu"
+  },
+  {
+    "item_id": "Y49acc06d8b",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yd604655f7e",
+    "intent": "COMPLAINT",
+    "aspects": [
+      "HOST_STREAM"
+    ],
+    "sentiment": "NEG",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "bình luận bị ẩn"
+  },
+  {
+    "item_id": "Ya0b8c9dd2f",
+    "intent": "COMPLAINT",
+    "aspects": [
+      "QUALITY_TRUST"
+    ],
+    "sentiment": "NEG",
+    "needs_reply": 1,
+    "product_ref": "quạt",
+    "note": "mơ hồ"
+  },
+  {
+    "item_id": "Y228bd8869a",
+    "intent": "GIVEAWAY",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "nhắc tặng like"
+  },
+  {
+    "item_id": "Y16d2e12cf9",
+    "intent": "QUESTION",
+    "aspects": [
+      "SIZE_FIT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "nêu số đo"
+  },
+  {
+    "item_id": "Y7126a3f084",
+    "intent": "COMPLAINT",
+    "aspects": [],
+    "sentiment": "NEG",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "chê ngoại hình, ý chưa rõ"
+  },
+  {
+    "item_id": "Y4978fc6a48",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "máy rửa xe",
+    "note": ""
+  },
+  {
+    "item_id": "Y5954a85caf",
+    "intent": "COMPLAINT",
+    "aspects": [
+      "HOST_STREAM"
+    ],
+    "sentiment": "NEG",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "lag"
+  },
+  {
+    "item_id": "Yb95f6d5f6c",
+    "intent": "COMPLAINT",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEG",
+    "needs_reply": 1,
+    "product_ref": "z fold 8",
+    "note": "chê pin"
+  },
+  {
+    "item_id": "Y23a2640dc4",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "đèn",
+    "note": ""
+  },
+  {
+    "item_id": "Ye784ff92ed",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yde118c7bd8",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "áo",
+    "note": "tên món đứng trơ"
+  },
+  {
+    "item_id": "Y1763a68554",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "24307",
+    "note": "dãy số, có thể là mã hoặc SĐT"
+  },
+  {
+    "item_id": "Y247e5d073e",
+    "intent": "QUESTION",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "quan ong rong",
+    "note": ""
+  },
+  {
+    "item_id": "Y28e352e173",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "redmi turbo 4",
+    "note": ""
+  },
+  {
+    "item_id": "Y00264b72b3",
+    "intent": "ORDER",
+    "aspects": [
+      "SIZE_FIT",
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "chốt có điều kiện vừa size"
+  },
+  {
+    "item_id": "Y4730aaee69",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "honor win",
+    "note": ""
+  },
+  {
+    "item_id": "Y039ea26857",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y5549affaf2",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "jean",
+    "note": ""
+  },
+  {
+    "item_id": "Y9e429ca0d2",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y6376215f6a",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "trả lời màu"
+  },
+  {
+    "item_id": "Yc1048d63a4",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y05141a390e",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE",
+      "PROMOTION"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Xiaomi 15",
+    "note": ""
+  },
+  {
+    "item_id": "Y9d7ceab96f",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y7519872243",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "note 20 5g",
+    "note": ""
+  },
+  {
+    "item_id": "Y95b3e60e9c",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y5fc93f3d10",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "thun",
+    "note": "mơ hồ"
+  },
+  {
+    "item_id": "Y13272abd24",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y6101ea6249",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "honor 600pr, poco F8 ULTRA",
+    "note": "tên máy đứng trơ"
+  },
+  {
+    "item_id": "Y3efe51af25",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE",
+      "QUALITY_TRUST"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "redmi k80 ultra cũ 99%",
+    "note": ""
+  },
+  {
+    "item_id": "Y145cf626da",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "loa 30",
+    "note": ""
+  },
+  {
+    "item_id": "Y49bd024310",
+    "intent": "REQUEST",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "note8",
+    "note": ""
+  },
+  {
+    "item_id": "Tbeebf4f13d",
+    "intent": "QUESTION",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Nâu",
+    "note": ""
+  },
+  {
+    "item_id": "Y05df863b98",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yc4845ccae9",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yd05f43d61a",
+    "intent": "PRAISE",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "POS",
+    "needs_reply": 0,
+    "product_ref": "mẫu áo",
+    "note": ""
+  },
+  {
+    "item_id": "Ydd6a0ddf6f",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "S20+",
+    "note": ""
+  },
+  {
+    "item_id": "Y673440cfdf",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "sam sung",
+    "note": ""
+  },
+  {
+    "item_id": "Ye051c1c94a",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "s22ut",
+    "note": ""
+  },
+  {
+    "item_id": "Ya48908a3ee",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE",
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "máy ám màn",
+    "note": ""
+  },
+  {
+    "item_id": "Y2ac623707a",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y97095d14c8",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK",
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Stream deck",
+    "note": ""
+  },
+  {
+    "item_id": "Y26f5ac4b5c",
+    "intent": "REQUEST",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "xin báo khi có hàng"
+  },
+  {
+    "item_id": "Y6e0e69a02b",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "iPhone se 2022",
+    "note": ""
+  },
+  {
+    "item_id": "T47492172d0",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Ye5f3a94862",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK",
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "men 2 kính",
+    "note": ""
+  },
+  {
+    "item_id": "Y1a96839247",
+    "intent": "SOCIAL",
+    "aspects": [
+      "HOST_STREAM"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "nhận xét MC"
+  },
+  {
+    "item_id": "Yff78a205ad",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "câu gõ sai, ngầm hỏi giá 2,2 triệu"
+  },
+  {
+    "item_id": "Yc3f23ca570",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL",
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "súp 50",
+    "note": ""
+  },
+  {
+    "item_id": "Y550cf88eaf",
+    "intent": "QUESTION",
+    "aspects": [
+      "SIZE_FIT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "mơ hồ"
+  },
+  {
+    "item_id": "Y7d13b1e3fe",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "snap 8 gen3",
+    "note": ""
+  },
+  {
+    "item_id": "Ydce944f7fd",
+    "intent": "QUESTION",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "số điện thoại ghi không khớp"
+  },
+  {
+    "item_id": "Ye1f219fcfe",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yf0f660fe55",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "mis b3",
+    "note": ""
+  },
+  {
+    "item_id": "Yfe8f86338c",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK",
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "galaxy s23 untra",
+    "note": ""
+  },
+  {
+    "item_id": "Y7bf932c277",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Ydcf057688e",
+    "intent": "COMPLAINT",
+    "aspects": [
+      "QUALITY_TRUST"
+    ],
+    "sentiment": "NEG",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "nghi ngờ chất lượng"
+  },
+  {
+    "item_id": "Yacfdf14447",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y48b7dd2f20",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Case Jonsbo D31",
+    "note": ""
+  },
+  {
+    "item_id": "Y6a6784b008",
+    "intent": "OTHER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y84dfdebd4a",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "oppo k13 turbo pro",
+    "note": ""
+  },
+  {
+    "item_id": "Yb667b91432",
+    "intent": "QUESTION",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "1660super",
+    "note": ""
+  },
+  {
+    "item_id": "Y42c2e7393a",
+    "intent": "COMPLAINT",
+    "aspects": [
+      "SIZE_FIT"
+    ],
+    "sentiment": "NEG",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "nhận xét áo rộng"
+  },
+  {
+    "item_id": "Yc83277c9e4",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y4167c61eb7",
+    "intent": "PRAISE",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "POS",
+    "needs_reply": 0,
+    "product_ref": "con này",
+    "note": ""
+  },
+  {
+    "item_id": "Yfe99586c7e",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "gợi ý sơn"
+  },
+  {
+    "item_id": "Y00dccdee8b",
+    "intent": "OTHER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "không rõ"
+  },
+  {
+    "item_id": "Y2cbb56826a",
+    "intent": "COMPLAINT",
+    "aspects": [
+      "SPEC_MATERIAL"
+    ],
+    "sentiment": "NEG",
+    "needs_reply": 1,
+    "product_ref": "Samsung dòng cao",
+    "note": ""
+  }
+]

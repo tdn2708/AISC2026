@@ -21,6 +21,19 @@
  */
 
 const { maskPII, canonicalize } = require('../normalizer');
+const linear = require('./linear_model');
+
+// 9 intent của bộ nhãn livestream -> 5 intent hàng đợi và trợ lý hành động dùng
+const TO5 = { ORDER: 'order', QUESTION: 'question', REQUEST: 'question', NEGOTIATE: 'question', COMPLAINT: 'complaint', PRAISE: 'praise', GIVEAWAY: 'chatter', SOCIAL: 'chatter', OTHER: 'chatter' };
+// LIVE_MODEL=0 tắt mô hình, chỉ dùng luật (so sánh, hoặc khi nghi mô hình sai)
+// Nhãn khía cạnh của mô hình -> chủ đề câu hỏi của hệ thống (thứ tự = ưu tiên, giống TOPICS)
+const ASPECT_TOPIC = [['PROMOTION', 'promo'], ['PRICE', 'price'], ['STOCK', 'stock'], ['SIZE_FIT', 'size'], ['SHIPPING', 'shipping'],
+  ['SPEC_MATERIAL', 'material'], ['VARIANT', 'color'], ['ORDER_PROCESS', 'howToOrder'], ['QUALITY_TRUST', 'authenticity'], ['USAGE', 'usage']];
+// Ngưỡng chọn trên dev 23/11 theo macro-F1 (0,5: 0,749; 0,6: 0,724; 0,8: 0,740)
+const COMPLAINT_MIN = Number(process.env.LIVE_COMPLAINT_MIN) || 0.5;
+// Chọn trên dev 23/11 theo macro-F1: 0,45 -> 0,752; 0 -> 0,749; 0,55 -> 0,731
+const LOW_CONF = process.env.LIVE_LOW_CONF !== undefined ? Number(process.env.LIVE_LOW_CONF) : 0.45;
+const modelEnabled = () => process.env.LIVE_MODEL !== '0' && linear.available();
 
 const fold = (s) =>
   String(s || '')
@@ -319,7 +332,33 @@ function matchProduct(folded, products = []) {
  *   reasons: string[]
  * }}
  */
-function classifyComment(rawText, { products = [] } = {}) {
+/**
+ * Bộ nhớ đệm theo nội dung: khách live gõ lặp rất nhiều ("198", "chốt", biểu tượng; 6.210 bình luận thật
+ * thu 23/11 chỉ có 2.662 câu khác nhau). Mỗi danh mục sản phẩm một bộ đệm (sản phẩm ảnh hưởng kết quả),
+ * tối đa CACHE_MAX câu, bỏ câu cũ nhất. Trả bản sao để nơi gọi sửa không làm hỏng bộ đệm.
+ */
+const CACHE_MAX = 5000;
+const NO_PRODUCTS = [];
+const caches = new WeakMap();
+function copyResult(r) {
+  return { ...r, piiTypes: [...r.piiTypes], variant: { ...r.variant }, body: r.body ? { ...r.body } : null, reasons: [...r.reasons], model: r.model ? { ...r.model, aspects: [...r.model.aspects], aspectProbs: { ...r.model.aspectProbs } } : null };
+}
+function classifyComment(rawText, { products = NO_PRODUCTS } = {}) {
+  if (process.env.LIVE_CLASSIFY_CACHE === '0') return classifyUncached(rawText, { products });
+  const list = products && products.length ? products : NO_PRODUCTS;
+  let cache = caches.get(list);
+  if (!cache) { cache = new Map(); caches.set(list, cache); }
+  const key = `${process.env.LIVE_MODEL === '0' ? 'r' : 'm'}|${String(rawText ?? '')}`;
+  let r = cache.get(key);
+  if (!r) {
+    r = classifyUncached(rawText, { products: list });
+    if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value);
+    cache.set(key, r);
+  }
+  return copyResult(r);
+}
+
+function classifyUncached(rawText, { products = [] } = {}) {
   const canon = canonicalize(String(rawText || '')).replace(/\s+/g, ' ').trim();
   const { text, piiTypes } = maskPII(canon);
   const hasPhone = piiTypes.includes('phone');
@@ -369,10 +408,54 @@ function classifyComment(rawText, { products = [] } = {}) {
     reasons.push(letters.length === 0 ? 'Chỉ có biểu tượng' : CHATTER.test(folded) ? 'Chào hỏi, tương tác' : 'Không có yêu cầu cần xử lý');
   }
 
+  // Mô hình học từ 8 nghìn bình luận bán hàng thật quyết định intent (linear_model.js);
+  // luật giữ phần chắc chắn: để lại số điện thoại là chốt, link mời nhóm là quảng cáo
+  const ruleIntent = intent;
+  const ml = modelEnabled() ? linear.predict(text) : null;
+  let model = null;
+  if (ml) {
+    const p5 = { order: 0, question: 0, complaint: 0, praise: 0, chatter: 0 };
+    for (const [k, v] of Object.entries(ml.probs)) p5[TO5[k]] += v;
+    const mi = Object.keys(p5).reduce((a, b) => (p5[b] > p5[a] ? b : a));
+    model = { intent: mi, label: ml.intent, confidence: Number(p5[mi].toFixed(3)), aspects: ml.aspects, aspectProbs: ml.aspectProbs };
+    const strat = process.env.LIVE_COMBINE || 'model+rules+complaint';
+    let chosen = mi;
+    if (strat !== 'model') {
+      if (hasPhone) chosen = 'order';
+      else if (isPromo && !isComplaint) chosen = 'chatter';
+      else if (strat.includes('complaint') && ruleIntent === 'complaint') chosen = 'complaint';
+      // Phủ quyết của luật: chốt bị phủ định ("không lấy", "đừng nói chốt", "chốt lời"),
+      // câu không có chữ ("???") không phải câu hỏi
+      else if (process.env.LIVE_VETO !== '0' && chosen === 'order' && !hasPhone && ruleIntent !== 'order' && (hit(NEG_ORDER, ctx, { dung: ['đừng'] }) || /(?<![a-z])(chot loi|lay loi|lay lai|chot lo)(?![a-z])/.test(folded))) chosen = ruleIntent;
+      else if (process.env.LIVE_VETO !== '0' && chosen === 'question' && letters.length < 2) chosen = 'chatter';
+      // Khiếu nại đẩy lên đầu hàng đợi và có thể báo "khiếu nại dồn dập": mô hình chưa chắc thì theo luật
+      else if (chosen === 'complaint' && ruleIntent !== 'complaint' && p5.complaint < COMPLAINT_MIN) chosen = ruleIntent;
+      // Mô hình phân vân mà luật thấy là trò chuyện thì giữ trò chuyện (bớt nhiễu hàng đợi ở phiên khác loại)
+      else if (chosen !== 'chatter' && ruleIntent === 'chatter' && p5[chosen] < LOW_CONF) chosen = 'chatter';
+    }
+    if (strat === 'rules') chosen = ruleIntent;
+    if (chosen !== intent) {
+      intent = chosen;
+      reasons.length = 0;
+      reasons.push(`Mô hình: ${INTENT_LABEL[intent].toLowerCase()} (${Math.round(p5[intent] * 100)}%)`);
+    }
+  }
+
   let topic = null;
   if (intent === 'question') {
     const found = TOPICS.find(([key, , re]) => hit(re, ctx, key === 'color' ? COLOR_ACCENTS : key === 'material' ? MATERIAL_ACCENTS : null));
     topic = found ? found[0] : 'other';
+    // Chủ đề lấy theo mô hình (dev 23/11: đúng 76% câu hỏi, luật 55%). Mô hình gộp "cách đặt" với
+    // "thanh toán" và "chính hãng" với "bảo hành": hai bên cùng nhóm thì giữ chủ đề chi tiết của luật,
+    // vì gợi ý trả lời đọc đúng chính sách thanh toán, bảo hành shop khai báo
+    if (model && process.env.LIVE_TOPIC !== 'rule') {
+      const mt = process.env.LIVE_TOPIC_PICK !== 'prob' // thứ tự ưu tiên (dev: 0,761) tốt hơn chọn theo xác suất (0,756)
+        ? ASPECT_TOPIC.find(([a]) => model.aspects.includes(a))?.[1] || 'other'
+        : ASPECT_TOPIC.filter(([a]) => model.aspects.includes(a)).sort((x, y) => model.aspectProbs[y[0]] - model.aspectProbs[x[0]])[0]?.[1] || 'other';
+      const finer = (mt === 'howToOrder' && topic === 'payment') || (mt === 'authenticity' && topic === 'warranty');
+      const keepRule = process.env.LIVE_TOPIC !== 'model' && mt === 'other' && topic !== 'other';
+      if (!finer && !keepRule) topic = mt;
+    }
   }
 
   const sentiment = intent === 'complaint' ? 'Negative' : intent === 'praise' ? 'Positive' : 'Neutral';
@@ -389,7 +472,9 @@ function classifyComment(rawText, { products = [] } = {}) {
     variant,
     quantity: intent === 'order' ? extractQuantity(folded) || 1 : null,
     body: intent === 'question' || intent === 'order' ? extractBody(folded) : null,
-    reasons
+    reasons,
+    // Ý kiến của mô hình (để soi lại và giải thích); null khi tắt mô hình
+    model
   };
 }
 

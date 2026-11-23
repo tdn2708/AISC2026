@@ -1,0 +1,781 @@
+[
+ {
+  "item_id": "Y386ba2e1d4",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "QUALITY_TRUST"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "Mơ hồ: \"còn mới\" có thể hỏi hàng còn mới hay còn như mới."
+ },
+ {
+  "item_id": "Y03a3f7eff8",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": "Chỉ tag người dùng: SOCIAL theo hướng dẫn."
+ },
+ {
+  "item_id": "Y94d4ab4f80",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": "Chỉ tag người dùng: SOCIAL."
+ },
+ {
+  "item_id": "Y32cd5ee491",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "new",
+  "certainty": "medium",
+  "reason": "Chúc buôn may bán đắt, ý lấy máy chỉ là dự định mơ hồ, chưa cam kết; POS do lời chúc."
+ },
+ {
+  "item_id": "Y2d6a004d6a",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "màu xanh màu trắng",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "Hỏi còn hàng: NEU."
+ },
+ {
+  "item_id": "Y80fd0f152e",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "đầm đen phối tay đo dài",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "Tên món đứng trơ: REQUEST theo quy ước."
+ },
+ {
+  "item_id": "Y1a9e2755ce",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": "Chỉ tag: SOCIAL."
+ },
+ {
+  "item_id": "Y7769e8189e",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "bơm nước mini không chổi than",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "Tên món đứng trơ: REQUEST theo quy ước."
+ },
+ {
+  "item_id": "Y04b7f5414d",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "xanh",
+  "decision": "new",
+  "certainty": "low",
+  "reason": "Màu đứng trơ, không rõ chốt hay hỏi; theo quy ước tên món trơ là REQUEST."
+ },
+ {
+  "item_id": "Ydddaeb98a8",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "h610 mATX",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yd876aa1822",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "s10 5g",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ye9e88e13ba",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 0,
+  "final_product_ref": "3060",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "Nhận xét chung, hơi tiếc, không phàn nàn shop: SOCIAL NEG."
+ },
+ {
+  "item_id": "Yb686fbdfdd",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "Câu điều kiện, chưa khen rõ: NEU."
+ },
+ {
+  "item_id": "Y5054192df4",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y431fac7626",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Note 9 512gb",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yae42d2fa81",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 1,
+  "final_product_ref": "bộ đồ",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": "Báo đã chốt và nhờ giữ đồ: ORDER."
+ },
+ {
+  "item_id": "Y032cde5ca3",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT",
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "sơmi nam trắng 39",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y37af05f232",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "Nhận xét thiết kế, không hỏi không khen rõ."
+ },
+ {
+  "item_id": "Y01bae0a576",
+  "final_intent": "PRAISE",
+  "final_aspects": [
+   "QUALITY_TRUST"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "Khen máy đẹp."
+ },
+ {
+  "item_id": "Y61f619d069",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "104",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "Báo cho người khác mã 104 đang đo."
+ },
+ {
+  "item_id": "Y6a8202cfb6",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL",
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "capture card usb 3.0-3.2",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yc89520af78",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y98f6985164",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "thun vàng",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "Tên món+màu đứng trơ: REQUEST; không đủ cơ sở gán SPEC_MATERIAL."
+ },
+ {
+  "item_id": "Yf824c801d3",
+  "final_intent": "PRAISE",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "Mơ hồ \"con chế ok\": khen hay đáp ngắn."
+ },
+ {
+  "item_id": "Y2da379ac13",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "iqoo 15",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y02f6e665a3",
+  "final_intent": "QUESTION",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": "Hỏi cách chơi mini game, không thuộc aspect nào rõ."
+ },
+ {
+  "item_id": "Y55c0f08892",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": "Chỉ tag: SOCIAL."
+ },
+ {
+  "item_id": "Y0eff07dd99",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "\"Chốt\" trơ, cần người bán xác nhận."
+ },
+ {
+  "item_id": "Y583f0264e0",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "sony 10 vi",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y47aa417f41",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "áo do",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "Tên món đứng trơ: REQUEST."
+ },
+ {
+  "item_id": "Y377d133431",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "s22 nhỏ",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "Cùng phiên có \"có s22 bé ko\", nên hiểu là xin xem/hỏi bản nhỏ; có thể là chê nhỏ."
+ },
+ {
+  "item_id": "Y51fa550709",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "red magic",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y3e973bef43",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "QUALITY_TRUST",
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "ống nước, block nước nhựa của ek, bits, bykski",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "Hỏi độ bền của chất liệu nhựa: cả chất lượng lẫn chất liệu."
+ },
+ {
+  "item_id": "Y71660a92cb",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "con 4.5tr",
+  "decision": "new",
+  "certainty": "low",
+  "reason": "Mơ hồ \"tức ngực\": bass mạnh khen hay chê."
+ },
+ {
+  "item_id": "Yfe7a24db15",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": "Chỉ tag: SOCIAL."
+ },
+ {
+  "item_id": "Y8263725717",
+  "final_intent": "OTHER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "Giống quảng cáo/chữ vô nghĩa, không phải câu hỏi hay chuyện thật."
+ },
+ {
+  "item_id": "Yd7c5e044bb",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "điện hay hơi",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "Hỏi loại điện hay hơi."
+ },
+ {
+  "item_id": "Yf3b29c33ef",
+  "final_intent": "NEGOTIATE",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "23.5 s26u",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yc4a2054fb6",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "QUALITY_TRUST",
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "iphon 12 promax 512",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y98247102f0",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "Lời dặn người xem khác dùng DP không dùng HDMI, không hỏi."
+ },
+ {
+  "item_id": "Ye73c37d993",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "Kể chuyện buồn cá nhân, không phàn nàn shop."
+ },
+ {
+  "item_id": "Y1147eed939",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "a82",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "\"lộn\" là sửa chốt."
+ },
+ {
+  "item_id": "Y5ebad5b4b6",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL",
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "màn 27in hay 29in 21:9",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": "Có nêu ngân sách 5tr."
+ },
+ {
+  "item_id": "Y864ded81c7",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ycb12788ade",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "QUALITY_TRUST",
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "súp bãi",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Tc3b909305d",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "size 36",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "\"size 36\" trơ, có thể hỏi còn size hay chốt; theo quy ước số/size trần là ORDER."
+ },
+ {
+  "item_id": "Ya7aab1fa99",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "QUALITY_TRUST"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "nguyên hộp",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "Có vẻ hỏi có nguyên hộp không."
+ },
+ {
+  "item_id": "Y77331e9af4",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y16f003e329",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "rog 6",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y3a26991f6c",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y17bc941ae9",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "x10 mark4",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "T3cd9104b25",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y27aab62e7c",
+  "final_intent": "PRAISE",
+  "final_aspects": [
+   "HOST_STREAM"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y4617db0711",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "\"up\" trơ, hiểu là nhờ lên/đẩy sản phẩm; mơ hồ."
+ },
+ {
+  "item_id": "Y9d4a15aed4",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "T6a7b168048",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "new",
+  "certainty": "low",
+  "reason": "Chỉ báo đã săn, không mã/số lượng cần xác nhận; không ORDER_PROCESS."
+ },
+ {
+  "item_id": "Y7a4f9a5a9a",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "Nhận xét châm biếm về đèn, không phải khiếu nại."
+ },
+ {
+  "item_id": "Y598f18a66b",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "Hỏi còn nhiều mã không, \"ôm hết\" là điều kiện."
+ },
+ {
+  "item_id": "Yc96707df76",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "s22 bé",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y90bd9a994d",
+  "final_intent": "NEGOTIATE",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "8tr4 mi 15",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "Ra giá và hỏi chốt được không."
+ },
+ {
+  "item_id": "Y7e07b7012b",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "Chê nhẹ hãng DW trong tán gẫu."
+ },
+ {
+  "item_id": "Y5eca4e00ec",
+  "final_intent": "OTHER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y5625dc57b2",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "ecos",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "\"lê ecos\" là nhờ đưa/lên máy ecos."
+ }
+]
