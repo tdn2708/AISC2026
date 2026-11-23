@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, ChartColumnBig, Siren, MessagesSquare, ScanSearch, ShieldCheck, FlaskConical,
-  DatabaseZap, FileText, Settings, Palette, Radio, FolderKanban, ConciergeBell, ServerCog
+  DatabaseZap, FileText, Settings, Palette, Radio, FolderKanban, ConciergeBell, ServerCog, Gem
 } from 'lucide-react';
 
 /**
@@ -65,6 +65,8 @@ export const HIDDEN_PAGES = [
   { to: '/reports', label: 'Báo cáo', icon: FileText, group: 'Khác' },
   { to: '/settings', label: 'Cài đặt', icon: Settings, group: 'Khác' },
   { to: '/lab', label: 'Phòng thí nghiệm mô hình', icon: FlaskConical, group: 'Khác' },
+  // Trang bảng giá nằm ngoài khung ứng dụng (/bang-gia), mở từ menu người dùng và Ctrl+K
+  { to: '/bang-gia', label: 'Gói và nâng cấp', icon: Gem, group: 'Khác' },
   // Trang nội bộ cho người làm giao diện: chỉ hiện ở bản dev, giám khảo không thấy trong Ctrl+K
   ...(import.meta.env.DEV ? [{ to: '/ui-kit', label: 'Bộ giao diện (UI kit)', icon: Palette, group: 'Khác' }] : [])
 ];

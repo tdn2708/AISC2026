@@ -12,6 +12,7 @@ import { useLandingHealth, verifiedCount, SNAPSHOT_DATE, SAMPLE_NOTE, LEDGER_SAM
 // vào <head> trong lúc trang giới thiệu đang mở, rời trang là gỡ.
 import engineCss from '../../vendor/scrollcraft/scrollcraft.css?inline';
 import '../../vendor/scrollcraft/scrollcraft.js';
+import { PLANS } from '../../lib/plans';
 import './landing.css';
 
 /**
@@ -44,12 +45,7 @@ import './landing.css';
  */
 
 
-// Giá dự kiến (chưa có khách trả tiền): ghi đúng như vậy trên trang
-const PLANS = [
-  { name: 'Thử', price: '0 đ', unit: '', for: 'Shop mới bắt đầu, muốn xem thử', items: ['Tới 500 phản hồi mỗi tháng', 'Cảnh báo và việc hôm nay', 'Bản tin Zalo buổi sáng'] },
-  { name: 'Shop', price: '199.000 đ', unit: ' mỗi tháng', for: 'Shop bán trên nhiều sàn', items: ['Không giới hạn phản hồi', 'Nạp file đơn hàng Shopee, TikTok Shop, Lazada', 'Kế hoạch xử lý kèm bằng chứng', 'Quản gia Zalo báo sự cố và nhận lệnh'] },
-  { name: 'Shop có live', price: '499.000 đ', unit: ' mỗi tháng', for: 'Shop bán hàng qua livestream', items: ['Mọi thứ của gói Shop', 'Phân loại bình luận live ngay khi tới', 'Việc gấp trong phiên và báo cáo cuối phiên', 'Báo Zalo khi live gặp sự cố'] }
-];
+// Gói và giá dùng chung với trang /bang-gia (src/lib/plans.js); giá dự kiến, chưa thu tiền
 
 const SHOTS = {
   overview: { base: 'tong-quan', w: 1600, h: 1000 },
@@ -497,6 +493,7 @@ const Landing = ({ isAuthenticated = false }) => {
               </li>
             ))}
           </ul>
+          <p className="lp-price__more"><Link to="/bang-gia">So sánh đầy đủ các gói</Link></p>
         </div>
       </section>
 

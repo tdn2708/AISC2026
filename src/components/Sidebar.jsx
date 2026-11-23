@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X, Database, Check, ShieldCheck, ChevronDown, LayoutList } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, LogOut, Settings, ChevronsUpDown, Cpu, X, Database, Check, ShieldCheck, ChevronDown, LayoutList, Gem } from 'lucide-react';
 import { Popover, MenuItem } from './ui';
 import Logo, { LogoMark } from './Logo';
 import { NAV, ADMIN_PAGE, navFor } from '../lib/nav';
@@ -452,6 +452,9 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
               </div>
               <MenuItem icon={Settings} onClick={() => { navigate('/settings'); setShowMenu(false); }} className="mt-1">
                 Cài đặt
+              </MenuItem>
+              <MenuItem icon={Gem} onClick={() => { navigate('/bang-gia'); setShowMenu(false); }}>
+                Gói và nâng cấp
               </MenuItem>
               {onLogout && (
                 <MenuItem icon={LogOut} onClick={onLogout} className="text-crit! hover:bg-crit/10!">

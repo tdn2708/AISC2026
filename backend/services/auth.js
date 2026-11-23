@@ -113,6 +113,9 @@ const roleOf = (u) => (u && u.role === 'admin' ? 'admin' : 'user');
 const isLocked = (u) => Boolean(u && u.status === 'locked');
 
 /** Thông tin tài khoản được phép gửi về trình duyệt (không bao giờ có passwordHash) */
+/** Gói có thể giữ chỗ (khớp src/lib/plans.js; gói Dùng thử là mặc định, không cần giữ chỗ) */
+const PLAN_IDS = ['shop', 'live'];
+
 const publicUser = (u) => (u ? {
   id: String(u._id),
   email: u.email,
@@ -122,7 +125,10 @@ const publicUser = (u) => (u ? {
   status: isLocked(u) ? 'locked' : 'active',
   mustChangePassword: Boolean(u.mustChangePassword),
   createdAt: u.createdAt,
-  isDemo: u.email === DEMO_ACCOUNT.email
+  isDemo: u.email === DEMO_ACCOUNT.email,
+  // Gói đã giữ chỗ ở trang bảng giá (null: đang ở gói Dùng thử, chưa giữ chỗ gói nào)
+  planWanted: PLAN_IDS.includes(u.planWanted) ? u.planWanted : null,
+  planWantedAt: u.planWantedAt || null
 } : null);
 
 async function ensureAuthIndexes(authDb) {
@@ -455,6 +461,7 @@ module.exports = {
   roleOf,
   isLocked,
   publicUser,
+  PLAN_IDS,
   ensureAuthIndexes,
   ensureDemoAccount,
   ensureAdminAccount,

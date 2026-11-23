@@ -140,6 +140,13 @@ module.exports = function authRouter(authDb) {
         set.name = name;
       }
       if (req.body?.shop !== undefined) set.shop = auth.cleanText(req.body.shop, auth.SHOP_MAX);
+      // Giữ chỗ gói cao hơn ở trang /bang-gia (chưa thu tiền: nhóm liên hệ qua email đăng ký khi mở thanh toán)
+      if (req.body?.planWanted !== undefined) {
+        const v = req.body.planWanted;
+        if (v !== null && !auth.PLAN_IDS.includes(v)) return res.status(400).json({ error: 'Gói không hợp lệ.' });
+        set.planWanted = v;
+        set.planWantedAt = v ? new Date() : null;
+      }
       if (!Object.keys(set).length) return res.json({ user: auth.publicUser(req.user) });
       await authDb.collection('users').updateOne({ _id: req.user._id }, { $set: set });
       auth.forgetUser(req.user._id); // phiên trong bộ nhớ đệm đang giữ tên cũ

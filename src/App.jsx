@@ -28,6 +28,7 @@ import './hooks/useTheme';
 
 // Trang giới thiệu công khai (F3): chunk riêng, chỉ tải khi mở `/`
 const Landing = lazy(() => import('./components/landing/Landing'));
+const Pricing = lazy(() => import('./components/pricing/Pricing'));
 // Bàn điều khiển máy chủ (/admin/*): chunk riêng, người thường không tải mã quản trị
 const AdminApp = lazy(() => import('./components/admin/AdminApp'));
 
@@ -185,6 +186,15 @@ function App() {
             <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
               {/* Có phiên đăng nhập: "Vào ứng dụng"; chưa có: "Đăng nhập" và "Xem bản dùng thử" (trang chọn) */}
               <Landing isAuthenticated={isAuthenticated} />
+            </Suspense>
+          }
+        />
+        {/* Bảng giá: công khai, đã đăng nhập thì thấy gói đang dùng và giữ chỗ gói cao hơn */}
+        <Route
+          path="/bang-gia"
+          element={
+            <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
+              <Pricing isAuthenticated={isAuthenticated} />
             </Suspense>
           }
         />

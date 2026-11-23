@@ -436,6 +436,9 @@ html:not(.sc-ready) .lp :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
 .lp-price__for { margin-top: 0.5rem; color: var(--text-mid); }
 .lp-price__list { margin-top: 1.25rem; display: grid; gap: 0.5rem; padding-left: 1.1rem; list-style: disc; }
 @media (max-width: 900px) { .lp-price__grid { grid-template-columns: minmax(0, 1fr); } }
+.lp-price__more { margin-top: 1.5rem; }
+.lp-price__more a { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.lp-price__more a:hover { color: var(--accent-hi); }
 .lp-team { background: var(--canvas); padding-block: var(--lp-section); }
 .lp-team__grid {
   display: grid;

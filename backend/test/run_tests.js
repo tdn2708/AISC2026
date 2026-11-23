@@ -3964,6 +3964,15 @@ test('Quản trị: publicUser có role (mặc định user), status, mustChange
   assert.strictEqual('passwordHash' in pubAdm, false);
 });
 
+test('Bảng giá: publicUser chỉ trả gói giữ chỗ hợp lệ (shop, live), còn lại là null', () => {
+  const auth = require('../services/auth');
+  assert.deepStrictEqual(auth.PLAN_IDS, ['shop', 'live']);
+  assert.strictEqual(auth.publicUser({ _id: 'p1', email: 'a@b.vn', planWanted: 'live', planWantedAt: new Date(0) }).planWanted, 'live');
+  assert.strictEqual(auth.publicUser({ _id: 'p2', email: 'a@b.vn', planWanted: 'vip' }).planWanted, null);
+  assert.strictEqual(auth.publicUser({ _id: 'p3', email: 'a@b.vn', planWanted: 'try' }).planWanted, null);
+  assert.strictEqual(auth.publicUser({ _id: 'p4', email: 'a@b.vn' }).planWanted, null);
+});
+
 test('Quản trị: requireAdmin chặn không phiên (401), người thường (403), cho admin qua kể cả khi AUTH_REQUIRED=0', () => {
   const auth = require('../services/auth');
   const prevAuthReq = process.env.AUTH_REQUIRED;
