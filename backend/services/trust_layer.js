@@ -667,7 +667,8 @@ function transactionMismatch(fb, orderIndex, orderBookCoverage = 1) {
   // dụng — không được suy ra "đơn không tồn tại". Đây là chế độ suy
   // giảm: hệ thống vẫn chạy, Data Health Score hiển thị thấp hơn, và
   // chính điều đó tạo động lực để doanh nghiệp kết nối thêm nguồn.
-  if (orderIndex.size === 0) {
+  // bookSize: tổng số đơn của sổ khi chỉ các đơn có phản hồi được gửi vào (context_compute)
+  if ((orderIndex.bookSize ?? orderIndex.size) === 0) {
     return { score: 0, available: false, note: 'Chưa kết nối dữ liệu giao dịch' };
   }
 
@@ -892,6 +893,8 @@ function runTrustLayer(feedbacks, options = {}) {
 
   const orderIndex = new Map();
   for (const o of options.orders || []) orderIndex.set(o.orderId, o);
+  // Chỉ nhận các đơn có phản hồi trỏ tới (bớt chép sang luồng tính): giữ tổng số đơn thật của sổ
+  if (Number.isFinite(options.orderBookSize)) orderIndex.bookSize = Math.max(options.orderBookSize, orderIndex.size);
 
   // Độ phủ của sổ đơn hàng: bao nhiêu phần trăm phản hồi có mã đơn thực
   // sự tra được. Quyết định việc tín hiệu (5) có đủ tin cậy để kết luận.

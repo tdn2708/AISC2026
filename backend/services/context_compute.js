@@ -117,6 +117,7 @@ function computeContext(input) {
 
   const result = runTrustLayer(feedbacks, {
     orders: transactions,
+    orderBookSize: Number.isFinite(input.orderBookSize) ? input.orderBookSize : undefined,
     halfLifeDays,
     now: dataAsOf || undefined,
     ingestedAt: ingestedAt ? new Date(ingestedAt) : undefined,

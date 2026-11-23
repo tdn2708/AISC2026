@@ -363,9 +363,14 @@ async function doFetch(db, gen, onlyIfChanged) {
 
   const halfLifeDays = anchorsToData(db) ? REAL_HALF_LIFE_DAYS : DEFAULT_HALF_LIFE_DAYS;
   const t1 = Date.now();
+  // Trust Layer chỉ tra các đơn có phản hồi trỏ tới: gửi sang luồng tính đúng các đơn đó cùng
+  // tổng số đơn, không chép cả sổ 77 nghìn đơn (đo 23/11 trên Linux: đỉnh khởi động 575 MB, Render cho 512)
+  const fbOrderIds = new Set();
+  for (const f of rawFeedbacks) if (f.orderId) fbOrderIds.add(f.orderId);
   const input = {
     rawFeedbacks,
-    transactions,
+    transactions: transactions.filter((t) => fbOrderIds.has(t.orderId)),
+    orderBookSize: transactions.length,
     auditLabels,
     reviewLabels,
     anchorToData: anchorsToData(db),
