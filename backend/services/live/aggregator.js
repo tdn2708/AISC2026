@@ -14,7 +14,7 @@
  * các bình luận đã lưu), nên hai nơi luôn ra cùng một con số.
  */
 
-const { TOPIC_LABEL, INTENT_LABEL } = require('./intent');
+const { TOPIC_LABEL, INTENT_LABEL, fold } = require('./intent');
 
 const MINUTE = 60 * 1000;
 const NEEDS_ANSWER = new Set(['question', 'complaint']);
@@ -24,7 +24,13 @@ function groupKeyOf(c) {
   if (c.intent === 'complaint') return `complaint|${c._id}`;
   if (c.intent !== 'question') return null;
   const size = c.topic === 'stock' || c.topic === 'size' ? c.variant?.size || '' : '';
-  return `q|${c.topic || 'other'}|${c.productId || '-'}|${size}`;
+  // Câu hỏi không thuộc chủ đề nào chỉ gom khi CÙNG nội dung: trước đây mọi câu "khác" vào chung
+  // một thẻ, phiên thật 23/11 báo "34 câu cùng nội dung" trong khi là 34 câu khác nhau
+  if (!c.topic || c.topic === 'other') {
+    const norm = fold(c.text || '').replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+    return `q|other|${c.productId || '-'}|t:${norm}`;
+  }
+  return `q|${c.topic}|${c.productId || '-'}|${size}`;
 }
 
 class LiveAggregator {

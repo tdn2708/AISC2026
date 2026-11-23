@@ -26,6 +26,8 @@ const BURST_RATE = Number(process.env.BURST_RATE || 500);
 const STEADY_SEC = Number(process.env.STEADY_SEC || 60);
 const BURST_SEC = Number(process.env.BURST_SEC || 10);
 const VIEWERS = Number(process.env.VIEWERS || 20);
+// REAL_TEXTS=<tệp JSON mảng chuỗi>: đẩy bình luận THẬT đã thu từ phiên TikTok/YouTube (lặp vòng) thay câu mẫu
+const REAL_TEXTS = process.env.REAL_TEXTS ? JSON.parse(require('fs').readFileSync(process.env.REAL_TEXTS, 'utf8')).filter((t) => typeof t === 'string' && t.trim()) : null;
 const TICK_MS = 100;
 const DB_NAME = 'customer_radar_ui_test';
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -198,7 +200,7 @@ async function main() {
           comments.push({
             id: `${mark}-${seq}`,
             handle: `${mark}-${seq}${labelled ? '-L' : ''}`,
-            text: labelled ? labelled[0] : `Khách ${seq % 97} hỏi còn size ${['S', 'M', 'L'][seq % 3]} không shop`,
+            text: labelled ? labelled[0] : REAL_TEXTS ? REAL_TEXTS[seq % REAL_TEXTS.length] : `Khách ${seq % 97} hỏi còn size ${['S', 'M', 'L'][seq % 3]} không shop`,
             ts: new Date().toISOString()
           });
         }

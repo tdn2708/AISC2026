@@ -1465,6 +1465,44 @@ test('Live: phân loại ý định bình luận, kể cả gõ không dấu', (
   }
 });
 
+test('Live: bình luận thật (YouTube/TikTok 23/11) không bị xếp nhầm vì trùng chữ khi bỏ dấu', () => {
+  // Câu lấy nguyên văn từ phiên live thật; trước bản sửa đều bị xếp sai
+  const cases = [
+    ['lo nghe máy', 'chatter'],                       // "máy" không phải "mấy"
+    ['Clm nó ko thể tin đc', 'chatter'],              // "ko" giữa câu không phải câu hỏi
+    ['không thì đi ngủ', 'chatter'],
+    ['anh vẫn mang đi cho mà có sao đâu', 'chatter'], // "có sao đâu" là "không sao"
+    ['thấy có chia tối ngũ phòng ngày chẵn và ngày lẽ nữa kia hihi', 'chatter'], // "chẵn" không phải "chán"
+    ['cảm ơn nhiều', 'chatter'],
+    ['trỡ lơi không biết có lợi hại hơn sưa ko', 'question'],
+    ['box nào v', 'question'],
+    ['giá bao nhiêu ạ.', 'question'],
+    ['Em chuyển khoản anh Beo 50, mời anh Hoàng và a Beo ly nước, check giúp em', 'question'],
+    ['chưa', 'chatter'],                               // câu đáp trơ trọi
+    ['huyêyt cao hay thấp uống đc ko shop , vì mình mua cho mẹ mình uống nên hỏi kỷ tý nhe', 'question'],
+    ['AE NÀO ĐI CHƯA ĐẾN CHỢ ĐÃ HẾT TIỀN THÌ VÀO CHỊ 3 ĐU ĐỦ CÓ THUỐC ĐÓ AE', 'chatter'],
+    ['Anh em rảnh tay cho mình 1 Like + đăng ký kênh + chia sẻ với - Xin chân thành cảm ơn', 'chatter'],
+    ['Ủng hộ tôi bằng cách đăng ký tài khoản Sàn HFM - Sàn uy tín theo link sau: https://www.hfreg-vn.com/', 'chatter'],
+    ['Box new seal hả mn', 'question'],
+    ['Mấy mô', 'question'],
+    ['1lộ trình báo nhiêu ông chủ', 'question'],
+    ['đừng nói chốt 240 nha', 'chatter'],
+    ['lấy một mình em Nguyệt thôi không lấy 2 đâu', 'chatter'],
+    ['lúc đó vụ kia cũng thua luôn hả mẫn', 'question'],
+    ['giờ đây như sắt như đồng như đinh đóng cột như rồng phun mưa phải không mẫn', 'question'],
+    ['cho xuống chốt lời giờ cho lên để lấy lời', 'chatter'],       // "chốt lời" là chốt lãi khi giao dịch
+    ['???', 'chatter'],                                              // bày tỏ, không phải câu hỏi
+    ['giá??', 'question']
+  ];
+  for (const [text, intent] of cases) assert.strictEqual(liveIntent.classifyComment(text).intent, intent, text);
+  // "đến giờ" không phải màu đen; "cảm ơn" không phải màu cam
+  assert.strictEqual(liveIntent.classifyComment('để không quên giờ cần có đồng hồ báo đến giờ làm việc M ạ').variant.color, undefined);
+  assert.strictEqual(liveIntent.classifyComment('cảm ơn shop nhiều').variant.color, undefined);
+  // Gõ không dấu vẫn hiểu như cũ
+  assert.strictEqual(liveIntent.classifyComment('ao mau den con ko').variant.color, 'đen');
+  assert.strictEqual(liveIntent.classifyComment('bo nay nhieu shop').topic, 'price');
+});
+
 test('Live: trích size, màu, số lượng, số đo và che số điện thoại', () => {
   const o = liveIntent.classifyComment('chốt M2 màu đen sdt 0912345678');
   assert.deepStrictEqual([o.intent, o.variant.size, o.variant.color, o.quantity, o.hasPhone], ['order', 'M', 'đen', 2, true]);
@@ -1559,6 +1597,32 @@ test('Live coach: biến thể sắp hết -> câu nói tạo khan hiếm với 
   const a = actions.find((x) => x.type === 'low_stock');
   assert.ok(a, JSON.stringify(actions.map((x) => x.type)));
   assert.ok(/còn 2 cái/.test(a.script), a.script);
+});
+
+test('Live: câu hỏi không rõ chủ đề chỉ gom khi cùng nội dung; dồn dập thì việc gấp nêu đúng câu khách hỏi', () => {
+  // Phiên YouTube thật 23/11: mọi câu "khác" bị gom một thẻ, báo "34 câu cùng nội dung" sai
+  const a = groupKeyOf({ intent: 'question', topic: 'other', text: 'Mạng sao thế chị' });
+  const b = groupKeyOf({ intent: 'question', topic: 'other', text: 'Em sinh năm nào vậy em?' });
+  const c = groupKeyOf({ intent: 'question', topic: 'other', text: 'mạng sao thế chị!!' });
+  assert.notStrictEqual(a, b, 'hai câu khác nhau không chung thẻ');
+  assert.strictEqual(a, c, 'cùng câu (khác dấu câu, hoa thường) thì chung thẻ');
+  assert.ok(groupKeyOf({ intent: 'question', topic: 'price', text: 'giá sao' }).startsWith('q|price|'), 'chủ đề có tên vẫn gom theo chủ đề');
+  const { actions } = liveScenario(times(6, 2, 'mạng sao thế chị'));
+  const burst = actions.find((x) => x.type === 'question_burst');
+  assert.ok(burst && /6 người cùng hỏi "mạng sao thế chị"/.test(burst.title), burst && burst.title);
+  const mixed = liveScenario([[2, 'mạng sao thế chị'], [2, 'em sinh năm nào'], [2, 'quê ở đâu vậy'], [2, 'ai đang xem'], [2, 'mấy giờ nghỉ'], [2, 'hôm nay bán gì']]).actions;
+  assert.ok(!mixed.some((x) => x.type === 'question_burst'), 'các câu khác nhau không thành "nhiều người cùng hỏi"');
+});
+
+test('Live coach: chốt dồn dập -> dự báo phút hết hàng trước khi chạm ngưỡng sắp hết', () => {
+  // Áo thun size XL tồn 25, 16 lượt chốt trong 10 phút: còn 9 cái, 1,6 cái/phút -> hết sau khoảng 6 phút
+  const { actions } = liveScenario(times(16, 5, 'chốt áo thun size XL'));
+  const a = actions.find((x) => x.type === 'low_stock');
+  assert.ok(a, JSON.stringify(actions.map((x) => x.type)));
+  assert.strictEqual(a.etaMin, 6);
+  assert.ok(/dự kiến hết sau khoảng 6 phút/.test(a.title), a.title);
+  // Nhịp chậm (3 lượt chốt) và còn nhiều hàng thì chưa báo
+  assert.ok(!liveScenario(times(3, 5, 'chốt áo thun size XL')).actions.some((x) => x.type === 'low_stock'));
 });
 
 test('Live coach: nhiều người cùng hỏi giá -> trả lời một lần trên sóng bằng giá trong danh mục', () => {
@@ -2232,6 +2296,54 @@ testAsync('Live: nạp lại phiên đọc bằng cursor, bỏ trường thừa,
   } finally {
     r.dispose();
   }
+});
+
+testAsync('Live: tin cũ trước khi mở phiên TikTok/YouTube không vào hàng đợi; bỏ "@" thừa ở tên', async () => {
+  const hub = require('../services/live/hub');
+  const opened = Date.now() - 60 * 1000;
+  const session = { _id: 'yt1', platform: 'youtube', target: 'abcdefghijk', products: [], policy: {}, createdAt: new Date(opened) };
+  const { db } = fakeLiveDb(() => []);
+  const r = new hub.Runtime(session, db, 'real');
+  try {
+    // tin 56 phút trước khi mở phiên (YouTube trả kèm lúc mới nối): bỏ
+    assert.strictEqual(r.ingest({ type: 'comment', platformMsgId: 'm1', text: 'giá bao nhiêu ạ', ts: new Date(opened - 56 * 60000), author: { handle: '@khach1' } }), null);
+    // tin 1 phút trước khi mở phiên: vẫn nhận (lệch đồng hồ, độ trễ nối)
+    const d = r.ingest({ type: 'comment', platformMsgId: 'm2', text: 'giá bao nhiêu ạ', ts: new Date(opened - 60000), author: { handle: '@khach2' } });
+    assert.ok(d, 'tin sát lúc mở phiên phải được nhận');
+    assert.strictEqual(d.author.handle, 'khach2', 'tên không còn @ đầu');
+    assert.strictEqual(r.health.skippedOld, 1);
+    assert.strictEqual(r.agg.total, 1);
+    // phiên nhập tay vẫn nhận bình luận cũ (dán lại sau live)
+    const m = new hub.Runtime({ ...session, _id: 'm1', platform: 'manual' }, db, 'real');
+    try { assert.ok(m.ingest({ type: 'comment', text: 'còn size M không', ts: new Date(opened - 3 * 3600000) })); } finally { m.dispose(); }
+  } finally {
+    r.dispose();
+  }
+});
+
+test('YouTube không khóa API: đọc tin thường, Super Chat, biểu tượng; trang tắt trò chuyện báo rõ; hết live không lấy tổng lượt xem làm người đang xem', () => {
+  const yt = require('../services/live/connectors/youtube_public');
+  const out = yt.parseChatActions([
+    { addChatItemAction: { item: { liveChatTextMessageRenderer: { id: 'a', message: { runs: [{ text: 'còn ' }, { emoji: { emojiId: '❤', shortcuts: [':heart:'] } }, { text: ' size M ko' }] }, authorName: { simpleText: '@khach' }, authorExternalChannelId: 'UC1', timestampUsec: '1763900000000000' } } } },
+    { addChatItemAction: { item: { liveChatPaidMessageRenderer: { id: 'b', message: { runs: [{ text: 'chốt 2' }] }, authorName: { simpleText: 'Lan' }, timestampUsec: '1763900001000000' } } } },
+    { addChatItemAction: { item: { liveChatViewerEngagementMessageRenderer: { id: 'c' } } } },
+    { addLiveChatTickerItemAction: {} }
+  ]);
+  assert.deepStrictEqual(out.map((c) => [c.platformMsgId, c.text, c.author.handle, c.paid]), [['a', 'còn ❤ size M ko', 'khach', false], ['b', 'chốt 2', 'Lan', true]]);
+  assert.strictEqual(out[0].ts.getTime(), 1763900000000);
+  const off = yt.parseChatPage('<script>window["ytInitialData"] = {"contents":{"messageRenderer":{"text":{"runs":[{"text":"Sự kiện trực tiếp này đã bị tắt tính năng trò chuyện."}]}}}};</script>');
+  assert.ok(/tắt tính năng trò chuyện/.test(off.offline), off.offline);
+  assert.ok(!off.parseError, 'YouTube nói rõ tắt trò chuyện: kết luận được');
+  assert.strictEqual(yt.parseChatPage('<html>trang lỗi</html>').parseError, true, 'trang đọc không được: phải hỏi lại còn phát không, không kết thúc ngay');
+  const page = yt.parseChatPage('"INNERTUBE_API_KEY":"k1","INNERTUBE_CLIENT_VERSION":"2.1"<script>window["ytInitialData"] = ' + JSON.stringify({ contents: { liveChatRenderer: {
+    continuations: [{ invalidationContinuationData: { continuation: 'TOP', timeoutMs: 5000 } }], actions: [],
+    header: { liveChatHeaderRenderer: { viewSelector: { sortFilterSubMenuRenderer: { subMenuItems: [
+      { title: 'Tin nhắn hàng đầu', selected: true, continuation: { reloadContinuationData: { continuation: 'TOP' } } },
+      { title: 'Trò chuyện trực tiếp', selected: false, continuation: { reloadContinuationData: { continuation: 'ALL' } } }] } } } } } } }) + ';</script>');
+  assert.deepStrictEqual([page.apiKey, page.clientVersion, page.continuation, page.allMessages], ['k1', '2.1', 'ALL', true], 'phải đọc chế độ mọi tin nhắn, không phải tin đã lọc');
+  const vr = (v) => ({ actions: [{ updateViewershipAction: { viewCount: { videoViewCountRenderer: v } } }] });
+  assert.deepStrictEqual(yt.parseViewers(vr({ originalViewCount: '739', isLive: true })), { count: 739, isLive: true });
+  assert.deepStrictEqual(yt.parseViewers(vr({ originalViewCount: '29694' })), { count: null, isLive: false });
 });
 
 testAsync('Live: phiên mô phỏng chạm trần thì tự dừng, không nhận thêm bình luận', async () => {
@@ -3653,6 +3765,69 @@ testAsync('Livestream: kết nối TikTok treo im lặng quá 3 phút thì tự 
   } finally {
     [r.flushTimer, r.statsTimer, r.heartbeat, r.pushTimer].forEach(clearInterval);
   }
+});
+
+testAsync('Livestream: mở phiên gặp lỗi máy ký TikTok 500 thì tự thử lại; sai tên báo lỗi ngay; bị tạm chặn thì không nối thêm', async () => {
+  const hub = require('../services/live/hub');
+  const { db } = fakeLiveDb(() => []);
+  const realSetTimeout = global.setTimeout;
+  global.setTimeout = (fn, ms, ...a) => realSetTimeout(fn, ms >= 15000 ? 0 : ms, ...a);
+  try {
+    // 23/11: phòng vangyasuoo hỏng lúc mở vì Euler Stream trả 500
+    const r = new hub.Runtime({ _id: 'tr1', platform: 'tiktok', target: 'shop', products: [] }, db, 'real');
+    let n = 0;
+    r.connectorFor = () => ({ start: async (emit) => { n += 1; if (n === 1) throw new Error('Máy chủ ký kết nối TikTok đang lỗi tạm thời (mã 500)'); emit({ type: 'connected', info: null }); }, stop: () => {} });
+    await r.start();
+    assert.strictEqual(n, 2, 'thử lại một lần thì được');
+    assert.strictEqual(r.status, 'live');
+    r.dispose();
+    const w = new hub.Runtime({ _id: 'tr2', platform: 'tiktok', target: 'sai-ten', products: [] }, db, 'real');
+    let m = 0;
+    w.connectorFor = () => ({ start: async () => { m += 1; throw new Error('Không tìm thấy tài khoản TikTok này'); }, stop: () => {} });
+    await w.start();
+    assert.strictEqual(m, 1, 'sai tên: không thử lại');
+    assert.strictEqual(w.status, 'error');
+    const b = new hub.Runtime({ _id: 'tr3', platform: 'tiktok', target: 'shop', products: [] }, db, 'real');
+    let k = 0;
+    b.connectorFor = () => ({ start: async () => { k += 1; throw new Error('TikTok đang tạm chặn máy chủ này vì kết nối quá nhiều lần'); }, stop: () => {} });
+    await b.reopen(0);
+    assert.strictEqual(k, 1, 'bị tạm chặn: không nối thêm kẻo bị chặn lâu hơn');
+    assert.strictEqual(b.status, 'error');
+  } finally {
+    global.setTimeout = realSetTimeout;
+  }
+});
+
+testAsync('Livestream: nối lại sau khi treo mà lỗi thoáng qua thì thử lại; chủ kênh tắt live thì kết thúc phiên, không báo lỗi', async () => {
+  const hub = require('../services/live/hub');
+  const { db } = fakeLiveDb(() => []);
+  const r = new hub.Runtime({ _id: 'ro1', platform: 'tiktok', target: 'shop', products: [] }, db, 'real');
+  const results = ['Không kết nối được TikTok: socket hang up', 'Không kết nối được TikTok: 502', 'ok'];
+  let starts = 0;
+  r.connectorFor = () => ({ start: async (emit) => { const x = results[starts++]; if (x !== 'ok') throw new Error(x); emit({ type: 'connected', info: null }); }, stop: () => {} });
+  const waits = [];
+  const realSetTimeout = global.setTimeout;
+  global.setTimeout = (fn, ms, ...a) => { if (ms >= 15000) { waits.push(ms); return realSetTimeout(fn, 0, ...a); } return realSetTimeout(fn, ms, ...a); };
+  try {
+    await r.reopen(0);
+  } finally {
+    global.setTimeout = realSetTimeout;
+  }
+  try {
+    assert.strictEqual(starts, 3, 'thử 3 lần: 2 lần lỗi, lần 3 được');
+    assert.deepStrictEqual(waits, [15000, 30000], 'chờ giãn dần giữa các lần');
+    assert.strictEqual(r.status, 'live');
+    assert.strictEqual(r.health.reconnects, 2);
+  } finally {
+    r.dispose();
+  }
+  const e = new hub.Runtime({ _id: 'ro2', platform: 'tiktok', target: 'shop', products: [] }, db, 'real');
+  let tries = 0;
+  e.connectorFor = () => ({ start: async () => { tries += 1; throw new Error('Tài khoản này đang không phát live'); }, stop: () => {} });
+  await e.reopen(0);
+  assert.strictEqual(tries, 1, 'chủ kênh đã tắt live thì không thử lại');
+  assert.strictEqual(e.status, 'ended');
+  e.dispose();
 });
 
 // ==================================================================

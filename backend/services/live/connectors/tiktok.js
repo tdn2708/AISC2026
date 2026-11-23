@@ -76,7 +76,11 @@ function createTikTokConnector({ target }) {
 
     const state = await conn.connect();
     retries = 0;
-    emit({ type: 'connected', info: { roomId: state?.roomId || null, title: state?.roomInfo?.title || null } });
+    // Thông tin phòng nằm ở roomInfo.data (thư viện 2.x), bản cũ để thẳng ở roomInfo
+    const room = state?.roomInfo?.data || state?.roomInfo || {};
+    emit({ type: 'connected', info: { roomId: state?.roomId || null, title: room.title || null, channel: room.owner?.nickname || null } });
+    const startViewers = Number(room.user_count ?? room.stats?.user_count);
+    if (Number.isFinite(startViewers) && startViewers > 0) emit({ type: 'viewers', count: startViewers });
   }
 
   function scheduleReconnect(emit, why) {
@@ -117,6 +121,11 @@ function explain(e) {
   const name = e?.constructor?.name || e?.name || '';
   const msg = String(e?.message || e || '');
   if (/UserOffline|offline|isn't online|not.*live/i.test(name + msg)) return 'Tài khoản này đang không phát live';
+  // Máy chủ ký (Euler Stream) lỗi phía họ: tạm thời, hub sẽ tự thử lại
+  if (/Sign Error|sign server|SignAPIError/i.test(name + msg)) {
+    const code = msg.match(/status (\d{3})/)?.[1];
+    return `Máy chủ ký kết nối TikTok đang lỗi tạm thời${code ? ` (mã ${code})` : ''}`;
+  }
   if (/DEVICE_BLOCKED/i.test(msg)) return 'TikTok đang tạm chặn máy chủ này vì kết nối quá nhiều lần; đợi 15-30 phút hoặc đặt TIKTOK_SIGN_API_KEY';
   if (/rate.?limit|429/i.test(msg)) return 'Máy chủ ký của TikTok đang giới hạn lượt; đặt TIKTOK_SIGN_API_KEY hoặc thử lại sau ít phút';
   if (/not found|404|user.*not.*exist/i.test(msg)) return 'Không tìm thấy tài khoản TikTok này';

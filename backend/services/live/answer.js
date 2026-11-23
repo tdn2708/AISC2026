@@ -16,7 +16,7 @@ const { TOPIC_LABEL } = require('./intent');
 
 const vnd = (n) => (Number.isFinite(Number(n)) && n !== null && n !== '' ? `${Number(n).toLocaleString('vi-VN')}đ` : null);
 
-const at = (handle) => (handle ? `@${handle} ` : '');
+const at = (handle) => (handle ? `@${String(handle).replace(/^@+/, '')} ` : '');
 
 /** "Dạ " + câu chính sách: hạ chữ đầu ("Bạn bấm" -> "bạn bấm"), giữ từ viết tắt ("COD") */
 const lowerFirst = (t) => (t && !/^[A-ZĐ]{2}/.test(t) ? t[0].toLowerCase() + t.slice(1) : t);

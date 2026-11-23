@@ -172,7 +172,10 @@ const SHORT_PLATFORM_DIGEST = {
 
 /** Dựng bản tin sáng và câu trả lời cho lệnh "tình hình" (hàm thuần) */
 function buildDigest({ workspaceLabel = 'Dữ liệu thật', ctxSummary = {}, incidents, tasks, todaySchedules, appUrl: _appUrl, now = new Date() } = {}) {
-  const lines = [`Bản tin sáng ${viDate(now)}, kho ${workspaceLabel}.`];
+  // Bản tin gửi bù khi máy chủ ngủ qua giờ hẹn (Render) có thể tới lúc tối: gọi đúng buổi
+  const vnHour = (now.getUTCHours() + 7) % 24;
+  const part = vnHour < 11 ? 'sáng' : vnHour < 14 ? 'trưa' : vnHour < 18 ? 'chiều' : 'tối';
+  const lines = [`Bản tin ${part} ${viDate(now)}, kho ${workspaceLabel}.`];
 
   const metricParts = [];
   if (Number.isFinite(ctxSummary?.counted)) {

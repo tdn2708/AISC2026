@@ -183,14 +183,23 @@ function coach({ agg, session, suggestionFor, now = Date.now() }) {
           // sang biến thể khác. Đo cả sản phẩm thì lẫn nhịp đổi sản phẩm của phiên.
           watch: 'soldout'
         });
-      } else if (left > 0 && left <= Math.max(3, Math.ceil(k.initial * 0.15)) && demandOrders.length >= 2) {
+      } else if (left > 0 && demandOrders.length >= 2) {
+        // Dự báo lúc hết hàng theo nhịp chốt 10 phút qua: còn ít hàng HOẶC với nhịp này
+        // sẽ hết trong 10 phút thì báo trước, để kịp nói số lượng còn lại và chuẩn bị hàng thay thế
+        const qty10 = demandOrders.reduce((s, e) => s + (e.qty || 1), 0);
+        const perMin = qty10 / 10;
+        const etaMin = perMin > 0 ? left / perMin : Infinity;
+        const fewLeft = left <= Math.max(3, Math.ceil(k.initial * 0.15));
+        if (!fewLeft && etaMin > 10) continue;
+        const eta = Number.isFinite(etaMin) ? Math.max(1, Math.round(etaMin)) : null;
         out.push({
           type: 'low_stock',
           key: `${p.id}|${k.key ?? ''}`,
           severity: 'high',
           productId: p.id,
-          title: `${label} chỉ còn khoảng ${left}`,
-          why: `Đã chốt ${k.initial - left}/${k.initial}, ${demandOrders.length} lượt chốt trong 10 phút qua. Nói rõ số lượng còn lại giúp khách chốt nhanh và tránh nhận quá số hàng có.`,
+          title: fewLeft || eta == null ? `${label} chỉ còn khoảng ${left}` : `${label} dự kiến hết sau khoảng ${eta} phút`,
+          why: `Đã chốt ${k.initial - left}/${k.initial}, ${demandOrders.length} lượt chốt (${qty10} cái) trong 10 phút qua${eta != null ? `; giữ nhịp này thì ${left} cái còn lại hết sau khoảng ${eta} phút` : ''}. Nói rõ số lượng còn lại giúp khách chốt nhanh và tránh nhận quá số hàng có.`,
+          etaMin: eta,
           script: `${label} chỉ còn ${left} cái cuối thôi ạ, bạn nào ưng chốt nhanh giúp shop nha!`,
           steps: ['Ngừng nhận đơn khi đủ số lượng, báo hết trên sóng', 'Kiểm tra kho trước khi xác nhận đơn'],
           watch: 'order'
@@ -228,8 +237,13 @@ function coach({ agg, session, suggestionFor, now = Date.now() }) {
         severity: 'high',
         productId: g.productId,
         groupKey: g.key,
-        title: `${recentAsk} người vừa hỏi ${(TOPIC_LABEL[g.topic] || 'cùng một câu').toLowerCase()}${pname ? ` ${pname}` : ''}`,
-        why: `${recentAsk} câu cùng nội dung trong 3 phút (${g.count} câu cả phiên). Trả lời một lần trên sóng thay vì từng người.`,
+        // Nhóm "câu hỏi khác" là các câu giống hệt nhau: nêu luôn câu khách hỏi
+        title: !g.topic || g.topic === 'other'
+          ? `${recentAsk} người cùng hỏi "${String(g.samples?.[0]?.text || '').slice(0, 60)}"`
+          : `${recentAsk} người vừa hỏi ${(TOPIC_LABEL[g.topic] || 'cùng một câu').toLowerCase()}${pname ? ` ${pname}` : ''}`,
+        why: !g.topic || g.topic === 'other'
+          ? `${recentAsk} lần trong 3 phút (${g.count} lần cả phiên). Trả lời một lần trên sóng thay vì từng người.`
+          : `${recentAsk} câu hỏi cùng chủ đề trong 3 phút (${g.count} câu cả phiên). Trả lời một lần trên sóng thay vì từng người.`,
         script: onAir,
         grounded: guide ? true : sug ? sug.grounded : null,
         steps: ['Đọc câu trả lời trên sóng', 'Ghim câu trả lời lên đầu phần bình luận nếu nền tảng cho phép'],

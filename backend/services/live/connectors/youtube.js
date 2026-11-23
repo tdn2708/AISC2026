@@ -1,13 +1,16 @@
 /**
- * KẾT NỐI YOUTUBE LIVE (API chính thức)
+ * KẾT NỐI YOUTUBE LIVE
  * ==================================================================
- * YouTube Data API v3: lấy liveChatId của video đang phát, rồi đọc tin nhắn
- * trò chuyện theo đúng nhịp `pollingIntervalMillis` API yêu cầu. Cần biến môi
- * trường YOUTUBE_API_KEY (miễn phí, hạn mức 10.000 đơn vị/ngày; mỗi lượt đọc
- * tin nhắn tốn khoảng 5 đơn vị).
+ * Có YOUTUBE_API_KEY: YouTube Data API v3, lấy liveChatId của video đang
+ * phát, rồi đọc tin nhắn trò chuyện theo đúng nhịp `pollingIntervalMillis` API
+ * yêu cầu (miễn phí, hạn mức 10.000 đơn vị/ngày; mỗi lượt đọc tin nhắn tốn
+ * khoảng 5 đơn vị, nên một phiên dài vài giờ đã gần hết hạn mức).
+ * Không có khóa (hoặc YOUTUBE_CHAT_MODE=public): đọc khung trò chuyện công
+ * khai như trình duyệt người xem, xem youtube_public.js.
  */
 
 const axios = require('axios');
+const { createYouTubePublicConnector } = require('./youtube_public');
 
 const API = 'https://www.googleapis.com/youtube/v3';
 
@@ -17,9 +20,21 @@ function videoIdOf(target) {
   return m ? m[1] : /^[\w-]{11}$/.test(s) ? s : null;
 }
 
+/** Đọc bằng API chính thức (có khóa) hay khung trò chuyện công khai */
+function youtubeMode() {
+  if (String(process.env.YOUTUBE_CHAT_MODE || '').toLowerCase() === 'public') return 'public';
+  return process.env.YOUTUBE_API_KEY ? 'api' : 'public';
+}
+
 function createYouTubeConnector({ target }) {
   const key = process.env.YOUTUBE_API_KEY;
   const videoId = videoIdOf(target);
+  if (youtubeMode() === 'public') {
+    if (!videoId) {
+      return { platform: 'youtube', target: null, async start() { throw new Error('Liên kết YouTube không hợp lệ'); }, stop() {} };
+    }
+    return createYouTubePublicConnector({ videoId });
+  }
   let stopped = false;
   let timer = null;
   let viewerTimer = null;
@@ -103,4 +118,4 @@ function createYouTubeConnector({ target }) {
   };
 }
 
-module.exports = { createYouTubeConnector, videoIdOf };
+module.exports = { createYouTubeConnector, videoIdOf, youtubeMode };

@@ -87,6 +87,13 @@ const ExportMenu = ({ sessionId }) => {
   );
 };
 
+/** Nguồn của phiên: TikTok là tên tài khoản, YouTube là tên kênh (không hiện cả đường dẫn) */
+const sourceLabel = (session) => {
+  if (!session.target || session.platform === 'simulator' || session.platform === 'manual') return '';
+  if (session.platform === 'youtube') return session.info?.channel ? `, kênh ${session.info.channel}` : '';
+  return `, @${String(session.target).replace(/^@+/, '')}`;
+};
+
 const LiveConsole = ({ sessionId, onBack }) => {
   const [epoch, setEpoch] = useState(0);
   const { session, stats, feed, error, refresh, patchComment, connection } = useLiveSession(sessionId, epoch);
@@ -166,7 +173,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
             {session.simulated && <Badge tone="sky">Dữ liệu mô phỏng</Badge>}
           </div>
           <p className="mt-1 text-sm text-ink-mid">
-            {PLATFORM_LABEL[session.platform]}{session.target && session.platform !== 'simulator' ? `, @${String(session.target).replace(/^@/, '')}` : ''}
+            {PLATFORM_LABEL[session.platform]}{sourceLabel(session)}
             <Elapsed session={session} live={live} />
             {connection === 'reconnecting' && live && <span className="text-high">, đang nối lại luồng dữ liệu</span>}
           </p>

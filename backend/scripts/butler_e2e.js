@@ -337,15 +337,20 @@ async function main() {
     });
     const step9 = await waitForSent(
       mockUrl,
-      (m, i) => i >= idx9 && m.chat_id === chatId && m.text.includes('Bản tin sáng'),
+      (m, i) => i >= idx9 && m.chat_id === chatId && /Bản tin (sáng|trưa|chiều|tối) /.test(m.text),
       25000
     );
     if (!step9.found) {
       fail(9, 'Tin "tình hình" không tới được sau khi giả lập lỗi 3 lần');
     }
-    const outboxDoc = await authDb
-      .collection('butler_outbox')
-      .findOne({ dedupKey: `reply|${statusMsgId}` });
+    // Máy Zalo giả ghi nhận tin ngay khi nhận; máy chủ ghi status 'sent' sau một vòng tới Atlas,
+    // nên chờ tối đa 8 giây thay vì đọc ngay (lần chạy 23/11 bắt được lúc còn 'sending')
+    let outboxDoc = null;
+    for (let i = 0; i < 16; i += 1) {
+      outboxDoc = await authDb.collection('butler_outbox').findOne({ dedupKey: `reply|${statusMsgId}` });
+      if (outboxDoc?.status === 'sent') break;
+      await sleep(500);
+    }
     if (!outboxDoc || outboxDoc.status !== 'sent' || !(outboxDoc.tries > 0)) {
       fail(9, `Bản ghi outbox không đúng kỳ vọng: ${JSON.stringify(outboxDoc)}`);
     }

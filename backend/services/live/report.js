@@ -225,11 +225,13 @@ async function buildReport(db, session) {
   if (answeredShare != null && answeredShare < 0.6 && askedPeople >= 10) {
     todo.push({ priority: 'medium', kind: 'staffing', title: 'Thêm người trả lời bình luận', detail: `Chỉ ${Math.round(answeredShare * 100)}% khách hỏi được trả lời${waits.length ? `, thời gian chờ trung vị ${median(waits).toFixed(1).replace('.', ',')} phút` : ''}.` });
   }
-  const topTopics = snap.topics.slice(0, 3);
+  // "Câu hỏi khác" không nói sẵn được: chỉ gợi ý các chủ đề có tên
+  const topTopics = snap.topics.filter((t) => t.key !== 'other').slice(0, 3);
   const qTotal = snap.topics.reduce((s, t) => s + t.count, 0);
   if (topTopics.length && qTotal >= 10) {
     const share = topTopics.reduce((s, t) => s + t.count, 0) / qTotal;
-    todo.push({ priority: 'medium', kind: 'script', title: `Nói sẵn về ${topTopics.map((t) => t.label.toLowerCase()).join(', ')} ngay đầu phiên`, detail: `Ba chủ đề này chiếm ${Math.round(share * 100)}% câu hỏi. Chủ động nói trước giúp giảm câu hỏi lặp lại.` });
+    const lead = topTopics.length === 1 ? 'Chủ đề này' : `${['', '', 'Hai', 'Ba'][topTopics.length]} chủ đề này`;
+    if (share >= 0.3) todo.push({ priority: 'medium', kind: 'script', title: `Nói sẵn về ${topTopics.map((t) => t.label.toLowerCase()).join(', ')} ngay đầu phiên`, detail: `${lead} chiếm ${Math.round(share * 100)}% câu hỏi. Chủ động nói trước giúp giảm câu hỏi lặp lại.` });
   }
   const weak = productRows.filter((p) => p.questions >= 8 && p.conversion != null && p.conversion < 0.2).sort((a, b) => b.questions - a.questions)[0];
   if (weak) {

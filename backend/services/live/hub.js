@@ -47,6 +47,15 @@ const COACH_EVERY_MS = 3000;
 // TikTok/YouTube im lặng quá lâu (kết nối treo, không báo ngắt): tự nối lại
 const STALL_MS = Number(process.env.LIVE_STALL_MS) || 3 * 60 * 1000;
 const PENDING_MAX = 100000;
+const BACKLOG_GRACE_MS = 2 * 60 * 1000;
+// Nối lại sau khi treo: chờ giữa các lần thử (5 lần, tổng khoảng 7,5 phút)
+const REOPEN_WAITS_MS = (process.env.LIVE_REOPEN_WAITS_MS || '15000,30000,60000,120000,240000').split(',').map(Number);
+// Lời báo của bộ kết nối khi chủ kênh đã tắt live: kết thúc phiên, không thử lại
+// Lỗi tạm thời đáng thử lại (máy chủ ký, mạng, giới hạn lượt, trang trò chuyện tạm không đọc được)
+// (TikTok "tạm chặn" DEVICE_BLOCKED KHÔNG thử lại: nối thêm chỉ kéo dài thời gian bị chặn)
+const TRANSIENT_RE = /máy chủ ký|sign|50\d|timeout|timed out|ECONN|socket hang up|network|giới hạn lượt|rate.?limit|429|Không đọc được trang/i;
+const BLOCKED_RE = /DEVICE_BLOCKED|tạm chặn/i;
+const LIVE_ENDED_RE =/đang không phát live|không đang phát live|đã kết thúc|bản phát lại|tắt tính năng trò chuyện/i;
 const HEARTBEAT_MS = 15000;
 
 const runtimes = new Map();
@@ -80,8 +89,9 @@ function platformInfo() {
   return Object.entries(PLATFORMS).map(([key, p]) => ({
     key,
     label: p.label,
-    ready: key === 'youtube' ? Boolean(process.env.YOUTUBE_API_KEY) : true,
-    note: key === 'youtube' && !process.env.YOUTUBE_API_KEY ? 'Máy chủ chưa có YOUTUBE_API_KEY' : null
+    // YouTube không có khóa API vẫn đọc được khung trò chuyện công khai (youtube_public.js)
+    ready: true,
+    note: null
   }));
 }
 
@@ -97,7 +107,8 @@ function buildCommentDoc(session, ev) {
     ts: ev.ts ? new Date(ev.ts) : new Date(),
     receivedAt: new Date(),
     author: {
-      handle: ev.author?.handle ? String(ev.author.handle).slice(0, 80) : null,
+      // Bỏ "@" đầu tên (YouTube trả sẵn "@ten"): giao diện và câu trả lời tự thêm một "@"
+      handle: ev.author?.handle ? String(ev.author.handle).replace(/^@+/, '').slice(0, 80) || null : null,
       nickname: ev.author?.nickname ? String(ev.author.nickname).slice(0, 80) : null,
       hash: authorHash(session.platform, ev.author?.platformUserId || ev.author?.handle)
     },
@@ -365,6 +376,19 @@ class Runtime {
       await this.connector.start((ev) => this.onEvent(ev));
       if (this.status === 'connecting') await this.setStatus('live');
     } catch (e) {
+      try { this.connector.stop(); } catch { /* đã đóng */ }
+      // Lỗi tạm của bên ngoài (máy chủ ký TikTok trả 500, mạng, giới hạn lượt): thử lại giãn dần
+      // thay vì bỏ phiên (23/11: phòng TikTok 1.700 người xem hỏng ngay lúc mở vì máy ký lỗi 500).
+      // Sai tên, kênh không live, link hỏng thì báo lỗi ngay để người dùng sửa.
+      if (this.isPlatformLive() && TRANSIENT_RE.test(e.message || '')) {
+        this.error = `${e.message}. Đang thử nối lại`;
+        await this.setStatus('reconnecting').catch(() => {});
+        this.health.reconnects += 1;
+        await new Promise((r) => { this.reopenTimer = setTimeout(r, REOPEN_WAITS_MS[0]); });
+        if (this.status === 'ended' || this.disposed) return;
+        await this.reopen(1);
+        return;
+      }
       this.error = e.message;
       await this.setStatus('error', { error: e.message });
       this.dispose();
@@ -471,10 +495,49 @@ class Runtime {
     this.setStatus('reconnecting').catch(() => {});
     try { this.connector.stop(); } catch { /* đã đóng */ }
     this.lastEventAt = now;
-    this.start()
+    this.reopen(0)
       .catch(() => {})
       .finally(() => { this.restarting = false; });
     return true;
+  }
+
+  /**
+   * Mở lại kết nối nền tảng sau khi treo. Lỗi thoáng qua (mạng, máy chủ ký của TikTok)
+   * thì thử lại giãn dần thay vì bỏ phiên; nền tảng báo chủ kênh đã tắt live thì kết
+   * thúc phiên như bình thường; thử hết lượt vẫn lỗi mới báo lỗi.
+   */
+  async reopen(attempt) {
+    if (this.status === 'ended') return;
+    const connector = this.connectorFor();
+    this.connector = connector;
+    try {
+      await connector.start((ev) => this.onEvent(ev));
+      if (this.status !== 'live') await this.setStatus('live');
+      this.error = null;
+    } catch (e) {
+      try { connector.stop(); } catch { /* đã đóng */ }
+      if (LIVE_ENDED_RE.test(e.message || '')) {
+        await this.stop(e.message);
+        return;
+      }
+      if (attempt + 1 >= REOPEN_WAITS_MS.length || BLOCKED_RE.test(e.message || '')) {
+        this.error = e.message;
+        await this.setStatus('error', { error: e.message });
+        this.dispose();
+        return;
+      }
+      this.error = `${e.message}. Đang thử nối lại`;
+      await this.setStatus('reconnecting').catch(() => {});
+      this.health.reconnects += 1;
+      await new Promise((r) => { this.reopenTimer = setTimeout(r, REOPEN_WAITS_MS[attempt]); });
+      if (this.status === 'ended' || this.disposed) return;
+      await this.reopen(attempt + 1);
+    }
+  }
+
+  /** Phiên đọc từ nền tảng live thật (không phải nhập tay, webhook hay mô phỏng) */
+  isPlatformLive() {
+    return this.session.platform === 'tiktok' || this.session.platform === 'youtube';
   }
 
   /** Phiên mô phỏng đã chạm trần bình luận */
@@ -491,6 +554,17 @@ class Runtime {
         this.stop(SIM_CAP_REASON).catch((e) => console.warn('[LIVE] Dừng phiên lỗi:', e.message));
       }
       return null;
+    }
+    // TikTok/YouTube trả kèm tin cũ lúc mới nối (YouTube tới vài chục tin, có tin từ cả giờ
+    // trước): tin viết trước khi mở phiên quá BACKLOG_GRACE_MS không tính, kẻo thành "khách
+    // đang chờ 56 phút" trong phiên mới mở. Tin trong lúc máy chủ khởi động lại vẫn giữ.
+    if (this.isPlatformLive() && ev.ts) {
+      const t = new Date(ev.ts).getTime();
+      const opened = new Date(this.session.createdAt || this.session.startedAt || Date.now()).getTime();
+      if (Number.isFinite(t) && t < opened - BACKLOG_GRACE_MS) {
+        this.health.skippedOld = (this.health.skippedOld || 0) + 1;
+        return null;
+      }
     }
     if (ev.platformMsgId) {
       const k = String(ev.platformMsgId);
@@ -676,6 +750,8 @@ class Runtime {
   }
 
   dispose() {
+    this.disposed = true;
+    clearTimeout(this.reopenTimer);
     clearInterval(this.flushTimer);
     clearInterval(this.statsTimer);
     clearInterval(this.pushTimer);
@@ -754,7 +830,7 @@ async function autoResume(workspaces, { minutes = Number(process.env.LIVE_AUTO_R
         }
         const resumes = (Number(s.autoResumes) || 0) + 1;
         await db.collection('live_sessions').updateOne({ _id: s._id }, { $set: { status: 'connecting', error: null, autoResumedAt: now, autoResumes: resumes } });
-        await startSession(db, ws, { ...s, status: 'connecting', error: null, autoResumedAt: now, autoResumes: resumes });
+        await startSession(db, ws, { ...s, status: 'connecting', error: null, autoResumedAt: now, autoResumes: resumes }, { retry: true });
         resumed.push({ workspace: ws, id: String(s._id), title: s.title });
       } catch (e) {
         console.warn(`[LIVE] Không tự nối lại được phiên ${s._id}:`, e.message);
@@ -793,7 +869,12 @@ function ensureLiveKeepAlive() {
   if (keepAliveTimer.unref) keepAliveTimer.unref();
 }
 
-async function startSession(db, workspace, session) {
+/**
+ * @param {{ retry?: boolean }} opts retry: lỗi kết nối thì thử lại giãn dần (tự nối lại sau khi
+ *   máy chủ khởi động lại: TikTok hay chặn tạm lúc vừa bật, không nên bỏ phiên ngay). Người bấm
+ *   mở phiên mới thì không thử lại, để thấy lỗi ngay.
+ */
+async function startSession(db, workspace, session, { retry = false } = {}) {
   await ensureIndexes(db);
   const r = new Runtime(session, db, workspace);
   runtimes.set(r.id, r);
@@ -803,7 +884,8 @@ async function startSession(db, workspace, session) {
     await r.stop(SIM_CAP_REASON);
     return r;
   }
-  r.start();
+  if (retry && r.isPlatformLive()) r.reopen(0).catch((e) => console.warn('[LIVE] Nối lại lỗi:', e.message));
+  else r.start();
   return r;
 }
 

@@ -163,7 +163,7 @@ function getWorker() {
 }
 
 /** Chạy phần tính trong worker; worker hỏng thì tính ngay tại luồng chính như trước */
-async function compute(input) {
+async function compute(input, { reload } = {}) {
   if (process.env.CONTEXT_WORKER === '0') return computeContext(input);
   try {
     const msg = await new Promise((resolve, reject) => {
@@ -172,6 +172,8 @@ async function compute(input) {
       try {
         if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
         getWorker().postMessage({ id, input });
+        // postMessage đã chép dữ liệu sang luồng tính: nhả bản ở luồng chính (đọc lại nếu phải tính dự phòng)
+        if (reload) input.rawFeedbacks = null;
       } catch (e) {
         pending.delete(id);
         reject(e);
@@ -180,6 +182,7 @@ async function compute(input) {
     return msg.value;
   } catch (e) {
     console.warn('[CONTEXT] Luồng tính riêng lỗi, tính tại luồng chính:', e.message);
+    if (!input.rawFeedbacks && reload) input.rawFeedbacks = await reload();
     return computeContext(input);
   }
 }
@@ -235,9 +238,16 @@ const LIVE_DEFER_MAX_MS = Number(process.env.LIVE_DEFER_MAX_MS) || 30 * 60 * 100
 function liveBusy() {
   try { return require('./live/hub').activeCount() > 0; } catch { return false; }
 }
+// Kho nhỏ tính lại chỉ mất vài chục mili giây: hoãn không giúp gì cho phiên live mà
+// làm khiếu nại vừa đưa từ live sang không hiện tới 30 phút (đo 23/11 ở kho thật 4 phản hồi)
+const LIVE_DEFER_MIN_ITEMS = Number(process.env.LIVE_DEFER_MIN_ITEMS) || 2000;
+const LIVE_DEFER_MIN_MS = 1500;
+function cheapToRefresh(st) {
+  return Boolean(st.lastCost) && st.lastCost.items < LIVE_DEFER_MIN_ITEMS && st.lastCost.ms < LIVE_DEFER_MIN_MS;
+}
 function backgroundRefresh(db, opts) {
   const st = stateFor(db);
-  if (liveBusy()) {
+  if (liveBusy() && !cheapToRefresh(st)) {
     if (!st.deferredSince) st.deferredSince = Date.now();
     if (Date.now() - st.deferredSince < LIVE_DEFER_MAX_MS) {
       if (!st.deferTimer) {
@@ -323,15 +333,20 @@ async function doFetch(db, gen, onlyIfChanged) {
   // (phát lại theo thời gian thực); bản ghi không có mốc thời gian vẫn được đọc
   // ($not $gt khớp cả trường thiếu hoặc null).
   const asOf = new Date();
-  const [rawFeedbacks, transactions, upcoming, auditLabels, reviewLabels] = await Promise.all([
-    db.collection('feedbacks').find({ timestamp: { $not: { $gt: asOf } } }).sort({ timestamp: -1 }).batchSize(FETCH_BATCH).toArray(),
+  const readFeedbacks = async () => {
+    const list = await db.collection('feedbacks').find({ timestamp: { $not: { $gt: asOf } } }).sort({ timestamp: -1 }).batchSize(FETCH_BATCH).toArray();
+    // Mã dạng chuỗi: đi qua được luồng tính riêng, và mọi nơi vốn so mã bằng String()
+    for (const f of list) f._id = String(f._id);
+    return list;
+  };
+  // eslint-disable-next-line prefer-const -- rawFeedbacks được nhả (gán null) sau khi gửi sang luồng tính
+  let [rawFeedbacks, transactions, upcoming, auditLabels, reviewLabels] = await Promise.all([
+    readFeedbacks(),
     db.collection('transactions').find({ deliveredAt: { $not: { $gt: asOf } } }, { projection: TXN_PROJECTION }).batchSize(FETCH_BATCH).toArray(),
     db.collection('feedbacks').findOne({ timestamp: { $gt: asOf } }, { projection: { _id: 1 } }),
     db.collection('audit_labels').find({}).toArray(),
     db.collection('review_labels').find({}).toArray()
   ]);
-  // Mã dạng chuỗi: đi qua được luồng tính riêng, và mọi nơi vốn so mã bằng String()
-  for (const f of rawFeedbacks) f._id = String(f._id);
   for (const l of auditLabels) l._id = String(l._id);
   for (const l of reviewLabels) l._id = String(l._id);
   const fetchMs = Date.now() - t0;
@@ -348,7 +363,7 @@ async function doFetch(db, gen, onlyIfChanged) {
 
   const halfLifeDays = anchorsToData(db) ? REAL_HALF_LIFE_DAYS : DEFAULT_HALF_LIFE_DAYS;
   const t1 = Date.now();
-  const computed = await compute({
+  const input = {
     rawFeedbacks,
     transactions,
     auditLabels,
@@ -356,7 +371,11 @@ async function doFetch(db, gen, onlyIfChanged) {
     anchorToData: anchorsToData(db),
     halfLifeDays,
     modelSignals: nlp ? nlp.signals : null
-  });
+  };
+  // Luồng tính có bản sao riêng: luồng chính nhả bản thô ngay, không giữ hai bản trong lúc
+  // tính (đo 23/11 kho demo 12,8 nghìn phản hồi: đỉnh RSS lúc khởi động 642 MB, Render cho 512)
+  rawFeedbacks = null;
+  const computed = await compute(input, { reload: readFeedbacks });
 
   const value = {
     items: computed.items,
@@ -379,7 +398,10 @@ async function doFetch(db, gen, onlyIfChanged) {
     painDefault: attachPainMembers(computed.pain, computed.items),
     replay: Boolean(upcoming)
   };
-  console.log(`[CONTEXT] ${db.databaseName}: ${computed.items.length} phản hồi, đọc ${fetchMs} ms, tính ${Date.now() - t1} ms`);
+  const computeMs = Date.now() - t1;
+  console.log(`[CONTEXT] ${db.databaseName}: ${computed.items.length} phản hồi, đọc ${fetchMs} ms, tính ${computeMs} ms`);
+  // Chỉ tính phần CPU: thời gian đọc Atlas là chờ mạng, không giành CPU của phiên live
+  st.lastCost = { items: computed.items.length, ms: computeMs };
 
   // Dữ liệu đã bị invalidate trong lúc nạp: không ghi đè bộ đệm bằng bản cũ
   if (gen === st.generation) {

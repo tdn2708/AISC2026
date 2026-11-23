@@ -158,17 +158,20 @@ async function buildInboxItems(db, workspace, ctx) {
         col.aggregate([{ $match: { sessionId: { $in: ids }, intent: 'complaint', pushedToFeedback: { $ne: true } } }, { $group: { _id: '$sessionId', n: { $sum: 1 } } }]).toArray()
       ]);
       const title = new Map(sessions.map((s) => [String(s._id), s.title]));
+      // Tên phiên nằm ngay trong tiêu đề: bản tin Zalo chỉ in tiêu đề, hai phiên cùng 5 đơn
+      // chờ trước đây hiện thành hai dòng giống hệt nhau
+      const short = (id) => { const t = String(title.get(String(id)) || 'không tên'); return t.length > 40 ? `${t.slice(0, 39)}…` : t; };
       for (const o of newOrders) {
         items.push({
           id: `orders|${o._id}`, source: 'orders', severity: o.n >= 20 ? 'high' : 'medium',
-          title: `${o.n.toLocaleString('vi-VN')} lượt chốt từ live chưa lên đơn`, why: `Phiên "${title.get(String(o._id))}". Khách chờ lâu thì dễ đổi ý.`,
+          title: `${o.n.toLocaleString('vi-VN')} lượt chốt từ live chưa lên đơn (phiên "${short(o._id)}")`, why: 'Khách chờ lâu thì dễ đổi ý.',
           actions: [{ label: 'Xem danh sách', to: `/live?session=${o._id}` }]
         });
       }
       for (const u of unpushed) {
         items.push({
           id: `livecomplaints|${u._id}`, source: 'live', severity: 'medium',
-          title: `${u.n.toLocaleString('vi-VN')} khiếu nại từ live chưa đưa vào hệ thống`, why: `Phiên "${title.get(String(u._id))}". Đưa vào để cảnh báo tính chung với các kênh khác.`,
+          title: `${u.n.toLocaleString('vi-VN')} khiếu nại từ live chưa đưa vào hệ thống (phiên "${short(u._id)}")`, why: 'Đưa vào để cảnh báo tính chung với các kênh khác.',
           actions: [{ label: 'Mở báo cáo phiên', to: `/live?session=${u._id}` }]
         });
       }

@@ -155,7 +155,11 @@ function buildLiveReportText(session, report, { appUrl: customUrl, durationMs } 
 
   const estRev = report?.revenue?.estimated ?? session?.summary?.revenue;
   const lostRev = report?.revenue?.lostTotal ?? session?.summary?.lostRevenue;
-  if (estRev != null && Number.isFinite(Number(estRev))) {
+  // Phiên không khai giá (đọc TikTok/YouTube mà chưa nhập danh mục): doanh thu 0 là sai, nói rõ là chưa tính được
+  const priced = (session?.products || []).some((p) => Number(p.salePrice ?? p.price) > 0);
+  if (!priced && Number(estRev || 0) === 0 && Number(lostRev || 0) === 0) {
+    lines.push('Doanh thu: chưa tính được vì danh mục phiên chưa có giá.');
+  } else if (estRev != null && Number.isFinite(Number(estRev))) {
     const revParts = [`Doanh thu ước tính: ${money(Number(estRev))}.`];
     if (lostRev != null && Number.isFinite(Number(lostRev))) {
       revParts.push(`Lỡ vì hết hàng: ${money(Number(lostRev))}.`);

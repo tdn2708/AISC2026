@@ -15,7 +15,7 @@ import { getWorkspace } from '../../lib/workspace';
 
 const PLATFORM_DESC = {
   tiktok: 'Nối vào phiên đang live bằng tên tài khoản, đọc bình luận công khai',
-  youtube: 'Đọc trò chuyện trực tiếp qua YouTube Data API',
+  youtube: 'Dán liên kết video đang live, đọc trò chuyện trực tiếp công khai',
   manual: 'Dán bình luận, nhập tệp CSV sau live, hoặc gửi qua webhook',
   simulator: 'Phát lại nhịp một phiên megalive 11.11 để trình diễn'
 };
