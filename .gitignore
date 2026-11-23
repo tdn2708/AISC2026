@@ -43,3 +43,23 @@ nlp_service/deploy/onnx/
 
 # Log loi cua cac tac vu chay ngam
 *.log.err
+
+# ---- Phần livestream (thêm 23/11/2026) ----
+# Dữ liệu cào gốc: còn TÊN và ID kênh người bình luận
+livestream_labeling/raw/
+# File trung gian lớn (>20MB, gồm cả spam và phiên ngoài phạm vi) -> tạo lại bằng scripts/clean_merge.py
+livestream_labeling/data/live_comments_all.csv
+livestream_labeling/output/01_du_lieu_cao_tho.csv
+livestream_labeling/data/labels/_*
+# Có cột author_hash
+livestream_labeling/data/live_comments_clean.csv
+livestream_labeling/data/sample_for_labeling.csv
+livestream_labeling/output/02_du_lieu_sach.csv
+# Mô hình đã fine-tune và kết quả huấn luyện
+nlp_service/live/runs/
+nlp_service/live/ckpt*/
+ckpt_live*/
+*.pt
+*.safetensors
+kaggle/*.zip
+ket_qua_live*/
