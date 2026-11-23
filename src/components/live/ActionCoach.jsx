@@ -22,6 +22,7 @@ const PRIMARY = {
   question_burst: 'Đã nói trên sóng',
   hot_other_product: 'Chuyển sản phẩm',
   engagement_drop: 'Đã làm',
+  order_slowdown: 'Đã làm',
   missing_info: 'Bổ sung danh mục',
   soldout_demand: 'Đã báo hết hàng',
   low_stock: 'Đã nói trên sóng',
@@ -104,7 +105,8 @@ const ActionCoach = ({ stats, sessionId, live, onOpenCatalog }) => {
   const active = stats?.actions?.active || [];
   const history = (stats?.actions?.history || []).filter((h) => h.status === 'done').slice(0, 4);
   if (!live && !history.length) return null;
-  const shown = showAll ? active : active.slice(0, 3);
+  // Mặc định chỉ hai việc gấp nhất: màn hình live phải đọc được trong một cái liếc
+  const shown = showAll ? active : active.slice(0, 2);
 
   return (
     <section aria-labelledby="coach-title" className="glass-strong rounded-surf p-4 sm:p-5">
@@ -112,7 +114,7 @@ const ActionCoach = ({ stats, sessionId, live, onOpenCatalog }) => {
         <div>
           <h2 id="coach-title" className="text-heading font-semibold text-ink-hi">Việc nên làm ngay</h2>
         </div>
-        {active.length > 3 && (
+        {active.length > 2 && (
           <Button variant="link" size="sm" onClick={() => setShowAll((v) => !v)} aria-expanded={showAll}>
             {showAll ? 'Thu gọn' : `Xem cả ${active.length} việc`}
           </Button>
@@ -120,7 +122,7 @@ const ActionCoach = ({ stats, sessionId, live, onOpenCatalog }) => {
       </div>
 
       {live && (shown.length ? (
-        <ul className="grid list-none gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid list-none gap-3 md:grid-cols-2">
           {shown.map((a) => <ActionCard key={a.id} a={a} sessionId={sessionId} onOpenCatalog={onOpenCatalog} />)}
         </ul>
       ) : (

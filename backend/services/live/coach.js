@@ -23,6 +23,7 @@
  *   ask_not_buy       hỏi nhiều mà ít chốt: đẩy mã giảm giá, thời hạn
  *   engagement_drop   bình luận giảm mạnh: mini game, đổi nhịp
  *   missing_info      danh mục thiếu thông tin khách đang hỏi: bổ sung danh mục
+ *   order_slowdown    nhịp chốt đơn chậm hẳn so với 10 phút trước: quay lại món bán chạy, nhắc ưu đãi
  */
 
 const { TOPIC_LABEL } = require('./intent');
@@ -345,6 +346,33 @@ function coach({ agg, session, suggestionFor, now = Date.now() }) {
     }
   }
 
+  // ---------- 8b. Nhịp chốt đơn chậm lại (giữ lượt bán ổn định) ----------
+  {
+    const isOrder = (e) => e.intent === 'order';
+    const now5 = rate(ev, end - 5 * MIN, end, isOrder);
+    const prevCount = ev.filter((e) => isOrder(e) && e.t >= end - 15 * MIN && e.t < end - 5 * MIN).length;
+    const prev10 = prevCount / 10;
+    if (prevCount >= 5 && now5 <= prev10 * 0.5) {
+      // Món chốt nhiều nhất phiên (khác món đang giới thiệu): quay lại món đó thường kéo lại đơn
+      const best = [...agg.productStats.entries()].filter(([id]) => id !== session.currentProductId).sort((a, b) => b[1].orders - a[1].orders)[0];
+      const bp = best && best[1].orders > 0 ? byId.get(best[0]) : null;
+      out.push({
+        type: 'order_slowdown',
+        key: 'orders',
+        severity: 'high',
+        title: `Nhịp chốt đơn giảm còn ${now5.toFixed(1).replace('.', ',')} lượt mỗi phút`,
+        why: `10 phút trước khách chốt ${prev10.toFixed(1).replace('.', ',')} lượt mỗi phút, 5 phút gần nhất chỉ còn ${now5.toFixed(1).replace('.', ',')}. Giữ nhịp bán bằng một lý do để chốt ngay.`,
+        script: policy.promo
+          ? `Bạn nào chưa chốt thì ${lowerFirst(policy.promo.replace(/\.$/, ''))}, chỉ trong mấy phút tới thôi ạ!`
+          : null,
+        grounded: Boolean(policy.promo),
+        steps: [bp ? `Quay lại ${bp.name} (chốt nhiều nhất phiên)` : 'Quay lại món khách chốt nhiều nhất', policy.promo ? 'Nhắc ưu đãi kèm thời hạn ngắn' : 'Chưa khai báo ưu đãi: cân nhắc một deal giới hạn thời gian'],
+        watch: 'order',
+        do: bp ? { kind: 'switch_product', productId: bp.id } : null
+      });
+    }
+  }
+
   // ---------- 9. Danh mục thiếu thông tin khách đang hỏi ----------
   if (suggestionFor) {
     // Gộp theo chủ đề + sản phẩm: câu hỏi size bị tách nhóm theo từng size,
@@ -407,7 +435,7 @@ function measureEffect(agg, action, at, now = Date.now(), ended = false) {
   const ready = end >= t + span;
   const afterEnd = Math.min(t + span, end);
   const pick = {
-    order: (e) => e.intent === 'order' && (!action.productId || action.type === 'engagement_drop' || e.productId === action.productId),
+    order: (e) => e.intent === 'order' && (!action.productId || action.type === 'engagement_drop' || action.type === 'order_slowdown' || e.productId === action.productId),
     soldout: (e) => e.intent === 'order' && e.productId === action.productId && (action.variant == null || e.size === action.variant || e.color === action.variant),
     complaint: (e) => e.intent === 'complaint',
     comments: () => true,

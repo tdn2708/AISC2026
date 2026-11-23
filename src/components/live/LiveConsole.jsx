@@ -1,26 +1,28 @@
 import React, { memo, useDeferredValue, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { ArrowLeft, Square, RotateCw, Package, MessageSquarePlus, Download, ChevronDown } from 'lucide-react';
-import { Button, Badge, Drawer, EmptyState, Tabs, Modal, Popover, MenuItem, SELECTED, Skeleton } from '../ui';
-import { fmtInt, fmtPct } from '../../lib/format';
+import { ArrowLeft, Square, RotateCw, Package, MessageSquarePlus, Download, Ellipsis, Radio } from 'lucide-react';
+import { Button, Badge, Drawer, EmptyState, Tabs, Modal, Popover, MenuItem, Skeleton, Select } from '../ui';
+import { fmtInt } from '../../lib/format';
 import useLiveSession, { liveUrl } from '../../hooks/useLiveSession';
 import { StatusPill, PLATFORM_LABEL, durationMs } from './shared';
 import QueueRaw from './Queue';
 import Feed from './Feed';
 import OrdersRaw from './Orders';
-import { Rhythm as RhythmRaw, Topics as TopicsRaw, Products as ProductsRaw } from './Insights';
+import PulseRaw from './Pulse';
+import BuyerNowRaw from './BuyerNow';
 import CatalogEditor, { toRow, fromRow } from './CatalogEditor';
 import ManualInput from './ManualInput';
 import ActionCoachRaw from './ActionCoach';
 import Report from './Report';
 
 /**
- * BẢNG ĐIỀU KHIỂN MỘT PHIÊN LIVE
- *   Hàng số liệu:  người xem, nhịp bình luận, câu hỏi chờ, đơn chốt, khiếu nại
- *   Dải sản phẩm:  bấm để báo "đang giới thiệu sản phẩm này" — câu hỏi không
- *                  nhắc tên sản phẩm sẽ được hiểu là hỏi về sản phẩm đó
- *   Ba cột:        cần trả lời | bình luận trực tiếp | nhịp và chủ đề
- *   Dưới cùng:     khách chốt đơn
+ * BẢNG ĐIỀU KHIỂN MỘT PHIÊN LIVE (tối giản, 24/11), đọc từ trên xuống theo đúng luồng:
+ *   1. Nhịp phiên        người xem, bình luận, lượt chốt trên cùng trục thời gian (dữ liệu vào)
+ *   2. Người mua lúc này  muốn mua gì, muốn biết gì, đang cần gì (xu hướng 10 phút)
+ *   3. Nên làm ngay       hai việc gấp nhất để giữ hoặc kéo lại nhịp bán
+ *   4. Khung có tab       cần trả lời, bình luận trực tiếp, khách chốt đơn (làm việc chi tiết)
+ * Sản phẩm đang giới thiệu chọn ở thanh đầu: câu hỏi không nhắc tên sản phẩm được hiểu là hỏi món đó.
+ * Danh mục, nhập bình luận, xuất dữ liệu nằm trong menu "Thêm".
  */
 
 /**
@@ -32,9 +34,8 @@ const slice = (...pick) => (a, b) =>
   pick.every((f) => JSON.stringify(f(a.stats)) === JSON.stringify(f(b.stats))) && a.sessionId === b.sessionId && a.live === b.live;
 const Queue = memo(QueueRaw, slice((s) => s?.queue, (s) => s?.answered, (s) => s?.queueOpen));
 const Orders = memo(OrdersRaw, slice((s) => s?.orders, (s) => s?.totals?.orderQuantity));
-const Rhythm = memo(RhythmRaw, slice((s) => s?.series));
-const Topics = memo(TopicsRaw, slice((s) => s?.topics));
-const Products = memo(ProductsRaw, slice((s) => s?.products));
+const Pulse = memo(PulseRaw, slice((s) => s?.series, (s) => s?.trend?.sales, (s) => s?.viewers, (s) => s?.totals));
+const BuyerNow = memo(BuyerNowRaw, slice((s) => s?.trend, (s) => s?.actions?.active));
 const ActionCoach = memo(ActionCoachRaw, slice((s) => s?.actions, (s) => s?.totals, (s) => s?.products));
 
 /** Đồng hồ thời lượng phiên: tự đếm từng giây, không kéo cả bảng điều khiển vẽ lại */
@@ -53,34 +54,21 @@ const Elapsed = ({ session, live }) => {
   return `, đã live ${durationMs(session.liveMs + extra)}`;
 };
 
-const Kpi = ({ label, value, sub, tone }) => (
-  <div className="glass-strong min-w-0 rounded-surf px-3.5 py-3">
-    <p className="truncate text-xs text-ink-lo">{label}</p>
-    <p className={`mt-1 tabular-nums text-display leading-none font-semibold ${tone === 'crit' ? 'text-crit' : tone === 'ok' ? 'text-ok' : 'text-ink-hi'}`}>{value}</p>
-    {sub && <p className="mt-1 truncate text-xs text-ink-lo">{sub}</p>}
-  </div>
-);
-
-const ExportMenu = ({ sessionId }) => {
+/** Menu "Thêm": việc ít dùng trong lúc live, không chiếm chỗ trên thanh đầu */
+const MoreMenu = ({ sessionId, canInput, onCatalog, onInput }) => {
   const [open, setOpen] = useState(false);
-  const go = (kind, format) => {
-    window.open(liveUrl(`/sessions/${sessionId}/export`, { kind, format }), '_blank');
-    setOpen(false);
-  };
+  const go = (fn) => { setOpen(false); fn(); };
+  const exp = (kind, format) => go(() => window.open(liveUrl(`/sessions/${sessionId}/export`, { kind, format }), '_blank'));
   return (
     <div className="relative">
-      <Button size="sm" variant="secondary" icon={Download} iconRight={ChevronDown} onClick={() => setOpen((v) => !v)} aria-expanded={open}>Xuất dữ liệu</Button>
+      <Button size="sm" variant="secondary" icon={Ellipsis} onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="menu">Thêm</Button>
       {open && (
-        <Popover className="absolute right-0 mt-1 w-72" role="menu">
-          {[
-            ['comments', 'jsonl', 'Bình luận đã chuẩn hóa', 'JSONL, không có tên tài khoản. Dùng cho huấn luyện.'],
-            ['qa', 'jsonl', 'Cặp hỏi đáp đã xác nhận', 'JSONL. Câu hỏi của khách và câu shop đã trả lời.'],
-            ['orders', 'csv', 'Danh sách chốt đơn', 'CSV để lên đơn sau live.']
-          ].map(([kind, format, label, hint]) => (
-            <MenuItem key={kind} role="menuitem" hint={hint} onClick={() => go(kind, format)} className="font-medium">
-              {label}
-            </MenuItem>
-          ))}
+        <Popover className="absolute right-0 z-20 mt-1 w-72" role="menu">
+          <MenuItem role="menuitem" icon={Package} hint="Gợi ý trả lời chỉ dùng thông tin ở đây" onClick={() => go(onCatalog)} className="font-medium">Sản phẩm, chính sách</MenuItem>
+          {canInput && <MenuItem role="menuitem" icon={MessageSquarePlus} hint="Dán bình luận hoặc nhập tệp CSV" onClick={() => go(onInput)} className="font-medium">Nhập bình luận</MenuItem>}
+          <MenuItem role="menuitem" icon={Download} hint="CSV để lên đơn sau live" onClick={() => exp('orders', 'csv')} className="font-medium">Xuất danh sách chốt đơn</MenuItem>
+          <MenuItem role="menuitem" icon={Download} hint="JSONL, không có tên tài khoản" onClick={() => exp('comments', 'jsonl')} className="font-medium">Xuất bình luận đã chuẩn hóa</MenuItem>
+          <MenuItem role="menuitem" icon={Download} hint="Câu khách hỏi và câu shop đã trả lời" onClick={() => exp('qa', 'jsonl')} className="font-medium">Xuất cặp hỏi đáp</MenuItem>
         </Popover>
       )}
     </div>
@@ -105,6 +93,7 @@ const LiveConsole = ({ sessionId, onBack }) => {
   const [busy, setBusy] = useState(null);
   const [view, setView] = useState(null);
   const [confirmStop, setConfirmStop] = useState(false);
+  const [work, setWork] = useState('queue');
 
   if (error && !session) {
     return <EmptyState variant="error" title="Không mở được phiên" description={error} action={<Button variant="secondary" icon={ArrowLeft} onClick={onBack}>Về danh sách phiên</Button>} />;
@@ -116,7 +105,6 @@ const LiveConsole = ({ sessionId, onBack }) => {
   const live = ['live', 'connecting', 'reconnecting'].includes(session.status);
   // Phiên đã kết thúc mở thẳng báo cáo; đang live mở bảng điều khiển
   const tab = view || (live ? 'console' : 'report');
-  const t = stats.totals;
   const products = session.products || [];
 
   const openCatalog = () => {
@@ -190,11 +178,18 @@ const LiveConsole = ({ sessionId, onBack }) => {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {(session.platform === 'manual' || !live) && (
-            <Button size="sm" variant="secondary" icon={MessageSquarePlus} onClick={() => setDrawer('input')}>Nhập bình luận</Button>
+          {products.length > 0 && (
+            <Select
+              aria-label="Sản phẩm đang giới thiệu"
+              icon={Radio}
+              size="sm"
+              className="w-80 max-w-full"
+              value={stats.currentProductId || session.currentProductId || ''}
+              onChange={(e) => setCurrent(e.target.value)}
+              options={products.map((p) => ({ value: p.id, label: `Đang giới thiệu: ${p.code ? `${p.code} ` : ''}${p.name}` }))}
+            />
           )}
-          <Button size="sm" variant="secondary" icon={Package} onClick={openCatalog}>Sản phẩm, chính sách</Button>
-          <ExportMenu sessionId={session.id} />
+          <MoreMenu sessionId={session.id} canInput={session.platform === 'manual' || !live} onCatalog={openCatalog} onInput={() => setDrawer('input')} />
           {live && <Button size="sm" variant="danger" icon={Square} loading={busy === 'stop'} onClick={() => setConfirmStop(true)}>Kết thúc</Button>}
           {['interrupted', 'error'].includes(session.status) && session.platform !== 'manual' && (
             <Button size="sm" icon={RotateCw} loading={busy === 'resume'} onClick={resume}>Kết nối lại</Button>
@@ -209,52 +204,26 @@ const LiveConsole = ({ sessionId, onBack }) => {
       />
 
       {tab === 'report' ? <Report key={`${session.status}-${session.endedAt || ''}`} sessionId={session.id} /> : (<>
-      {/* Số liệu */}
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
-        <Kpi label="Người xem" value={stats.viewers?.now != null ? fmtInt(stats.viewers.now) : '—'} sub={stats.viewers?.peak ? `Cao nhất ${fmtInt(stats.viewers.peak)}` : 'Nền tảng chưa báo'} />
-        <Kpi label="Bình luận mỗi phút" value={live ? fmtInt(t.perMinuteNow) : '—'} sub={`Tổng ${fmtInt(t.comments)} bình luận, ${fmtInt(t.commenters)} người`} />
-        <Kpi label="Câu hỏi đang chờ" value={fmtInt(stats.queueOpen)} sub={t.answeredShare != null ? `Đã trả lời ${fmtPct(t.answeredShare, 0)} câu hỏi` : 'Chưa có câu hỏi'} tone={stats.queueOpen > 5 ? 'crit' : undefined} />
-        <Kpi label="Lượt chốt đơn" value={fmtInt(t.byIntent.order)} sub={`${fmtInt(t.orderQuantity)} sản phẩm`} tone="ok" />
-        <Kpi label="Khiếu nại" value={fmtInt(t.byIntent.complaint)} sub={t.byIntent.complaint ? 'Xem đầu hàng đợi' : 'Không có'} tone={t.byIntent.complaint ? 'crit' : undefined} />
-        <Kpi label="Lượt thích" value={stats.likes != null ? fmtInt(stats.likes) : '—'} sub={`${fmtInt(t.byIntent.praise)} lời khen`} />
-      </div>
-
-      {/* Sản phẩm đang giới thiệu */}
-      {products.length > 0 && (
-        <div className="flex items-center gap-2 scroll-hint-x overflow-x-auto pb-1">
-          <span className="shrink-0 text-xs text-ink-lo">Đang giới thiệu</span>
-          {products.map((p) => {
-            const active = p.id === (stats.currentProductId || session.currentProductId);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setCurrent(p.id)}
-                className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-ctrl border px-2.5 text-xs transition-[background-color,border-color,color] duration-micro ease-out ${active ? `${SELECTED} font-semibold` : 'border-line bg-surface text-ink-mid hover:border-ink-lo hover:text-ink-hi'}`}
-              >
-                <span className="tabular-nums">{p.code}</span>
-                <span className="max-w-[12rem] truncate">{p.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
+      <Pulse stats={slow} sessionId={session.id} live={live} />
+      <BuyerNow stats={slow} sessionId={session.id} live={live} onOpen={setWork} onOpenCatalog={openCatalog} />
       <ActionCoach stats={slow} sessionId={session.id} live={live} onOpenCatalog={openCatalog} />
 
-      {/* Ba cột */}
-      <div className="grid gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-5"><Queue stats={slow} sessionId={session.id} onChanged={live ? undefined : refresh} /></div>
-        <div className="lg:col-span-4"><Feed feed={feed} sessionId={session.id} onPatched={(c) => { patchComment(c); if (!live) refresh(); }} live={live} /></div>
-        <div className="flex flex-col gap-4 lg:col-span-3">
-          <Rhythm stats={slow} />
-          <Topics stats={slow} />
-          <Products stats={slow} />
-        </div>
-      </div>
-
-      <Orders stats={slow} sessionId={session.id} onChanged={live ? undefined : refresh} />
+      {/* Làm việc chi tiết: một khung, ba tab */}
+      <section aria-label="Xử lý bình luận" className="glass-strong rounded-surf p-4 sm:p-5">
+        <Tabs
+          className="mb-4"
+          value={work}
+          onChange={setWork}
+          tabs={[
+            { value: 'queue', label: 'Cần trả lời', count: stats.queueOpen || undefined },
+            { value: 'feed', label: 'Bình luận trực tiếp' },
+            { value: 'orders', label: 'Khách chốt đơn', count: (stats.orders || []).filter((o) => o.status === 'new').length || undefined }
+          ]}
+        />
+        {work === 'queue' && <Queue bare stats={slow} sessionId={session.id} onChanged={live ? undefined : refresh} />}
+        {work === 'feed' && <Feed bare feed={feed} sessionId={session.id} onPatched={(c) => { patchComment(c); if (!live) refresh(); }} live={live} />}
+        {work === 'orders' && <Orders bare stats={slow} sessionId={session.id} onChanged={live ? undefined : refresh} />}
+      </section>
       </>)}
 
       <Drawer

@@ -15,6 +15,7 @@
  */
 
 const { TOPIC_LABEL, INTENT_LABEL, fold } = require('./intent');
+const { buyerTrends } = require('./trends');
 
 const MINUTE = 60 * 1000;
 const NEEDS_ANSWER = new Set(['question', 'complaint']);
@@ -57,10 +58,15 @@ class LiveAggregator {
     this.products = new Map(products.map((p) => [p.id, p]));
   }
 
-  setViewers(n) {
+  /** Số người xem; ghi vào phút hiện tại để vẽ người xem theo thời gian cạnh bình luận và chốt đơn */
+  setViewers(n, ts = Date.now()) {
     if (!Number.isFinite(n)) return;
     this.viewers.now = n;
     this.viewers.peak = Math.max(this.viewers.peak || 0, n);
+    const mk = Math.floor(ts / MINUTE) * MINUTE;
+    const m = this.minutes.get(mk) || { t: mk, total: 0, question: 0, order: 0, complaint: 0, qty: 0 };
+    m.viewers = n;
+    this.minutes.set(mk, m);
   }
 
   setLikes(n) {
@@ -78,7 +84,9 @@ class LiveAggregator {
     this.events.push({
       t: ts, intent: c.intent, topic: c.topic || null, productId: c.productId || null,
       size: c.variant?.size || null, color: c.variant?.color || null, qty: c.quantity || 0,
-      groupKey: c.groupKey || null, inferred: Boolean(c.productInferred)
+      groupKey: c.groupKey || null, inferred: Boolean(c.productInferred),
+      // Câu chốt không gắn được sản phẩm (phiên chốt bằng mã "198"): giữ dạng rút gọn để gom "khách muốn mua gì"
+      okey: c.intent === 'order' && !c.productId ? fold(c.text || '').replace(/[^a-z0-9/x,.+ ]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 24) || null : null
     });
     // Giữ đủ để đo hiệu quả hành động cả phiên; chỉ cắt khi phiên rất dài
     if (this.events.length > 60000) {
@@ -87,9 +95,10 @@ class LiveAggregator {
     }
 
     const mk = Math.floor(ts / MINUTE) * MINUTE;
-    const m = this.minutes.get(mk) || { t: mk, total: 0, question: 0, order: 0, complaint: 0 };
+    const m = this.minutes.get(mk) || { t: mk, total: 0, question: 0, order: 0, complaint: 0, qty: 0 };
     m.total += 1;
     if (m[c.intent] != null) m[c.intent] += 1;
+    if (c.intent === 'order') m.qty = (m.qty || 0) + (c.quantity || 1);
     this.minutes.set(mk, m);
 
     if (c.productId) {
@@ -212,7 +221,8 @@ class LiveAggregator {
       queue: open.slice(0, queueLimit).map(decorate),
       queueOpen: open.length,
       answered: answered.slice(0, 20).map(decorate),
-      orders: this.orders.slice(-200).reverse().map((o) => ({ ...o, productName: this.productName(o.productId) }))
+      orders: this.orders.slice(-200).reverse().map((o) => ({ ...o, productName: this.productName(o.productId) })),
+      trend: buyerTrends(this, { now, topicLabel: TOPIC_LABEL })
     };
   }
 }

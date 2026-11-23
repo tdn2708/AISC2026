@@ -135,26 +135,22 @@ const AnsweredRow = ({ g, sessionId, onResolved }) => (
   </li>
 );
 
-const Queue = ({ stats, sessionId, onChanged }) => {
+/** bare: không khung, không tiêu đề (đặt trong khung có tab của bảng điều khiển) */
+const Queue = ({ stats, sessionId, onChanged, bare = false }) => {
   const [view, setView] = useState('open');
   const open = stats?.queue || [];
   const done = stats?.answered || [];
 
-  return (
-    <GlassPanel tone="strong" className="flex min-h-0 flex-col p-4 sm:p-5">
-      <PanelHeader
-        title="Cần trả lời"
-        subtitle={view === 'open' ? 'Câu hỏi giống nhau đã được gom. Khiếu nại luôn ở trên cùng.' : 'Các nhóm đã xử lý trong phiên.'}
-        right={(
-          <Segmented
-            label="Hàng đợi"
-            value={view}
-            onChange={setView}
-            options={[{ value: 'open', label: `Đang chờ ${stats?.queueOpen ?? 0}` }, { value: 'done', label: `Đã xử lý ${done.length}` }]}
-          />
-        )}
-      />
-      {view === 'open' ? (
+  const subtitle = view === 'open' ? 'Câu hỏi giống nhau đã được gom. Khiếu nại luôn ở trên cùng.' : 'Các nhóm đã xử lý trong phiên.';
+  const seg = (
+    <Segmented
+      label="Hàng đợi"
+      value={view}
+      onChange={setView}
+      options={[{ value: 'open', label: `Đang chờ ${stats?.queueOpen ?? 0}` }, { value: 'done', label: `Đã xử lý ${done.length}` }]}
+    />
+  );
+  const body = view === 'open' ? (
         open.length ? (
           <ul className="-mr-2 flex max-h-[70vh] list-none flex-col gap-2.5 overflow-y-auto pr-2">
             {open.map((g) => <QueueCard key={g.key} g={g} sessionId={sessionId} onResolved={onChanged} />)}
@@ -168,7 +164,19 @@ const Queue = ({ stats, sessionId, onChanged }) => {
         </ul>
       ) : (
         <EmptyState compact title="Chưa xử lý nhóm nào" />
-      )}
+      );
+  if (bare) {
+    return (
+      <div className="flex min-h-0 flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-ink-lo">{subtitle}</p>{seg}</div>
+        {body}
+      </div>
+    );
+  }
+  return (
+    <GlassPanel tone="strong" className="flex min-h-0 flex-col p-4 sm:p-5">
+      <PanelHeader title="Cần trả lời" subtitle={subtitle} right={seg} />
+      {body}
     </GlassPanel>
   );
 };

@@ -1662,6 +1662,57 @@ test('Live: câu hỏi không rõ chủ đề chỉ gom khi cùng nội dung; d�
   assert.ok(!mixed.some((x) => x.type === 'question_burst'), 'các câu khác nhau không thành "nhiều người cùng hỏi"');
 });
 
+test('Live: xu hướng người mua 10 phút (muốn mua, muốn biết, đang cần, nhịp bán) và người xem theo phút', () => {
+  const now = Date.parse('2026-11-24T10:30:00Z');
+  const agg = new LiveAggregator({ products: MEGALIVE_CATALOG });
+  let i = 0;
+  const add = (minAgo, text, extra = {}) => {
+    const c = liveIntent.classifyComment(text, { products: MEGALIVE_CATALOG });
+    const doc = { _id: `t${i++}`, ts: new Date(now - minAgo * 60000), author: { hash: `u${i}` }, ...c, ...extra, status: c.intent === 'question' || c.intent === 'complaint' ? 'open' : null };
+    doc.groupKey = groupKeyOf(doc);
+    agg.add(doc);
+  };
+  for (let k = 0; k < 4; k++) add(15 - k, 'chốt áo thun size M');          // 10 phút trước: 4 lượt
+  for (let k = 0; k < 6; k++) add(4 - k * 0.5, 'chốt áo thun size M');      // 10 phút gần nhất: 6 lượt
+  add(3, 'áo thun giá bao nhiêu'); add(2, 'giá áo thun sao shop');
+  add(1, 'đơn hôm trước chưa nhận được hàng');
+  agg.setViewers(1000, now - 12 * 60000); agg.setViewers(1200, now - 2 * 60000);
+  const snap = agg.snapshot({ now });
+  const tr = snap.trend;
+  assert.ok(tr.wants[0].label.includes('Áo thun') && tr.wants[0].label.includes('size M'), JSON.stringify(tr.wants));
+  assert.deepStrictEqual([tr.wants[0].now, tr.wants[0].before], [6, 4]);
+  assert.strictEqual(tr.asks[0].key, 'price');
+  assert.ok(tr.asks[0].sample, 'có câu khách hỏi thật làm ví dụ');
+  assert.ok(tr.needs.some((n) => n.kind === 'complaint' && n.count === 1));
+  assert.ok(tr.needs.some((n) => n.kind === 'waiting' && n.count === 2));
+  assert.strictEqual(tr.sales.viewersNow, 1200);
+  assert.ok(snap.series.some((m) => m.viewers === 1000) && snap.series.some((m) => m.viewers === 1200), 'người xem ghi theo phút');
+  assert.ok(snap.series.some((m) => m.qty >= 1), 'số sản phẩm chốt theo phút');
+  // Phiên không khai danh mục, chốt bằng mã số: gom theo chính câu chốt
+  const bare = new LiveAggregator({ products: [] });
+  for (let k = 0; k < 3; k++) { const c = liveIntent.classifyComment('198'); bare.add({ _id: `b${k}`, ts: new Date(now - k * 60000), author: { hash: `b${k}` }, ...c }); }
+  const w = bare.snapshot({ now }).trend.wants[0];
+  assert.deepStrictEqual([w.label, w.now, w.byCode], ['"198"', 3, true]);
+  // Phiên mới chạy 1 phút: nhịp chốt chia cho thời gian đã live, không chia cứng 5 phút
+  const young = new LiveAggregator({ products: [] });
+  for (let k = 0; k < 6; k++) { const c = liveIntent.classifyComment('chốt 1 cái'); young.add({ _id: `y${k}`, ts: new Date(now - 60000 + k * 5000), author: { hash: `y${k}` }, ...c }); }
+  const ys = young.snapshot({ now }).trend.sales;
+  assert.strictEqual(ys.perMinNow, 6);
+  assert.strictEqual(ys.state, 'start');
+});
+
+test('Live coach: nhịp chốt đơn chậm hẳn so với 10 phút trước -> quay lại món bán chạy, nhắc ưu đãi', () => {
+  const lines = [...times(8, 13, 'chốt áo thun size M'), [3, 'đẹp quá shop']];
+  const { actions } = liveScenario(lines, { current: 'quan-jean' });
+  const a = actions.find((x) => x.type === 'order_slowdown');
+  assert.ok(a, JSON.stringify(actions.map((x) => x.type)));
+  assert.strictEqual(a.do?.productId, 'ao-thun', 'quay lại món chốt nhiều nhất');
+  assert.ok(a.script && /chỉ trong mấy phút tới/.test(a.script), a.script);
+  assert.ok(!a.script.includes('..'), a.script);
+  // Nhịp vẫn đều thì không báo
+  assert.ok(!liveScenario([...times(6, 12, 'chốt áo thun size M'), ...times(4, 3, 'chốt áo thun size M')]).actions.some((x) => x.type === 'order_slowdown'));
+});
+
 test('Live coach: chốt dồn dập -> dự báo phút hết hàng trước khi chạm ngưỡng sắp hết', () => {
   // Áo thun size XL tồn 25, 16 lượt chốt trong 10 phút: còn 9 cái, 1,6 cái/phút -> hết sau khoảng 6 phút
   const { actions } = liveScenario(times(16, 5, 'chốt áo thun size XL'));

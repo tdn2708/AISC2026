@@ -94,7 +94,8 @@ const Row = memo(({ c, sessionId, onPatched, fresh }) => {
   );
 });
 
-const Feed = ({ feed, sessionId, onPatched, live }) => {
+/** bare: không khung, không tiêu đề (đặt trong khung có tab của bảng điều khiển) */
+const Feed = ({ feed, sessionId, onPatched, live, bare = false }) => {
   const [filter, setFilter] = useState('all');
   const [frozen, setFrozen] = useState(null);
 
@@ -121,9 +122,11 @@ const Feed = ({ feed, sessionId, onPatched, live }) => {
   patchRef.current = onPatched;
   const stablePatch = useCallback((c) => patchRef.current?.(c), []);
 
+  const Shell = bare ? 'div' : GlassPanel;
+  const shellProps = bare ? { className: 'flex min-h-0 flex-col' } : { tone: 'strong', className: 'flex min-h-0 flex-col p-4 sm:p-5' };
   return (
-    <GlassPanel tone="strong" className="flex min-h-0 flex-col p-4 sm:p-5">
-      <PanelHeader title="Bình luận trực tiếp" className="mb-3" />
+    <Shell {...shellProps}>
+      {!bare && <PanelHeader title="Bình luận trực tiếp" className="mb-3" />}
       <div className="mb-3"><Segmented label="Lọc bình luận" value={filter} onChange={setFilter} options={FILTERS} /></div>
       {frozen && live && (
         <p className="mb-2 flex items-center gap-1.5 text-xs text-ink-lo">
@@ -143,7 +146,7 @@ const Feed = ({ feed, sessionId, onPatched, live }) => {
       ) : (
         <EmptyState compact title={live ? 'Đang chờ bình luận' : 'Không có bình luận'} description={live ? 'Bình luận đầu tiên sẽ hiện ở đây.' : undefined} />
       )}
-    </GlassPanel>
+    </Shell>
   );
 };
 

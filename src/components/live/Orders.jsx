@@ -43,7 +43,8 @@ const OrderRow = memo(({ o, onStatus }) => (
                 </tr>
 ), sameContent);
 
-const Orders = ({ stats, sessionId, onChanged }) => {
+/** bare: không khung, không tiêu đề (đặt trong khung có tab của bảng điều khiển) */
+const Orders = ({ stats, sessionId, onChanged, bare = false }) => {
   const [filter, setFilter] = useState('new');
   const all = stats?.orders || [];
   const items = filter === 'all' ? all : all.filter((o) => o.status === filter);
@@ -54,12 +55,10 @@ const Orders = ({ stats, sessionId, onChanged }) => {
     onChanged?.();
   };
 
-  return (
-    <GlassPanel tone="strong" className="p-4 sm:p-5">
-      <PanelHeader
-        title="Khách chốt đơn"
-        subtitle={`${fmtInt(all.length)} lượt chốt, ${fmtInt(stats?.totals?.orderQuantity || 0)} sản phẩm (trừ đơn hủy)`}
-        right={(
+  const subtitle = `${fmtInt(all.length)} lượt chốt, ${fmtInt(stats?.totals?.orderQuantity || 0)} sản phẩm (trừ đơn hủy)`;
+  const Shell = bare ? 'div' : GlassPanel;
+  const shellProps = bare ? {} : { tone: 'strong', className: 'p-4 sm:p-5' };
+  const tools = (
           <div className="flex flex-wrap items-center gap-2">
             <Segmented
               label="Lọc đơn"
@@ -69,8 +68,12 @@ const Orders = ({ stats, sessionId, onChanged }) => {
             />
             <Button size="sm" variant="secondary" icon={Download} onClick={() => window.open(liveUrl(`/sessions/${sessionId}/export`, { kind: 'orders', format: 'csv' }), '_blank')}>CSV</Button>
           </div>
-        )}
-      />
+  );
+  return (
+    <Shell {...shellProps}>
+      {bare
+        ? <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-ink-lo">{subtitle}</p>{tools}</div>
+        : <PanelHeader title="Khách chốt đơn" subtitle={subtitle} right={tools} />}
       {items.length ? (
         <div className="paper"><div className="-mx-1 scroll-hint-x overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
@@ -93,7 +96,7 @@ const Orders = ({ stats, sessionId, onChanged }) => {
       ) : (
         <EmptyState compact title={filter === 'new' ? 'Không có đơn mới' : 'Chưa có đơn'} />
       )}
-    </GlassPanel>
+    </Shell>
   );
 };
 

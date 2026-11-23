@@ -30,7 +30,10 @@ const TO5 = { ORDER: 'order', QUESTION: 'question', REQUEST: 'question', NEGOTIA
 const ASPECT_TOPIC = [['PROMOTION', 'promo'], ['PRICE', 'price'], ['STOCK', 'stock'], ['SIZE_FIT', 'size'], ['SHIPPING', 'shipping'],
   ['SPEC_MATERIAL', 'material'], ['VARIANT', 'color'], ['ORDER_PROCESS', 'howToOrder'], ['QUALITY_TRUST', 'authenticity'], ['USAGE', 'usage']];
 // Ngưỡng chọn trên dev 23/11 theo macro-F1 (0,5: 0,749; 0,6: 0,724; 0,8: 0,740)
-const COMPLAINT_MIN = Number(process.env.LIVE_COMPLAINT_MIN) || 0.5;
+// Chủ đề của luật -> khía cạnh tương ứng của mô hình (để biết hai bên có đồng ý không)
+const TOPIC_ASPECT = { promo: 'PROMOTION', price: 'PRICE', stock: 'STOCK', size: 'SIZE_FIT', shipping: 'SHIPPING', material: 'SPEC_MATERIAL',
+  color: 'VARIANT', howToOrder: 'ORDER_PROCESS', payment: 'ORDER_PROCESS', authenticity: 'QUALITY_TRUST', warranty: 'QUALITY_TRUST', usage: 'USAGE' };
+const COMPLAINT_MIN =Number(process.env.LIVE_COMPLAINT_MIN) || 0.5;
 // Chọn trên dev 23/11 theo macro-F1: 0,45 -> 0,752; 0 -> 0,749; 0,55 -> 0,731
 const LOW_CONF = process.env.LIVE_LOW_CONF !== undefined ? Number(process.env.LIVE_LOW_CONF) : 0.45;
 const modelEnabled = () => process.env.LIVE_MODEL !== '0' && linear.available();
@@ -453,7 +456,10 @@ function classifyUncached(rawText, { products = [] } = {}) {
         ? ASPECT_TOPIC.find(([a]) => model.aspects.includes(a))?.[1] || 'other'
         : ASPECT_TOPIC.filter(([a]) => model.aspects.includes(a)).sort((x, y) => model.aspectProbs[y[0]] - model.aspectProbs[x[0]])[0]?.[1] || 'other';
       const finer = (mt === 'howToOrder' && topic === 'payment') || (mt === 'authenticity' && topic === 'warranty');
-      const keepRule = process.env.LIVE_TOPIC !== 'model' && mt === 'other' && topic !== 'other';
+      // Giữ chủ đề của luật khi mô hình không có chủ đề, hoặc khi khía cạnh ứng với chủ đề luật cũng nằm
+      // trong các khía cạnh mô hình đoán (hai bên đồng ý; "hàng có chính hãng không" là chính hãng, không phải còn hàng)
+      const agree = process.env.LIVE_TOPIC_AGREE !== '0' && topic !== 'other' && model.aspects.includes(TOPIC_ASPECT[topic]);
+      const keepRule = process.env.LIVE_TOPIC !== 'model' && ((mt === 'other' && topic !== 'other') || agree);
       if (!finer && !keepRule) topic = mt;
     }
   }
