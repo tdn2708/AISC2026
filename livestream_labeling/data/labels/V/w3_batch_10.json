@@ -1,0 +1,531 @@
+[
+ {
+  "item_id": "Y4f725303f9",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ydb97681d43",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "cẩu",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "ten mon tro -> REQUEST theo quy uoc"
+ },
+ {
+  "item_id": "Ybe333827a3",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "80k đĩa hột xoài",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "gia 80k; hot xoai la ten mon"
+ },
+ {
+  "item_id": "Y735bd8de16",
+  "final_intent": "NEGOTIATE",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "350",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "350 chi ma em: thac mac/che gia, mo ho"
+ },
+ {
+  "item_id": "Ya360a4c64a",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "4 chén xanh",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y51e695bf2c",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "44 3",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "ma 44 so luong 3"
+ },
+ {
+  "item_id": "Yada7449696",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "than khong chot duoc"
+ },
+ {
+  "item_id": "Y99b0888e72",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Xông tinh dầu",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "ten mon tro -> REQUEST"
+ },
+ {
+  "item_id": "Y4afcea81a2",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "10 cái",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y2628427761",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "M110",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y4093dd6ae6",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ya48445c0d7",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Cái thố trắng xanh",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Tc93db11f14",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT",
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "hong 38",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "phien nan, quy uoc giay"
+ },
+ {
+  "item_id": "Y78b6c9469b",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "12",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y50f286a71a",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "80",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y63d0c8d861",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "67",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ya20f825a7f",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "lay nhe khong ma/so luong"
+ },
+ {
+  "item_id": "Y889f71f6af",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yf47b63983d",
+  "final_intent": "SOCIAL",
+  "final_aspects": [
+   "HOST_STREAM"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "treu toc do nguoi live"
+ },
+ {
+  "item_id": "Y49ce769725",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "101",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yd197a68e62",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ya2e8cceec9",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "noi voi nguoi xem khac"
+ },
+ {
+  "item_id": "Yc85f43daf5",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y4fc0df5889",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "m98",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yaebf146579",
+  "final_intent": "SOCIAL",
+  "final_aspects": [
+   "HOST_STREAM"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "khong thay chu shop tren hinh"
+ },
+ {
+  "item_id": "Y3ac0017449",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y6c4cedf076",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 1,
+  "final_product_ref": "51",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "bao doan duoc ma 51 de chot"
+ },
+ {
+  "item_id": "Y4b838b9eb2",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT",
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "U 36",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y604f11b2c4",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "hoi tai sao khong chot duoc"
+ },
+ {
+  "item_id": "Y962045c3c5",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y11f0b73a20",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "2 cái đĩa trước mặt",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "co the la REQUEST"
+ },
+ {
+  "item_id": "Y7dc7853c72",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y9353ff8f70",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "20.6",
+  "decision": "agree_AB",
+  "certainty": "low",
+  "reason": "20.6 mo ho (ma/gia)"
+ },
+ {
+  "item_id": "Ye857a032a5",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT",
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "ấm m 7",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "xin chot ma m7 da bo lo; co the la QUESTION"
+ },
+ {
+  "item_id": "Y9db08d57c8",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ycbdce33aae",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "xin xem bong; mo ho"
+ },
+ {
+  "item_id": "Y10d778a7b4",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "1250",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ydfa4111681",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "hoi mua duoc nhieu khong; co the noi voi nguoi xem"
+ },
+ {
+  "item_id": "Y92fd8bf028",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "5.ch",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "5 chen?"
+ },
+ {
+  "item_id": "Y7840dab0b2",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "xin to chuc giao luu"
+ },
+ {
+  "item_id": "Yc180f3e799",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "VARIANT",
+   "QUALITY_TRUST"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Gạt tàn xanh",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "theo quy uoc 'X loi' -> QUESTION"
+ },
+ {
+  "item_id": "Y155421fa58",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "36",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yee203b13a2",
+  "final_intent": "NEGOTIATE",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "khen dep nhung it tien khong dam = ngam che dat; uu tien NEGOTIATE"
+ }
+]

@@ -1,0 +1,1556 @@
+[
+  {
+    "item_id": "Yf19ad7a2f0",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "8 chén còn kg em",
+    "note": ""
+  },
+  {
+    "item_id": "Y1c652a30f4",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "19",
+    "note": ""
+  },
+  {
+    "item_id": "Y9abd9dd004",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "23",
+    "note": ""
+  },
+  {
+    "item_id": "Yfa657adaf1",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "ly giống vậy",
+    "note": "hỏi còn không, kèm ý giữ mua"
+  },
+  {
+    "item_id": "Yee34854afe",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y1e7d0d5fb3",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yf8c6da2453",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "chén nhỏ uống trà",
+    "note": ""
+  },
+  {
+    "item_id": "Yb70f139467",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "G65",
+    "note": ""
+  },
+  {
+    "item_id": "Ybe056d5c2c",
+    "intent": "ORDER",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Còn 1cai",
+    "note": ""
+  },
+  {
+    "item_id": "Y38c75b4a51",
+    "intent": "QUESTION",
+    "aspects": [
+      "SHIPPING"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "hỏi đã gửi hàng chưa"
+  },
+  {
+    "item_id": "Yd55bcf3135",
+    "intent": "QUESTION",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "cặp đĩa",
+    "note": ""
+  },
+  {
+    "item_id": "Yb315150e14",
+    "intent": "GIVEAWAY",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "Tặng",
+    "note": ""
+  },
+  {
+    "item_id": "Y7a4730795f",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "tách trà mini",
+    "note": ""
+  },
+  {
+    "item_id": "Y18b000ca68",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y3a3fb4fc69",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "bộ ấm trà",
+    "note": ""
+  },
+  {
+    "item_id": "Y8f486bdc8c",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "cho xem",
+    "note": ""
+  },
+  {
+    "item_id": "Ycb723aca24",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "34",
+    "note": ""
+  },
+  {
+    "item_id": "Y14726e3445",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "230",
+    "note": ""
+  },
+  {
+    "item_id": "Teabafcf93c",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "trả lời về cách dùng giữa người xem; SOCIAL nên không gắn USAGE"
+  },
+  {
+    "item_id": "Ycdca6b8143",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "62",
+    "note": ""
+  },
+  {
+    "item_id": "Y6b6e81cede",
+    "intent": "OTHER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "Tổng chèo",
+    "note": "không rõ nghĩa"
+  },
+  {
+    "item_id": "Yc124d26c21",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "50/5",
+    "note": ""
+  },
+  {
+    "item_id": "Y6f957f7cde",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK",
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "đĩa ngũ sắc sai 12",
+    "note": "sai 12 không rõ là mã hay cỡ"
+  },
+  {
+    "item_id": "Yff183f1330",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Ye2f4fae6ec",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "220",
+    "note": ""
+  },
+  {
+    "item_id": "Y356de7e5aa",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "bộ tô ngũ sắc",
+    "note": ""
+  },
+  {
+    "item_id": "Y8ebf0c9543",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "G9 all",
+    "note": "bye kèm mã, coi là chốt"
+  },
+  {
+    "item_id": "Tf33907fa75",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Mẫu 10",
+    "note": ""
+  },
+  {
+    "item_id": "Ya3420f1f05",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "250",
+    "note": ""
+  },
+  {
+    "item_id": "Yd071bbeee0",
+    "intent": "ORDER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "5ly",
+    "note": "chỉ có số lượng, không rõ mã/giá"
+  },
+  {
+    "item_id": "Y9375952fa9",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "39",
+    "note": ""
+  },
+  {
+    "item_id": "Y5bc31fcafb",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "120",
+    "note": ""
+  },
+  {
+    "item_id": "Y8787333b78",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y1f2f0cf646",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y521af1119a",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y71751bac31",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "5.chung.tra",
+    "note": "cụm viết liền không rõ"
+  },
+  {
+    "item_id": "Y8d84ac65af",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "150.1",
+    "note": ""
+  },
+  {
+    "item_id": "Ye8d2506a44",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "80 2 cái",
+    "note": ""
+  },
+  {
+    "item_id": "Yb234091d2c",
+    "intent": "ORDER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "lay",
+    "note": ""
+  },
+  {
+    "item_id": "Y07c01efb38",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "113",
+    "note": ""
+  },
+  {
+    "item_id": "Yae3c60c11a",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "tô ngũ sắc cạnh ấm trà xanh",
+    "note": ""
+  },
+  {
+    "item_id": "Y92e06f6e14",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "350",
+    "note": ""
+  },
+  {
+    "item_id": "Yaaa53796e8",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "bình đất nung bé",
+    "note": ""
+  },
+  {
+    "item_id": "Yf6ab47bfe7",
+    "intent": "OTHER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yf05b081860",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "26",
+    "note": ""
+  },
+  {
+    "item_id": "Ye8c49e0140",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "40/2",
+    "note": ""
+  },
+  {
+    "item_id": "Y015f727fed",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "m23",
+    "note": ""
+  },
+  {
+    "item_id": "Yc0eddef968",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "680",
+    "note": ""
+  },
+  {
+    "item_id": "Ycad146825d",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "2/ 113",
+    "note": ""
+  },
+  {
+    "item_id": "Ydee3b11181",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "10",
+    "note": ""
+  },
+  {
+    "item_id": "Y9ff8bc8596",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "Có giá bán cho anh",
+    "note": ""
+  },
+  {
+    "item_id": "Y684f6d98f8",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "binh rượu đo 71",
+    "note": ""
+  },
+  {
+    "item_id": "Yd0025ac43a",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Ye94782a349",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Ydf9c1dc558",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "149",
+    "note": ""
+  },
+  {
+    "item_id": "Y7f0340904c",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "30",
+    "note": ""
+  },
+  {
+    "item_id": "Y50c42bcd33",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "5 bát lở mã 100k",
+    "note": ""
+  },
+  {
+    "item_id": "Ya40104dfb5",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y374adbe2ac",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "101",
+    "note": ""
+  },
+  {
+    "item_id": "T9f62bd67e3",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "kem 38",
+    "note": ""
+  },
+  {
+    "item_id": "Y5195a77fe0",
+    "intent": "ORDER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "4cai",
+    "note": "chỉ có số lượng"
+  },
+  {
+    "item_id": "Y4400e91a74",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "4 c đĩa 200",
+    "note": ""
+  },
+  {
+    "item_id": "Yd9c2b3cff9",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y64aa625351",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "đã gửi SĐT, coi là chốt"
+  },
+  {
+    "item_id": "Y99f1284759",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y0be3a91862",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y0e9ee9de8c",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "bình trà hình vuông",
+    "note": ""
+  },
+  {
+    "item_id": "Y067bcef834",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "nhận xét, không hỏi"
+  },
+  {
+    "item_id": "Yd68acfa39f",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y100cb92fb6",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "/100",
+    "note": "dạng /100 không rõ, coi là giá"
+  },
+  {
+    "item_id": "Yf2ca38d814",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "có 120",
+    "note": ""
+  },
+  {
+    "item_id": "Yfee6c92fb0",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "73",
+    "note": ""
+  },
+  {
+    "item_id": "Yd6ae09938c",
+    "intent": "OTHER",
+    "aspects": [
+      "HOST_STREAM"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "chủ phiên báo mạng chậm"
+  },
+  {
+    "item_id": "Y110f52aa16",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "21",
+    "note": ""
+  },
+  {
+    "item_id": "Yc05f87a27d",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y6fabe830ae",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "91",
+    "note": ""
+  },
+  {
+    "item_id": "Y6d10623fff",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "bình để trong tô ngủ sắc trên kệ",
+    "note": ""
+  },
+  {
+    "item_id": "Y73a86b29ec",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "49",
+    "note": ""
+  },
+  {
+    "item_id": "Ydcd4b5410a",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yffe6410b70",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "89",
+    "note": "ai chốt e, coi là chốt mã 89"
+  },
+  {
+    "item_id": "Yb2a05faad8",
+    "intent": "ORDER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "co lay",
+    "note": "có lấy, coi là chốt"
+  },
+  {
+    "item_id": "Yc8ad95809f",
+    "intent": "QUESTION",
+    "aspects": [
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "có bộ",
+    "note": "câu viết tắt, không rõ đoạn qh 0"
+  },
+  {
+    "item_id": "Yeffa98136c",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "76",
+    "note": ""
+  },
+  {
+    "item_id": "Y888e2c73d6",
+    "intent": "ORDER",
+    "aspects": [
+      "QUALITY_TRUST"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "báo đã mua dù có lỗi"
+  },
+  {
+    "item_id": "Yfd870621ab",
+    "intent": "ORDER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "cái thố trên bàn",
+    "note": "xin lấy, coi là chốt"
+  },
+  {
+    "item_id": "Yf5e73a35cc",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "xả mã 100.đĩa",
+    "note": ""
+  },
+  {
+    "item_id": "Y799105a6be",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "POS",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yddf6131b36",
+    "intent": "COMPLAINT",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEG",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Ye7c9d06d2f",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "54",
+    "note": ""
+  },
+  {
+    "item_id": "Yb908380b15",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "1500",
+    "note": ""
+  },
+  {
+    "item_id": "Y068a9410ee",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "ấm coban còn lại",
+    "note": ""
+  },
+  {
+    "item_id": "Y1af8595627",
+    "intent": "PRAISE",
+    "aspects": [],
+    "sentiment": "POS",
+    "needs_reply": 0,
+    "product_ref": "cái đĩa đẹp",
+    "note": ""
+  },
+  {
+    "item_id": "Y2b65c6e9c8",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y924bfb08d3",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "78",
+    "note": ""
+  },
+  {
+    "item_id": "Y4af451c505",
+    "intent": "REQUEST",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "bình trà",
+    "note": ""
+  },
+  {
+    "item_id": "Y93f463b158",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Ycf7f57f516",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "m21",
+    "note": ""
+  },
+  {
+    "item_id": "Y00aa430f8d",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "70000",
+    "note": "5 chữ số không phải SĐT, coi là giá"
+  },
+  {
+    "item_id": "Y850045c655",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "",
+    "note": "chốt theo cách khác, coi là chốt"
+  },
+  {
+    "item_id": "Y997e1fd237",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y2216309de5",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y9512e690e9",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yf1a9180bea",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "900",
+    "note": ""
+  },
+  {
+    "item_id": "Ya80d198ae6",
+    "intent": "PRAISE",
+    "aspects": [
+      "QUALITY_TRUST"
+    ],
+    "sentiment": "POS",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yf33ae984b8",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE",
+      "QUALITY_TRUST",
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "mã 2 cái đĩa men Ngọc",
+    "note": "người xem báo xả mã, có tình trạng bị mẻ"
+  },
+  {
+    "item_id": "Y50f07fea3e",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "120*2",
+    "note": ""
+  },
+  {
+    "item_id": "Y1dd7e795ff",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "đùa, không phải chốt"
+  },
+  {
+    "item_id": "Yc137fa4921",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "loa 2400",
+    "note": ""
+  },
+  {
+    "item_id": "Y2e6eae49eb",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "19",
+    "note": ""
+  },
+  {
+    "item_id": "Y1170118afa",
+    "intent": "OTHER",
+    "aspects": [
+      "HOST_STREAM"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "giải thích mạng và máy chủ"
+  },
+  {
+    "item_id": "Yf25e9db08c",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y5ede69ef58",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "501",
+    "note": ""
+  },
+  {
+    "item_id": "Y2b060ce448",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "250/10",
+    "note": ""
+  },
+  {
+    "item_id": "Yaf38ca27c5",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "mã 300",
+    "note": "nhường lại mã, coi là huỷ"
+  },
+  {
+    "item_id": "Y9579573b99",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yb6b6ffc02b",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE",
+      "STOCK"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "bánh mì ổ vuông",
+    "note": ""
+  },
+  {
+    "item_id": "Yd84a195c80",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "150",
+    "note": ""
+  },
+  {
+    "item_id": "Yceca20f984",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y18883770ba",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "12",
+    "note": ""
+  },
+  {
+    "item_id": "Y2366b6950c",
+    "intent": "OTHER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "không rõ là chủ phiên hay người xem"
+  },
+  {
+    "item_id": "Yeb1c81fdbd",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "70",
+    "note": ""
+  },
+  {
+    "item_id": "Ya0723606d6",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "50l",
+    "note": ""
+  },
+  {
+    "item_id": "Y9fe30ed84e",
+    "intent": "QUESTION",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "mã 57",
+    "note": "hỏi vì sao không ghi tên"
+  },
+  {
+    "item_id": "Y7ecae81ed0",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "70",
+    "note": ""
+  },
+  {
+    "item_id": "Y6e8dc7dee6",
+    "intent": "QUESTION",
+    "aspects": [
+      "SHIPPING"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "con voi lớn 16tr",
+    "note": ""
+  },
+  {
+    "item_id": "Ydd1c29f506",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "28/3",
+    "note": "không rõ là ngày hay giá/SL"
+  },
+  {
+    "item_id": "Y1ee30ed2c1",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "G9 all",
+    "note": ""
+  },
+  {
+    "item_id": "Yf8c1f8e9f8",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "2008",
+    "note": ""
+  },
+  {
+    "item_id": "Ybf803a0730",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "34",
+    "note": ""
+  },
+  {
+    "item_id": "Yb5287363bc",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "56",
+    "note": ""
+  },
+  {
+    "item_id": "Yab4ec45488",
+    "intent": "SOCIAL",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": "nhường cho người khác, không có mã"
+  },
+  {
+    "item_id": "Y41b0431282",
+    "intent": "ORDER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "2c",
+    "note": "chỉ có số lượng"
+  },
+  {
+    "item_id": "Ya3c82e9097",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "68",
+    "note": ""
+  },
+  {
+    "item_id": "Yfcd6fc7d61",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "100 2 cai",
+    "note": ""
+  },
+  {
+    "item_id": "Y920fe34255",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "50",
+    "note": ""
+  },
+  {
+    "item_id": "Yee998ba938",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "*60",
+    "note": ""
+  },
+  {
+    "item_id": "Y9d8d52a668",
+    "intent": "QUESTION",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "bình nước",
+    "note": ""
+  },
+  {
+    "item_id": "Y0eeebcfd46",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "c100",
+    "note": ""
+  },
+  {
+    "item_id": "Yc83fc4f669",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "211",
+    "note": ""
+  },
+  {
+    "item_id": "Tb7d3fefe79",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "55 hồng",
+    "note": ""
+  },
+  {
+    "item_id": "Y2e89c93072",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "29",
+    "note": ""
+  },
+  {
+    "item_id": "Y825e9fa22a",
+    "intent": "COMPLAINT",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEG",
+    "needs_reply": 1,
+    "product_ref": "giá trước",
+    "note": ""
+  },
+  {
+    "item_id": "Yf452a543db",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "M82",
+    "note": ""
+  },
+  {
+    "item_id": "Y4de4932365",
+    "intent": "ORDER",
+    "aspects": [
+      "PRICE"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "32/1",
+    "note": ""
+  },
+  {
+    "item_id": "Ydd3ac27ff8",
+    "intent": "SOCIAL",
+    "aspects": [
+      "HOST_STREAM"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Y0f832a9b90",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "27",
+    "note": ""
+  },
+  {
+    "item_id": "Y935fc0f93f",
+    "intent": "OTHER",
+    "aspects": [],
+    "sentiment": "NEU",
+    "needs_reply": 0,
+    "product_ref": "gop",
+    "note": "không rõ, có thể là gộp đơn"
+  },
+  {
+    "item_id": "Yed5884a1af",
+    "intent": "ORDER",
+    "aspects": [
+      "ORDER_PROCESS"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "[SĐT]",
+    "note": ""
+  },
+  {
+    "item_id": "Y3141ec7c3e",
+    "intent": "PRAISE",
+    "aspects": [
+      "HOST_STREAM"
+    ],
+    "sentiment": "POS",
+    "needs_reply": 0,
+    "product_ref": "",
+    "note": ""
+  },
+  {
+    "item_id": "Yd11cbf6cfa",
+    "intent": "ORDER",
+    "aspects": [
+      "VARIANT"
+    ],
+    "sentiment": "NEU",
+    "needs_reply": 1,
+    "product_ref": "chốt ly 40",
+    "note": ""
+  }
+]

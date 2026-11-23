@@ -1,0 +1,506 @@
+[
+ {
+  "item_id": "Y2a8dcbd50d",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "57",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yab4ec9f77e",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "VARIANT",
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "mã 30",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "tố mã đã chốt trước bị bỏ sót"
+ },
+ {
+  "item_id": "Y7a454695d1",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "1992",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y800959030a",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "1t2",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y978064086d",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "sét trà Âu lẻ",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y3ea91e3a69",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "than phiền không chốt được, nói chung"
+ },
+ {
+  "item_id": "Yb52c4d23f7",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "hỏi chuyện chủ live, không về sản phẩm"
+ },
+ {
+  "item_id": "Ycd81ce7547",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "súp dmx",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ye419989dc4",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ybd2d6ee4c5",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yb84bb1dd80",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Hoa Trịnh",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "\"bán X đi\" = yêu cầu lên món"
+ },
+ {
+  "item_id": "Y7128d0ef67",
+  "final_intent": "OTHER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y41d7de09d5",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "3250",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y7b64d1fd6c",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "5.chungtr.cai.binh",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yfd3df01650",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Nồi",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yda2fcd0903",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yec26bb3435",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "900.000₫ Dĩa Lam",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y7ee1ddf7b5",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y0472ae0240",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "bình mọc",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "\"cho chị X đi\" = lấy"
+ },
+ {
+  "item_id": "Y113c9e0d6e",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y1d50fdfae2",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y42d728c06b",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yf5c041799f",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "bình trà",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y185a03d158",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "\"còn em\" có thể hỏi còn hàng"
+ },
+ {
+  "item_id": "Yd25f7e3f50",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "hình 1nam 1nu",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "mô tả hình mẫu xin xem"
+ },
+ {
+  "item_id": "Y5e849951c1",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y8231a6f3bc",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ya4822db47b",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "than việc người khác chốt trước giá"
+ },
+ {
+  "item_id": "Yd3688b9768",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y4b5361d12e",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "13",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yafa6062505",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "ch150",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y591cb77ac0",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "VARIANT",
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "Số 6",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "tố đã chốt trước bị bỏ sót"
+ },
+ {
+  "item_id": "Y8d795f00fe",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "900",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ydc2c6ae86a",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "bình rót nhỏ",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y69d910b1e3",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "dĩa trắng núp ly trà",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yecb7448dc4",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "50/2",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": "giá x SL"
+ },
+ {
+  "item_id": "Y598d766bbb",
+  "final_intent": "OTHER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "high",
+  "reason": "chọn theo quy tắc"
+ },
+ {
+  "item_id": "Y3365e1d9de",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "hỏi/than chuyện bán hàng chung"
+ },
+ {
+  "item_id": "Yed80153e0d",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "04",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y689615f6fd",
+  "final_intent": "PRAISE",
+  "final_aspects": [
+   "HOST_STREAM"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y6c5c2ad216",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ya2b1b0ac30",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "49383",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ }
+]

@@ -1,0 +1,1166 @@
+[
+{
+"item_id": "Td489732cb4",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "thêm",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "ORDER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "\"thêm\" mơ hồ"
+},
+"B": {
+"intent": "ORDER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "\"thêm\" không rõ là đặt thêm hay hỏi thêm"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Tc1f0bd5f6e",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "1m50 nặng 70",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Tca042ca8fb",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "Chị đang mặc size j ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+]
+}
+},
+{
+"item_id": "Ta6b30321f6",
+"category": "cong_nghe",
+"session_title": "nan",
+"text": "sdh co kk",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "sdh co = đã checkout (Indo)"
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "tiếng Indonesia: hỏi đã có chưa"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "T41b3c5cea7",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "Cao m7, 55kg mặc có bị ngắn k ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+]
+}
+},
+{
+"item_id": "T2b418b80a1",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "1 bộ mấy món ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "1 bộ",
+"note": "hỏi 1 bộ gồm mấy món"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "T49be806219",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "Mk m58 nặng 62kg mặc size gì a",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+]
+}
+},
+{
+"item_id": "T98e28146c2",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "dùng thích lắm sộp ơi",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "PRAISE",
+"aspects": [
+"QUALITY_TRUST"
+],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": "khen dùng thích"
+},
+"B": {
+"intent": "PRAISE",
+"aspects": [
+"USAGE"
+],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "PRAISE",
+"aspects": []
+}
+},
+{
+"item_id": "T7d028cf5e7",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "Mã 2 46kg mặc size S có bé không ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Mã 2",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Mã 2",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+]
+}
+},
+{
+"item_id": "T914b3a57d4",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "đồ nào mua nhiều nhứt v",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"QUALITY_TRUST"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "đồ bán chạy nhất"
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "hỏi món bán chạy nhất, không có tên sản phẩm"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+]
+}
+},
+{
+"item_id": "T7df67b5765",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "K đeo thắt lưng dc k ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"USAGE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"USAGE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "T7cbf70aa3c",
+"category": "cong_nghe",
+"session_title": "nan",
+"text": "14prm 256g giá sao a",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "14prm 256g",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "14prm 256g",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+]
+}
+},
+{
+"item_id": "T1e5c43b2a3",
+"category": "cong_nghe",
+"session_title": "nan",
+"text": "dpat 2 y kk",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "2",
+"note": "tiếng Indonesia \"dapat 2 ya\": lấy 2 được không, chọn ORDER"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Ta99dfb2dcf",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "68kg vừa k c?",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+]
+}
+},
+{
+"item_id": "T903b5fd9a7",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "m đặt nồi áp suốt rồi có đc tặng bình nước ko",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"PROMOTION"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "nồi áp suốt",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"PROMOTION",
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "nồi áp suất",
+"note": "đã đặt, hỏi có được tặng bình nước"
+},
+"C_luat": {
+"intent": "ORDER",
+"aspects": []
+}
+},
+{
+"item_id": "Tce44749e52",
+"category": "cong_nghe",
+"session_title": "nan",
+"text": "14pr 256 ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "14pr 256",
+"note": ""
+},
+"B": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "14pr 256",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Te68d032996",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "Đã đặt",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "ORDER",
+"aspects": []
+}
+},
+{
+"item_id": "T69dcfbce15",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "Met 53 nặng 54eo 74 mặc sai gì bn",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+]
+}
+},
+{
+"item_id": "T411b65e24c",
+"category": "cong_nghe",
+"session_title": "nan",
+"text": "tu van ma2 a",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT",
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "ma2",
+"note": ""
+},
+"B": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "mã 2",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "T915e99b541",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "Mã số 5 phải đặt trc ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Mã số 5",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT",
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Mã số 5",
+"note": ""
+},
+"C_luat": {
+"intent": "ORDER",
+"aspects": []
+}
+},
+{
+"item_id": "Tdf14c3fbca",
+"category": "cong_nghe",
+"session_title": "nan",
+"text": "14",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "14",
+"note": "tên máy đứng trơ"
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "14",
+"note": "bare số 2 chữ số, theo quy ước ORDER + VARIANT"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "T37a00d11a3",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "54kg 1m50",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Tceeef4c11a",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "Của chị màu nâu",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "màu nâu",
+"note": ""
+},
+"B": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "màu nâu",
+"note": "ý không rõ, có thể đang chỉ màu"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Taab7029186",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "đỉnh thế nhiều mắt xem thế",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "PRAISE",
+"aspects": [
+"HOST_STREAM"
+],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": "khen người live và số người xem"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Tca892ab2b6",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "Lên 79k ik ạ",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "79k",
+"note": "lên 79k, xin lên món giá này"
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "79k",
+"note": "tiếng Việt \"lên 79k\" trong phiên đấu giá: tăng giá"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+]
+}
+},
+{
+"item_id": "T6582dc77ef",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "1m66 48kg size gì ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+]
+}
+},
+{
+"item_id": "Teebc576748",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "nữ 1m6 nặng 48kg mặc size nào shop",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+]
+}
+},
+{
+"item_id": "Taab39b61fc",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "cao  1/50  nạng 52 ký chị",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "\"1/50\" là 1m50"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "T838c3248f9",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "50kg,1m 58",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "T68ff98f239",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "1m85, 85kg size gì shop",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+]
+}
+},
+{
+"item_id": "T6284d9b1fa",
+"category": "cong_nghe",
+"session_title": "nan",
+"text": "kak panci yg tutupan itu.ukuran 30 ada",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"STOCK",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "panci tutupan 30",
+"note": "Indo"
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"STOCK",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "panci ukuran 30",
+"note": "tiếng Indonesia: hỏi nồi size 30 còn không"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "T9550d81684",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "E đặt nhầm size",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"SIZE_FIT",
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "đặt nhầm size"
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS",
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "đặt nhầm size, đề nghị sửa"
+},
+"C_luat": {
+"intent": "ORDER",
+"aspects": []
+}
+},
+{
+"item_id": "T0bb5a0b528",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "@[USER] e nhận đơn rồi. Cám ơn bác nhiều nha",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "PRAISE",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "cảm ơn đã nhận đơn"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+]
+}
+},
+{
+"item_id": "T5ec916ace6",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "M8 60kg size gì ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+]
+}
+},
+{
+"item_id": "Tccf455041e",
+"category": "cong_nghe",
+"session_title": "nan",
+"text": "Em đang có c Nexus 61s he custom case nhôm + keycap trong suốt, plate carbon, sw trong suốt",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "chia sẻ cấu hình bàn phím của mình, không hỏi"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Tfb1bba9a88",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "Lấy chó sọc cho dễ thấy c kkk",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "chó sọc",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "chó sọc",
+"note": ""
+},
+"C_luat": {
+"intent": "ORDER",
+"aspects": []
+}
+},
+{
+"item_id": "Tddec236ac5",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "Cao 164 nặng 62kg vừa k",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+]
+}
+}
+]

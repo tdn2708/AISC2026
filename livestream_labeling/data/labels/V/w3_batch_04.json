@@ -1,0 +1,473 @@
+[
+ {
+  "item_id": "Y70f82e353d",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "than chốt chậm bị trượt (cùng kiểu 'tối nay chốt toàn trượt'); có thể chỉ tự than"
+ },
+ {
+  "item_id": "Y4addaf7e8e",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ydde807de4a",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Cây mai",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "tên món trần → nghiêng xin xem; có thể là chốt hoặc bình luận"
+ },
+ {
+  "item_id": "Y1f3a89a4e7",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y2176f55c05",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "'vip rồi' có nghĩa (đùa giữa người xem) → SOCIAL theo #10; mơ hồ"
+ },
+ {
+  "item_id": "Y93f646e5f4",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": "'1 cái' là số lượng, product_ref rỗng"
+ },
+ {
+  "item_id": "Ybebca214cc",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "HOST_STREAM"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "'cô hỏi mà Lý' = trách người live chưa trả lời câu hỏi"
+ },
+ {
+  "item_id": "Y5a85f209fc",
+  "final_intent": "PRAISE",
+  "final_aspects": [
+   "HOST_STREAM"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "chào + khen người live là chính (ví dụ trong hướng dẫn mục 1)"
+ },
+ {
+  "item_id": "Y25e8456412",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT",
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "ma 26",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": "#27/#24: xả mã = huỷ chốt → ORDER_PROCESS"
+ },
+ {
+  "item_id": "Y1268d9f472",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "20,4",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "dạng giá,SL (#13) → PRICE; có thể là mã,SL"
+ },
+ {
+  "item_id": "Y5eb69942ec",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "50 /4",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "dạng giá/SL (#13) → PRICE; có thể là mã/SL"
+ },
+ {
+  "item_id": "Yee492f1ed8",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "ấm lớn 120",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "#29: 3 chữ số không k → VARIANT, dù có thể là giá"
+ },
+ {
+  "item_id": "Y854b00a683",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Ye1f267a845",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "110",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y6cb0e5e9c3",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": "sentiment POS (kakaka, emoji)"
+ },
+ {
+  "item_id": "Yd37b6c1023",
+  "final_intent": "PRAISE",
+  "final_aspects": [
+   "HOST_STREAM"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yebc3cffb7b",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "lộc bình lam lớn",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y6ee5a82909",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "đùa về đồ cổ bị mẻ"
+ },
+ {
+  "item_id": "T789060ff6c",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "VARIANT",
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yaf040d2db4",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "40, 4",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "dạng giá,SL (#13) → PRICE; có thể là mã,SL"
+ },
+ {
+  "item_id": "Y00cfbaeb0c",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yc0a474aaf6",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": "chào + chúc → SOCIAL, POS"
+ },
+ {
+  "item_id": "Y98e55b6b8b",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": "sentiment POS (kakaka)"
+ },
+ {
+  "item_id": "Yc5562a070e",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": "nói về người xem khác, không về người live → không HOST_STREAM"
+ },
+ {
+  "item_id": "Y9d9bcb6eca",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "ly trúc",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "'trúc' là hoa văn → VARIANT (#9)"
+ },
+ {
+  "item_id": "Y2b1385199f",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Tô Xanh",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y70a46a8e27",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "110",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y7c0e25f805",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "152",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yf5f3e398b3",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "SHIPPING",
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "dặn gộp và gửi hàng đơn của mình (ngoài sóng) → ORDER + SHIPPING/ORDER_PROCESS"
+ },
+ {
+  "item_id": "Y1c635af185",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK",
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "đĩa ngũ xắc 220",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y26fe8e8841",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "'để [cho] Tưởng Vũ Mạnh' = giữ hàng cho người mua tên đó"
+ },
+ {
+  "item_id": "Y0da5e41350",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "160/2",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "dạng giá/SL (#13) → PRICE; có thể là mã/SL"
+ },
+ {
+  "item_id": "Yd55bf82419",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "thuy tinh",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "chỉ một từ 'thủy tinh': nghiêng xin xem đồ thủy tinh; có thể chỉ là nhận xét"
+ },
+ {
+  "item_id": "Yd512eab0f9",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "200",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": "#29"
+ },
+ {
+  "item_id": "Yd22a875a17",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "nhận xét/đùa về món; có thể là hỏi chức năng"
+ },
+ {
+  "item_id": "Y260d987e26",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": "chào + chúc → POS"
+ },
+ {
+  "item_id": "Y50cf9fa23c",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": "chào + chúc (#18) → POS"
+ },
+ {
+  "item_id": "Y04f0bd7dc5",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT",
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 1,
+  "final_product_ref": "hồ lô 400",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "sửa đơn (lấy bớt hồ lô từ phần người khác) → ORDER_PROCESS; 400 theo #29 → VARIANT; có cảm ơn → POS"
+ }
+]

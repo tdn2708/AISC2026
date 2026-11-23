@@ -1,0 +1,1533 @@
+[
+ {
+  "item_id": "Yc366fb9c88",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK",
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "áo",
+  "note": ""
+ },
+ {
+  "item_id": "Ya7f0084034",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "5max",
+  "note": ""
+ },
+ {
+  "item_id": "Y570bfc5e1b",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "huawei gập 3",
+  "note": ""
+ },
+ {
+  "item_id": "Ye5c4657e2f",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yee3453d6e3",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "ryzen 5 3500",
+  "note": ""
+ },
+ {
+  "item_id": "Y0e00236b5a",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y4bd6b48480",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yd8d8c27d0b",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y0968691bef",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK",
+   "PRICE",
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y8fccda6117",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y10153fb3da",
+  "intent": "ORDER",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "100k",
+  "note": "mơ hồ"
+ },
+ {
+  "item_id": "Y7c202c77db",
+  "intent": "PRAISE",
+  "aspects": [
+   "QUALITY_TRUST"
+  ],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": "báo đã mua + đánh giá"
+ },
+ {
+  "item_id": "Y90c38f85a1",
+  "intent": "QUESTION",
+  "aspects": [
+   "ORDER_PROCESS",
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "s 20fe",
+  "note": ""
+ },
+ {
+  "item_id": "Y7f23adb5cf",
+  "intent": "ORDER",
+  "aspects": [
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "97869",
+  "note": ""
+ },
+ {
+  "item_id": "Ycb79b91f9e",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y5836e58951",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "H9",
+  "note": ""
+ },
+ {
+  "item_id": "Y66a9196b1a",
+  "intent": "ORDER",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "\"tang\" đơn lẻ"
+ },
+ {
+  "item_id": "Y7d18157e30",
+  "intent": "QUESTION",
+  "aspects": [
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y6a55d218b1",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "3tr 3",
+  "note": ""
+ },
+ {
+  "item_id": "Y7c5cf80089",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "bơm chìm hút xì Yoga",
+  "note": ""
+ },
+ {
+  "item_id": "Y1d9585ca5b",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y30a37f51cb",
+  "intent": "ORDER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "áo",
+  "note": ""
+ },
+ {
+  "item_id": "Yd35c8a4ad6",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "iphone 11 pro",
+  "note": ""
+ },
+ {
+  "item_id": "Y3e2fbe6eab",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y44d40d4e9a",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "rog phone 6",
+  "note": ""
+ },
+ {
+  "item_id": "Y55fea51146",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y1e1820334a",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "s21utra",
+  "note": ""
+ },
+ {
+  "item_id": "Y2f9c80aafd",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ycb98689711",
+  "intent": "PRAISE",
+  "aspects": [
+   "QUALITY_TRUST"
+  ],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yaff5917539",
+  "intent": "QUESTION",
+  "aspects": [
+   "QUALITY_TRUST"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "rin treo",
+  "note": ""
+ },
+ {
+  "item_id": "Y9ae47e94b6",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y0e8c658e52",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y2032d1f82d",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "máy khò nhiệt",
+  "note": ""
+ },
+ {
+  "item_id": "Yc859f8109e",
+  "intent": "REQUEST",
+  "aspects": [
+   "USAGE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ya6a834caea",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ya0fe946838",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y58bdf4f363",
+  "intent": "ORDER",
+  "aspects": [
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yd3bbc8aa21",
+  "intent": "NEGOTIATE",
+  "aspects": [
+   "PROMOTION",
+   "SHIPPING"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yf3b9e9ea61",
+  "intent": "PRAISE",
+  "aspects": [
+   "QUALITY_TRUST"
+  ],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yf11d3a57e1",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y7806b85212",
+  "intent": "ORDER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "1 quả",
+  "note": ""
+ },
+ {
+  "item_id": "Y63045dcbb2",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y034f7fe1ac",
+  "intent": "QUESTION",
+  "aspects": [
+   "QUALITY_TRUST"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y465553d718",
+  "intent": "QUESTION",
+  "aspects": [
+   "SHIPPING"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yc069ba743b",
+  "intent": "COMPLAINT",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEG",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y65c7de31ca",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yd12efe4a90",
+  "intent": "SOCIAL",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y5d6d8345f7",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y26bc276dc9",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yc9f22f1b3b",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "s6 epl",
+  "note": ""
+ },
+ {
+  "item_id": "Ybe30a4b995",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y4e7ee15434",
+  "intent": "REQUEST",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y3b2e8fd5ca",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "áo kiểu",
+  "note": ""
+ },
+ {
+  "item_id": "Y28d20174ca",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ye6801191e7",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yadcf15faaf",
+  "intent": "PRAISE",
+  "aspects": [],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y366aecae40",
+  "intent": "PRAISE",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "jum",
+  "note": ""
+ },
+ {
+  "item_id": "Yb78baafec6",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y7ba84b2f53",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEG",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y824440415b",
+  "intent": "QUESTION",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y33fb1b48e0",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y665638acd7",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y85ec50ab01",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ydec0a7316c",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK",
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "note 20 untra",
+  "note": ""
+ },
+ {
+  "item_id": "Y673e0df41f",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "hoa tiễn",
+  "note": ""
+ },
+ {
+  "item_id": "Y8dcc7baccf",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yfcccf7b776",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK",
+   "QUALITY_TRUST"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "not10+",
+  "note": ""
+ },
+ {
+  "item_id": "Y75507aaf3c",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y22ba4a5f72",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK",
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "bà ba",
+  "note": ""
+ },
+ {
+  "item_id": "Yc8db32acb7",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y1b05c5db60",
+  "intent": "ORDER",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "con thanh lý năm triệu",
+  "note": ""
+ },
+ {
+  "item_id": "Ybab47d01b6",
+  "intent": "ORDER",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "300k",
+  "note": ""
+ },
+ {
+  "item_id": "Yc17b8faf90",
+  "intent": "ORDER",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "áo trắng lửng",
+  "note": ""
+ },
+ {
+  "item_id": "Y68cfcc9d38",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y2550314b80",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "x300 pro",
+  "note": ""
+ },
+ {
+  "item_id": "Y38a229ab2c",
+  "intent": "ORDER",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "váy nâu",
+  "note": ""
+ },
+ {
+  "item_id": "Yb180486ca7",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y1382413663",
+  "intent": "QUESTION",
+  "aspects": [
+   "USAGE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y8d35a8fc6a",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "loa 715",
+  "note": ""
+ },
+ {
+  "item_id": "Y862aff8368",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "áo sọc",
+  "note": ""
+ },
+ {
+  "item_id": "Y371947b932",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "đầm hoa",
+  "note": ""
+ },
+ {
+  "item_id": "Ydce867878d",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y972aacf4cd",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "z11tb, neo11",
+  "note": ""
+ },
+ {
+  "item_id": "Yebd807eb3a",
+  "intent": "QUESTION",
+  "aspects": [
+   "QUALITY_TRUST"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "nguồn giga p550b",
+  "note": ""
+ },
+ {
+  "item_id": "Y7291b265d9",
+  "intent": "REQUEST",
+  "aspects": [
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "k80 pro",
+  "note": ""
+ },
+ {
+  "item_id": "Y294133b047",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "s21 ultra",
+  "note": ""
+ },
+ {
+  "item_id": "Y4026d30255",
+  "intent": "PRAISE",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yd4f58cd028",
+  "intent": "COMPLAINT",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEG",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y566492bdaa",
+  "intent": "ORDER",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "trang acong",
+  "note": ""
+ },
+ {
+  "item_id": "Ybdfc01e221",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEG",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yd50af2cbc9",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK",
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "xs màu gold",
+  "note": ""
+ },
+ {
+  "item_id": "Ya92e924ad6",
+  "intent": "QUESTION",
+  "aspects": [
+   "PROMOTION"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y9c4793d2b5",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "áo cam",
+  "note": ""
+ },
+ {
+  "item_id": "Y8d87dee265",
+  "intent": "PRAISE",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y8270e22599",
+  "intent": "REQUEST",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y2cabaa8824",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y6cdf6281f1",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yc48ae2fa6d",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK",
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yc5e720ee63",
+  "intent": "COMPLAINT",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEG",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y5cd58c9e56",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "s21 5g",
+  "note": ""
+ },
+ {
+  "item_id": "Y63561dfaf0",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y119b3d3dc3",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y0e81786a1b",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEG",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yb4a20aeb21",
+  "intent": "QUESTION",
+  "aspects": [
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yeab76dadb6",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK",
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "ddr4",
+  "note": ""
+ },
+ {
+  "item_id": "Y997234a4aa",
+  "intent": "COMPLAINT",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEG",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y66f4fa935c",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y96106a1699",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y2aed035a56",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "s21 5g",
+  "note": ""
+ },
+ {
+  "item_id": "Y5821859473",
+  "intent": "QUESTION",
+  "aspects": [
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ya8f44ac8ec",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE",
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ydab9ec9213",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yba2ed2944c",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "hàng collab",
+  "note": ""
+ },
+ {
+  "item_id": "Y096a074fe8",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "loa hỏa tiễn",
+  "note": ""
+ },
+ {
+  "item_id": "Yf15cdbcd3a",
+  "intent": "REQUEST",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ycd39d50e08",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "s20",
+  "note": ""
+ },
+ {
+  "item_id": "Y0b538a3fbd",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yfdab5abb62",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ya8e3dc71ed",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "nâu nơ",
+  "note": ""
+ },
+ {
+  "item_id": "Y1fae73871c",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y2c71876c60",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y1cc192fc0c",
+  "intent": "PRAISE",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y577b4075a8",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y4eb0ece4c2",
+  "intent": "QUESTION",
+  "aspects": [
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "hỏi chốt"
+ },
+ {
+  "item_id": "Y2589eb1733",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "ip 12 mini",
+  "note": ""
+ },
+ {
+  "item_id": "Y86c5e9d906",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "note20",
+  "note": ""
+ },
+ {
+  "item_id": "Y00daf215d3",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y0197a1387b",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y9bfe9512e4",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "hoa",
+  "note": ""
+ },
+ {
+  "item_id": "Ye7bc7691af",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yf60dedb734",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL",
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y1eb918e37d",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEG",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y32256d1a8c",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y7b5b92019e",
+  "intent": "COMPLAINT",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEG",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y6ca17d0d29",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yac0aeace5f",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y0009070157",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y229071f8dd",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "aio 360",
+  "note": ""
+ },
+ {
+  "item_id": "Y1d38104dab",
+  "intent": "COMPLAINT",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEG",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y25be0be926",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y0c45e89f27",
+  "intent": "PRAISE",
+  "aspects": [],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y87da06004f",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Yba277f6566",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "4080",
+  "note": "mơ hồ"
+ },
+ {
+  "item_id": "Y71f4b0cfc3",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ye9a57d7c08",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y5ae607b5e3",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y96c6165d52",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "bàn miso đinaco",
+  "note": ""
+ },
+ {
+  "item_id": "Ycca3ba50f0",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "xiaomi note15 pro plus",
+  "note": ""
+ },
+ {
+  "item_id": "Yb81f5ebbd0",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEG",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Y4e80614ce8",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ }
+]

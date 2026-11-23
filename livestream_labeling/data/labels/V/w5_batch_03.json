@@ -1,0 +1,606 @@
+[
+ {
+  "item_id": "Y43d66ad988",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "SPEC_MATERIAL",
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "áo khoác có túi",
+  "decision": "new",
+  "certainty": "medium",
+  "reason": "vừa hỏi vừa lấy hai cái, ORDER ưu tiên"
+ },
+ {
+  "item_id": "Y8e0a9f5da3",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "súp điện lai hoi eb 15s",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y97d68db043",
+  "final_intent": "OTHER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chỉ tag bạn"
+ },
+ {
+  "item_id": "Ya2b0921b47",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "yếm vàng",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "chọn theo hướng dẫn"
+ },
+ {
+  "item_id": "Y6cdb3ee6d5",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "chia sẻ giá đã xem, không yêu cầu"
+ },
+ {
+  "item_id": "Y3e2e7d1c2f",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Do",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "có thể gõ sai Đỏ"
+ },
+ {
+  "item_id": "Yfb3be8da87",
+  "final_intent": "QUESTION",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chọn theo hướng dẫn"
+ },
+ {
+  "item_id": "Y7f8d7b8d52",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yb72bfe4f5d",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y24a20f8e9c",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE",
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "cây nào tầm 2tr",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y2842c1eebe",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Xanh",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chọn theo hướng dẫn"
+ },
+ {
+  "item_id": "Y41dd8bf102",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "nhận xét, không hỏi"
+ },
+ {
+  "item_id": "Ycb8b286ac1",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "redmi Note 11 pro 4g",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y88bdcd8451",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "đỏ",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chọn theo hướng dẫn"
+ },
+ {
+  "item_id": "Y52c94ba0a0",
+  "final_intent": "OTHER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chỉ tag bạn"
+ },
+ {
+  "item_id": "Y01d02aa024",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PROMOTION"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yf7991be1a1",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "một cái 32 60",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y67a2fc5c45",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "to",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "chê quá to hay hỏi, mơ hồ"
+ },
+ {
+  "item_id": "Y87a1cf338d",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE",
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "máy giá 4,5tr",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yca2fc1de47",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "nêu nhu cầu, ngầm hỏi cấu hình"
+ },
+ {
+  "item_id": "Y0b34deb8bc",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "QUALITY_TRUST"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "tuf",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "nghi ngờ độ bền"
+ },
+ {
+  "item_id": "Y7dceb17a8a",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "S23 utral",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y0c9952f5a1",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "SHIPPING"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y8064279787",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "S10 PLUS 512GB",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "tên máy đứng trơ"
+ },
+ {
+  "item_id": "Yacdb104600",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "34092",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yb78b4fa9fb",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Hồng",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chọn theo hướng dẫn"
+ },
+ {
+  "item_id": "Y2e0bf13740",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yc1bb1fe9c4",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE",
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "oppo k13 turbo pro",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "hỏi máy chơi game tầm giá"
+ },
+ {
+  "item_id": "Yfcc701de45",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "VARIANT",
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "b760 aorus pro và aorus elite",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "chọn theo hướng dẫn"
+ },
+ {
+  "item_id": "Y7de7934696",
+  "final_intent": "OTHER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chỉ tag bạn"
+ },
+ {
+  "item_id": "Y1cf40d935e",
+  "final_intent": "SOCIAL",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "chọn theo hướng dẫn"
+ },
+ {
+  "item_id": "Y0b8d23c2c1",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "QUALITY_TRUST"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "redmi note 13 pro 5g",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y1bf655d507",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "sửa số chốt, theo hai gán nhãn"
+ },
+ {
+  "item_id": "Yc91598b97e",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "hoa đỏ",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chọn theo hướng dẫn"
+ },
+ {
+  "item_id": "Ye99c2808e0",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SHIPPING"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "máy",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "T24bf7eb6bb",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "1m50 nặng 57kg",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yb33b73f37b",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "ORDER_PROCESS",
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y5fe5c4d52b",
+  "final_intent": "ORDER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chốt không mã"
+ },
+ {
+  "item_id": "Yf5c6af05e9",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "k60",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "lock sim là tình trạng máy"
+ },
+ {
+  "item_id": "Y9f8884aa66",
+  "final_intent": "COMPLAINT",
+  "final_aspects": [
+   "QUALITY_TRUST",
+   "ORDER_PROCESS"
+  ],
+  "final_sentiment": "NEG",
+  "final_needs_reply": 1,
+  "final_product_ref": "đổi k đổi",
+  "decision": "chose_A",
+  "certainty": "high",
+  "reason": "chọn theo hướng dẫn"
+ },
+ {
+  "item_id": "Y680ca46d4f",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "PRICE"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "sam sung 9",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y828d7df00c",
+  "final_intent": "OTHER",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_A",
+  "certainty": "low",
+  "reason": "có thể là quảng cáo tên shop"
+ },
+ {
+  "item_id": "Y045039bea1",
+  "final_intent": "REQUEST",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "coi kem sau lưng",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chọn theo hướng dẫn"
+ },
+ {
+  "item_id": "Y96423d25c8",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Vòi nước 01",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yc260cc2f43",
+  "final_intent": "GIVEAWAY",
+  "final_aspects": [],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "chose_B",
+  "certainty": "low",
+  "reason": "số trong phiên quay số trúng thưởng"
+ },
+ {
+  "item_id": "Yb2294e23ec",
+  "final_intent": "PRAISE",
+  "final_aspects": [
+   "HOST_STREAM"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Y59e6c15d26",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT",
+   "SIZE_FIT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "Hồng",
+  "decision": "chose_A",
+  "certainty": "medium",
+  "reason": "chọn theo hướng dẫn"
+ },
+ {
+  "item_id": "Yc78af30b5d",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "SHIPPING"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ }
+]

@@ -1,0 +1,869 @@
+[
+{
+"item_id": "Ye7d8a10da3",
+"category": "gia_dung",
+"session_title": "Livestream 24/10/2022 gốm sứ Nhật Bản Huyền Lý gốm đẹp",
+"text": "A trước ma",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "khẳng định chốt trước"
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "",
+"note": "tranh chấp thứ tự"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Y41cbcb36eb",
+"category": "gia_dung",
+"session_title": "Livestream 17/5/22 gốm sứ Nhật Bản siêu đẹp giá yêu thương",
+"text": "Nắp mơi c cầm",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Nắp",
+"note": "'nắp mới cầm' — mơ hồ chốt hay xin xem"
+},
+"B": {
+"intent": "ORDER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "nắp",
+"note": "mơ hồ"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Yebbab3de93",
+"category": "gia_dung",
+"session_title": "Livestream 24/10/2022 gốm sứ Nhật Bản Huyền Lý gốm đẹp",
+"text": "quái sach mà vàng bạch hóa kia",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "quái sach mà vàng bạch hóa",
+"note": "chỉ sp; mơ hồ"
+},
+"B": {
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "quái sách",
+"note": "mơ hồ"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y438c29036d",
+"category": "gia_dung",
+"session_title": "Livestream gốm Nhật lúc 20h30 ngày 11/08/2021 | Gốm Nhật Huyền Lý",
+"text": "Cho a xem cặp thú nhỏ sau lưng e",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "cặp thú nhỏ",
+"note": ""
+},
+"B": {
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "cặp thú nhỏ",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Yfa45a6fea1",
+"category": "gia_dung",
+"session_title": "Gốm sứ Nhật Bản giá rẻ livestream trực tiếp 29/3/2021  | Gốm Nhật Luân Thanh",
+"text": "M 53",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "M 53",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "M 53",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y73f03cb44b",
+"category": "gia_dung",
+"session_title": "Livestream 4/8/2022 gốm Nhật đẹp 💕",
+"text": "a truoc ma",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "khẳng định chốt trước"
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "",
+"note": "tranh chấp thứ tự"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Yeb12f79fa4",
+"category": "gia_dung",
+"session_title": "Livestream gốm Nhật đẹp sale sập sàn ❤️",
+"text": "25 ko đc cái nào hả",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT",
+"ORDER_PROCESS"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "25",
+"note": "hỏi/than không được cái nào"
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "25",
+"note": "mơ hồ"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Ya18833e1d8",
+"category": "gia_dung",
+"session_title": "Livestream 24/10/2022 gốm sứ Nhật Bản Huyền Lý gốm đẹp",
+"text": "em lên bờ trả quái sach đẹp di",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "bờ trả quái sach",
+"note": ""
+},
+"B": {
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "quái sách",
+"note": "mơ hồ"
+},
+"C_luat": {
+"intent": "PRAISE",
+"aspects": []
+}
+},
+{
+"item_id": "Y9cdc825dae",
+"category": "gia_dung",
+"session_title": "Livestream 09/10/2021 gốm sứ các loại theo yêu cầu | 0835518585",
+"text": "1 bộ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "1 bộ",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "1 bộ",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y9eedc6c7a6",
+"category": "gia_dung",
+"session_title": "Trực tiếp khui thùng hàng mới tối 9/11/2026 chốt đơn gọi 0393 053 200",
+"text": "rẻ đẹp",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "PRAISE",
+"aspects": [
+"PRICE"
+],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "PRAISE",
+"aspects": [
+"PRICE"
+],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "PRAISE",
+"aspects": []
+}
+},
+{
+"item_id": "Yeabfd74300",
+"category": "gia_dung",
+"session_title": "Livestream 17/5/22 gốm sứ Nhật Bản siêu đẹp giá yêu thương",
+"text": "heo",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "heo",
+"note": "chỉ tên sp (tượng heo?); mơ hồ"
+},
+"B": {
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "vô nghĩa"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y173ff47cd8",
+"category": "gia_dung",
+"session_title": "Livestream 17/5/22 gốm sứ Nhật Bản siêu đẹp giá yêu thương",
+"text": "50/6",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "50/6",
+"note": "dạng giá/SL (#13)"
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "50/6",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y6484d5088c",
+"category": "gia_dung",
+"session_title": "Livestream gốm Nhật lúc 20h30 ngày 11/08/2021 | Gốm Nhật Huyền Lý",
+"text": "1 cái",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "1 cái",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "1 cái",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Ycd494c5ee3",
+"category": "gia_dung",
+"session_title": "Livestream 29/11/2022 gốm Nhật đẹp trưng bày Tết",
+"text": "Gần đèn nằm trong",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "chỉ vị trí sp"
+},
+"B": {
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "vô nghĩa"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Ybe46fe3d5f",
+"category": "gia_dung",
+"session_title": "Trực tiếp khui thùng hàng mới tối 30/10/2026 Chốt đơn gọi 0393 053 200",
+"text": "A lấy ly hoa vàng",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "ly hoa vàng",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "ly hoa vàng",
+"note": ""
+},
+"C_luat": {
+"intent": "ORDER",
+"aspects": []
+}
+},
+{
+"item_id": "Y3939b0b279",
+"category": "gia_dung",
+"session_title": "Gốm sứ Nhật Bản giá rẻ livestream trực tiếp 29/3/2021  | Gốm Nhật Luân Thanh",
+"text": "gốm nhất",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "'gốm nhất' không rõ ý"
+},
+"B": {
+"intent": "PRAISE",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": "\"gốm nhất\" mơ hồ"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y8c3015060f",
+"category": "gia_dung",
+"session_title": "Livestream gốm Nhật Âu siêu đẹp ngày 16/09/2021 | Zalo 0835518585",
+"text": "trà chiều uống nhiều mất ngủ rồi.sao",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Y2fdcd2204d",
+"category": "gia_dung",
+"session_title": "Livestream 27/10/2021 gốm sứ Âu - Nhật siêu đẹp | Huyền Lý",
+"text": "OK… Thanks đại gia Sơn Thế 👍💪🍻🍻",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Ya4b81a0518",
+"category": "gia_dung",
+"session_title": "Livestream 31/8/2022 gốm sứ Huyền Lý giao lưu siêu đẹp giá yêu thương",
+"text": "tang",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "GIVEAWAY",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "GIVEAWAY",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Ya64d66ae09",
+"category": "gia_dung",
+"session_title": "Livestream 4/8/2022 gốm Nhật đẹp 💕",
+"text": "35/2",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "35/2",
+"note": "dạng giá/SL (#13)"
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "35/2",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y4506351aaf",
+"category": "gia_dung",
+"session_title": "Huyền Lý livestream giao lưu Gốm Nhật siêu đẹp ngày 27/08/2021",
+"text": "A cảm ơn e",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+]
+}
+},
+{
+"item_id": "Y9e3883b06a",
+"category": "gia_dung",
+"session_title": "Livestream gốm sứ ngày 05/10/2021 nhiều mẫu mã theo yêu cầu | 0835518585",
+"text": "A cảm ơn",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+]
+}
+},
+{
+"item_id": "Y8f1885f00f",
+"category": "gia_dung",
+"session_title": "Livestream gốm Nhật lúc 20h30 ngày 11/08/2021 | Gốm Nhật Huyền Lý",
+"text": "41",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "41",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "41",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y333a39119f",
+"category": "gia_dung",
+"session_title": "Livestream săn sale gốm sứ Nhật Bản cửa hàng Huyền Lý",
+"text": "50loi",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "50loi",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "50loi",
+"note": "50 lỗi"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y022d292435",
+"category": "gia_dung",
+"session_title": "Huyền Lý livestream giao lưu Gốm Nhật siêu đẹp ngày 27/08/2021",
+"text": "ba me he lo con gai yeu va huyen ly nhe",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Yb5f2e7ec9c",
+"category": "gia_dung",
+"session_title": "Livestream 4/8/2022 gốm Nhật đẹp 💕",
+"text": "huhi",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEG",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y16ca275c51",
+"category": "gia_dung",
+"session_title": "Gốm sứ Nhật Bản giá rẻ livestream trực tiếp 29/3/2021  | Gốm Nhật Luân Thanh",
+"text": "mm107",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "mm107",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "mm107",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "T0f2b9dacd5",
+"category": "gia_dung",
+"session_title": "nan",
+"text": "@[USER] 97 dạ vâng em cảm ơn bác ạ",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": "có vẻ lời cảm ơn trả lời người khác"
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+]
+}
+},
+{
+"item_id": "Ye3debbcc33",
+"category": "gia_dung",
+"session_title": "Livestream 4/8/2022 gốm Nhật đẹp 💕",
+"text": "8c 35",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "8c 35",
+"note": "dạng giá/SL (#13)"
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "8c 35",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y30c8fb545f",
+"category": "gia_dung",
+"session_title": "Trực tiếp khui thùng hàng mới tối 9/11/2026 chốt đơn gọi 0393 053 200",
+"text": "con trai giỏi ngoan giúp mẹ, cưng 🌸",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+}
+]

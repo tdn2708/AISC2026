@@ -1,0 +1,1477 @@
+[
+{
+"item_id": "Y43d66ad988",
+"category": "quan_ao",
+"session_title": "xã kho thanh lý quần áo đầm váy siêu xinh giá cực kì hấp dẫn xem ngay trong live",
+"text": "có áo khoác có túi ko nón cho xem lấy hai cái 74kg",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"SIZE_FIT",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "áo khoác có túi",
+"note": "vừa hỏi vừa lấy"
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL",
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "áo khoác",
+"note": "74kg ngầm hỏi size"
+},
+"C_luat": {
+"intent": "ORDER",
+"aspects": []
+}
+},
+{
+"item_id": "Y8e0a9f5da3",
+"category": "cong_nghe",
+"session_title": "Công Khai Nội Thất Loa Full EB PRO V-12S + SUB Bass 30 M623 | THANH LÝ hàng giá ",
+"text": "anh cho em hỏi súp điện lai hoi eb 15s giá bao nhiêu vậy anh",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "eb 15s",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "súp điện lai hoi eb 15s",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+]
+}
+},
+{
+"item_id": "Y97d68db043",
+"category": "quan_ao",
+"session_title": "Xem Live nhận ưu đãi - hàng thanh lí giá chấn động ❤️❤️❤️❤️",
+"text": "@[USER]",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Ya2b0921b47",
+"category": "quan_ao",
+"session_title": "Hơn 200 mẫu áo váy - livestream bán trực tiếp 😍😍😍",
+"text": "chốt yếm vàng .",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "yếm vàng",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "yếm vàng",
+"note": ""
+},
+"C_luat": {
+"intent": "ORDER",
+"aspects": []
+}
+},
+{
+"item_id": "Y6cdb3ee6d5",
+"category": "cong_nghe",
+"session_title": "🔴 [LiveStream] Bộ 70 Triệu Mãi Chưa Thấy Yếu!",
+"text": "qua xem 4090 52tr",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "REQUEST",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "4090 52tr",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y3e2e7d1c2f",
+"category": "quan_ao",
+"session_title": "Xả Đồ Rẻ  #thoitrangnu",
+"text": "Do",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Do",
+"note": "mơ hồ"
+},
+"B": {
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "không rõ"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Yfb3be8da87",
+"category": "cong_nghe",
+"session_title": "[LiveStream] 🔴 Đây Có Là PC Full MSI Đẹp Nhất 2023?",
+"text": "Cảm ơn b cho mình hỏi t7 Hacom có làm việc mai mình ra luôn mình cảm ơn",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "hỏi giờ làm việc"
+},
+"C_luat": {
+"intent": "ORDER",
+"aspects": []
+}
+},
+{
+"item_id": "Y7f8d7b8d52",
+"category": "cong_nghe",
+"session_title": "MC Studio đang phát trực tiếp!",
+"text": "bye:hand-pink-waving::hand-pink-waving:",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Yb72bfe4f5d",
+"category": "cong_nghe",
+"session_title": "Tới công chuyện| S20ultra 2200k, M33, N20Ultra, 12Promax, Note 20...Góp 0 trả tr",
+"text": "cầu phạm hùng đổ xuống là tới á Tai Mai",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "hỏi đường"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+]
+}
+},
+{
+"item_id": "Y24a20f8e9c",
+"category": "cong_nghe",
+"session_title": "Cuối Năm Xả Tết | Gởi Xe Hoả Tốc | Samsung Sony Sharp Đủ Mã Đón Tết",
+"text": "có cây nào tầm 2tr ko ạ anh",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "cây nào tầm 2tr",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Y2842c1eebe",
+"category": "quan_ao",
+"session_title": "Quần áo phong cách Hàn Quốc -  Giá ưu đãi",
+"text": "Xanh",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Xanh",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "trả lời màu"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y41dd8bf102",
+"category": "cong_nghe",
+"session_title": "🔴 [LiveStream] Bộ 70 Triệu Mãi Chưa Thấy Yếu!",
+"text": "chưa bóc keo tản thì phải",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "tản",
+"note": "ngầm hỏi"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Ycb8b286ac1",
+"category": "cong_nghe",
+"session_title": "Góp 0 trả trước! S20Ultra 2 sim 1900k, N20 4990k, S22Ultra, 12Promax, 12Pro, 12M",
+"text": "redmi Note 11 pro 4g nhiêu anh",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "redmi Note 11 pro 4g",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "redmi Note 11 pro 4g",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Y88bdcd8451",
+"category": "quan_ao",
+"session_title": "Xả đồ Nữ Giá Cực Hot #thoitrangnu",
+"text": "đỏ",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "đỏ",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "trả lời màu"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y52c94ba0a0",
+"category": "quan_ao",
+"session_title": "Livestream thanh lý quần áo xinh- giá cực hời🎉🎉- dễ mua - dễ chốt😍😍😍",
+"text": "@[USER]",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y01d02aa024",
+"category": "cong_nghe",
+"session_title": "[LiveStream] 🔴 Cuối Cùng Cũng Có Đủ Bộ...",
+"text": "quên mất mai mấy giờ hacom là giảm giá nhỉ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"PROMOTION"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"PROMOTION"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "hỏi giờ giảm giá"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"PROMOTION"
+]
+}
+},
+{
+"item_id": "Yf7991be1a1",
+"category": "cong_nghe",
+"session_title": "[Trực Tiếp]  Livestream Bán Hàng Trực Tiếp Giảm Ngay 200k  | Điện Máy RUBY |",
+"text": "một cái 32 60 giá bao nhiêu",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "32 60",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "một cái 32 60",
+"note": "mơ hồ"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+]
+}
+},
+{
+"item_id": "Y67a2fc5c45",
+"category": "quan_ao",
+"session_title": "Livestream độc quyền quần áo đầm váy thanh lý siêu đẹp giá sốc ❤️❤️",
+"text": "to",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "COMPLAINT",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "to",
+"note": "mơ hồ"
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "ngầm hỏi size, mơ hồ"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y87a1cf338d",
+"category": "cong_nghe",
+"session_title": "Đẹp Miên Man Về Hàng Siêu Phẩm Đầu Tuần Samsung LG Sony Đời cao Mượt",
+"text": "máy giá 4,5tr trả góp thời gian bao nhiêu em?",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "4,5tr",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "máy giá 4,5tr",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+]
+}
+},
+{
+"item_id": "Yca2fc1de47",
+"category": "cong_nghe",
+"session_title": "[LiveStream 14H HÔM NAY] Đi Chợ Bộ PC Gaming BÁN CHẠY NHẤT 2021!",
+"text": "em định làm render Vray",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "ngầm hỏi cấu hình render"
+},
+"C_luat": {
+"intent": "PRAISE",
+"aspects": []
+}
+},
+{
+"item_id": "Y0b34deb8bc",
+"category": "cong_nghe",
+"session_title": "🔴 [LiveStream] Bộ 70 Triệu Mãi Chưa Thấy Yếu!",
+"text": "tuf mà bạn nổi tiếng tiêu chuẩn quân đội blabla nhưng chưa chắc vì đồ điện tử mà lỗi thì bảo hành thôi",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "COMPLAINT",
+"aspects": [
+"QUALITY_TRUST"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "tuf",
+"note": "nghi ngờ chất lượng"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"QUALITY_TRUST"
+]
+}
+},
+{
+"item_id": "Y7dceb17a8a",
+"category": "cong_nghe",
+"session_title": "Góp 0 trả trước! S20Ultra 2 sim 1900k, N20 4990k, S22Ultra, 12Promax, 12Pro, 12M",
+"text": "S23 utral còn không",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "S23 utral",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "S23 utral",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"STOCK"
+]
+}
+},
+{
+"item_id": "Y0c9952f5a1",
+"category": "cong_nghe",
+"session_title": "SỐC LIVE XẢ CUỐI NĂM GIÁ NÀO CŨNG BÁN SAMSUNG SONY LG SHARP",
+"text": "Đr anh 2 ngày rồi nó còn ở hà nội cơ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "COMPLAINT",
+"aspects": [
+"SHIPPING"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "COMPLAINT",
+"aspects": [
+"SHIPPING"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "",
+"note": "giao chậm"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y8064279787",
+"category": "cong_nghe",
+"session_title": "MY STORE Di ĐỘNG UY TÍN đang phát trực tiếp!",
+"text": "S10 PLUS 512GB",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"STOCK"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "S10 PLUS 512GB",
+"note": ""
+},
+"B": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "S10 PLUS 512GB",
+"note": "tên máy đứng trơ"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Yacdb104600",
+"category": "quan_ao",
+"session_title": "Cực hời sẵn khuyến mãi ngay trên livestream với loạt quần áo thời trang thanh lý",
+"text": "34092",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "34092",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "34092",
+"note": "dãy số, mơ hồ"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Yb78b4fa9fb",
+"category": "quan_ao",
+"session_title": "Livestream thanh lý quần áo xinh- giá cực hời🎉🎉- dễ mua - dễ chốt😍😍😍",
+"text": "Hồng",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Hồng",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "trả lời màu"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+]
+}
+},
+{
+"item_id": "Y2e0bf13740",
+"category": "cong_nghe",
+"session_title": "THANH LÝ Sub điện lai hơi bass 30-40 công suất khủng | Lh 0967.345.155",
+"text": "chào shop nhé ♥",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Yc1bb1fe9c4",
+"category": "cong_nghe",
+"session_title": "MC Studio đang phát trực tiếp!",
+"text": "thế giờ 7m quay đầu có con nào chiến game ok không.Trước định mua oppo k13 turbo pro mà giờ giá khê",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT",
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "7m",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE",
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "oppo k13 turbo pro",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+]
+}
+},
+{
+"item_id": "Yfcc701de45",
+"category": "cong_nghe",
+"session_title": "[LiveStream] 🔴 Đừng Mua CPU Quá KHOẺ!",
+"text": "Giữa main của gigabyte b760 aorus pro và aorus elite khác nhau gì trong khi nó ngang giá nhau ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT",
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "b760 aorus pro và aorus elite",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT",
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "gigabyte b760 aorus pro và aorus elite",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+]
+}
+},
+{
+"item_id": "Y7de7934696",
+"category": "quan_ao",
+"session_title": "Đầu tuần vui vẻ vào Live e săn hàng đẹp giá rẻ ❤️❤️❤️❤️",
+"text": "@[USER]",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y1cf40d935e",
+"category": "cong_nghe",
+"session_title": "[LiveStream] 🔴 Đây Có Lẽ Là Bộ PC ĐẸP NHẤT...",
+"text": "mang theo thận là muốn gặp là ok luôn",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "không liên quan"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y0b8d23c2c1",
+"category": "cong_nghe",
+"session_title": "MC Studio đang phát trực tiếp!",
+"text": "bạn ơi tôi mua redmi note 13 pro 5g OTA của shop mà cập nhật được vài lần bây giờ có cập nhật sẵn HyperOS 3.2 mà cập nhật xong reset máy thì không vào được HyperOS mới tôi nghĩ là HyperOS 3 nó chặn má",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "COMPLAINT",
+"aspects": [
+"QUALITY_TRUST"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "redmi note 13 pro 5g",
+"note": ""
+},
+"B": {
+"intent": "COMPLAINT",
+"aspects": [
+"QUALITY_TRUST"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "redmi note 13 pro 5g",
+"note": "lỗi cập nhật"
+},
+"C_luat": {
+"intent": "COMPLAINT",
+"aspects": []
+}
+},
+{
+"item_id": "Y1bf655d507",
+"category": "quan_ao",
+"session_title": "Livestream thanh lý quần áo xinh- giá cực hời🎉🎉- dễ mua - dễ chốt😍😍😍",
+"text": "Em đổi lại số mới cho chị được không",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "REQUEST",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "xin đổi số"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Yc91598b97e",
+"category": "quan_ao",
+"session_title": "Kiện hàng quần áo nữ thời trang Giá thanh lý #thoitrangnu",
+"text": "@[USER] hoa đỏ",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "hoa đỏ",
+"note": ""
+},
+"B": {
+"intent": "SOCIAL",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "hoa đỏ",
+"note": "trả lời mẫu hoa"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Ye99c2808e0",
+"category": "cong_nghe",
+"session_title": "Live Xả Hàng Bom -100k Samsung Note 9 Google Pixel5 Blackberry Key2 Samsung Note",
+"text": "huy oi may anh em da gui chua??? lai xa hang ah chua kip nhan may moi",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SHIPPING"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SHIPPING"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "máy",
+"note": "hỏi đã gửi chưa"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "T24bf7eb6bb",
+"category": "quan_ao",
+"session_title": "nan",
+"text": "1m50 nặng 57kg ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "1m50 nặng 57kg",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "nêu chiều cao, cân nặng"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT"
+]
+}
+},
+{
+"item_id": "Yb33b73f37b",
+"category": "cong_nghe",
+"session_title": "S10 5G 512Gb 1490k, S22Ultra, 12Promax, Note 20Ultra, S20Plus, 11Promax…Góp 0 tr",
+"text": "có trả tiền làm hồ sơ ko a",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"ORDER_PROCESS",
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"ORDER_PROCESS",
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "phí làm hồ sơ trả góp"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+]
+}
+},
+{
+"item_id": "Y5fe5c4d52b",
+"category": "quan_ao",
+"session_title": "Xem Live nhận ưu đãi - hàng thanh lí giá chấn động ❤️❤️❤️❤️",
+"text": "chốt",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "ORDER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"C_luat": {
+"intent": "ORDER",
+"aspects": []
+}
+},
+{
+"item_id": "Yf5c6af05e9",
+"category": "cong_nghe",
+"session_title": "MobileCity live sale Shopee 22h30 -23h30 hàng ngày!",
+"text": "k60 có bị lock sim ko ạ",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SPEC_MATERIAL"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "k60",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"QUALITY_TRUST"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "k60",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Y9f8884aa66",
+"category": "cong_nghe",
+"session_title": "THANH LÝ Loa Bãi JBL KI512 - Tặng Loa Trợ Lời HT | Lh 0967.345.155",
+"text": "Hàng ship về bị dơi méo mà bảo đổi k đổi chịu hẳn",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "COMPLAINT",
+"aspects": [
+"QUALITY_TRUST",
+"ORDER_PROCESS"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "đổi k đổi",
+"note": ""
+},
+"B": {
+"intent": "COMPLAINT",
+"aspects": [
+"QUALITY_TRUST",
+"SHIPPING"
+],
+"sentiment": "NEG",
+"needs_reply": 1,
+"product_ref": "",
+"note": "hàng méo, không đổi"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"SHIPPING"
+]
+}
+},
+{
+"item_id": "Y680ca46d4f",
+"category": "cong_nghe",
+"session_title": "Note 10 5G 2990k, Note 20 5390k, S22Ultra, 12Promax, Note 20Ultra, Góp 0 cầm trả",
+"text": "sam sung 9 rẻ ko em",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "sam sung 9",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"PRICE"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "sam sung 9",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+},
+{
+"item_id": "Y828d7df00c",
+"category": "cong_nghe",
+"session_title": "Tặng điện thoại Free",
+"text": "Tech Lập Store 8733",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "OTHER",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "GIVEAWAY",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "mã nhận quà, mơ hồ"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y045039bea1",
+"category": "quan_ao",
+"session_title": "Xả Đồ Rẻ  #thoitrangnu",
+"text": "@ coi kem sau lưng",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "REQUEST",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "coi kem sau lưng",
+"note": ""
+},
+"B": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "xin xem mặt sau"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y96423d25c8",
+"category": "cong_nghe",
+"session_title": "Live dọn kho phần 2 - 0963599474",
+"text": "Vòi nước 01",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Vòi nước 01",
+"note": "tên món có mã"
+},
+"B": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Vòi nước 01",
+"note": "tên món"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Yc260cc2f43",
+"category": "cong_nghe",
+"session_title": "[LiveStream] 🔴 Quay Số Trúng Thưởng Mừng Sinh Nhật HACOM 22 Tuổi",
+"text": "23324",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "ORDER",
+"aspects": [
+"ORDER_PROCESS"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "23324",
+"note": ""
+},
+"B": {
+"intent": "GIVEAWAY",
+"aspects": [],
+"sentiment": "NEU",
+"needs_reply": 0,
+"product_ref": "",
+"note": "số quay thưởng"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Yb2294e23ec",
+"category": "cong_nghe",
+"session_title": "Đẹp Miên Man Về Hàng Siêu Phẩm Đầu Tuần Samsung LG Sony Đời cao Mượt",
+"text": "sắc net",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "PRAISE",
+"aspects": [
+"HOST_STREAM"
+],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "PRAISE",
+"aspects": [
+"HOST_STREAM"
+],
+"sentiment": "POS",
+"needs_reply": 0,
+"product_ref": "",
+"note": "hình ảnh sắc nét"
+},
+"C_luat": {
+"intent": "SOCIAL",
+"aspects": []
+}
+},
+{
+"item_id": "Y59e6c15d26",
+"category": "quan_ao",
+"session_title": "Xem Live nhận ưu đãi - hàng thanh lí giá chấn động ❤️❤️❤️❤️",
+"text": "Hồng đo dài",
+"ly_do_chon": "bat_dong",
+"A": {
+"intent": "REQUEST",
+"aspects": [
+"VARIANT",
+"SIZE_FIT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Hồng",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SIZE_FIT",
+"VARIANT"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "Hồng",
+"note": ""
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": [
+"VARIANT"
+]
+}
+},
+{
+"item_id": "Yc78af30b5d",
+"category": "cong_nghe",
+"session_title": "THANH LÝ Sub điện lai hơi bass 30-40 công suất khủng | Lh 0967.345.155",
+"text": "có gửi xe về bến bác giang không sôp",
+"ly_do_chon": "mau_20",
+"A": {
+"intent": "QUESTION",
+"aspects": [
+"SHIPPING"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": ""
+},
+"B": {
+"intent": "QUESTION",
+"aspects": [
+"SHIPPING"
+],
+"sentiment": "NEU",
+"needs_reply": 1,
+"product_ref": "",
+"note": "hỏi gửi xe"
+},
+"C_luat": {
+"intent": "QUESTION",
+"aspects": []
+}
+}
+]

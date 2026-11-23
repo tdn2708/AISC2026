@@ -1,0 +1,1625 @@
+[
+ {
+  "item_id": "T211496e678",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT",
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Mã 2 màu nâu",
+  "note": ""
+ },
+ {
+  "item_id": "Tf15e3ca3df",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "POS",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "\"lên luôn\" là yêu cầu lên sóng"
+ },
+ {
+  "item_id": "T17d5405da1",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "đỏ",
+  "note": ""
+ },
+ {
+  "item_id": "Te1230e501f",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "mã 5 màu tiêu đen",
+  "note": ""
+ },
+ {
+  "item_id": "T30083f810a",
+  "intent": "ORDER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tf3a7995cfc",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT",
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Quần mã 5",
+  "note": "hỏi quần ngắn không, gán SIZE_FIT"
+ },
+ {
+  "item_id": "Tec75873d24",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "05",
+  "note": "chữ \"xâm\" không rõ nghĩa, hiểu là hỏi màu đậm"
+ },
+ {
+  "item_id": "T3622d0a71e",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "etalase 4",
+  "note": "tiếng Indonesia, nhờ cho xem etalase 4"
+ },
+ {
+  "item_id": "T91f7458b51",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T5796625ec4",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": "\"13thg\" không đủ ngữ cảnh"
+ },
+ {
+  "item_id": "Tdb72f32832",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "màu kem",
+  "note": ""
+ },
+ {
+  "item_id": "T2d71fe2707",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "M53 là chiều cao 1m53"
+ },
+ {
+  "item_id": "T521ff68e2e",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T9a59efc7f3",
+  "intent": "REQUEST",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "yêu cầu người live đứng lùi"
+ },
+ {
+  "item_id": "T81c6579dca",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T6bcf460cd3",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ta69551d514",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "xsmax 64g",
+  "note": ""
+ },
+ {
+  "item_id": "Tb7848530a7",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT",
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Mã 5",
+  "note": ""
+ },
+ {
+  "item_id": "T632a59daf3",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Ta16f0455f6",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "số đo đùi, ngầm hỏi size"
+ },
+ {
+  "item_id": "Tc90d83b2f5",
+  "intent": "REQUEST",
+  "aspects": [
+   "SHIPPING"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "không rõ hỏi hay yêu cầu, chọn yêu cầu giao sớm"
+ },
+ {
+  "item_id": "T600e3ca5a3",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "đôi",
+  "note": "không rõ \"nhớ đôi\"; hiểu là hỏi đôi đó có về lại không"
+ },
+ {
+  "item_id": "Ta453bc5f90",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T3a4e46e3c4",
+  "intent": "ORDER",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "118.000",
+  "note": "tiếng Indonesia \"sy dpt\": đã lấy được giá này"
+ },
+ {
+  "item_id": "T2a8e177981",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "01",
+  "note": ""
+ },
+ {
+  "item_id": "Tbf5aa0acfd",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "mã số 7",
+  "note": ""
+ },
+ {
+  "item_id": "T45601ea8d2",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tc2c23bb9c5",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "màu xám",
+  "note": "ngầm yêu cầu xem màu xám"
+ },
+ {
+  "item_id": "Tb977fc964a",
+  "intent": "ORDER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T03fadd6038",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T6ccd4bf721",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "màu nâu",
+  "note": ""
+ },
+ {
+  "item_id": "Te22a2db8c0",
+  "intent": "COMPLAINT",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEG",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "chê người bán không trả lời"
+ },
+ {
+  "item_id": "Tefe2df21af",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "mã quần",
+  "note": ""
+ },
+ {
+  "item_id": "Tdf457bc685",
+  "intent": "OTHER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": "tiếng Indonesia rời rạc, không rõ ý"
+ },
+ {
+  "item_id": "T4c3f69d8f0",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK",
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "17prm",
+  "note": ""
+ },
+ {
+  "item_id": "T33ff2ff4b7",
+  "intent": "ORDER",
+  "aspects": [],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": "đã mua; \"im chân\" là nhận xét không rõ aspect"
+ },
+ {
+  "item_id": "T428ea12479",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tb9b7c62b3e",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Áo rời hay liền",
+  "note": ""
+ },
+ {
+  "item_id": "T588d98a975",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "bình lít",
+  "note": ""
+ },
+ {
+  "item_id": "T34fd5860ef",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T0dbac760d0",
+  "intent": "ORDER",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "size m",
+  "note": "ngầm chốt size M, không rõ"
+ },
+ {
+  "item_id": "Tc0f30fa6ee",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "13pro max",
+  "note": ""
+ },
+ {
+  "item_id": "Ta5b79621bd",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "bình lít",
+  "note": "tên món đứng trơ, xin xem"
+ },
+ {
+  "item_id": "Tcad815ca65",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "màu nâu socola",
+  "note": ""
+ },
+ {
+  "item_id": "T0d3adbe326",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "21",
+  "note": ""
+ },
+ {
+  "item_id": "T56998de91b",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "pijama",
+  "note": ""
+ },
+ {
+  "item_id": "T0077c6485d",
+  "intent": "QUESTION",
+  "aspects": [
+   "STOCK",
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "asus oled",
+  "note": ""
+ },
+ {
+  "item_id": "Tdb4a5c3676",
+  "intent": "COMPLAINT",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEG",
+  "needs_reply": 1,
+  "product_ref": "168",
+  "note": "tiếc vì giá giảm sau khi đã mua PO"
+ },
+ {
+  "item_id": "T91743ec04a",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tfb02a4f9ca",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "\"z máy\" không rõ"
+ },
+ {
+  "item_id": "T51a10f9fb8",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T2b77b516d2",
+  "intent": "COMPLAINT",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEG",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "chê người bán hỏi không trả lời"
+ },
+ {
+  "item_id": "Tc435c35d00",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tbea3b3e7c4",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "có vẻ là cân nặng 61kg, không có câu hỏi rõ"
+ },
+ {
+  "item_id": "T4a0944f2c0",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T5b308e441a",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "13 thường 128",
+  "note": ""
+ },
+ {
+  "item_id": "T8643d2eb1b",
+  "intent": "ORDER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T9b513b7429",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE",
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "flex 75",
+  "note": "hỏi giá mua trực tiếp"
+ },
+ {
+  "item_id": "T23906d2d45",
+  "intent": "ORDER",
+  "aspects": [
+   "VARIANT",
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "1 nâu 1 đen",
+  "note": "nêu SL 2 kèm màu và cân nặng, chọn ORDER"
+ },
+ {
+  "item_id": "Te88ee510b9",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T4eed032dea",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T8cd8f297f4",
+  "intent": "QUESTION",
+  "aspects": [
+   "USAGE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "bông lau",
+  "note": ""
+ },
+ {
+  "item_id": "T9e264c005e",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "tiếng Thái/Indonesia, hỏi mẫu nào"
+ },
+ {
+  "item_id": "Tc4a1ccfd6d",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "nâu",
+  "note": "ngầm yêu cầu cho xem màu nâu"
+ },
+ {
+  "item_id": "T50ea8ad356",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tf5052134b4",
+  "intent": "REQUEST",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "\"5p\" không rõ nghĩa, chọn yêu cầu"
+ },
+ {
+  "item_id": "Te9f45f7570",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T146a9eddd5",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE",
+   "PROMOTION"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "con x3 strike",
+  "note": "hỏi có giảm sâu hơn không"
+ },
+ {
+  "item_id": "T2e17a2e742",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T9c3b8aa44e",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "xiaomi vip",
+  "note": ""
+ },
+ {
+  "item_id": "T487257bf3f",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "M1",
+  "note": "hỏi M1 có kèm vỏ gối không"
+ },
+ {
+  "item_id": "Tdbc3a4781e",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tc5125e933b",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "mẫu không cạp chun",
+  "note": ""
+ },
+ {
+  "item_id": "Ta1256b7602",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T625c3963f1",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T5d047d9316",
+  "intent": "QUESTION",
+  "aspects": [
+   "PROMOTION"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "polo",
+  "note": "hỏi mua 2 cái cùng polo có ưu đãi không"
+ },
+ {
+  "item_id": "Ta4e0e89e75",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT",
+   "STOCK"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "bigsize",
+  "note": ""
+ },
+ {
+  "item_id": "T32f54f0f6b",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Áo",
+  "note": ""
+ },
+ {
+  "item_id": "Ta936baa2c2",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT",
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Mã 2",
+  "note": ""
+ },
+ {
+  "item_id": "T7ba088b287",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tef9071cc9f",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "con chó sọc",
+  "note": "nhờ cho xem hình"
+ },
+ {
+  "item_id": "T96da2bcb92",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T9188d53f95",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T3334fbbe9e",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "giá sao, không rõ sản phẩm"
+ },
+ {
+  "item_id": "T15d9f054c0",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "áo nữ vàng với trắng",
+  "note": "muốn mua nhưng chưa chốt"
+ },
+ {
+  "item_id": "T4b8a0d9e38",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "15th",
+  "note": "không rõ 15 là gì"
+ },
+ {
+  "item_id": "T70685fae47",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tbd4400c97f",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "mẫu đen",
+  "note": "xin xem phía sau mẫu đen"
+ },
+ {
+  "item_id": "Tf50440d0e5",
+  "intent": "QUESTION",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "không rõ, hiểu là người xem không đọc được bình luận"
+ },
+ {
+  "item_id": "T286d870bcd",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "88 hay 95",
+  "note": ""
+ },
+ {
+  "item_id": "Tcbc79d24d2",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "áo mã 2",
+  "note": "nhờ tư vấn"
+ },
+ {
+  "item_id": "Tcc6e8e321b",
+  "intent": "ORDER",
+  "aspects": [
+   "VARIANT",
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "1 hồng và 1 xanh cốm",
+  "note": "mua 2 áo kèm màu và số đo"
+ },
+ {
+  "item_id": "T7e8439125d",
+  "intent": "QUESTION",
+  "aspects": [
+   "USAGE",
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "hỏi màu hợp da tối"
+ },
+ {
+  "item_id": "T1e5ab61732",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT",
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Mã bạn đang cầm",
+  "note": ""
+ },
+ {
+  "item_id": "T8186e02ba2",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Size XL v2",
+  "note": ""
+ },
+ {
+  "item_id": "Tfad7aa94e9",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "12pro",
+  "note": ""
+ },
+ {
+  "item_id": "Tc7b0e20820",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "eo 85"
+ },
+ {
+  "item_id": "Tb0ed11ddef",
+  "intent": "PRAISE",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": "khen giá rẻ"
+ },
+ {
+  "item_id": "Te03764b654",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tde8341ad8c",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T4185d6795d",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "hàng giữ nhiệt",
+  "note": "hỏi thời gian giữ nhiệt"
+ },
+ {
+  "item_id": "T0e3de9c22b",
+  "intent": "ORDER",
+  "aspects": [
+   "ORDER_PROCESS",
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "size 2",
+  "note": "sửa size đã chốt"
+ },
+ {
+  "item_id": "Tbf03314258",
+  "intent": "PRAISE",
+  "aspects": [],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "Đôi này",
+  "note": ""
+ },
+ {
+  "item_id": "T26d15c5aeb",
+  "intent": "COMPLAINT",
+  "aspects": [
+   "STOCK",
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEG",
+  "needs_reply": 1,
+  "product_ref": "bose soundlink flex 2; jbl charge 6",
+  "note": "có hỏi tồn kho nhưng chê JBL to thô nên ưu tiên COMPLAINT"
+ },
+ {
+  "item_id": "Tc773bab400",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T67557b5203",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "nêu cân nặng"
+ },
+ {
+  "item_id": "Tdcec448426",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "1 lit",
+  "note": ""
+ },
+ {
+  "item_id": "T7aa46cf468",
+  "intent": "QUESTION",
+  "aspects": [
+   "PROMOTION"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "hỏi quà tặng"
+ },
+ {
+  "item_id": "T9f2ba4b5f8",
+  "intent": "COMPLAINT",
+  "aspects": [
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEG",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "không mua được"
+ },
+ {
+  "item_id": "T4dc9fc9aff",
+  "intent": "PRAISE",
+  "aspects": [],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "nệm",
+  "note": ""
+ },
+ {
+  "item_id": "Tb96b01fadc",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "kiểu thấp có quai hậu",
+  "note": ""
+ },
+ {
+  "item_id": "T9c7ecdf853",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "màu kem",
+  "note": ""
+ },
+ {
+  "item_id": "T115d597235",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "M7 hiểu là 1m7"
+ },
+ {
+  "item_id": "Tab6cb02c7b",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "11pro",
+  "note": ""
+ },
+ {
+  "item_id": "T7ec1b71b5d",
+  "intent": "ORDER",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "3822",
+  "note": "số 4 chữ số, theo quy ước ORDER + PRICE"
+ },
+ {
+  "item_id": "Tfcc9eec345",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tf086f187a6",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL",
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "mã 18",
+  "note": "hỏi chất liệu mã 18"
+ },
+ {
+  "item_id": "Tdbb7f0e250",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "cổ 3 phân",
+  "note": ""
+ },
+ {
+  "item_id": "Tfc38bfc111",
+  "intent": "ORDER",
+  "aspects": [
+   "PRICE",
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "săn 136",
+  "note": "vừa chốt mua, hỏi có thấy đơn không"
+ },
+ {
+  "item_id": "T30857b5c59",
+  "intent": "ORDER",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "2 cái áo nam 172",
+  "note": "172 có thể là chiều cao hoặc mã, không chắc"
+ },
+ {
+  "item_id": "T57897673ff",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT",
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Mã 5 cạp",
+  "note": ""
+ },
+ {
+  "item_id": "T9735c20638",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "mã 32",
+  "note": ""
+ },
+ {
+  "item_id": "T00532eebc2",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T1240e8c535",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "M7 hiểu là 1m7, hỏi quần ngắn không"
+ },
+ {
+  "item_id": "T97a86b7911",
+  "intent": "QUESTION",
+  "aspects": [
+   "SHIPPING"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "12pro",
+  "note": ""
+ },
+ {
+  "item_id": "T4246f166d7",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tb08eb44b13",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "01",
+  "note": ""
+ },
+ {
+  "item_id": "T04866bcd8d",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tdfb368fe05",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Bình lít",
+  "note": ""
+ },
+ {
+  "item_id": "Td152afcee3",
+  "intent": "QUESTION",
+  "aspects": [
+   "SPEC_MATERIAL"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "etalase 2",
+  "note": "tiếng Indonesia, hỏi chất liệu"
+ },
+ {
+  "item_id": "T59311d5b14",
+  "intent": "REQUEST",
+  "aspects": [
+   "SPEC_MATERIAL",
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "mã 5",
+  "note": ""
+ },
+ {
+  "item_id": "T92614a64f8",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "nam 1m76 72kg"
+ },
+ {
+  "item_id": "T8803efb527",
+  "intent": "QUESTION",
+  "aspects": [
+   "HOST_STREAM"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "hỏi có lên live không"
+ },
+ {
+  "item_id": "Tff690a465a",
+  "intent": "ORDER",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "97k",
+  "note": ""
+ },
+ {
+  "item_id": "Tff2e1b2577",
+  "intent": "ORDER",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "136k",
+  "note": ""
+ },
+ {
+  "item_id": "T8b0827c932",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Tcf35e252d5",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": "bình luận về số người xem"
+ },
+ {
+  "item_id": "Td8c87ae885",
+  "intent": "QUESTION",
+  "aspects": [
+   "SHIPPING",
+   "ORDER_PROCESS"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "hỏi COD có cọc trước không"
+ },
+ {
+  "item_id": "Tc9bdaa47ac",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "Te203780d6d",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "chỉ có số 58, không rõ là chiều cao"
+ },
+ {
+  "item_id": "T9ba70fd129",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "nâu nam",
+  "note": ""
+ },
+ {
+  "item_id": "Tda708dc5f9",
+  "intent": "ORDER",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "1 con",
+  "note": "đặt thêm 1 cái"
+ },
+ {
+  "item_id": "T69f397957a",
+  "intent": "SOCIAL",
+  "aspects": [],
+  "sentiment": "NEU",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": "tiếng Hmong, nói chuyện riêng"
+ },
+ {
+  "item_id": "T845663cdc3",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "54k",
+  "note": ""
+ },
+ {
+  "item_id": "T517bf0a47e",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": ""
+ },
+ {
+  "item_id": "T736f2af6ca",
+  "intent": "QUESTION",
+  "aspects": [
+   "SIZE_FIT",
+   "USAGE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "",
+  "note": "người đang bầu hỏi size"
+ },
+ {
+  "item_id": "Tc4f9bb725b",
+  "intent": "REQUEST",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Set nâu",
+  "note": ""
+ },
+ {
+  "item_id": "T0d134bcf61",
+  "intent": "QUESTION",
+  "aspects": [
+   "PRICE"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "720",
+  "note": ""
+ },
+ {
+  "item_id": "T369fee6457",
+  "intent": "QUESTION",
+  "aspects": [
+   "VARIANT"
+  ],
+  "sentiment": "NEU",
+  "needs_reply": 1,
+  "product_ref": "Quần dạ",
+  "note": ""
+ },
+ {
+  "item_id": "T23fda086a5",
+  "intent": "PRAISE",
+  "aspects": [],
+  "sentiment": "POS",
+  "needs_reply": 0,
+  "product_ref": "",
+  "note": ""
+ }
+]

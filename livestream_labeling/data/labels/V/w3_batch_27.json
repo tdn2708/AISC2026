@@ -1,0 +1,80 @@
+[
+ {
+  "item_id": "Y2200ee59d2",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "55",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ },
+ {
+  "item_id": "Yfc9bb6e5c6",
+  "final_intent": "PRAISE",
+  "final_aspects": [
+   "HOST_STREAM"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "",
+  "decision": "both_wrong",
+  "certainty": "medium",
+  "reason": "chào kèm khen xinh đẹp"
+ },
+ {
+  "item_id": "Y2efd092557",
+  "final_intent": "REQUEST",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "cái ngũ sắc",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "tên món trơ"
+ },
+ {
+  "item_id": "Y87f2ab20f5",
+  "final_intent": "QUESTION",
+  "final_aspects": [
+   "STOCK"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "món hoang dã",
+  "decision": "chose_B",
+  "certainty": "medium",
+  "reason": "hỏi có món hoang dã"
+ },
+ {
+  "item_id": "Y0f81ce047e",
+  "final_intent": "ORDER",
+  "final_aspects": [
+   "VARIANT"
+  ],
+  "final_sentiment": "NEU",
+  "final_needs_reply": 1,
+  "final_product_ref": "92",
+  "decision": "agree_AB",
+  "certainty": "medium",
+  "reason": "số mã kèm đòi quyền trước"
+ },
+ {
+  "item_id": "Y7de2609b6f",
+  "final_intent": "PRAISE",
+  "final_aspects": [
+   "USAGE"
+  ],
+  "final_sentiment": "POS",
+  "final_needs_reply": 0,
+  "final_product_ref": "Cặp chó",
+  "decision": "agree_AB",
+  "certainty": "high",
+  "reason": ""
+ }
+]
