@@ -1,8 +1,7 @@
 """
 Dự đoán nhãn cho bình luận livestream bằng mô hình đã fine-tune (ViSoBERT đa nhiệm).
 
-Mô hình nằm ở thư mục checkpoint (giải nén ckpt_live_tot_nhat.zip từ Kaggle) hoặc trên Hugging Face.
-Thư mục checkpoint gồm: encoder/ (trọng số + tokenizer), heads.pt (4 đầu ra), meta.json (nhãn, ngưỡng).
+Mô hình nằm ở thư mục checkpoint
 
     # một câu
     python predict_live.py --model ckpt_live --nganh quan_ao "chốt mã 5 size M"
@@ -16,7 +15,6 @@ Dùng trong code:
     p = LivePredictor("ckpt_live")
     p.predict([("quan_ao", "chốt mã 5 size M")])
 
-nganh: gia_dung | quan_ao | cong_nghe (mô hình chỉ được huấn luyện trên 3 ngành này).
 """
 import argparse
 import json

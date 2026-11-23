@@ -1,5 +1,3 @@
-// Người gán C (đường cơ sở): bộ luật từ khoá có sẵn của dự án (backend/services/live/intent.js),
-// ánh xạ sang bộ nhãn mới. Đọc JSON [{item_id,text}] từ file argv[2], ghi JSON ra argv[3].
 const fs = require('fs');
 const path = require('path');
 const { classifyComment } = require(path.resolve(__dirname, '../../backend/services/live/intent.js'));
