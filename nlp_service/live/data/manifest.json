@@ -1,0 +1,139 @@
+{
+ "nguon": "livestream_labeling/output/04_tap_train_ban_hang_sach.csv",
+ "sha256_nguon": "a5ff31600c26ffdc53fa7cdef8a0c27b55e5c376d149414b6672db89a8e760e0",
+ "seed_chia": 2026,
+ "diem_lech_ti_le": 1.867,
+ "nhan": {
+  "intent": [
+   "ORDER",
+   "QUESTION",
+   "REQUEST",
+   "NEGOTIATE",
+   "COMPLAINT",
+   "PRAISE",
+   "GIVEAWAY",
+   "SOCIAL",
+   "OTHER"
+  ],
+  "aspects": [
+   "PRICE",
+   "PROMOTION",
+   "SIZE_FIT",
+   "VARIANT",
+   "SPEC_MATERIAL",
+   "USAGE",
+   "STOCK",
+   "SHIPPING",
+   "ORDER_PROCESS",
+   "QUALITY_TRUST",
+   "HOST_STREAM"
+  ],
+  "sentiment": [
+   "POS",
+   "NEU",
+   "NEG"
+  ]
+ },
+ "tap": {
+  "train": {
+   "so_cau": 5467,
+   "so_phien": 173,
+   "intent": {
+    "ORDER": 1860,
+    "QUESTION": 1472,
+    "SOCIAL": 979,
+    "REQUEST": 646,
+    "PRAISE": 160,
+    "OTHER": 151,
+    "COMPLAINT": 127,
+    "NEGOTIATE": 42,
+    "GIVEAWAY": 30
+   },
+   "nganh": {
+    "quan_ao": 1119,
+    "gia_dung": 3077,
+    "cong_nghe": 1271
+   },
+   "nen_tang": {
+    "tiktok": 713,
+    "youtube": 4754
+   },
+   "sentiment": {
+    "NEU": 5051,
+    "POS": 235,
+    "NEG": 181
+   },
+   "needs_reply_1": 4087,
+   "muc_tin_cay_thap": 259,
+   "sha256": "fcac3b19fb3cbf0915288d12b85b240c32f58d487c02e505d91b99e2e42be76b"
+  },
+  "dev": {
+   "so_cau": 1345,
+   "so_phien": 39,
+   "intent": {
+    "ORDER": 472,
+    "QUESTION": 370,
+    "SOCIAL": 262,
+    "REQUEST": 125,
+    "PRAISE": 37,
+    "OTHER": 36,
+    "COMPLAINT": 27,
+    "NEGOTIATE": 10,
+    "GIVEAWAY": 6
+   },
+   "nganh": {
+    "quan_ao": 237,
+    "gia_dung": 838,
+    "cong_nghe": 270
+   },
+   "nen_tang": {
+    "tiktok": 194,
+    "youtube": 1151
+   },
+   "sentiment": {
+    "NEU": 1259,
+    "POS": 52,
+    "NEG": 34
+   },
+   "needs_reply_1": 991,
+   "muc_tin_cay_thap": 59,
+   "sha256": "c7d55f1b59141bc8bcd4de6144ccee7e70400a7341e329c7888876b688c59a04"
+  },
+  "test": {
+   "so_cau": 1345,
+   "so_phien": 35,
+   "intent": {
+    "ORDER": 538,
+    "QUESTION": 293,
+    "SOCIAL": 247,
+    "REQUEST": 142,
+    "PRAISE": 39,
+    "OTHER": 37,
+    "COMPLAINT": 37,
+    "NEGOTIATE": 8,
+    "GIVEAWAY": 4
+   },
+   "nganh": {
+    "gia_dung": 803,
+    "quan_ao": 303,
+    "cong_nghe": 239
+   },
+   "nen_tang": {
+    "youtube": 1157,
+    "tiktok": 188
+   },
+   "sentiment": {
+    "NEU": 1231,
+    "POS": 67,
+    "NEG": 47
+   },
+   "needs_reply_1": 1005,
+   "muc_tin_cay_thap": 55,
+   "sha256": "1495cbfb2860a21b26dd2bc5dd653d9ca6a8cea3832591d26c2e263bcde1c8a9"
+  }
+ },
+ "dapt_corpus": {
+  "so_cau": 18396,
+  "ghi_chu": "bỏ spam, bỏ trùng, đã che SĐT/@tên, không gồm phiên dev/test"
+ }
+}
