@@ -53,7 +53,7 @@ const REOPEN_WAITS_MS = (process.env.LIVE_REOPEN_WAITS_MS || '15000,30000,60000,
 // Lời báo của bộ kết nối khi chủ kênh đã tắt live: kết thúc phiên, không thử lại
 // Lỗi tạm thời đáng thử lại (máy chủ ký, mạng, giới hạn lượt, trang trò chuyện tạm không đọc được)
 // (TikTok "tạm chặn" DEVICE_BLOCKED KHÔNG thử lại: nối thêm chỉ kéo dài thời gian bị chặn)
-const TRANSIENT_RE = /máy chủ ký|sign|50\d|timeout|timed out|ECONN|socket hang up|network|giới hạn lượt|rate.?limit|429|Không đọc được trang/i;
+const TRANSIENT_RE = /máy chủ ký|sign|50\d|timeout|timed out|ECONN|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ENETUNREACH|EHOSTUNREACH|socket hang up|network|giới hạn lượt|rate.?limit|429|Không đọc được trang/i;
 const BLOCKED_RE = /DEVICE_BLOCKED|tạm chặn/i;
 const LIVE_ENDED_RE =/đang không phát live|không đang phát live|đã kết thúc|bản phát lại|tắt tính năng trò chuyện/i;
 const HEARTBEAT_MS = 15000;

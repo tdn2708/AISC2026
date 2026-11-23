@@ -3781,6 +3781,13 @@ testAsync('Livestream: mở phiên gặp lỗi máy ký TikTok 500 thì tự th�
     assert.strictEqual(n, 2, 'thử lại một lần thì được');
     assert.strictEqual(r.status, 'live');
     r.dispose();
+    // Mất DNS lúc mở phiên (đo thật 23/11 bằng chặn DNS máy ký): cũng là lỗi tạm
+    const d = new hub.Runtime({ _id: 'tr4', platform: 'youtube', target: 'abcdefghijk', products: [] }, db, 'real');
+    let dn = 0;
+    d.connectorFor = () => ({ start: async (emit) => { dn += 1; if (dn === 1) throw new Error('getaddrinfo ENOTFOUND www.youtube.com'); emit({ type: 'connected', info: null }); }, stop: () => {} });
+    await d.start();
+    assert.strictEqual(d.status, 'live', 'mất DNS thoáng qua thì nối lại được');
+    d.dispose();
     const w = new hub.Runtime({ _id: 'tr2', platform: 'tiktok', target: 'sai-ten', products: [] }, db, 'real');
     let m = 0;
     w.connectorFor = () => ({ start: async () => { m += 1; throw new Error('Không tìm thấy tài khoản TikTok này'); }, stop: () => {} });
