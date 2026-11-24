@@ -91,10 +91,10 @@ async function main() {
     const pwInit = 'MatKhauThu2026';
 
     const signA = await request('POST', '/api/auth/signup', {
-      body: { name: 'Kiểm Tra A', shop: 'Shop A', email: emailA, password: pwInit }
+      body: { name: 'Kiểm Tra A', shop: 'Shop A', email: emailA, password: pwInit, acceptTerms: true }
     });
     const signB = await request('POST', '/api/auth/signup', {
-      body: { name: 'Kiểm Tra B', shop: 'Shop B', email: emailB, password: pwInit }
+      body: { name: 'Kiểm Tra B', shop: 'Shop B', email: emailB, password: pwInit, acceptTerms: true }
     });
     if (signA.status === 201 && signB.status === 201) {
       userA = { ...signA.data.user, token: signA.data.token };

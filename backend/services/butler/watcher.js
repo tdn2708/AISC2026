@@ -92,7 +92,7 @@ async function runTickInner({ authDb, workspaces, now = new Date() }) {
     }
 
     const neededWorkspaces = new Set(
-      links.map((l) => (l.settings?.workspace === 'demo' ? 'demo' : 'real'))
+      links.map((l) => require('../tenants').keyFor(l.userId, l.settings?.workspace === 'demo' ? 'demo' : 'real'))
     );
 
     const openByWs = {};
@@ -195,7 +195,7 @@ async function runTickInner({ authDb, workspaces, now = new Date() }) {
     const { hour: vnHour, ymd: vnYmd } = vnParts(now);
 
     for (const link of links) {
-      const ws = link.settings?.workspace === 'demo' ? 'demo' : 'real';
+      const ws = require('../tenants').keyFor(link.userId, link.settings?.workspace === 'demo' ? 'demo' : 'real');
       const open = openByWs[ws];
       if (!open) continue;
 

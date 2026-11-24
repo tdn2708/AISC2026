@@ -122,10 +122,20 @@ async function buildTaskItems(db, ws, ctx) {
 async function handle({ authDb, workspaces, user, link: initialLink, text, channel = 'web', workspace }) {
   const cmd = parseCommand(text);
   const link = initialLink || (await store.getLink(authDb, user._id));
-  const ws = (workspace || link?.settings?.workspace) === 'demo' ? 'demo' : 'real';
+  // Khóa kho của chính tài khoản: shop thường là kho riêng 't_...', tài khoản mẫu là kho chung
+  const ws = require('../tenants').keyFor(user, (workspace || link?.settings?.workspace) === 'demo' ? 'demo' : 'real');
   const db = workspaces[ws] || workspaces.real || workspaces.demo;
   const wsLabel = workspaceLabel(ws);
   const baseAppUrl = appUrl();
+
+  // Gói Dùng thử nhận bản tin sáng và tin báo; lệnh từ xa (xem việc, duyệt, hỏi, live...) có ở gói Shop
+  const FREE_COMMANDS = new Set(['help', 'status', 'mute', 'unmute', 'unlink', 'link_code', 'cancel']);
+  if (!FREE_COMMANDS.has(cmd.type) && !require('../billing').planAllows(user, 'butler_commands')) {
+    return {
+      text: `Lệnh từ xa có ở gói Shop trở lên. Gói Dùng thử vẫn nhận bản tin sáng và tin báo sự cố. Nâng cấp tại ${baseAppUrl}/bang-gia`,
+      kind: 'info'
+    };
+  }
 
   try {
     switch (cmd.type) {
@@ -183,7 +193,7 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
             kind: 'info'
           };
         }
-        const listWs = list.workspace === 'demo' ? 'demo' : 'real';
+        const listWs = list.workspace === 'demo' ? 'demo' : require('../tenants').keyFor(user, 'real');
         const listDb = workspaces[listWs] || db;
 
         if (item.kind === 'alert') {
@@ -231,7 +241,7 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
           return { text: `Việc này làm trên web: ${url}`, kind: 'info' };
         }
 
-        const listWs = list.workspace === 'demo' ? 'demo' : 'real';
+        const listWs = list.workspace === 'demo' ? 'demo' : require('../tenants').keyFor(user, 'real');
         const listDb = workspaces[listWs] || db;
         const ctx = await withTimeout(getContext(listDb), 20000, 'Tính số liệu');
         const alerts = await pendingAlerts(listDb, ctx);
@@ -287,7 +297,7 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
           };
         }
 
-        const listWs = list.workspace === 'demo' ? 'demo' : 'real';
+        const listWs = list.workspace === 'demo' ? 'demo' : require('../tenants').keyFor(user, 'real');
         const listDb = workspaces[listWs] || db;
         const ctx = await withTimeout(getContext(listDb), 20000, 'Tính số liệu');
         const alerts = await pendingAlerts(listDb, ctx);
@@ -322,7 +332,12 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
 
       case 'collect': {
         if (ws !== 'real') {
-          return { text: 'Kho mô phỏng không thu thập.', kind: 'info' };
+          return {
+            text: ws === 'demo'
+              ? 'Kho mô phỏng không thu thập.'
+              : 'Kho của shop chưa bật tự thu thập. Nạp file đánh giá hoặc dán link sản phẩm ở trang Nguồn dữ liệu.',
+            kind: 'info'
+          };
         }
         const prompt = 'Chạy một lượt thu thập đánh giá mới? Mất khoảng 10 đến 20 phút. Nhắn "có" để chạy.';
         await store.setPending(authDb, user._id, {

@@ -23,6 +23,7 @@ const caseFile = require('./case_file');
 const { findDecision } = require('./decision_match');
 const { issueTitle } = require('./wording');
 const { spanWords } = require('./cadence');
+const { isRealKey } = require('./tenants');
 const { applyFilters, scopeTransactions, ctxNow, cadenceOf } = require('./analysis_context');
 
 /**
@@ -208,7 +209,7 @@ async function buildInboxItems(db, workspace, ctx) {
   // có hồ sơ đang mở; đang tăng (kỳ gần nhất hơn hẳn kỳ trước) thì mức gấp.
   // Chỉ kho thật: câu của kho mô phỏng ghép từ mẫu nên điểm đau ra mẩu câu mẫu ("quảng cáo"),
   // đưa lên hộp việc thì chen trước các cảnh báo vốn là câu chuyện của kho demo
-  if (workspace === 'real') try {
+  if (isRealKey(workspace)) try {
     const pain = painPointsFor(ctx, {});
     const open = new Set((await db.collection('cases').find({ status: 'open' }, { projection: { key: 1 } }).toArray()).map((c) => c.key));
     const list = [...pain.groups, ...(pain.shop ? [pain.shop] : [])]
@@ -255,7 +256,7 @@ async function buildInboxItems(db, workspace, ctx) {
   }
 
   // ---------- Độ tươi của dữ liệu thật ----------
-  if (workspace === 'real' && ctx.ingestedAt) {
+  if (isRealKey(workspace) && ctx.ingestedAt) {
     const days = Math.floor((Date.now() - new Date(ctx.ingestedAt).getTime()) / DAY);
     if (days >= 2) {
       items.push({

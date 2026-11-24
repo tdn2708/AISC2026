@@ -55,7 +55,7 @@ async function collectIncidents(db, workspace, ctx, { collectorStatus } = {}) {
   }
 
   // 3. Lỗi tự thu thập của kho dữ liệu thật trong 24 giờ qua
-  if (workspace === 'real') {
+  if (require('../tenants').isRealKey(workspace)) {
     try {
       const st = collectorStatus !== undefined
         ? collectorStatus

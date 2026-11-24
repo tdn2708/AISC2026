@@ -122,13 +122,21 @@ async function startServer() {
     else console.log('Tài khoản quản trị: chưa cấu hình ADMIN_EMAIL, ADMIN_PASSWORD.');
     console.log(`Tài khoản: database ${authDb.databaseName}.`);
 
+    // Kho riêng từng shop (services/tenants.js): tài khoản mẫu giữ hai kho chung, tài khoản khác có kho thật riêng
+    const tenants = require('./services/tenants');
+    const demoUser = await authDb.collection('users').findOne({ email: auth.DEMO_ACCOUNT.email }, { projection: { _id: 1 } });
+    tenants.init({ client, workspaces, authDb, ensureIndexes, demoUserId: demoUser?._id });
+    const tenantCount = await tenants.registerExisting();
+    console.log(`Kho riêng của shop: ${tenantCount} kho đã có.`);
+
     // Muối băm mã khách: từ biến môi trường, không có thì từ kho thật (services/pii_salt.js)
     const saltSource = await require('./services/pii_salt').loadSalt(workspaces.real);
     console.log(saltSource ? `Muối băm mã khách: đã nạp (nguồn ${saltSource === 'env' ? 'biến môi trường' : 'database'}).` : 'Muối băm mã khách: CHƯA CÓ, các đường ghi dữ liệu thật sẽ từ chối.');
 
     app.use((req, res, next) => {
       const ws = String(req.get('X-Workspace') || req.query.workspace || 'demo').toLowerCase();
-      req.workspace = workspaces[ws] ? ws : 'demo';
+      // Chỉ 'demo' hoặc 'real': sổ kho còn chứa kho riêng của từng shop (khóa 't_...'), header không được chọn chúng
+      req.workspace = ws === 'real' ? 'real' : 'demo';
       req.db = workspaces[req.workspace];
       next();
     });
@@ -183,6 +191,12 @@ async function startServer() {
     app.use('/api/auth', require('./routes/auth')(authDb));
     // Từ đây mọi API dữ liệu cần phiên đăng nhập (ngoại lệ và lý do: services/auth.js requireSession)
     app.use('/api', auth.requireSession(authDb));
+    // Sau khi biết tài khoản: kho thật của shop là kho riêng, kho mô phỏng chung chỉ đọc
+    app.use('/api', tenants.middleware());
+    // Gói và thanh toán (routes/billing.js); phần quản trị xác nhận tiền nằm dưới /api/admin/billing
+    const billingRoutes = require('./routes/billing')({ authDb });
+    app.use('/api/billing', billingRoutes.shop);
+    app.use('/api/admin/billing', auth.requireAdmin, billingRoutes.admin);
     if (String(process.env.AUTH_REQUIRED) === '0') console.log('Đăng nhập: TẮT kiểm phiên (AUTH_REQUIRED=0).');
     app.use('/api/admin', auth.requireAdmin, require('./routes/admin')({ authDb, workspaces }));
     app.use('/api/live/schedule', require('./routes/live_schedule'));

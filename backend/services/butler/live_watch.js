@@ -314,7 +314,7 @@ async function runLiveTickInner({ authDb, workspaces, now = new Date(), onSchedu
     }
 
     const neededWorkspaces = new Set(
-      links.map((l) => (l.settings?.workspace === 'demo' ? 'demo' : 'real'))
+      links.map((l) => require('../tenants').keyFor(l.userId, l.settings?.workspace === 'demo' ? 'demo' : 'real'))
     );
 
     const incCol = authDb.collection('butler_incidents');
@@ -462,7 +462,7 @@ async function runLiveTickInner({ authDb, workspaces, now = new Date(), onSchedu
     const tech = techTracker.update(techProblems, now.getTime());
 
     for (const link of links) {
-      const ws = link.settings?.workspace === 'demo' ? 'demo' : 'real';
+      const ws = require('../tenants').keyFor(link.userId, link.settings?.workspace === 'demo' ? 'demo' : 'real');
       const data = wsData[ws];
       if (!data) continue;
 

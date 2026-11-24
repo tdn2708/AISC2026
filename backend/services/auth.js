@@ -41,7 +41,8 @@ const ADMIN_AUDIT_ACTIONS = new Set([
   'revoke_session',
   'reset_password',
   'set_role',
-  'delete_user'
+  'delete_user',
+  'confirm_payment'
 ]);
 
 const DEMO_ACCOUNT = {
@@ -99,11 +100,13 @@ function validateSignup(body = {}) {
   const password = typeof body.password === 'string' ? body.password : '';
   const errors = {};
   if (name.length < 2) errors.name = 'Nhập họ và tên (ít nhất 2 ký tự).';
+  // Nghị định 13/2023: shop đồng ý điều khoản và chính sách dữ liệu trước khi đưa dữ liệu khách vào
+  if (body.acceptTerms !== true) errors.acceptTerms = 'Cần đồng ý Điều khoản sử dụng và Chính sách dữ liệu để tạo tài khoản.';
   if (!EMAIL_RE.test(email) || email.length > 254) errors.email = 'Email chưa đúng dạng, ví dụ ten@cuahang.vn.';
   const pw = passwordProblems(password);
   if (pw.length) errors.password = pw[0];
   if (Object.keys(errors).length) return { errors };
-  return { value: { name, shop, email, password } };
+  return { value: { name, shop, email, password, acceptTerms: true } };
 }
 
 const hashToken = (token) => crypto.createHash('sha256').update(String(token)).digest('hex');
@@ -128,7 +131,9 @@ const publicUser = (u) => (u ? {
   isDemo: u.email === DEMO_ACCOUNT.email,
   // Gói đã giữ chỗ ở trang bảng giá (null: đang ở gói Dùng thử, chưa giữ chỗ gói nào)
   planWanted: PLAN_IDS.includes(u.planWanted) ? u.planWanted : null,
-  planWantedAt: u.planWantedAt || null
+  planWantedAt: u.planWantedAt || null,
+  // Gói có hiệu lực (hết hạn thì về Dùng thử) và tính năng mở theo gói: services/billing.js
+  ...require('./billing').planSummary(u)
 } : null);
 
 async function ensureAuthIndexes(authDb) {
@@ -241,11 +246,18 @@ async function ensureAdminAccount(authDb, env = process.env) {
   return { email, created: true, passwordReset: false };
 }
 
-async function createUser(authDb, { name, shop, email, password }) {
+// Phiên bản điều khoản hiện hành (src/components/legal): đổi nội dung thì tăng số này
+const TERMS_VERSION = '2026-11-24';
+
+async function createUser(authDb, { name, shop, email, password, acceptTerms = false }) {
   const doc = {
     email,
     name,
     shop,
+    plan: 'try',
+    planUntil: null,
+    termsAcceptedAt: acceptTerms ? new Date() : null,
+    termsVersion: acceptTerms ? TERMS_VERSION : null,
     passwordHash: await hashPassword(password),
     role: 'user',
     status: 'active',
@@ -386,7 +398,9 @@ const PUBLIC = [
   [null, /^\/api\/auth(\/|$)/],
   ['GET', /^\/api\/trust\/health\/?$/],
   ['POST', /^\/api\/live\/sessions\/[^/]+\/comments\/?$/],
-  ['POST', /^\/api\/butler\/zalo\/webhook\/?$/]
+  ['POST', /^\/api\/butler\/zalo\/webhook\/?$/],
+  // Ngân hàng báo tiền vào (SePay/Casso): có khóa riêng BILLING_WEBHOOK_KEY (routes/billing.js)
+  ['POST', /^\/api\/billing\/webhook\/?$/]
 ];
 const QUERY_TOKEN_PATH = /^\/api\/live\/sessions\/[^/]+\/(stream|export)\/?$/;
 
@@ -411,7 +425,18 @@ function requireSession(authDb, env = process.env) {
     const path = String(req.originalUrl || req.url || '').split('?')[0];
     // Phần quản trị luôn cần phiên thật, không bị bỏ qua khi AUTH_REQUIRED=0
     if (String(env.AUTH_REQUIRED) === '0' && !/^\/api\/admin(\/|$)/.test(path)) return next();
-    if (isPublicApi(req.method, path)) return next();
+    if (isPublicApi(req.method, path)) {
+      // Đường công khai vẫn đọc phiên nếu trình duyệt có gửi: /trust/health của shop đã đăng
+      // nhập phải là sổ của kho riêng (services/tenants.js), không phải kho trưng bày chung
+      const t = requestToken(req, path);
+      if (t && !/^\/api\/auth(\/|$)/.test(path)) {
+        try {
+          const found = await sessionUser(authDb, t);
+          if (found && !found.user.mustChangePassword) { req.user = found.user; req.session = found.session; }
+        } catch { /* công khai: không đọc được phiên thì coi như khách */ }
+      }
+      return next();
+    }
     try {
       const found = await sessionUser(authDb, requestToken(req, path));
       if (!found) return res.status(401).json({ error: 'Cần đăng nhập để xem dữ liệu này.', code: 'auth_required' });
@@ -444,6 +469,7 @@ function requireAdmin(req, res, next) {
 
 module.exports = {
   DEMO_ACCOUNT,
+  TERMS_VERSION,
   PASSWORD_MIN,
   ADMIN_PASSWORD_MIN,
   ADMIN_SESSION_HOURS,

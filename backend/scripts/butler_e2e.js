@@ -172,15 +172,24 @@ async function main() {
         name: userName,
         shop: 'Shop Thử E2E',
         email,
-        password: 'matkhau2026'
+        password: 'matkhau2026',
+        acceptTerms: true
       },
       { headers: baseHeaders(null) }
     );
     if (signup.status !== 201 || !signup.data?.token || !signup.data?.user?.id) {
       fail(1, `Đăng ký thất bại: status=${signup.status} body=${JSON.stringify(signup.data)}`);
     }
-    const token = signup.data.token;
     testUserId = new ObjectId(String(signup.data.user.id));
+    // Tài khoản thử là thành viên nhóm (dùng kho mô phỏng chung, services/tenants.js) có gói
+    // Shop có live (lệnh Quản gia, phiên live). Đăng nhập lại để phiên mang quyền mới.
+    await authDb.collection('users').updateOne(
+      { _id: testUserId },
+      { $set: { sharedWorkspaces: true, plan: 'live', planUntil: new Date(Date.now() + 86400000) } }
+    );
+    const relogin = await http.post(`${apiUrl}/api/auth/login`, { email, password: 'matkhau2026' }, { headers: baseHeaders(null) });
+    if (relogin.status !== 200 || !relogin.data?.token) fail(1, `Đăng nhập lại thất bại: status=${relogin.status}`);
+    const token = relogin.data.token;
     pass(1, `Đã đăng ký ${email}`);
 
     // Bước 2: POST /api/butler/link-code -> có mã 6 số; tài khoản mẫu trả 403

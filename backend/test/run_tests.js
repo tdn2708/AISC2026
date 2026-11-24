@@ -3066,8 +3066,10 @@ testAsync('Live: nối lại phiên mô phỏng đã quá trần thì dừng nga
     assert.ok(bad.errors.name && bad.errors.email && bad.errors.password);
     assert.ok(auth.validateSignup({ name: 'An', email: 'a@b.vn', password: 'chiconchu' }).errors.password.includes('chữ và số'));
     assert.ok(auth.validateSignup({ name: 'An', email: 'a@b.vn', password: '12345678' }).errors.password.includes('chữ và số'));
-    const ok = auth.validateSignup({ name: '  Nguyễn   Văn\tA ', shop: ' Shop  X ', email: ' Ten@CuaHang.VN ', password: 'matkhau2026' });
-    assert.deepStrictEqual(ok.value, { name: 'Nguyễn Văn A', shop: 'Shop X', email: 'ten@cuahang.vn', password: 'matkhau2026' });
+    const ok = auth.validateSignup({ name: '  Nguyễn   Văn\tA ', shop: ' Shop  X ', email: ' Ten@CuaHang.VN ', password: 'matkhau2026', acceptTerms: true });
+    assert.deepStrictEqual(ok.value, { name: 'Nguyễn Văn A', shop: 'Shop X', email: 'ten@cuahang.vn', password: 'matkhau2026', acceptTerms: true });
+    // Chưa đồng ý điều khoản và chính sách dữ liệu thì không tạo được tài khoản (Nghị định 13/2023)
+    assert.ok(auth.validateSignup({ name: 'An', email: 'a@b.vn', password: 'matkhau2026' }).errors.acceptTerms);
     // Mật khẩu chữ có dấu vẫn tính là chữ
     assert.deepStrictEqual(auth.passwordProblems('mậtkhẩu99'), []);
   });
@@ -4235,6 +4237,87 @@ test('Quản trị: sessionRow ẩn tokenHash, adminUserRow ẩn passwordHash, p
   assert.doesNotThrow(() => new RegExp(pq.qEscaped, 'i'));
   assert.strictEqual(new RegExp(pq.qEscaped, 'i').test('.*(test)+$'), true);
   assert.strictEqual(new RegExp(pq.qEscaped, 'i').test('anything'), false);
+});
+
+test('Gói: hết hạn về Dùng thử; tài khoản mẫu và quản trị dùng đủ; khóa tính năng theo bậc', () => {
+  const billing = require('../services/billing');
+  const now = new Date('2026-11-24T00:00:00Z');
+  const future = new Date('2026-12-24T00:00:00Z');
+  const past = new Date('2026-11-01T00:00:00Z');
+  assert.strictEqual(billing.effectivePlan({ email: 'a@b.vn', plan: 'shop', planUntil: future }, now), 'shop');
+  assert.strictEqual(billing.effectivePlan({ email: 'a@b.vn', plan: 'live', planUntil: past }, now), 'try', 'hết hạn phải về Dùng thử');
+  assert.strictEqual(billing.effectivePlan({ email: 'a@b.vn', plan: 'live' }, now), 'try', 'không có hạn thì không tính');
+  assert.strictEqual(billing.effectivePlan({ email: 'demo@customerradar.vn' }, now), 'live');
+  assert.strictEqual(billing.effectivePlan({ email: 'x@y.vn', role: 'admin' }, now), 'live');
+  const shopUser = { email: 'a@b.vn', plan: 'shop', planUntil: future };
+  assert.strictEqual(billing.planAllows(shopUser, 'orders_import', now), true);
+  assert.strictEqual(billing.planAllows(shopUser, 'butler_commands', now), true);
+  assert.strictEqual(billing.planAllows(shopUser, 'live', now), false, 'gói Shop chưa có live');
+  assert.strictEqual(billing.planAllows({ email: 'a@b.vn' }, 'orders_import', now), false);
+  // Đầu tháng giờ Việt Nam: 1/12 00:30 giờ VN là 30/11 17:30 UTC, vẫn thuộc tháng 12
+  assert.strictEqual(billing.vnMonthStart(new Date('2026-11-30T17:30:00Z')).toISOString(), '2026-11-30T17:00:00.000Z');
+});
+
+test('Thanh toán: mã đơn, QR, đơn sai bị từ chối, gia hạn cộng dồn, webhook SePay và Casso', () => {
+  const billing = require('../services/billing');
+  const codes = new Set(Array.from({ length: 200 }, () => billing.newOrderCode()));
+  assert.ok(codes.size > 195, 'mã đơn phải gần như không trùng');
+  for (const c of codes) assert.ok(billing.CODE_RE.test(c) && !/[01OIL]/.test(c.slice(2)), c);
+  assert.deepStrictEqual(billing.validateOrder({ plan: 'shop', months: 3 }).value, { plan: 'shop', months: 3, amount: 597000 });
+  assert.ok(billing.validateOrder({ plan: 'try', months: 1 }).error);
+  assert.ok(billing.validateOrder({ plan: 'live', months: 2 }).error);
+  const pay = billing.payInfo({ code: 'CRABC234', amount: 199000 }, { PAY_BANK_BIN: '970436', PAY_ACCOUNT_NO: '0123456789', PAY_ACCOUNT_NAME: 'NGUYEN VAN A' });
+  assert.ok(pay.qrUrl.startsWith('https://img.vietqr.io/image/970436-0123456789-'));
+  assert.ok(pay.qrUrl.includes('amount=199000') && pay.qrUrl.includes('addInfo=CRABC234'));
+  assert.strictEqual(billing.payInfo({ code: 'CRABC234', amount: 1 }, {}), null, 'chưa cấu hình tài khoản thì không bịa QR');
+  const now = new Date('2026-11-24T00:00:00Z');
+  const still = new Date('2026-12-04T00:00:00Z');
+  assert.strictEqual(billing.extendPlan({ plan: 'shop', planUntil: still }, 'shop', 1, now).toISOString(), new Date(still.getTime() + 30 * 86400000).toISOString(), 'gia hạn cùng gói cộng vào hạn cũ');
+  assert.strictEqual(billing.extendPlan({ plan: 'shop', planUntil: still }, 'live', 1, now).toISOString(), new Date(now.getTime() + 30 * 86400000).toISOString(), 'đổi gói tính từ hôm nay');
+  const sepay = billing.parseBankWebhook({ id: 92704, transferType: 'in', transferAmount: 199000, content: 'MBVCB.123 CRABC234 chuyen tien' });
+  assert.deepStrictEqual(sepay, [{ code: 'CRABC234', amount: 199000, ref: '92704' }]);
+  assert.deepStrictEqual(billing.parseBankWebhook({ transferType: 'out', transferAmount: 5, content: 'CRABC234' }), [], 'tiền ra không tính');
+  const casso = billing.parseBankWebhook({ data: [{ id: 1, amount: 499000, description: 'thanh toan CRXYZ789' }] });
+  assert.deepStrictEqual(casso.map((t) => t.code), ['CRXYZ789']);
+  // Ngân hàng chèn dấu cách, gạch nối vào nội dung: vẫn nhận ra mã
+  assert.deepStrictEqual(billing.parseBankWebhook({ data: [{ id: 2, amount: 1, description: 'cr-xyz 789' }] }).map((t) => t.code), ['CRXYZ789']);
+});
+
+test('Tách dữ liệu từng shop: khóa kho, header không chọn được kho người khác, kho mô phỏng chỉ đọc', () => {
+  const tenants = require('../services/tenants');
+  const fakeDb = (name) => ({ databaseName: name, collection: () => ({ updateOne: () => Promise.resolve() }) });
+  const workspaces = { demo: fakeDb('x_demo'), real: fakeDb('x_real') };
+  const client = { db: (n) => fakeDb(n) };
+  const authDb = { collection: () => ({ updateOne: () => Promise.resolve() }) };
+  tenants.init({ client, workspaces, authDb, demoUserId: 'aaaaaaaaaaaaaaaaaaaaaaaa' });
+  const shopA = { _id: 'bbbbbbbbbbbbbbbbbbbbbbbb', email: 'a@shop.vn', role: 'user' };
+  const shopB = { _id: 'cccccccccccccccccccccccc', email: 'b@shop.vn', role: 'user' };
+  const demo = { _id: 'aaaaaaaaaaaaaaaaaaaaaaaa', email: 'demo@customerradar.vn' };
+  assert.strictEqual(tenants.keyFor(demo, 'real'), 'real');
+  assert.strictEqual(tenants.keyFor(shopA, 'real'), 't_bbbbbbbbbbbbbbbbbbbbbbbb');
+  assert.notStrictEqual(tenants.keyFor(shopA, 'real'), tenants.keyFor(shopB, 'real'));
+  assert.strictEqual(tenants.dbForKey('t_bbbbbbbbbbbbbbbbbbbbbbbb').databaseName, 'cr_t_bbbbbbbbbbbbbbbbbbbbbbbb');
+  assert.ok(tenants.dbNameFor('bbbbbbbbbbbbbbbbbbbbbbbb').length <= 38, 'Atlas giới hạn tên database 38 byte');
+  assert.strictEqual(tenants.keyFor(shopA, 'demo'), 'demo');
+  assert.strictEqual(tenants.keyFor({ ...shopB, sharedWorkspaces: true }, 'real'), 'real', 'thành viên nhóm dùng kho chung');
+  assert.strictEqual(tenants.isShared(shopB._id), true, 'ghi nhớ quyền kho chung cho vòng canh');
+  tenants.isShared(shopB);
+  assert.strictEqual(tenants.isShared(shopB._id), false, 'bỏ quyền thì vòng canh cũng bỏ');
+  const mw = tenants.middleware();
+  const run = (req) => { let code = null; let body = null; let nexted = false; const res = { status: (c) => { code = c; return { json: (b) => { body = b; } }; } }; mw(req, res, () => { nexted = true; }); return { code, body, nexted, req }; };
+  const base = (o) => ({ get: () => null, query: {}, ...o });
+  const r1 = run(base({ user: shopA, workspace: 'real', method: 'GET', originalUrl: '/api/stats', db: workspaces.real }));
+  assert.ok(r1.nexted && r1.req.db.databaseName === 'cr_t_bbbbbbbbbbbbbbbbbbbbbbbb', 'kho thật của shop là kho riêng');
+  const r2 = run(base({ user: shopA, workspace: 'demo', method: 'POST', originalUrl: '/api/recommendations/decision', db: workspaces.demo }));
+  assert.strictEqual(r2.code, 403, 'shop không ghi vào kho mô phỏng chung');
+  const r3 = run(base({ user: shopA, workspace: 'demo', method: 'POST', originalUrl: '/api/chat', db: workspaces.demo }));
+  assert.ok(r3.nexted, 'hỏi trợ lý trên kho mô phỏng vẫn được');
+  const r4 = run(base({ user: demo, workspace: 'demo', method: 'POST', originalUrl: '/api/recommendations/decision', db: workspaces.demo }));
+  assert.ok(r4.nexted, 'tài khoản mẫu vẫn thao tác trên kho mô phỏng');
+  // Webhook live không đăng nhập: chỉ khóa kho đã có mới đổi được kho; khóa bịa giữ kho mặc định
+  const hook = (key) => run(base({ workspace: 'demo', method: 'POST', originalUrl: '/api/live/sessions/aaaaaaaaaaaaaaaaaaaaaaaa/comments', db: workspaces.demo, get: (h) => (h === 'X-Workspace' ? key : null) }));
+  assert.strictEqual(hook('t_bbbbbbbbbbbbbbbbbbbbbbbb').req.db.databaseName, 'cr_t_bbbbbbbbbbbbbbbbbbbbbbbb');
+  assert.strictEqual(hook('t_dddddddddddddddddddddddd').req.db.databaseName, 'x_demo', 'khóa kho bịa không tạo database mới');
 });
 
 (async () => {

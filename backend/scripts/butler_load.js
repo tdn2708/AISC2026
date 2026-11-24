@@ -465,7 +465,8 @@ async function main() {
           name: 'Chủ Shop Live Load',
           shop: 'Shop Live Load',
           email: `butler-live-load-${Date.now()}@example.com`,
-          password: 'matkhau2026'
+          password: 'matkhau2026',
+          acceptTerms: true
         },
         { headers: writeKey ? { 'X-Write-Key': writeKey } : {} }
       );
@@ -473,7 +474,10 @@ async function main() {
         throw new Error(`Không tạo được tài khoản thử Mục 5: ${JSON.stringify(signupRes.data)}`);
       }
       liveTestUserId = new ObjectId(String(signupRes.data.user.id));
-      const liveToken = signupRes.data.token;
+      // Thành viên nhóm (kho mô phỏng chung) có gói Shop có live: đăng nhập lại để phiên mang quyền mới
+      await authDb.collection('users').updateOne({ _id: liveTestUserId }, { $set: { sharedWorkspaces: true, plan: 'live', planUntil: new Date(Date.now() + 86400000) } });
+      const relogin = await http.post(`${liveSrv.baseUrl}/api/auth/login`, { email: signupRes.data.user.email, password: 'matkhau2026' }, { headers: writeKey ? { 'X-Write-Key': writeKey } : {} });
+      const liveToken = relogin.data?.token || signupRes.data.token;
       const liveHeaders = {
         Authorization: `Bearer ${liveToken}`,
         'X-Workspace': 'demo',

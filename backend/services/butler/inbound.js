@@ -175,7 +175,7 @@ function createInbound({ authDb, workspaces, maxQueue = 500, concurrency = 2 }) 
     }
 
     zalo.typing(chatId);
-    const ws = link.settings?.workspace === 'demo' ? 'demo' : 'real';
+    const ws = require('../tenants').keyFor(user, link.settings?.workspace === 'demo' ? 'demo' : 'real');
     const reply = await engine.handle({
       authDb,
       workspaces,

@@ -56,7 +56,9 @@ const FETCH_BATCH = 5000;
  * độ tươi không thành số đẹp giả.
  */
 const REAL_DB = process.env.MONGODB_REAL_DB || 'customer_radar_real';
-const anchorsToData = (db) => db.databaseName === REAL_DB;
+// Kho thật riêng của từng shop (services/tenants.js, `cr_t_<mã tài khoản>`): cũng là dữ liệu sàn thật
+const isTenantDbName = (name) => /^cr(_test)?_t_[a-f0-9]{24}$/.test(String(name || ''));
+const anchorsToData = (db) => db.databaseName === REAL_DB || isTenantDbName(db.databaseName);
 
 /**
  * Chu kỳ bán rã của trọng số theo kho. Kho mô phỏng giữ 30 ngày (mặc định
@@ -98,12 +100,32 @@ const TXN_PROJECTION = { _id: 0, orderId: 1, productName: 1, region: 1, orderedA
  *   stale     bản vừa bị invalidate: vẫn phục vụ trong lúc bản mới đang tính
  */
 const states = new Map();
+/**
+ * Mỗi shop một kho riêng nên RAM giữ nhiều ngữ cảnh. Render 512 MB: chỉ giữ ngữ cảnh
+ * của TENANT_CTX_MAX kho riêng dùng gần nhất (mặc định 3); kho ít dùng nhất bị bỏ bản
+ * tính sẵn, lần sau mở thì tính lại. Hai kho chung (demo, real) không bao giờ bị bỏ.
+ */
+const TENANT_CTX_MAX = Math.max(1, Number(process.env.TENANT_CTX_MAX) || 3);
+function evictTenantStates(keepName) {
+  const tenantNames = [...states.keys()].filter((n) => isTenantDbName(n) && n !== keepName);
+  const over = tenantNames.length + (isTenantDbName(keepName) ? 1 : 0) - TENANT_CTX_MAX;
+  if (over <= 0) return;
+  tenantNames
+    .map((n) => ({ n, st: states.get(n) }))
+    .filter(({ st }) => !st.ongoing)
+    .sort((a, b) => (a.st.usedAt || 0) - (b.st.usedAt || 0))
+    .slice(0, over)
+    .forEach(({ n }) => states.delete(n));
+}
 function stateFor(db) {
   const name = db.databaseName;
   if (!states.has(name)) {
     states.set(name, { cache: { key: null, at: 0, computedAt: 0, value: null, generation: 0 }, generation: 0, ongoing: null, stale: null });
+    if (isTenantDbName(name)) evictTenantStates(name);
   }
-  return states.get(name);
+  const st = states.get(name);
+  st.usedAt = Date.now();
+  return st;
 }
 
 // ==================================================================

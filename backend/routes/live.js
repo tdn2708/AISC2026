@@ -116,7 +116,7 @@ router.get('/overview', wrap(async (req, res) => {
   const col = req.db.collection('live_sessions');
   const recent = await col.find({}).sort({ createdAt: -1 }).limit(20).toArray();
   const live = recent
-    .map((s) => ({ s, r: hub.runtimeFor(s._id, req.workspace) }))
+    .map((s) => ({ s, r: hub.runtimeFor(s._id, req.wsKey) }))
     .filter(({ r }) => r && r.status !== 'ended')
     .map(({ s, r }) => {
       const snap = r.snapshot();
@@ -146,10 +146,11 @@ router.get('/sessions', wrap(async (req, res) => {
   await hub.ensureIndexes(req.db);
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
   const docs = await req.db.collection('live_sessions').find({}).sort({ createdAt: -1 }).limit(limit).toArray();
-  res.json({ sessions: docs.map((s) => hub.publicSession(s, hub.runtimeFor(s._id, req.workspace))) });
+  res.json({ sessions: docs.map((s) => hub.publicSession(s, hub.runtimeFor(s._id, req.wsKey))) });
 }));
 
-router.post('/sessions', wrap(async (req, res) => {
+// Đọc bình luận live có ở gói Shop có live (services/billing.js)
+router.post('/sessions', require('../services/billing').requireFeature('live'), wrap(async (req, res) => {
   const b = req.body || {};
   const platform = str(b.platform, 20);
   // hasOwn: "__proto__", "constructor" là thuộc tính có sẵn của mọi object, PLATFORMS[...] vẫn ra giá trị
@@ -179,14 +180,14 @@ router.post('/sessions', wrap(async (req, res) => {
   await hub.ensureIndexes(req.db);
   const { insertedId } = await req.db.collection('live_sessions').insertOne(session);
   session._id = insertedId;
-  const r = await hub.startSession(req.db, req.workspace, session);
+  const r = await hub.startSession(req.db, req.wsKey, session);
   require('./live_schedule').linkSession(req.db, session).catch(() => {});
   res.status(201).json({ session: hub.publicSession(session, r) });
 }));
 
 router.get('/sessions/:id', wrap(async (req, res) => {
   const s = await sessionOr404(req);
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   res.json({ session: hub.publicSession(r ? r.session : s, r), snapshot: r ? r.snapshot() : await hub.rebuildSnapshot(req.db, s) });
 }));
 
@@ -201,7 +202,7 @@ router.get('/sessions/:id/stream', wrap(async (req, res) => {
   });
   res.flushHeaders();
   res.write('retry: 3000\n\n');
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   if (!r) {
     // Phiên không chạy: gửi trạng thái cuối rồi đóng
     res.write(`event: session\ndata: ${JSON.stringify(hub.publicSession(s, null))}\n\n`);
@@ -215,7 +216,7 @@ router.get('/sessions/:id/stream', wrap(async (req, res) => {
 
 router.post('/sessions/:id/stop', wrap(async (req, res) => {
   const s = await sessionOr404(req);
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   if (r) await r.stop('Người dùng kết thúc phiên');
   else if (s.status !== 'ended') {
     const snap = await hub.rebuildSnapshot(req.db, s);
@@ -225,9 +226,9 @@ router.post('/sessions/:id/stop', wrap(async (req, res) => {
   res.json({ session: hub.publicSession(fresh, null) });
 }));
 
-router.post('/sessions/:id/resume', wrap(async (req, res) => {
+router.post('/sessions/:id/resume', require('../services/billing').requireFeature('live'), wrap(async (req, res) => {
   const s = await sessionOr404(req);
-  if (hub.runtimeFor(s._id, req.workspace)) throw bad('Phiên đang chạy');
+  if (hub.runtimeFor(s._id, req.wsKey)) throw bad('Phiên đang chạy');
   if (s.platform === 'simulator' && req.workspace !== 'demo') throw bad('Phiên mô phỏng chỉ chạy trong kho demo');
   if (s.platform === 'simulator') {
     // Đếm trước khi nạp: phiên đã đủ trần thì không nạp lại cả phiên vào RAM
@@ -235,7 +236,7 @@ router.post('/sessions/:id/resume', wrap(async (req, res) => {
     if (n >= hub.SIM_MAX_COMMENTS) throw bad(`Phiên mô phỏng đã có ${n.toLocaleString('vi-VN')} bình luận, quá trần ${hub.SIM_MAX_COMMENTS.toLocaleString('vi-VN')}. Tạo phiên mô phỏng mới để chạy tiếp.`);
   }
   await req.db.collection('live_sessions').updateOne({ _id: s._id }, { $set: { status: 'connecting', error: null }, $unset: { endedAt: '' } });
-  const r = await hub.startSession(req.db, req.workspace, { ...s, status: 'connecting', error: null, endedAt: null });
+  const r = await hub.startSession(req.db, req.wsKey, { ...s, status: 'connecting', error: null, endedAt: null });
   res.json({ session: hub.publicSession(r.session, r) });
 }));
 
@@ -243,7 +244,7 @@ router.delete('/sessions/:id', wrap(async (req, res) => {
   const s = await sessionOr404(req);
   // Chỉ xóa được phiên mô phỏng; phiên thật là dữ liệu của shop, không xóa qua giao diện
   if (!s.simulated) throw bad('Chỉ xóa được phiên mô phỏng', 403);
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   if (r) await r.stop('Xóa phiên');
   await req.db.collection('live_comments').deleteMany({ sessionId: s._id });
   await req.db.collection('live_sessions').deleteOne({ _id: s._id });
@@ -256,7 +257,7 @@ router.put('/sessions/:id/catalog', wrap(async (req, res) => {
   const policy = cleanPolicy(req.body?.policy);
   const currentProductId = products.some((p) => p.id === s.currentProductId) ? s.currentProductId : products[0]?.id || null;
   await req.db.collection('live_sessions').updateOne({ _id: s._id }, { $set: { products, policy, currentProductId } });
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   if (r) {
     Object.assign(r.session, { products, policy, currentProductId });
     r.agg.setProducts(products);
@@ -269,7 +270,7 @@ router.put('/sessions/:id/catalog', wrap(async (req, res) => {
 router.post('/sessions/:id/current-product', wrap(async (req, res) => {
   const s = await sessionOr404(req);
   const productId = str(req.body?.productId, 40);
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   if (r) await r.setCurrentProduct(productId);
   else await req.db.collection('live_sessions').updateOne({ _id: s._id }, { $set: { currentProductId: productId } });
   res.json({ ok: true, currentProductId: productId });
@@ -322,7 +323,7 @@ function parseCsv(text) {
 router.post('/sessions/:id/comments', wrap(async (req, res) => {
   // Phiên đang chạy thì lấy từ bộ nhớ: giờ cao điểm webhook gọi hàng trăm lần mỗi
   // giây, đọc lại phiên từ Atlas mỗi lần vừa chậm vừa làm rơi cả lô khi mạng chập chờn
-  const live = hub.runtimeFor(req.params.id, req.workspace);
+  const live = hub.runtimeFor(req.params.id, req.wsKey);
   const s = live ? live.session : await sessionOr404(req);
   const key = req.get('X-Ingest-Key') || req.body?.key || req.query.key;
   if (!key || key !== s.ingestKey) throw bad('Sai khóa nhập của phiên', 403);
@@ -338,7 +339,7 @@ router.post('/sessions/:id/comments', wrap(async (req, res) => {
     ts: c.ts && !Number.isNaN(Date.parse(c.ts)) ? new Date(c.ts) : new Date(Date.now() - (items.length - i))
   })).filter((c) => c.text);
 
-  const r = live || hub.runtimeFor(s._id, req.workspace);
+  const r = live || hub.runtimeFor(s._id, req.wsKey);
   let accepted = 0;
   let queued = false;
   if (r) {
@@ -393,7 +394,7 @@ router.post('/sessions/:id/comments/:commentId/label', wrap(async (req, res) => 
     machineLabel: d.machineLabel || { intent: d.intent, topic: d.topic }
   };
   await col.updateOne({ _id: d._id }, { $set: set });
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   if (r) await hub.refreshRuntime(r);
   const names = new Map((s.products || []).map((p) => [p.id, p.name]));
   res.json({ comment: hub.publicComment({ ...d, ...set }, names.get(d.productId)) });
@@ -410,7 +411,7 @@ router.post('/sessions/:id/groups/resolve', wrap(async (req, res) => {
   if (!key) throw bad('Thiếu khóa nhóm');
   const answer = status === 'answered' ? { text: str(req.body?.text, 600) || null, by: str(req.body?.by, 60) || 'người đứng live', provider: str(req.body?.provider, 20) || 'template', at: new Date() } : null;
   const set = { status, ...(answer ? { answer } : {}) };
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   if (r) await r.flush();
   const out = await req.db.collection('live_comments').updateMany({ sessionId: s._id, groupKey: key, intent: { $in: ['question', 'complaint'] } }, { $set: set });
   if (r) {
@@ -425,7 +426,7 @@ router.post('/sessions/:id/groups/resolve', wrap(async (req, res) => {
 router.post('/sessions/:id/groups/rewrite', require('../services/rate_limit').rateLimit({ max: 12, windowMs: 60 * 1000, name: 'viết lại câu trả lời' }), wrap(async (req, res) => {
   const s = await sessionOr404(req);
   const key = str(req.body?.key, 200);
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   const snap = r ? r.snapshot() : await hub.rebuildSnapshot(req.db, s);
   const g = [...snap.queue, ...snap.answered].find((x) => x.key === key);
   if (!g) throw bad('Không tìm thấy nhóm câu hỏi', 404);
@@ -444,7 +445,7 @@ router.post('/sessions/:id/groups/rewrite', require('../services/rate_limit').ra
 /** Báo cáo sau phiên: phễu, doanh thu, cầu bị lỡ, câu hỏi bỏ sót, việc cần làm */
 router.get('/sessions/:id/report', wrap(async (req, res) => {
   const s = await sessionOr404(req);
-  res.json(await hub.reportFor(req.db, s, hub.runtimeFor(s._id, req.workspace)));
+  res.json(await hub.reportFor(req.db, s, hub.runtimeFor(s._id, req.wsKey)));
 }));
 
 /**
@@ -456,7 +457,7 @@ router.get('/sessions/:id/report', wrap(async (req, res) => {
 router.post('/sessions/:id/push-feedback', wrap(async (req, res) => {
   const s = await sessionOr404(req);
   const intents = req.body?.includePraise ? ['complaint', 'praise'] : ['complaint'];
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   if (r) await r.flush();
   const col = req.db.collection('live_comments');
   const docs = await col.find({ sessionId: s._id, intent: { $in: intents }, pushedToFeedback: { $ne: true } }).sort({ ts: 1 }).limit(300).toArray();
@@ -497,7 +498,7 @@ router.post('/sessions/:id/actions', wrap(async (req, res) => {
   const id = str(req.body?.id, 200);
   const status = ['done', 'dismissed'].includes(req.body?.status) ? req.body.status : null;
   if (!id || !status) throw bad('Thiếu mã việc hoặc trạng thái');
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   if (!r) throw bad('Phiên không còn chạy', 409);
   const entry = await r.resolveAction(id, status, str(req.body?.by, 60));
   if (!entry) throw bad('Việc này không còn hiệu lực', 404);
@@ -508,7 +509,7 @@ router.post('/sessions/:id/orders/:commentId', wrap(async (req, res) => {
   const s = await sessionOr404(req);
   const status = ['new', 'confirmed', 'cancelled'].includes(req.body?.status) ? req.body.status : null;
   if (!status || !ObjectId.isValid(req.params.commentId)) throw bad('Trạng thái hoặc mã không hợp lệ');
-  const r = hub.runtimeFor(s._id, req.workspace);
+  const r = hub.runtimeFor(s._id, req.wsKey);
   if (r) await r.flush();
   await req.db.collection('live_comments').updateOne({ _id: new ObjectId(req.params.commentId), sessionId: s._id, intent: 'order' }, { $set: { orderStatus: status } });
   if (r) {

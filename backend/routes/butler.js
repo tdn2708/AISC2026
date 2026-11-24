@@ -97,7 +97,7 @@ module.exports = ({ authDb, workspaces, getInbound }) => {
       outbox.stats(authDb, req.user._id)
     ]);
 
-    const watchWs = (link?.settings?.workspace || 'real') === 'demo' ? 'demo' : 'real';
+    const watchWs = require('../services/tenants').keyFor(req.user, (link?.settings?.workspace || 'real') === 'demo' ? 'demo' : 'real');
     const watchDb = workspaces[watchWs] || req.db;
     const nextSched = watchDb
       ? await watchDb

@@ -188,6 +188,8 @@ function publicSession(s, runtime) {
     status,
     error: runtime?.error || s.error || null,
     simulated: Boolean(s.simulated),
+    // Khóa kho cho webhook bên ngoài: kho riêng của shop là 't_...' (services/tenants.js)
+    wsKey: runtime?.workspace || null,
     products: s.products || [],
     policy: s.policy || {},
     currentProductId: s.currentProductId || null,

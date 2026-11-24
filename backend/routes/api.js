@@ -33,7 +33,7 @@ const wrap = (fn) => (req, res) => {
     if (status === 500) console.error(`[API] ${req.method} ${req.path}:`, err.message);
     if (res.headersSent) return;
     // Lỗi máy chủ: ghi chi tiết vào log, không trả nguyên thông báo (có thể lộ tên kho, đường dẫn, câu truy vấn)
-    res.status(status).json({ error: status === 500 ? 'Lỗi máy chủ, vui lòng thử lại sau.' : err.message });
+    res.status(status).json({ error: status === 500 ? 'Lỗi máy chủ, vui lòng thử lại sau.' : err.message, ...(err.code === 'plan_required' ? { code: err.code } : {}) });
   });
 };
 
@@ -537,7 +537,7 @@ router.get('/nav/status', wrap(async (req, res) => {
  */
 router.get('/inbox', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
-  res.json({ items: await buildInboxItems(req.db, req.workspace, ctx) });
+  res.json({ items: await buildInboxItems(req.db, req.wsKey || req.workspace, ctx) });
 }));
 
 /**
@@ -1419,6 +1419,9 @@ router.post('/scrape', collectLimit, wrap(async (req, res) => {
   const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
   if (!url) return res.status(400).json({ error: 'Cần trường url' });
 
+  // Hạn mức tháng của gói Dùng thử: hết thì dừng trước khi tốn công thu thập
+  const { left } = req.body?.dryRun === true ? { left: Infinity } : await feedbackRoomOr402(req);
+
   // URL sai định dạng / không phải http(s) / địa chỉ nội bộ -> lỗi 400 từ validateTargetUrl
   const rawReviews = await scrapeShopeeReviews(url);
 
@@ -1457,7 +1460,7 @@ router.post('/scrape', collectLimit, wrap(async (req, res) => {
   // Ghi theo khóa chống trùng thay vì insertMany: cào lại cùng trang từng
   // chèn nguyên bản sao của mọi bình luận, và chính các bản sao cùng thời
   // điểm đó bị Trust Layer bắt thành "cụm đánh giá ảo".
-  const { inserted } = await saveFeedbacks(req.db, analyzed);
+  const { inserted } = await saveFeedbacks(req.db, analyzed.slice(0, left));
   if (inserted > 0) {
     await req.db.collection('predictions').deleteMany({});
     invalidate(req.db);
@@ -1598,6 +1601,26 @@ const { maskName, pseudoCustomerId, dedupKey } = require('../services/ingest');
  * thu thập sàn (ViSoBERT, LLM, luật), che PII, chống trùng, rồi tính lại. Chỉ
  * nhận ở kho Dữ liệu thật: kho Mô phỏng giữ nguyên câu chuyện demo.
  */
+
+// ---------- Gói dùng (services/billing.js) ----------
+const billing = require('../services/billing');
+/**
+ * Hạn mức phản hồi mỗi tháng của gói Dùng thử: trả số dòng còn được nạp (Infinity nếu
+ * không giới hạn). Hết hạn mức thì ném 402 để giao diện dẫn sang trang Bảng giá.
+ * Tài khoản mẫu và kho chung không bị tính (billing.effectivePlan trả 'live').
+ */
+async function feedbackRoomOr402(req) {
+  const room = await billing.feedbackRoom(req.db, req.user);
+  if (room.left == null) return { left: Infinity, room };
+  if (room.left <= 0) {
+    const e = new Error(`Gói Dùng thử nạp tối đa ${room.limit} phản hồi mỗi tháng và tháng này đã đủ. Nâng lên gói Shop để nạp không giới hạn.`);
+    e.status = 402;
+    e.code = 'plan_required';
+    throw e;
+  }
+  return { left: room.left, room };
+}
+
 router.post('/import/feedbacks', importLimit, wrap(async (req, res) => {
   if (req.workspace !== 'real') return res.status(403).json({ error: 'Chỉ nạp file vào kho Dữ liệu thật. Chọn kho ở góc trên thanh bên.' });
   const rows = Array.isArray(req.body?.rows) ? req.body.rows : null;
@@ -1641,7 +1664,10 @@ router.post('/import/feedbacks', importLimit, wrap(async (req, res) => {
   const seen = new Set((await req.db.collection('feedbacks').find({ dedupKey: { $in: keys } }, { projection: { dedupKey: 1 } }).toArray()).map((d) => d.dedupKey));
   const fresh = raw.filter((r, i) => !seen.has(keys[i]));
   if (!fresh.length) return res.json({ inserted: 0, duplicates: raw.length, skipped, labelledBy: [], negatives: 0 });
-  raw.splice(0, raw.length, ...fresh);
+  // Gói Dùng thử: cắt phần vượt hạn mức tháng TRƯỚC khi gán nhãn (không tốn lượt AI cho dòng không lưu)
+  const { left, room } = await feedbackRoomOr402(req);
+  const overQuota = fresh.length > left ? fresh.length - left : 0;
+  raw.splice(0, raw.length, ...fresh.slice(0, left));
 
   const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating })));
   const docs = buildFeedbackDocs(raw, ai, { collectedVia: 'import', sourceUrl: fileName ? `file:${fileName}` : null, fallbackProduct: 'Sản phẩm chưa ghi tên' });
@@ -1658,7 +1684,10 @@ router.post('/import/feedbacks', importLimit, wrap(async (req, res) => {
     duplicates: duplicates + seen.size,
     skipped,
     labelledBy: [...new Set(docs.map((d) => d.labelledBy).filter(Boolean))],
-    negatives: docs.filter((d) => d.sentiment === 'Negative').length
+    negatives: docs.filter((d) => d.sentiment === 'Negative').length,
+    // Số dòng bị cắt vì vượt hạn mức tháng của gói Dùng thử
+    overQuota,
+    quota: room.limit != null ? { limit: room.limit, used: room.used + inserted } : null
   });
 }));
 
@@ -1687,7 +1716,7 @@ const toDate = (v) => {
 };
 const CANCELLED = /(huy|cancel|that bai|failed|tra hang hoan tien toan bo)/;
 
-router.post('/import/orders', importLimit, wrap(async (req, res) => {
+router.post('/import/orders', importLimit, billing.requireFeature('orders_import'), wrap(async (req, res) => {
   if (req.workspace !== 'real') return res.status(403).json({ error: 'Chỉ nạp file vào kho Dữ liệu thật. Chọn kho ở góc trên thanh bên.' });
   const rows = Array.isArray(req.body?.rows) ? req.body.rows : null;
   if (!rows || !rows.length) return res.status(400).json({ error: 'Cần ít nhất một dòng' });
@@ -1848,7 +1877,7 @@ router.post('/chat', llmLimit, wrap(async (req, res) => {
   if (chatEngine.routeIntent(message).intent.id === 'live') {
     try {
       const { liveBriefing } = require('../services/live/brief');
-      ctx = Object.assign(Object.create(baseCtx), { live: await liveBriefing(req.db, req.workspace) });
+      ctx = Object.assign(Object.create(baseCtx), { live: await liveBriefing(req.db, req.wsKey || req.workspace) });
     } catch (e) {
       console.warn('[CHAT] Không lấy được dữ liệu livestream:', e.message);
     }
