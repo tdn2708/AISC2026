@@ -21,8 +21,8 @@ export const PLANS = [
     for: 'Shop mới bắt đầu, muốn xem thử',
     items: ['Tới 500 phản hồi mỗi tháng', 'Cảnh báo và việc hôm nay', 'Bản tin Zalo buổi sáng'],
     brief: ['500 phản hồi mỗi tháng', 'Cảnh báo, việc hôm nay', 'Bản tin Zalo'],
-    unlocks: ['Cảnh báo khi khách phàn nàn tăng', 'Việc hôm nay, xếp theo mức độ', 'Bản tin Zalo mỗi sáng'],
-    shot: { base: '/landing/viec-hom-nay', w: 1400, h: 531, alt: 'Khối Việc hôm nay trong ứng dụng: các cảnh báo xếp theo mức độ, mỗi việc có kế hoạch xử lý' }
+    unlocks: ['Cảnh báo khi phàn nàn tăng', 'Việc hôm nay theo mức gấp', 'Bản tin Zalo mỗi sáng'],
+    shot: { base: '/landing/tong-quan', w: 1600, h: 1000, alt: 'Trang Tổng quan: hôm nay có 4 việc cần làm, việc gấp nhất ở đầu, số liệu đứng trên phép trừ đối chiếu' }
   },
   {
     id: 'shop',
@@ -33,7 +33,7 @@ export const PLANS = [
     for: 'Shop bán trên nhiều sàn',
     items: ['Không giới hạn phản hồi', 'Nạp file đơn hàng Shopee, TikTok Shop, Lazada', 'Kế hoạch xử lý kèm bằng chứng', 'Quản gia Zalo báo sự cố và nhận lệnh'],
     brief: ['Không giới hạn phản hồi', 'Nạp đơn hàng từ sàn', 'Quản gia Zalo'],
-    unlocks: ['Quản gia Zalo báo sự cố và nhận lệnh', 'Nạp file đơn hàng Shopee, TikTok Shop, Lazada', 'Không giới hạn phản hồi'],
+    unlocks: ['Quản gia Zalo nhận lệnh từ xa', 'Nạp đơn từ Shopee, TikTok, Lazada', 'Không giới hạn phản hồi'],
     shot: { base: '/goi/quan-gia', w: 773, h: 716, alt: 'Trang Quản gia: danh sách việc đang chờ, mỗi việc có mức độ, nút xem kế hoạch và duyệt' }
   },
   {
@@ -45,7 +45,8 @@ export const PLANS = [
     for: 'Shop bán hàng qua livestream',
     items: ['Mọi thứ của gói Shop', 'Phân loại bình luận live ngay khi tới', 'Việc gấp trong phiên và báo cáo cuối phiên', 'Báo Zalo khi live gặp sự cố'],
     brief: ['Toàn bộ gói Shop', 'Đọc bình luận live', 'Việc gấp trong phiên'],
-    unlocks: ['Đọc bình luận TikTok, YouTube Live ngay khi tới', 'Người mua muốn mua gì, muốn biết gì', 'Việc gấp trong phiên, báo Zalo khi live gặp sự cố'],
+    unlocks: ['Đọc bình luận live ngay khi tới', 'Khách muốn mua gì, hỏi gì', 'Việc gấp trong phiên live'],
+    pulse: { base: '/goi/live-pulse', w: 1153, h: 388 },
     shot: { base: '/goi/live', w: 1153, h: 747, alt: 'Bảng điều khiển phiên live: người xem, bình luận và lượt chốt theo phút, khách muốn mua gì, muốn biết gì' }
   }
 ];
