@@ -2,6 +2,8 @@
  * hero: three depth planes (the Overview capture receding behind, the price staircase in the middle, the live chart capture floating in front on glass), copy left · paper: var(--canvas) under the app's own atmosphere washes · accent: var(--accent) · display: Be Vietnam Pro · body: Be Vietnam Pro · nav: sticky glass bar (wordmark, two anchors, one action) · footer: one line inside the close
  * signature: the unlock rail, a pinned scene where one smoothed scroll value runs down three plan groups flipping each lock open in turn, while a deck of three real app captures shuffles the current plan to the front and drops the passed one · imagery: real app captures (Tổng quan, Quản gia, the live console) · v2.0.0 */
 /* Hallmark · pre-emit critique: P4 H5 E4 S5 R4 V4 · weakest: P, the only pictures are app captures, by the project's rule (no generated or stock imagery) */
+/* Hallmark · hero-review: in-thread · 3 findings (prices overflowing the steps, the back plane 155px from the copy and 121px above its centre, the front chip too small to read) · 3 resolved */
+/* Hallmark · finish-review: in-thread (no subagent in this session) · 5 findings · 4 resolved, 1 dismissed (the gap before the close is the authored silence in BRIEF.md) · follow-ups: card lists cut to two lines and the table set apart, so every screen holds under 80 words · gap: none */
 /* Hallmark · waive 39b · the three tall buttons are the staircase figure itself (each step's height is its tier), not form controls; their 44px minimum holds · Customer Radar's other controls stand 40 to 48px */
 /* Hallmark · waive 81 · the three washes are --atmos-a/b/c, the locked system's atmosphere layer (DESIGN.md § 4, same as AppAtmosphere in the app), fixed behind the page · every picture on the page is a real app capture; the washes are a backdrop, not picture slots */
 /* Hallmark · answered F19 · four weights (400, 500, 600, 700) are the locked system's set (DESIGN.md § 3); this page adds none */
@@ -35,6 +37,9 @@ html.pg-on {
   --pg-nav-h: 3.75rem;
 }
 html.pg-on, html.pg-on body { overflow-x: clip; }
+html.pg-on { scrollbar-color: var(--border-field) transparent; }
+.pg ::selection { background: var(--accent-dim); color: var(--text-hi); }
+.pg { caret-color: var(--accent); }
 
 /* Engine chưa chạy (lỗi, hoặc trước lần đo đầu): không giấu chữ nào */
 html:not(.sc-ready) .pg :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) { opacity: 1; transform: none; }
@@ -48,8 +53,8 @@ html:not(.sc-ready) .pg :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
 .pg-skip { position: absolute; left: 1rem; top: -4rem; z-index: 50; background: var(--surface); color: var(--text-hi); padding: 0.5rem 0.75rem; border-radius: var(--r-ctrl); }
 .pg-skip:focus-visible { top: 0.75rem; }
 
-.pg-h1 { font-size: clamp(2.5rem, 1.6rem + 3.4vw, 4.25rem); line-height: 1.06; letter-spacing: -0.025em; font-weight: 700; max-width: 13ch; overflow-wrap: break-word; min-width: 0; text-wrap: balance; }
-.pg-h2 { font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.6rem); line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; max-width: 22ch; overflow-wrap: break-word; min-width: 0; text-wrap: balance; }
+.pg-h1 { font-size: clamp(2.5rem, 1.6rem + 3.4vw, 4.25rem); line-height: 1.06; letter-spacing: -0.025em; font-weight: 700; max-width: 13ch; overflow-wrap: break-word; min-width: 0; text-wrap: pretty; }
+.pg-h2 { font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.6rem); line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; max-width: 22ch; overflow-wrap: break-word; min-width: 0; text-wrap: pretty; }
 
 /* ---------- lớp không khí: ba vùng sáng rất nhẹ của app, trôi chậm theo cuộn ---------- */
 .pg-atmos { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: clip; }
@@ -238,7 +243,7 @@ html:not(.sc-ready) .pg :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
 @media (max-width: 900px) { .pg-unlock.is-static .pg-unlock__side { display: block; } }
 
 /* ---------- 3. so sánh ---------- */
-.pg-compare { padding-block: var(--pg-section); }
+.pg-compare { padding-block: var(--pg-section) calc(var(--pg-section) * 1.9); }
 .pg-table-wrap { margin-top: 2rem; overflow: clip; border: 1px solid var(--border); border-radius: var(--r-surf); background: var(--surface); box-shadow: var(--glass-edge); }
 /* Bảng co vừa mọi bề ngang (không cuộn ngang): cột tên 40%, ba cột gói chia đều */
 .pg-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.9375rem; }
@@ -246,14 +251,13 @@ html:not(.sc-ready) .pg :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
 .pg-table th, .pg-table td { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border-soft); text-align: center; transition: background-color var(--motion-micro) var(--ease-out); }
 .pg-table thead th { padding-block: 1.1rem; vertical-align: bottom; }
 .pg-th__name { display: block; font-size: 0.9375rem; font-weight: 700; color: var(--text-hi); }
-.pg-th__price { display: block; margin-top: 0.15rem; font-size: 0.8125rem; font-weight: 500; color: var(--text-mid); font-variant-numeric: tabular-nums; }
 .pg-table tbody th { text-align: left; font-weight: 500; color: var(--text-hi); }
 .pg-table tbody tr:last-child :is(th, td) { border-bottom: 0; }
 .pg-table tbody tr:hover :is(th, td):not(:last-child) { background: var(--raised); }
 /* Cột Shop có live: một dải nền mực chạy suốt bảng */
 .pg-table :is(th, td):last-child { background: var(--strip-bg); color: var(--on-strip); border-bottom-color: color-mix(in oklab, var(--on-strip) 12%, transparent); }
 .pg-table thead th:last-child .pg-th__name { color: var(--on-strip); }
-.pg-table thead th:last-child .pg-th__price { color: var(--on-strip-mid); }
+.pg-mark { display: inline-flex; vertical-align: middle; }
 .pg-yes { color: var(--sev-ok); display: inline-block; }
 .pg-no { color: var(--text-lo); display: inline-block; opacity: 0.7; }
 .pg-table td:last-child .pg-yes { color: var(--accent-on-strip); }
@@ -263,12 +267,11 @@ html:not(.sc-ready) .pg :is([data-sc-cue], [data-sc-in], [data-sc-stagger] > *) 
   .pg-table th, .pg-table td { padding: 0.65rem 0.35rem; }
   .pg-table tbody th { padding-left: 0.75rem; }
   .pg-th__name { font-size: 0.8125rem; }
-  .pg-th__price { font-size: 0.8125rem; white-space: nowrap; }
-  .pg-table col.pg-col-name { width: 32%; }
   .pg-table thead th { padding-inline: 0.2rem; }
 }
 
 /* ---------- 4. câu hỏi ---------- */
+/* Khoảng lặng có chủ ý trước màn chọn gói (BRIEF), để màn chọn đứng riêng một màn */
 .pg-faq { padding-block: 0 calc(var(--pg-section) * 1.6); }
 .pg-faq__grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: start; }
 .pg-q { border-bottom: 1px solid var(--border); }

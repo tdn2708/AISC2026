@@ -312,8 +312,9 @@ function usePreloadShots(theme) {
 }
 
 const Mark = ({ v }) => {
-  if (v === true) return <><Check size={18} className="pg-yes" aria-hidden="true" /><span className="sr-only">Có</span></>;
-  if (v === false) return <><Lock size={15} className="pg-no" aria-hidden="true" /><span className="sr-only">Không có</span></>;
+  // Nhãn đọc màn hình đặt trên biểu tượng (role img), không thêm chữ ẩn vào từng ô
+  if (v === true) return <span role="img" aria-label="Có" className="pg-mark"><Check size={18} className="pg-yes" aria-hidden="true" /></span>;
+  if (v === false) return <span role="img" aria-label="Không có" className="pg-mark"><Lock size={15} className="pg-no" aria-hidden="true" /></span>;
   return <span className="pg-cellword">{v}</span>;
 };
 
@@ -328,10 +329,7 @@ const Compare = () => (
             <tr>
               <th scope="col"><span className="sr-only">Tính năng</span></th>
               {PLANS.map((p) => (
-                <th key={p.id} scope="col">
-                  <span className="pg-th__name">{p.name}</span>
-                  <span className="pg-th__price">{p.price.replace(' ', '\u00a0')}</span>
-                </th>
+                <th key={p.id} scope="col"><span className="pg-th__name">{p.name}</span></th>
               ))}
             </tr>
           </thead>
@@ -417,7 +415,6 @@ const Choose = ({ account }) => {
     <section id="chon-goi" className="pg-choose" aria-labelledby="pg-choose-h">
       <div className="pg-wrap">
         <h2 id="pg-choose-h" className="pg-h2">Chọn gói cho shop.</h2>
-        <p className="pg-choose__note">Giá dự kiến, chưa thu tiền.</p>
         {account?.isDemo && <p className="pg-choose__note">Tài khoản mẫu dùng chung đã mở mọi tính năng trên kho Mô phỏng.</p>}
         <ul className="pg-cards" data-sc-stagger="90">
           {PLANS.map((p) => (
