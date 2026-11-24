@@ -68,7 +68,9 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
     sentence = (
       <>
         Hôm nay có {todo.length} việc cần làm{urgentCount ? `, ${urgentCount} việc khẩn` : ''}.
-        {!hasUrgent && <>{' '}Gấp nhất: {topWords(top)}.</>}
+        {/* Không có việc gấp thì khung "Việc gấp nhất" bên dưới ghi "Hôm nay chưa có việc gấp";
+            câu này gọi việc đứng đầu là "nên làm trước" để hai chỗ không cãi nhau */}
+        {!hasUrgent && <>{' '}Nên làm trước: {topWords(top)}.</>}
       </>
     );
   } else {

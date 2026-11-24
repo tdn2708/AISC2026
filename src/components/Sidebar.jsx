@@ -389,7 +389,8 @@ const Sidebar = ({ onLogout, isOpen, onClose, collapsed: collapsedPref = false, 
                     className="flex min-h-9 w-full items-center gap-2 rounded-ctrl px-3 text-left text-sm text-ink-mid hover:bg-raised hover:text-ink-hi focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-60 pointer-coarse:min-h-10"
                   >
                     <ChevronDown size={16} className={`transition-transform duration-short ${advancedOpen || onAdvancedPage ? 'rotate-180' : ''}`} aria-hidden="true" />
-                    Nâng cao
+                    {/* Mở ra thì nhóm đã có nhãn "Nâng cao" ở trên; nút ghi lại chữ đó thành hai dòng trùng nhau */}
+                    {advancedOpen || onAdvancedPage ? 'Thu gọn' : 'Nâng cao'}
                   </button>
                 )}
                 <button
