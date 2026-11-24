@@ -10,7 +10,8 @@
  * `matrix`: bảng so sánh đầy đủ; giá trị true, false hoặc một chữ ngắn.
  */
 
-export const PRICE_NOTE = 'Giá cho mỗi 30 ngày, trả bằng chuyển khoản theo mã đơn. Hết hạn thì tự về gói Dùng thử, dữ liệu vẫn giữ.';
+// Đổi khi bật thu tiền (BILLING=1 ở máy chủ): 'Giá cho mỗi 30 ngày, trả bằng chuyển khoản theo mã đơn. Hết hạn thì tự về gói Dùng thử, dữ liệu vẫn giữ.'
+export const PRICE_NOTE = 'Giá dự kiến. Trong giai đoạn thử nghiệm, mọi tính năng đang mở miễn phí cho mọi tài khoản.';
 
 export const PLANS = [
   {

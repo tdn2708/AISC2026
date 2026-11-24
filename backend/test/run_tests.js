@@ -4239,8 +4239,25 @@ test('Quản trị: sessionRow ẩn tokenHash, adminUserRow ẩn passwordHash, p
   assert.strictEqual(new RegExp(pq.qEscaped, 'i').test('anything'), false);
 });
 
+test('Gói: tắt thu tiền (mặc định) thì mọi tài khoản dùng đủ tính năng, không hạn mức', () => {
+  const billing = require('../services/billing');
+  const saved = process.env.BILLING;
+  delete process.env.BILLING;
+  try {
+    assert.strictEqual(billing.billingEnabled(), false);
+    assert.strictEqual(billing.effectivePlan({ email: 'a@b.vn' }), 'live');
+    assert.strictEqual(billing.planAllows({ email: 'a@b.vn' }, 'live'), true);
+    assert.strictEqual(billing.planSummary({ email: 'a@b.vn' }).billingEnabled, false);
+  } finally {
+    if (saved === undefined) delete process.env.BILLING; else process.env.BILLING = saved;
+  }
+});
+
 test('Gói: hết hạn về Dùng thử; tài khoản mẫu và quản trị dùng đủ; khóa tính năng theo bậc', () => {
   const billing = require('../services/billing');
+  const saved = process.env.BILLING;
+  process.env.BILLING = '1';
+  try {
   const now = new Date('2026-11-24T00:00:00Z');
   const future = new Date('2026-12-24T00:00:00Z');
   const past = new Date('2026-11-01T00:00:00Z');
@@ -4256,6 +4273,9 @@ test('Gói: hết hạn về Dùng thử; tài khoản mẫu và quản trị d�
   assert.strictEqual(billing.planAllows({ email: 'a@b.vn' }, 'orders_import', now), false);
   // Đầu tháng giờ Việt Nam: 1/12 00:30 giờ VN là 30/11 17:30 UTC, vẫn thuộc tháng 12
   assert.strictEqual(billing.vnMonthStart(new Date('2026-11-30T17:30:00Z')).toISOString(), '2026-11-30T17:00:00.000Z');
+  } finally {
+    if (saved === undefined) delete process.env.BILLING; else process.env.BILLING = saved;
+  }
 });
 
 test('Thanh toán: mã đơn, QR, đơn sai bị từ chối, gia hạn cộng dồn, webhook SePay và Casso', () => {

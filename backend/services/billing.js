@@ -42,7 +42,15 @@ const FEATURE_LABEL = {
 };
 
 /** Gói đang có hiệu lực của tài khoản (hết hạn thì về Dùng thử) */
+/**
+ * Công tắc thu tiền. Tắt (mặc định, chưa đặt BILLING=1): giai đoạn thử nghiệm, mọi tài
+ * khoản dùng đủ tính năng như gói Shop có live, không hạn mức, không tạo đơn mua gói.
+ * Bật khi đã có tài khoản nhận tiền (PAY_*) và webhook ngân hàng (BILLING_WEBHOOK_KEY).
+ */
+const billingEnabled = (env = process.env) => String(env.BILLING || '') === '1';
+
 function effectivePlan(user, now = new Date()) {
+  if (!billingEnabled()) return 'live';
   if (!user) return 'try';
   if (user.email === DEMO_EMAIL || user.role === 'admin') return 'live';
   if (PAID_PLANS.includes(user.plan) && user.planUntil && new Date(user.planUntil).getTime() > new Date(now).getTime()) return user.plan;
@@ -238,11 +246,13 @@ function planSummary(user, now = new Date()) {
     planName: PLANS[id].name,
     planUntil: id !== 'try' && user?.planUntil && user.email !== DEMO_EMAIL && user.role !== 'admin' ? user.planUntil : null,
     feedbackPerMonth: PLANS[id].feedbackPerMonth,
+    billingEnabled: billingEnabled(),
     features: Object.fromEntries(Object.keys(FEATURE_PLAN).map((f) => [f, planAllows(user, f, now)]))
   };
 }
 
 module.exports = {
+  billingEnabled,
   PLANS, PAID_PLANS, MONTH_CHOICES, FEATURE_PLAN,
   effectivePlan, planAllows, planRequired, requireFeature, feedbackRoom, vnMonthStart,
   newOrderCode, CODE_RE, payInfo, validateOrder, ensureBillingIndexes, publicOrder,

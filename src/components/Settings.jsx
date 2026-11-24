@@ -91,8 +91,8 @@ const PlanPanel = ({ account }) => {
   return (
     <>
       <PanelHeader
-        title={`Gói ${bill.planName}`}
-        subtitle={account?.isDemo ? 'Tài khoản mẫu dùng chung đã mở mọi tính năng.' : bill.planUntil ? `Dùng tới ${day(bill.planUntil)}, hết hạn thì tự về gói Dùng thử, dữ liệu vẫn giữ.` : 'Miễn phí, không hết hạn.'}
+        title={bill.billingEnabled ? `Gói ${bill.planName}` : 'Giai đoạn thử nghiệm'}
+        subtitle={account?.isDemo ? 'Tài khoản mẫu dùng chung đã mở mọi tính năng.' : !bill.billingEnabled ? 'Không giới hạn phản hồi, đủ Quản gia Zalo và livestream.' : bill.planUntil ? `Dùng tới ${day(bill.planUntil)}, hết hạn thì tự về gói Dùng thử, dữ liệu vẫn giữ.` : 'Miễn phí, không hết hạn.'}
       />
       {bill.room && bill.room.limit != null && (
         <p className="mb-4 text-sm text-ink-mid">
@@ -107,7 +107,8 @@ const PlanPanel = ({ account }) => {
           </li>
         ))}
       </ul>
-      {!account?.isDemo && <Button onClick={() => navigate('/bang-gia#chon-goi')}>{bill.plan === 'try' ? 'Nâng cấp gói' : 'Gia hạn hoặc đổi gói'}</Button>}
+      {!bill.billingEnabled && !account?.isDemo && <p className="text-sm text-ink-mid">Giai đoạn thử nghiệm: mọi tính năng đang mở miễn phí.</p>}
+      {bill.billingEnabled && !account?.isDemo && <Button onClick={() => navigate('/bang-gia#chon-goi')}>{bill.plan === 'try' ? 'Nâng cấp gói' : 'Gia hạn hoặc đổi gói'}</Button>}
       {bill.orders?.length > 0 && (
         <div className="mt-8 border-t border-line-soft pt-6">
           <PanelHeader title="Đơn gần đây" />

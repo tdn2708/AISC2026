@@ -33,6 +33,7 @@ module.exports = ({ authDb }) => {
 
   shop.post('/orders', async (req, res, next) => {
     try {
+      if (!billing.billingEnabled()) return res.status(403).json({ error: 'Đang giai đoạn thử nghiệm: mọi tính năng mở miễn phí, chưa nhận thanh toán.', code: 'billing_off' });
       if (req.user.email === auth.DEMO_ACCOUNT.email) return res.status(403).json({ error: 'Tài khoản mẫu đã mở đủ tính năng, không cần mua gói.' });
       const v = billing.validateOrder(req.body || {});
       if (v.error) return res.status(400).json({ error: v.error });
@@ -43,6 +44,7 @@ module.exports = ({ authDb }) => {
 
   shop.post('/webhook', async (req, res, next) => {
     try {
+      if (!billing.billingEnabled()) return res.status(404).json({ error: 'Chưa bật thu tiền' });
       if (!billing.webhookKeyOk(req)) return res.status(401).json({ error: 'Sai khóa webhook' });
       const txs = billing.parseBankWebhook(req.body || {});
       const results = [];

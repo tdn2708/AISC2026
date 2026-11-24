@@ -480,6 +480,8 @@ const Choose = ({ account }) => {
   useEffect(() => { load(); }, [load]);
 
   const current = bill?.plan || account?.plan || 'try';
+  // Máy chủ chưa bật thu tiền (BILLING khác 1): giai đoạn thử nghiệm, mọi tài khoản dùng đủ tính năng
+  const billingOn = (bill?.billingEnabled ?? account?.billingEnabled) === true;
   const until = bill?.planUntil || account?.planUntil || null;
   const done = useCallback((text) => { setMsg(text); setBuying(null); load(); }, [load]);
 
@@ -489,6 +491,7 @@ const Choose = ({ account }) => {
     // Chưa đăng nhập: thẻ Dùng thử mời dùng thử, hai gói trả phí "Đăng ký" (đăng ký xong mới mua được)
     if (!account) return <Button as={Link} to="/signup" variant={variantFor(p)} block>{p.id === 'try' ? ACTION : 'Đăng ký'}</Button>;
     if (account.isDemo) return <Button as={Link} to="/dashboard" variant={variantFor(p)} block>Vào ứng dụng</Button>;
+    if (!billingOn) return <p className="pg-card__state">{p.id === 'live' ? 'Đang mở cho tài khoản của bạn' : 'Đã gồm trong giai đoạn thử nghiệm'}</p>;
     if (p.id === 'try') return <p className="pg-card__state">{current === 'try' ? 'Gói đang dùng' : 'Tự về gói này khi gói trả phí hết hạn'}</p>;
     if (current === p.id) {
       return (

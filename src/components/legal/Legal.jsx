@@ -26,6 +26,7 @@ const TERMS = [
     'Dữ liệu của shop nằm trong kho riêng của tài khoản; tài khoản khác không xem được.'
   ]],
   ['Gói và thanh toán', [
+    'Trong giai đoạn thử nghiệm, mọi tính năng mở miễn phí cho mọi tài khoản. Đơn vị vận hành báo trước ít nhất 30 ngày qua email đăng ký trước khi bắt đầu thu phí; các điều dưới đây áp dụng từ lúc đó.',
     'Gói Dùng thử miễn phí, tối đa 500 phản hồi mỗi tháng. Gói Shop 199.000 đ và gói Shop có live 499.000 đ cho mỗi 30 ngày.',
     'Thanh toán bằng chuyển khoản ngân hàng theo mã đơn hiện trên trang Bảng giá. Gói bật khi đã nhận đủ tiền, kéo dài theo số tháng đã mua; hết hạn thì tài khoản về gói Dùng thử, dữ liệu vẫn giữ.',
     'Chuyển nhầm số tiền hoặc nội dung: liên hệ để được đối soát. Gói đã bật không hoàn tiền phần thời gian chưa dùng, trừ khi dịch vụ ngừng hoạt động do lỗi của đơn vị vận hành.'
