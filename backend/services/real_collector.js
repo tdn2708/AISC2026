@@ -109,7 +109,9 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, o
     productsPerQuery: opts.productsPerQuery ?? 5,
     pages: opts.pages ?? 5,
     minReviews: opts.minReviews ?? 20,
-    pauseMs: opts.pauseMs ?? 1000
+    pauseMs: opts.pauseMs ?? 1000,
+    // Thu thập riêng một thương hiệu với gán nhãn giãn nhịp (LLM_MIN_INTERVAL_MS) cần lâu hơn 3 phút mỗi sản phẩm
+    productBudgetMs: opts.productBudgetMs ?? PRODUCT_BUDGET_MS
   };
   if (db) {
     await db.collection('feedbacks').createIndex(
@@ -178,7 +180,7 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, o
         }
       })();
       try {
-        await withTimeout(work, PRODUCT_BUDGET_MS, `Sản phẩm ${product.productId}`, token);
+        await withTimeout(work, o.productBudgetMs, `Sản phẩm ${product.productId}`, token);
       } catch (e) {
         totals.failed += 1;
         if (/quá \d+ giây/.test(e.message)) totals.timedOut += 1;

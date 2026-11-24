@@ -7,6 +7,7 @@ import { fmtInt, fmtDateTime, fmtPct } from '../lib/format';
 import StartSession from './live/StartSession';
 import LiveConsole from './live/LiveConsole';
 import Schedule from './live/Schedule';
+import Follows from './live/Follows';
 import { StatusPill, PLATFORM_LABEL, duration } from './live/shared';
 import { PageEnter } from './motion';
 
@@ -170,6 +171,8 @@ const Live = () => {
           />
         )}
       </GlassPanel>
+
+      <Follows />
 
       <Schedule
         onStartFromSchedule={(init) => {

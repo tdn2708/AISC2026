@@ -4340,6 +4340,57 @@ test('Tách dữ liệu từng shop: khóa kho, header không chọn được kh
   assert.strictEqual(hook('t_dddddddddddddddddddddddd').req.db.databaseName, 'x_demo', 'khóa kho bịa không tạo database mới');
 });
 
+testAsync('Theo dõi kênh: kênh lên live thì tự mở phiên một lần; đang có phiên thì thôi; bị chặn thì nghỉ; kho mô phỏng bỏ qua', async () => {
+  const follow = require('../services/live/follow');
+  const hub = require('../services/live/hub');
+  const mkCol = (docs) => ({
+    docs,
+    find(q) {
+      const match = (d) => Object.entries(q || {}).every(([k, v]) => (v && typeof v === 'object' && v.$in ? v.$in.includes(d[k]) : d[k] === v));
+      const out = docs.filter(match);
+      return { limit: () => ({ toArray: async () => out }), toArray: async () => out };
+    },
+    async updateOne(q, u) { const d = docs.find((x) => String(x._id) === String(q._id)); if (d) Object.assign(d, u.$set || {}); return {}; },
+    async insertOne(d) { const id = 'sess' + (docs.length + 1); docs.push({ ...d, _id: id }); return { insertedId: id }; },
+    async createIndex() { return {}; }
+  });
+  const mkDb = (follows) => { const cols = { live_follow: mkCol(follows), live_sessions: mkCol([]), live_comments: mkCol([]) }; return { cols, collection: (n) => cols[n] || mkCol([]) }; };
+  const shop = mkDb([{ _id: 'f1', platform: 'tiktok', target: 'bluestonevn', enabled: true, products: [{ id: 'afb-5880', name: 'Nồi chiên AFB-5880' }] }]);
+  const demo = mkDb([{ _id: 'f2', platform: 'tiktok', target: 'khac', enabled: true }]);
+  const started = [];
+  const origStart = hub.startSession;
+  const origRuntime = hub.runtimeFor;
+  hub.startSession = async (db, key, s) => { started.push({ key, s }); return {}; };
+  hub.runtimeFor = (id) => (started.some((x) => String(x.s._id) === String(id)) ? {} : null);
+  try {
+    const now = new Date('2026-11-25T13:00:00Z');
+    const asked = [];
+    const isLive = async (t) => { asked.push(t); return true; };
+    const r1 = await follow.tick({ demo: demo, t_aaaaaaaaaaaaaaaaaaaaaaaa: shop }, { isLive, now, log: () => {} });
+    assert.strictEqual(r1.length, 1, 'mở đúng một phiên');
+    assert.deepStrictEqual(asked, ['bluestonevn'], 'kho mô phỏng không bị hỏi');
+    assert.strictEqual(started[0].key, 't_aaaaaaaaaaaaaaaaaaaaaaaa', 'phiên gắn khóa kho riêng');
+    assert.strictEqual(started[0].s.target, 'bluestonevn');
+    assert.strictEqual(started[0].s.products.length, 1, 'mang theo danh mục đã lưu');
+    assert.strictEqual(started[0].s.autoStarted, true);
+    const r2 = await follow.tick({ t_aaaaaaaaaaaaaaaaaaaaaaaa: shop }, { isLive, now, log: () => {} });
+    assert.strictEqual(r2.length, 0, 'đang có phiên chạy thì không mở thêm');
+    // TikTok tạm chặn: nghỉ 60 phút, không hỏi lại trong lúc nghỉ
+    const shop2 = mkDb([{ _id: 'f3', platform: 'tiktok', target: 'shopb', enabled: true }]);
+    await follow.tick({ t_bbbbbbbbbbbbbbbbbbbbbbbb: shop2 }, { isLive: async () => { throw new Error('DEVICE_BLOCKED'); }, now, log: () => {} });
+    const f3 = shop2.cols.live_follow.docs[0];
+    assert.strictEqual(new Date(f3.backoffUntil).getTime(), now.getTime() + 3600000);
+    let askedAgain = false;
+    await follow.tick({ t_bbbbbbbbbbbbbbbbbbbbbbbb: shop2 }, { isLive: async () => { askedAgain = true; return true; }, now: new Date(now.getTime() + 600000), log: () => {} });
+    assert.strictEqual(askedAgain, false, 'đang nghỉ thì không hỏi TikTok');
+    assert.strictEqual(follow.cleanTikTok('https://www.tiktok.com/@bluestonevn/live'), 'bluestonevn');
+    assert.strictEqual(follow.cleanTikTok('@a b'), null, 'tên có khoảng trắng bị từ chối');
+  } finally {
+    hub.startSession = origStart;
+    hub.runtimeFor = origRuntime;
+  }
+});
+
 (async () => {
   for (const t of asyncTests) {
     try {

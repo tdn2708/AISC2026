@@ -250,6 +250,8 @@ async function startServer() {
       require('./services/live/hub').autoResume(workspaces)
         .then((list) => { if (list.length) console.log(`[LIVE] Tự nối lại ${list.length} phiên: ${list.map((x) => x.title).join(', ')}`); })
         .catch((e) => console.warn('[LIVE] Tự nối lại lỗi:', e.message));
+      // Theo dõi kênh của shop: tự mở phiên khi kênh lên live (services/live/follow.js)
+      require('./services/live/follow').startFollowing(workspaces);
       require('./services/butler').startButler({ authDb, workspaces })
         .then((b) => { butler = b; })
         .catch((e) => console.warn('[QUẢN GIA] Không bật được:', e.message));

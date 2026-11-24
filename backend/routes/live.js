@@ -142,6 +142,46 @@ router.get('/overview', wrap(async (req, res) => {
   res.json({ live, latest });
 }));
 
+// ---------- Theo dõi kênh: tự mở phiên khi shop lên live (services/live/follow.js) ----------
+const follow = require('../services/live/follow');
+const publicFollow = (f) => ({
+  id: String(f._id), platform: f.platform, target: f.target, title: f.title || null, enabled: f.enabled !== false,
+  products: (f.products || []).length, lastCheckAt: f.lastCheckAt || null, lastLive: f.lastLive ?? null,
+  lastStartedAt: f.lastStartedAt || null, lastError: f.lastError || null, backoffUntil: f.backoffUntil || null
+});
+router.get('/follows', wrap(async (req, res) => {
+  if (req.workspace !== 'real') return res.json({ follows: [] });
+  const list = await req.db.collection('live_follow').find({}).sort({ createdAt: -1 }).limit(follow.MAX_FOLLOWS).toArray();
+  res.json({ follows: list.map(publicFollow), everyMin: Math.max(2, Number(process.env.LIVE_FOLLOW_MIN) || 10) });
+}));
+router.post('/follows', require('../services/billing').requireFeature('live'), wrap(async (req, res) => {
+  if (req.workspace !== 'real') throw bad('Chỉ theo dõi kênh trong kho Dữ liệu thật');
+  const b = req.body || {};
+  const target = follow.cleanTikTok(b.target);
+  if (!target) throw bad('Nhập tên tài khoản TikTok, ví dụ @tenshop');
+  const col = req.db.collection('live_follow');
+  const existing = await col.findOne({ platform: 'tiktok', target });
+  if (!existing && (await col.countDocuments({})) >= follow.MAX_FOLLOWS) throw bad(`Mỗi kho theo dõi tối đa ${follow.MAX_FOLLOWS} kênh`);
+  // Danh mục: gửi kèm thì dùng, không thì lấy của phiên gần nhất cùng kênh (gợi ý trả lời đọc đúng hàng)
+  let products = Array.isArray(b.products) && b.products.length ? cleanProducts(b.products) : null;
+  if (!products) {
+    const last = await req.db.collection('live_sessions').find({ platform: 'tiktok', target }, { projection: { products: 1 } }).sort({ createdAt: -1 }).limit(1).toArray();
+    products = last[0]?.products || existing?.products || [];
+  }
+  const now = new Date();
+  await col.updateOne({ platform: 'tiktok', target }, {
+    $set: { platform: 'tiktok', target, title: str(b.title, 80) || null, enabled: b.enabled !== false, products, policy: cleanPolicy(b.policy || existing?.policy || {}), updatedAt: now, backoffUntil: null },
+    $setOnInsert: { createdAt: now }
+  }, { upsert: true });
+  const doc = await col.findOne({ platform: 'tiktok', target });
+  res.status(existing ? 200 : 201).json({ follow: publicFollow(doc) });
+}));
+router.delete('/follows/:id', wrap(async (req, res) => {
+  if (!/^[a-f0-9]{24}$/.test(req.params.id)) throw bad('Mã không hợp lệ');
+  const r = await req.db.collection('live_follow').deleteOne({ _id: new (require('mongodb').ObjectId)(req.params.id) });
+  res.json({ deleted: r.deletedCount });
+}));
+
 router.get('/sessions', wrap(async (req, res) => {
   await hub.ensureIndexes(req.db);
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 30));
