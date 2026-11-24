@@ -1,5 +1,5 @@
 /**
- * KIỂM THỬ API QUẢN TRỊ MÁY CHỦ (mục 8.2 KE-HOACH-QUAN-TRI-MAY-CHU.md)
+ * KIỂM THỬ API QUẢN TRỊ MÁY CHỦ
  * ==================================================================
  * Chạy với backend cục bộ đang mở ở cổng 5000, kho thử và biến admin thử:
  *   node backend/scripts/admin_check.js

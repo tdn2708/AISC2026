@@ -147,6 +147,12 @@ test('EWMA phát hiện dịch chuyển chậm nhưng bỏ qua chuỗi ổn đ�
   const drifting = stats.ewmaControlChart([2, 3, 2, 3, 2, 3, 5, 7, 9, 11, 13, 15]);
   assert.strictEqual(drifting.breached, true, 'chuỗi tăng đều phải bị bắt');
   assert.ok(drifting.consecutiveBreaches >= 3, 'phải vượt giới hạn ít nhất 3 chu kỳ');
+
+  // Chuỗi thật của kho thật 24/11 (đổi trả, % mỗi kỳ 103 ngày): vượt ngưỡng ở
+  // giữa rồi về 0 ba kỳ cuối. Đợt vượt đã qua không được báo là "đang xấu đi".
+  const past = stats.ewmaControlChart([0.36, 0.48, 0.58, 1.07, 0, 0, 0.57, 0, 2.47, 2.17, 1.75, 0, 0, 0], { runLength: 3 });
+  assert.strictEqual(past.breached, false, 'đợt vượt đã kết thúc vẫn bị báo động');
+  assert.ok(past.maxConsecutiveBreaches >= 3, 'vẫn phải giữ lại độ dài đợt vượt cũ');
 });
 
 test('Điểm nghiêm trọng nằm trong [0,1] và ánh xạ đúng mức', () => {
@@ -218,6 +224,17 @@ test('Số điện thoại được phát hiện ổn định qua nhiều lần 
   const ad = 'Liên hệ mua sỉ giá gốc gọi ngay 0912345678 nhé';
   const runs = [1, 2, 3, 4].map(() => normalizer.spamSignals(ad).hasPhone);
   assert.deepStrictEqual(runs, [true, true, true, true]);
+});
+
+test('Quảng cáo đã che số ("[SĐT]") vẫn bị chặn; khiếu nại nhắc số shop và chữ S, T hoa thì không', () => {
+  // Kho thật 24/11: file nạp được che số trước khi lọc rác, quảng cáo "Liên hệ zalo [SĐT]
+  // để mua hàng giá sỉ" lọt vào và được tính như đánh giá thật
+  const spam = (s) => trust.runSpamFilter({ originalText: s }, normalizer.normalize(s)).isSpam;
+  assert.strictEqual(spam('Liên hệ zalo [SĐT] để mua hàng giá sỉ rẻ hơn'), true);
+  assert.strictEqual(spam('Inbox [SĐT] lấy sỉ giá tốt'), true);
+  assert.strictEqual(spam('Gọi [SĐT] shop không nghe máy, hàng lỗi'), false, 'khiếu nại có số shop không phải quảng cáo');
+  assert.strictEqual(spam('mua sỉ được giảm không shop'), false, 'hỏi mua sỉ không kèm liên hệ không phải quảng cáo');
+  assert.strictEqual(normalizer.spamSignals('Shop Tốt, STT 12').hasPhone, false, 'chữ S, Đ, T không phải số điện thoại');
 });
 
 test('Chữ kéo dài mang cảm xúc không bị coi là rác; gõ phím bừa thì vẫn bị', () => {
@@ -591,6 +608,41 @@ test('Lịch sử ngắn không sinh cảnh báo suy giảm giả', () => {
   );
 });
 
+test('Cảnh báo suy giảm kéo dài mang cửa sổ của kho: đề xuất đếm đúng khiếu nại trên kho thưa (nhịp 6 tháng)', () => {
+  // Lỗi tìm thấy trên kho thật 24/11: cảnh báo drift không mang windowDays nên
+  // đề xuất dựng lại bằng chứng trong 7 ngày mặc định, ra "0 phản hồi trong 7 ngày"
+  // dù cảnh báo có 10 khiếu nại.
+  const now = new Date('2026-11-23T00:00:00Z');
+  const items = [];
+  const buckets = 14;
+  const bucketDays = 1440 / buckets;
+  let id = 0;
+  for (let b = 0; b < buckets; b++) {
+    const rate = b >= 11 ? 0.3 : [0.06, 0.1, 0.08, 0.12, 0.06][b % 5];
+    for (let k = 0; k < 50; k++) {
+      const complaint = k < rate * 50;
+      items.push({
+        _id: 'dr' + id++,
+        category: complaint ? 'ReturnRefund' : 'Other',
+        subCategory: null,
+        sentiment: complaint ? 'Negative' : 'Positive',
+        productName: 'SP ' + (k % 4),
+        source: 'Tiki',
+        timestamp: new Date(now.getTime() - ((buckets - b - 0.5) * bucketDays + (k % 5)) * 86400000),
+        trust: { weight: 0.5, tierWeight: 1, authenticityScore: 0, tier: 'P2', canTriggerHighAlert: true, band: 'ACCEPTED' }
+      });
+    }
+  }
+  const drift = alertEngine.detectSustainedDrift(items, { now, baselineDays: 1440, windowDays: 180, recentBaselineDays: 720 });
+  assert.strictEqual(drift.length, 1, 'phải có đúng một cảnh báo suy giảm');
+  assert.strictEqual(drift[0].windowDays, 180);
+  assert.strictEqual(drift[0].baselineDays, 720);
+  const rec = require('../services/recommender').buildRecommendation(drift[0], { items, now });
+  assert.ok(rec.evidence.evidenceCount > 0, 'đề xuất phải thấy khiếu nại trong cửa sổ 6 tháng');
+  assert.strictEqual(rec.dataProfile.slots.windowDays, '6 tháng');
+  assert.ok(!/0 phản hồi trong 7 ngày/.test(rec.steps[0].text), rec.steps[0].text);
+});
+
 test('Biểu đồ kiểm soát báo không hợp lệ khi đường nền rỗng', () => {
   const emptyBaseline = stats.ewmaControlChart([0, 0, 0, 0, 0, 0, 5, 6, 7, 8, 9, 10]);
   assert.strictEqual(emptyBaseline.valid, false, 'đường nền toàn 0 phải bị coi là không hợp lệ');
@@ -854,6 +906,24 @@ test('Suy ra bộ lọc thời gian từ câu hỏi', () => {
   // Không được ghi đè bộ lọc người dùng đã chọn trên dashboard
   const explicit = chatEngine.inferFilters('tuần này thế nào', { time: 'Today' });
   assert.strictEqual(explicit.time, 'Today', 'bộ lọc người dùng chọn phải được tôn trọng');
+  // Kho thật 24/11: "6 tháng qua" từng khớp "tháng qua" thành 30 ngày (0 khiếu nại)
+  assert.strictEqual(chatEngine.inferFilters('Sản phẩm nào bị chê nhiều nhất 6 tháng qua?').time, 'Days:180');
+  assert.strictEqual(chatEngine.inferFilters('2 tuần gần đây').time, 'Days:14');
+  assert.strictEqual(chatEngine.inferFilters('7 ngày qua').time, 'This Week');
+  assert.strictEqual(chatEngine.inferFilters('size 38 còn không').time, undefined, 'số không kèm đơn vị thời gian không phải khoảng thời gian');
+  const { timeBounds } = require('../services/analysis_context');
+  const b = timeBounds('Days:180', new Date('2026-11-23T00:00:00Z'));
+  assert.strictEqual(b.start, new Date('2026-11-23T00:00:00Z').getTime() - 180 * 86400000);
+});
+
+test('Trợ lý nhận ra sản phẩm được hỏi (đủ mọi mẫu của một dòng hàng, không khớp câu hỏi chung)', () => {
+  const names = ['Máy Xay Sinh Tố Toshiba BL-70PR1NV (700W) - Hàng Chính Hãng', 'Máy xay sinh tố Philips HR2221/00 (700W) - Hàng Chính Hãng',
+    'Máy xay sinh tố Philips HR2223/00 - Hàng Chính Hãng', 'Máy sấy tóc Philips BHC010/10 - Hàng Chính Hãng', 'Chuột Không Dây PIX-LINK P100'];
+  assert.deepStrictEqual(chatEngine.productsInQuestion('Máy xay sinh tố Philips bị than gì?', names), [names[1], names[2]]);
+  assert.deepStrictEqual(chatEngine.productsInQuestion('máy xay philips hr2223 thế nào', names), [names[2]]);
+  // "dây" không được trùng "đây" (từ bỏ qua) sau khi bỏ dấu
+  assert.deepStrictEqual(chatEngine.productsInQuestion('chuột không dây bị gì gần đây', names), [names[4]]);
+  assert.deepStrictEqual(chatEngine.productsInQuestion('Sản phẩm nào bị chê nhiều nhất và vì sao?', names), []);
 });
 
 test('Lọc thời gian KHÔNG được xóa đường nền của động cơ cảnh báo', () => {

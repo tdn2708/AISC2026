@@ -124,7 +124,8 @@ const TOOLS = {
       const items = applyFilters(ctx.items, scopeFilters, ctx.asOf);
 
       const windowDays =
-        time === 'Today' ? 1 : time === 'This Week' ? 7 : time === 'This Month' ? 30 : cadenceOf(ctx).windowDays;
+        time === 'Today' ? 1 : time === 'This Week' ? 7 : time === 'This Month' ? 30
+          : /^Days:\d+$/.test(time || '') ? Number(time.slice(5)) : cadenceOf(ctx).windowDays;
       const baselineDays = time ? undefined : cadenceOf(ctx).baselineDays;
 
       const result = alertEngine.detectAlerts(items, {

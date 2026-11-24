@@ -331,7 +331,7 @@ function detectAlerts(feedbacks, options = {}) {
   });
 
   // --- EWMA: bắt kiểu suy giảm chậm mà kiểm định đột biến bỏ sót ---
-  const driftAlerts = detectSustainedDrift(feedbacks, { now, baselineDays: baselineDays * 2 });
+  const driftAlerts = detectSustainedDrift(feedbacks, { now, baselineDays: baselineDays * 2, windowDays, recentBaselineDays: baselineDays });
 
   const all = deduplicateAlerts([...alerts, ...driftAlerts]);
 
@@ -467,7 +467,12 @@ function detectSustainedDrift(feedbacks, options = {}) {
       notificationChannel: band.channel,
       sla: band.sla,
       cappedByProvenance: false,
-      detectedAt: now.toISOString()
+      detectedAt: now.toISOString(),
+      // Đề xuất xử lý dựng lại bằng chứng theo cửa sổ này (nhịp của kho). Thiếu
+      // thì nó lấy mặc định 7 ngày: kho thật thưa (nhịp 6 tháng) ra 0 phản hồi
+      // và câu "0 phản hồi trong 7 ngày" dù cảnh báo có hàng chục khiếu nại.
+      windowDays: options.windowDays ?? Math.round(spanDays / 4),
+      baselineDays: options.recentBaselineDays ?? Math.round(spanDays / 2)
     });
   }
 

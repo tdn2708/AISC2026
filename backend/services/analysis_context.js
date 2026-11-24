@@ -509,6 +509,9 @@ function timeBounds(time, nowRef = null) {
     start = now.getTime() - 7 * DAY_MS;
   } else if (time === 'This Month') {
     start = now.getTime() - 30 * DAY_MS;
+  } else if (/^Days:\d+$/.test(time)) {
+    // Trợ lý hiểu "6 tháng qua" thành Days:180 (chat_engine.inferFilters)
+    start = now.getTime() - Number(time.slice(5)) * DAY_MS;
   }
   return start != null ? { start, end: end != null ? end : null } : null;
 }

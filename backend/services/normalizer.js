@@ -248,7 +248,7 @@ const SPAM_MARKERS = {
    * mở rộng danh sách này không làm tăng nguy cơ chặn nhầm phản hồi thật
    * — đo lại cho thấy Precision vẫn giữ nguyên ở mức tuyệt đối.
    */
-  commerce: /(?:sỉ lẻ|chuyên sỉ|bán buôn|đại lý|ctv|cộng tác viên|tuyển|vay nhanh|vay tiền|lãi suất|hoa hồng|kiếm tiền|việc nhẹ|xả kho|giá sốc|giá gốc|rẻ nhất thị trường|freeship toàn quốc|nhận đặt hàng|hàng quảng châu|cam kết rẻ)/i,
+  commerce: /(?:sỉ lẻ|chuyên sỉ|giá sỉ|mua sỉ|bán sỉ|lấy sỉ|nhận sỉ|bán buôn|đại lý|ctv|cộng tác viên|tuyển|vay nhanh|vay tiền|lãi suất|hoa hồng|kiếm tiền|việc nhẹ|xả kho|giá sốc|giá gốc|rẻ nhất thị trường|freeship toàn quốc|nhận đặt hàng|hàng quảng châu|cam kết rẻ)/i,
 
   url: /(?:https?:\/\/|www\.|\.com|\.vn\/|bit\.ly|shope\.ee)/i,
   promoCode: /\b(?:mã|code|voucher)\s*[:#]?\s*[A-Z0-9]{5,}\b/i
@@ -587,7 +587,10 @@ function normalize(raw, opts = {}) {
 // Bản KHÔNG có cờ g của mẫu số điện thoại. Gọi .test() trên biểu thức có cờ g
 // sẽ nhớ lastIndex giữa các lần gọi, nên cùng một câu quảng cáo lúc bị bắt
 // lúc lọt (true, false, true, false...) tùy câu nào chạy trước nó.
-const PHONE_TEST = new RegExp(PII_PATTERNS[0].re.source);
+// Văn bản đã che (đánh giá nạp từ file, bình luận live lưu bản che) mang "[SĐT]" thay số:
+// bộ lọc rác chạy trên bản che vẫn phải thấy đó là số điện thoại. Bản trước bỏ sót, nên
+// "Liên hệ zalo [SĐT] để mua hàng giá sỉ" được tính như một đánh giá thật (kho thật 24/11).
+const PHONE_TEST = new RegExp(PII_PATTERNS[0].re.source + String.raw`|\[SĐT\]`);
 
 function spamSignals(rawText) {
   const text = canonicalize(rawText);

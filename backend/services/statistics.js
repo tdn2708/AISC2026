@@ -191,10 +191,15 @@ function ewmaControlChart(series, options = {}) {
     L,
     valid: true,
     invalidReason: null,
-    consecutiveBreaches: maxConsecutive,
+    // Chỉ tính chuỗi vượt ĐANG DIỄN RA ở cuối. Bản trước lấy chuỗi dài nhất ở
+    // bất kỳ đâu trong lịch sử: kho thật (24/11) báo "Đổi trả đang xấu đi đều
+    // đặn" trong khi đợt vượt đã hết từ 7 tháng trước và hai kỳ gần nhất có 0
+    // khiếu nại đổi trả. Đợt vượt đã qua vẫn xem được ở maxConsecutiveBreaches.
+    consecutiveBreaches: consecutive,
+    maxConsecutiveBreaches: maxConsecutive,
     // Phân biệt rõ với cảnh báo dạng "đột biến": hai loại này đòi hỏi
     // hai kiểu phản ứng khác nhau nên được tách bạch trên giao diện.
-    breached: maxConsecutive >= (options.runLength ?? 3),
+    breached: consecutive >= (options.runLength ?? 3),
     driftType: maxConsecutive >= (options.runLength ?? 3) ? 'SUSTAINED_DRIFT' : null
   };
 }

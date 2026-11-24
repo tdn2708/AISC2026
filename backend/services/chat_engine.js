@@ -32,6 +32,7 @@
 const { TOOLS } = require('./chat_tools');
 const { llmAvailability } = require('./ai_analyzer');
 const { canonicalize } = require('./normalizer');
+const { spanWords } = require('./cadence');
 
 // ==================================================================
 // BƯỚC 1 — ĐỊNH TUYẾN Ý ĐỊNH
@@ -175,14 +176,35 @@ function routeIntent(question) {
  * "tuần này có vấn đề gì" phải được hiểu là lọc 7 ngày, không phải toàn
  * bộ lịch sử — nếu không thì câu trả lời đúng số nhưng sai phạm vi.
  */
+/** Mã khoảng thời gian của bộ lọc thành chữ cho người đọc */
+function timeWords(time) {
+  if (time === 'Today') return 'hôm nay';
+  if (time === 'This Week') return '7 ngày gần nhất';
+  if (time === 'This Month') return '30 ngày gần nhất';
+  const d = /^Days:(\d+)$/.exec(time || '');
+  if (d) return `${spanWords(Number(d[1]))} gần nhất`;
+  if ((time || '').startsWith('Custom:')) return `từ ${time.split(':')[1]} đến ${time.split(':')[2]}`;
+  return time;
+}
+
 function inferFilters(question, baseFilters = {}) {
   const q = normalizeQuestion(question);
   const filters = { ...baseFilters };
 
   if (!filters.time || filters.time === 'All') {
-    if (/hôm nay|hom nay/.test(q)) filters.time = 'Today';
+    // "6 tháng qua", "2 tuần gần đây", "1 năm": có số thì lấy đúng độ dài đó. Bản
+    // trước để "6 tháng qua" khớp "tháng qua" thành 30 ngày; kho thật thưa (nhịp
+    // 6 tháng) thì 30 ngày có 0 khiếu nại và trợ lý trả lời "không xác định được".
+    const n = q.match(/(\d{1,3})\s*(ngày|ngay|tuần|tuan|tháng|thang|quý|quy|năm|nam)(?![a-zà-ỹ])/);
+    const unit = n && { ngày: 1, ngay: 1, tuần: 7, tuan: 7, tháng: 30, thang: 30, quý: 91, quy: 91, năm: 365, nam: 365 }[n[2]];
+    const days = unit ? Math.min(3650, Number(n[1]) * unit) : null;
+    if (days === 7) filters.time = 'This Week';
+    else if (days === 30) filters.time = 'This Month';
+    else if (days) filters.time = `Days:${days}`;
+    else if (/hôm nay|hom nay/.test(q)) filters.time = 'Today';
     else if (/tuần này|tuan nay|7 ngày|7 ngay|tuần qua/.test(q)) filters.time = 'This Week';
     else if (/tháng này|thang nay|30 ngày|30 ngay|tháng qua/.test(q)) filters.time = 'This Month';
+    else if (/năm nay|nam nay|năm qua|nam qua/.test(q)) filters.time = 'Days:365';
   }
 
   const channels = ['Shopee', 'Facebook', 'TikTok', 'Lazada', 'CSKH'];
@@ -198,11 +220,90 @@ function inferFilters(question, baseFilters = {}) {
   return filters;
 }
 
+// Từ của câu hỏi và từ có trong gần như mọi tên hàng: không dùng để nhận ra sản phẩm
+const PRODUCT_STOP = new Set(('sản phẩm nào bị chê khen nhiều nhất ít khách than phiền gì của có không là và thế '
+  + 'sao vì hàng chính hãng mới tháng ngày tuần năm qua nay này gần đây đang hay hỏi về cho shop mình tôi bên '
+  + 'được với những các một hai ba so sánh tốt xấu lỗi vấn đề nguyên nhân phản hồi đánh giá').split(' '));
+const foldVi = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase();
+const wordsOf = (s) => foldVi(s).split(/[^a-z0-9]+/).filter(Boolean);
+
+/**
+ * Sản phẩm được nhắc trong câu hỏi ("máy xay sinh tố Philips bị than gì"). Khớp
+ * theo số từ của câu hỏi nằm trong tên hàng; lấy các tên khớp nhiều từ nhất (ít
+ * nhất 2 từ), nên một câu nêu dòng hàng ra đủ mọi mẫu của dòng đó. Bản trước không
+ * lọc sản phẩm: trợ lý tìm theo từ khoá, vớ vài lời khen và trả lời "chủ yếu tích
+ * cực" trong khi ba mẫu máy xay Philips có 48 đánh giá tiêu cực (kho thật 24/11).
+ */
+function productsInQuestion(question, productNames, max = 6) {
+  // Lọc từ bỏ qua khi CÒN dấu ("đây" khác "dây", "tố" khác "tổ"), chỉ bỏ dấu lúc so với tên hàng
+  const accented = canonicalize(String(question || '')).toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  const content = [...new Set(accented.filter((w) => !PRODUCT_STOP.has(w) && (w.length >= 2 || /\d/.test(w))).map(foldVi))];
+  if (content.length < 2) return [];
+  let best = 0;
+  const scored = [];
+  for (const name of productNames) {
+    const set = new Set(wordsOf(name));
+    const score = content.filter((w) => set.has(w)).length;
+    if (score >= 2) scored.push({ name, score });
+    if (score > best) best = score;
+  }
+  if (best < 2) return [];
+  const top = scored.filter((s) => s.score === best).map((s) => s.name);
+  return top.length <= max ? top : [];
+}
+
+/** Số liệu và khiếu nại gần nhất của các sản phẩm được hỏi, dựng từ dữ liệu đã tính */
+function productFocus(ctx, question, filters) {
+  const { applyFilters } = require('./analysis_context');
+  const metrics = require('./metrics');
+  const items = applyFilters(ctx.items, { ...(filters || {}), product: undefined }, ctx.asOf).filter(metrics.isCountable);
+  const names = productsInQuestion(question, new Set(items.map((f) => f.productName).filter(Boolean)));
+  if (!names.length) return null;
+  const facts = [];
+  const evidence = [];
+  for (const name of names) {
+    const list = items.filter((f) => f.productName === name);
+    const neg = list.filter(metrics.isComplaint);
+    const causes = {};
+    for (const f of neg) {
+      const k = f.causeLabel || f.categoryLabel;
+      if (k && f.category !== 'Other') causes[k] = (causes[k] || 0) + 1;
+    }
+    const topCauses = Object.entries(causes).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => `${k} (${n})`);
+    facts.push(`${name}: ${list.length} phản hồi được tính, ${neg.length} tiêu cực`
+      + (list.length ? ` (${((neg.length / list.length) * 100).toFixed(1).replace('.', ',')}%)` : '')
+      + (topCauses.length ? `; bị chê nhiều nhất: ${topCauses.join(', ')}` : '') + '.');
+    evidence.push(...neg
+      .filter((f) => f.originalText)
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .slice(0, Math.max(2, Math.ceil(8 / names.length)))
+      .map((f) => ({
+        id: String(f._id), text: f.originalText, category: f.categoryLabel || null, cause: f.causeLabel || null,
+        sentiment: f.sentiment, source: f.source, product: f.productName, date: f.timestamp,
+        trustTier: f.trust ? f.trust.tier : null, relevance: null
+      })));
+  }
+  return {
+    section: { title: 'Sản phẩm được hỏi', facts: [`Câu hỏi khớp ${names.length} sản phẩm trong kho.`, ...facts] },
+    evidence: evidence.slice(0, 10)
+  };
+}
+
 /** Chạy các công cụ mà ý định yêu cầu, gom thành một bản tóm lược dữ kiện */
 function gatherBriefing(ctx, question, intent, filters) {
   const sections = [];
   const evidence = [];
   const toolsUsed = [];
+
+  // Hỏi về một sản phẩm hay dòng hàng cụ thể: số liệu và khiếu nại của đúng nó đứng đầu
+  if (!['model_performance', 'taxonomy', 'live'].includes(intent.id)) {
+    const focus = productFocus(ctx, question, filters);
+    if (focus) {
+      sections.push(focus.section);
+      evidence.push(...focus.evidence);
+      toolsUsed.push('product_focus');
+    }
+  }
 
   for (const toolName of intent.tools) {
     const tool = TOOLS[toolName];
@@ -327,7 +428,8 @@ function buildPrompt(question, intent, briefing, history, ctx, filters) {
     : '(đây là câu hỏi đầu tiên)';
 
   const scope = [];
-  if (filters.time && filters.time !== 'All') scope.push(`thời gian: ${filters.time}`);
+  // Nhãn tiếng Việt: đưa mã "This Month" vào lời nhắc thì mô hình chép nguyên chữ tiếng Anh ra câu trả lời
+  if (filters.time && filters.time !== 'All') scope.push(`thời gian: ${timeWords(filters.time)}`);
   if (filters.source && filters.source !== 'All') scope.push(`kênh: ${filters.source}`);
   if (filters.product && filters.product !== 'All') scope.push(`sản phẩm: ${filters.product}`);
 
@@ -506,6 +608,7 @@ module.exports = {
   synthesize,
   routeIntent,
   inferFilters,
+  productsInQuestion,
   gatherBriefing,
   deterministicAnswer,
   suggestedQuestions,
