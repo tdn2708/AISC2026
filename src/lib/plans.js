@@ -1,15 +1,16 @@
 /**
  * CÁC GÓI DÙNG (một nguồn duy nhất cho trang giới thiệu và trang /bang-gia)
  * ------------------------------------------------------------------
- * Giá dự kiến cho giai đoạn thử nghiệm với shop thật, CHƯA có khách trả tiền: mọi trang
- * hiện giá phải nói đúng như vậy. Đổi giá, đổi tên gói hay đổi tính năng chỉ sửa ở đây.
+ * Giá thật, thu bằng chuyển khoản có mã đơn (backend/routes/billing.js). Máy chủ khóa tính
+ * năng theo gói (backend/services/billing.js): đổi giá, tên gói hay tính năng thì sửa cả hai.
+ * Kế hoạch kèm bằng chứng mở cho mọi gói (máy chủ không khóa phần này).
  *
  * `unlocks`: tính năng gói này mở thêm so với gói trước (trang bảng giá mở khóa theo bậc).
  * `items`: danh sách đầy đủ (trang giới thiệu); `brief`: bản ngắn cho thẻ chọn gói ở /bang-gia.
  * `matrix`: bảng so sánh đầy đủ; giá trị true, false hoặc một chữ ngắn.
  */
 
-export const PRICE_NOTE = 'Giá dự kiến cho giai đoạn thử nghiệm với shop thật, chưa thu tiền.';
+export const PRICE_NOTE = 'Giá cho mỗi 30 ngày, trả bằng chuyển khoản theo mã đơn. Hết hạn thì tự về gói Dùng thử, dữ liệu vẫn giữ.';
 
 export const PLANS = [
   {
@@ -57,7 +58,7 @@ export const MATRIX = [
   ['Cảnh báo, việc hôm nay', true, true, true],
   ['Bản tin Zalo sáng', true, true, true],
   ['Nạp đơn hàng từ sàn', false, true, true],
-  ['Kế hoạch kèm bằng chứng', false, true, true],
+  ['Kế hoạch kèm bằng chứng', true, true, true],
   ['Quản gia Zalo', false, true, true],
   ['Đọc bình luận live', false, false, true],
   ['Khách muốn gì trong live', false, false, true],

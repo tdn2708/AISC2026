@@ -45,7 +45,7 @@ import './landing.css';
  */
 
 
-// Gói và giá dùng chung với trang /bang-gia (src/lib/plans.js); giá dự kiến, chưa thu tiền
+// Gói và giá dùng chung với trang /bang-gia (src/lib/plans.js); thu tiền qua routes/billing.js
 
 const SHOTS = {
   overview: { base: 'tong-quan', w: 1600, h: 1000 },

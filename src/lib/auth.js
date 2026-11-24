@@ -131,8 +131,8 @@ export async function changePassword({ current, next }) {
   return data.user || null;
 }
 
-export async function signup({ name, shop, email, password, remember = true }) {
-  const { data } = await axios.post('/auth/signup', { name, shop, email, password, remember });
+export async function signup({ name, shop, email, password, remember = true, acceptTerms = false }) {
+  const { data } = await axios.post('/auth/signup', { name, shop, email, password, remember, acceptTerms });
   save({ token: data.token, user: data.user, expiresAt: data.expiresAt }, remember);
   return data.user;
 }

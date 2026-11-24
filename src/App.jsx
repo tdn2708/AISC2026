@@ -29,6 +29,7 @@ import './hooks/useTheme';
 // Trang giới thiệu công khai (F3): chunk riêng, chỉ tải khi mở `/`
 const Landing = lazy(() => import('./components/landing/Landing'));
 const Pricing = lazy(() => import('./components/pricing/Pricing'));
+const Legal = lazy(() => import('./components/legal/Legal'));
 // Bàn điều khiển máy chủ (/admin/*): chunk riêng, người thường không tải mã quản trị
 const AdminApp = lazy(() => import('./components/admin/AdminApp'));
 
@@ -189,7 +190,7 @@ function App() {
             </Suspense>
           }
         />
-        {/* Bảng giá: công khai, đã đăng nhập thì thấy gói đang dùng và giữ chỗ gói cao hơn */}
+        {/* Bảng giá: công khai, đã đăng nhập thì thấy gói đang dùng và mua hoặc gia hạn gói trả phí */}
         <Route
           path="/bang-gia"
           element={
@@ -198,6 +199,9 @@ function App() {
             </Suspense>
           }
         />
+        {/* Điều khoản và chính sách dữ liệu: công khai, form đăng ký dẫn tới đây */}
+        <Route path="/dieu-khoan" element={<Suspense fallback={<div className="min-h-screen bg-canvas" />}><Legal kind="terms" /></Suspense>} />
+        <Route path="/chinh-sach-du-lieu" element={<Suspense fallback={<div className="min-h-screen bg-canvas" />}><Legal kind="privacy" /></Suspense>} />
         <Route path="/dashboard" element={page(<Dashboard />)} />
         <Route path="/butler" element={page(<Butler />)} />
         <Route path="/insights" element={page(<Insights />)} />

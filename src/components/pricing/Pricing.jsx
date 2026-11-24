@@ -6,7 +6,8 @@ import { Button } from '../ui';
 import { useReducedMotion } from '../motion';
 import { useTheme } from '../../hooks/useTheme';
 import { PLANS, MATRIX, PRICE_NOTE } from '../../lib/plans';
-import { currentAccount, updateAccount, authError } from '../../lib/auth';
+import axios from 'axios';
+import { currentAccount, refreshAccount } from '../../lib/auth';
 // Engine scroll-craft chép nguyên văn (không sửa), nạp CSS dạng chuỗi như trang giới thiệu:
 // CSS của engine có luật toàn cục nên chỉ gắn vào <head> khi trang này đang mở
 import engineCss from '../../vendor/scrollcraft/scrollcraft.css?inline';
@@ -24,8 +25,8 @@ import './pricing.css';
  *                rơi xuống. Tiến độ được làm mượt (lerp) và ghi thẳng vào biến CSS, không render lại
  *   3. So sánh   bảng đủ dòng, cột Shop có live nền mực, các dòng hiện nối nhau
  *   4. Câu hỏi   ba câu, mở gập khi bấm
- *   5. Chốt      ba thẻ chọn gói. Đã đăng nhập: thấy gói đang dùng, giữ chỗ gói cao hơn
- * Giá dự kiến, chưa thu tiền (src/lib/plans.js); không có số liệu hay lời khen nào được bịa.
+ *   5. Chốt      ba thẻ chọn gói. Đã đăng nhập: thấy gói đang dùng, mua hoặc gia hạn gói trả phí
+ * Giá thật, trả bằng chuyển khoản có mã đơn (src/lib/plans.js); không có số liệu hay lời khen nào được bịa.
  */
 
 const ACTION = 'Dùng thử miễn phí';
@@ -372,45 +373,135 @@ const Questions = () => (
   </section>
 );
 
-/** CHỐT: chọn gói. Đã đăng nhập thì thấy gói đang dùng và giữ chỗ gói cao hơn */
-const Choose = ({ account }) => {
-  const [wanted, setWanted] = useState(account?.planWanted || null);
-  const [busy, setBusy] = useState(null);
-  const [msg, setMsg] = useState('');
-  useEffect(() => { setWanted(account?.planWanted || null); }, [account?.planWanted]);
+/** CHỐT: chọn gói. Đã đăng nhập thì thấy gói đang dùng, mua hoặc gia hạn gói trả phí */
+const fmtVnd = (n) => `${Math.round(n).toLocaleString('vi-VN')} đ`;
+const fmtDay = (d) => (d ? new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
 
-  const hold = useCallback(async (id) => {
-    setBusy(id || 'none');
-    setMsg('');
+/**
+ * MUA GÓI (backend/routes/billing.js). Chọn gói trả phí và số tháng, máy chủ tạo đơn có
+ * mã chuyển khoản; trang hiện QR (VietQR) đã điền sẵn số tiền và nội dung. Gói bật khi
+ * ngân hàng báo có tiền (webhook SePay/Casso) hoặc quản trị viên xác nhận; trong lúc
+ * chờ, trang hỏi lại /billing mỗi 10 giây và báo ngay khi gói đã bật.
+ */
+const Checkout = ({ plan, onDone, onClose }) => {
+  const [months, setMonths] = useState(1);
+  const [order, setOrder] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const price = Number(String(plan.priceShort).replace(/\./g, '')) || 0;
+
+  const create = async () => {
+    setBusy(true);
+    setErr('');
     try {
-      const u = await updateAccount({ planWanted: id });
-      setWanted(u?.planWanted || null);
-      setMsg(id ? `Đã giữ chỗ gói ${PLANS.find((p) => p.id === id)?.name}. Nhóm sẽ liên hệ qua email ${u?.email || 'bạn đăng ký'} khi mở thanh toán.` : 'Đã bỏ giữ chỗ.');
+      const { data } = await axios.post('/billing/orders', { plan: plan.id, months });
+      setOrder(data);
     } catch (e) {
-      setMsg(authError(e).message);
+      setErr(e?.response?.data?.error || 'Chưa tạo được mã chuyển khoản. Thử lại sau ít phút.');
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
-  }, []);
+  };
+
+  // Chờ tiền về: hỏi lại mỗi 10 giây, gói bật thì báo và làm mới tài khoản
+  useEffect(() => {
+    if (!order || order.status !== 'pending') return undefined;
+    const t = setInterval(async () => {
+      try {
+        const { data } = await axios.get('/billing');
+        const mine = (data.orders || []).find((o) => o.code === order.code);
+        if (mine && mine.status === 'paid') {
+          clearInterval(t);
+          setOrder(mine);
+          await refreshAccount();
+          onDone(`Đã nhận tiền. Gói ${mine.planName} đang chạy tới ${fmtDay(data.planUntil)}.`);
+        }
+      } catch { /* mạng chập chờn: lần sau hỏi lại */ }
+    }, 10000);
+    return () => clearInterval(t);
+  }, [order, onDone]);
+
+  return (
+    <div className="pg-pay" role="region" aria-label={`Mua gói ${plan.name}`}>
+      <div className="pg-pay__head">
+        <h3 className="pg-pay__title">Mua gói {plan.name}</h3>
+        <button type="button" className="pg-unhold" onClick={onClose}>Đóng</button>
+      </div>
+      {!order && (
+        <>
+          <p className="pg-pay__label" id="pg-months">Số tháng</p>
+          <div className="pg-pay__months" role="radiogroup" aria-labelledby="pg-months">
+            {[1, 3, 6, 12].map((m) => (
+              <button key={m} type="button" role="radio" aria-checked={months === m} className="pg-pay__month" onClick={() => setMonths(m)}>
+                {m} tháng
+              </button>
+            ))}
+          </div>
+          <p className="pg-pay__sum">Thành tiền <strong>{fmtVnd(price * months)}</strong></p>
+          <Button onClick={create} loading={busy}>Tạo mã chuyển khoản</Button>
+          {err && <p role="alert" className="pg-pay__err">{err}</p>}
+        </>
+      )}
+      {order && order.status === 'pending' && (
+        <div className="pg-pay__body">
+          {order.pay ? (
+            <>
+              <img className="pg-pay__qr" src={order.pay.qrUrl} alt={`Mã QR chuyển ${fmtVnd(order.amount)} tới tài khoản ${order.pay.accountNo}, nội dung ${order.code}`} width="240" height="240" />
+              <dl className="pg-pay__facts">
+                {order.pay.bankName && <><dt>Ngân hàng</dt><dd>{order.pay.bankName}</dd></>}
+                <dt>Số tài khoản</dt><dd>{order.pay.accountNo}</dd>
+                {order.pay.accountName && <><dt>Chủ tài khoản</dt><dd>{order.pay.accountName}</dd></>}
+                <dt>Số tiền</dt><dd>{fmtVnd(order.amount)}</dd>
+                <dt>Nội dung</dt><dd><strong>{order.code}</strong></dd>
+              </dl>
+              <p className="pg-pay__hint">Quét mã bằng ứng dụng ngân hàng, giữ nguyên nội dung {order.code}. Gói tự bật khi tiền về, trang này tự báo.</p>
+            </>
+          ) : (
+            <p className="pg-pay__hint">Mã đơn của bạn là <strong>{order.code}</strong> ({fmtVnd(order.amount)}). Thông tin chuyển khoản đang được cập nhật; đội vận hành sẽ gửi qua email đăng ký và bật gói ngay khi nhận tiền.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Choose = ({ account }) => {
+  const [bill, setBill] = useState(null);
+  const [buying, setBuying] = useState(null);
+  const [msg, setMsg] = useState('');
+
+  const load = useCallback(async () => {
+    if (!account || account.isDemo) return;
+    try {
+      const { data } = await axios.get('/billing');
+      setBill(data);
+    } catch { /* chưa tải được thì thẻ dùng gói trong phiên đăng nhập */ }
+  }, [account]);
+  useEffect(() => { load(); }, [load]);
+
+  const current = bill?.plan || account?.plan || 'try';
+  const until = bill?.planUntil || account?.planUntil || null;
+  const done = useCallback((text) => { setMsg(text); setBuying(null); load(); }, [load]);
 
   // Thẻ nền mực (Shop có live) luôn dùng nút chính: nút phụ là chữ sáng trên nền sáng, không đọc được
   const variantFor = (p) => (p.id === 'live' ? 'primary' : 'secondary');
   const action = (p) => {
-    // Chưa đăng nhập: thẻ Dùng thử mời dùng thử, hai gói trả phí chỉ "Đăng ký" (đăng ký xong mới giữ chỗ được)
+    // Chưa đăng nhập: thẻ Dùng thử mời dùng thử, hai gói trả phí "Đăng ký" (đăng ký xong mới mua được)
     if (!account) return <Button as={Link} to="/signup" variant={variantFor(p)} block>{p.id === 'try' ? ACTION : 'Đăng ký'}</Button>;
     if (account.isDemo) return <Button as={Link} to="/dashboard" variant={variantFor(p)} block>Vào ứng dụng</Button>;
-    if (p.id === 'try') return <p className="pg-card__state">{wanted ? 'Đang dùng, chờ lên gói đã giữ chỗ' : 'Gói đang dùng'}</p>;
-    if (wanted === p.id) {
+    if (p.id === 'try') return <p className="pg-card__state">{current === 'try' ? 'Gói đang dùng' : 'Tự về gói này khi gói trả phí hết hạn'}</p>;
+    if (current === p.id) {
       return (
         <div className="pg-card__held">
-          <p className="pg-card__state">Đã giữ chỗ</p>
-          <button type="button" className="pg-unhold" disabled={busy === 'none'} onClick={() => hold(null)}>{busy === 'none' ? 'Đang bỏ giữ chỗ' : 'Bỏ giữ chỗ'}</button>
+          <p className="pg-card__state">Đang dùng tới {fmtDay(until)}</p>
+          <button type="button" className="pg-unhold" onClick={() => setBuying(p.id)}>Gia hạn</button>
         </div>
       );
     }
-    return <Button variant={variantFor(p)} block loading={busy === p.id} onClick={() => hold(p.id)}>Giữ chỗ gói này</Button>;
+    return <Button variant={variantFor(p)} block onClick={() => { setMsg(''); setBuying(p.id); }}>Mua gói này</Button>;
   };
 
+  const buyingPlan = PLANS.find((p) => p.id === buying);
   return (
     <section id="chon-goi" className="pg-choose" aria-labelledby="pg-choose-h">
       <div className="pg-wrap">
@@ -428,8 +519,13 @@ const Choose = ({ account }) => {
             </li>
           ))}
         </ul>
+        {buyingPlan && <Checkout key={buyingPlan.id} plan={buyingPlan} onDone={done} onClose={() => setBuying(null)} />}
         <p role="status" className="pg-choose__msg">{msg}</p>
-        <p className="pg-foot">© 2026 Customer Radar</p>
+        <p className="pg-foot">
+          © 2026 Customer Radar{' '}
+          <Link to="/dieu-khoan" className="pg-foot__link">Điều khoản</Link>{' '}
+          <Link to="/chinh-sach-du-lieu" className="pg-foot__link">Chính sách dữ liệu</Link>
+        </p>
       </div>
     </section>
   );
@@ -451,7 +547,7 @@ const Pricing = ({ isAuthenticated }) => {
   }, [isAuthenticated]);
   useEffect(() => { document.title = 'Bảng giá | Customer Radar'; }, []);
 
-  // Đã đăng nhập: nút chính của hero đưa xuống chỗ chọn và giữ chỗ gói
+  // Đã đăng nhập: nút chính của hero đưa xuống chỗ chọn và mua gói
   const cta = isAuthenticated ? { href: '#chon-goi', label: 'Chọn gói' } : { to: '/signup', label: ACTION };
   const onJump = (i) => {
     const act = actRef.current;

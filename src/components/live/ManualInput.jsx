@@ -48,7 +48,7 @@ const ManualInput = ({ session, onDone }) => {
     await send({ csv: content });
   };
 
-  const curl = `curl -X POST "${endpoint}" -H "Content-Type: application/json" -H "X-Workspace: ${getWorkspace()}" -H "X-Ingest-Key: ${session.ingestKey}" -d '{"comments":[{"author":"khach01","text":"giá bao nhiêu shop","id":"msg-1"}]}'`;
+  const curl = `curl -X POST "${endpoint}" -H "Content-Type: application/json" -H "X-Workspace: ${session.wsKey || getWorkspace()}" -H "X-Ingest-Key: ${session.ingestKey}" -d '{"comments":[{"author":"khach01","text":"giá bao nhiêu shop","id":"msg-1"}]}'`;
 
   return (
     <div className="flex flex-col gap-6">

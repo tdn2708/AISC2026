@@ -77,8 +77,10 @@ const SummaryHeader = ({ stats, todo = [], todoReady = true, loading, error, las
     sentence = 'Hôm nay không có việc nào cần làm. Mọi chỉ số đang trong ngưỡng bình thường.';
   }
 
+  // Kho thật chưa có phản hồi nào (shop mới): không có mốc nào để ghi, tránh "Cập nhật 01/01/1970"
+  const realStamp = stats?.ingestedAt || (stats?.totalFeedbacks?.value ? stats.asOf : null);
   const asOfLine = real
-    ? `Dữ liệu thật từ sàn, đã che tên người mua. Cập nhật ${stats.ingestedAt ? fmtDateTime(stats.ingestedAt) : fmtDate(stats.asOf)}.`
+    ? (realStamp ? `Dữ liệu thật từ sàn, đã che tên người mua. Cập nhật ${stats.ingestedAt ? fmtDateTime(stats.ingestedAt) : fmtDate(stats.asOf)}.` : 'Kho dữ liệu thật của shop chưa có phản hồi nào.')
     : `Dữ liệu mô phỏng, cập nhật lúc ${lastUpdated}.`;
 
   const asOf = !stats && error ? null : loading && !stats

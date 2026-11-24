@@ -21,6 +21,8 @@ const Signup = () => {
 
   const [form, setForm] = useState({ name: '', shop: '', email: '', password: '' });
   const [remember, setRemember] = useState(true);
+  // Nghị định 13/2023: shop đồng ý điều khoản và chính sách dữ liệu trước khi đưa dữ liệu khách vào (máy chủ kiểm lại)
+  const [accept, setAccept] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -46,6 +48,7 @@ const Signup = () => {
     if (!EMAIL_RE.test(form.email.trim())) fe.email = 'Email chưa đúng dạng, ví dụ ten@cuahang.vn.';
     const broken = PASSWORD_RULES.find((r) => !r.test(form.password));
     if (broken) fe.password = `Mật khẩu chưa đạt: ${broken.label.toLowerCase()}.`;
+    if (!accept) fe.acceptTerms = 'Cần đồng ý Điều khoản sử dụng và Chính sách dữ liệu để tạo tài khoản.';
     return fe;
   };
 
@@ -60,9 +63,10 @@ const Signup = () => {
       refs[first].current?.focus();
       return;
     }
+    if (fe.acceptTerms) return;
     setLoading(true);
     try {
-      await signup({ ...form, remember });
+      await signup({ ...form, remember, acceptTerms: accept });
       // App thấy phiên mới và tự chuyển sang trang cần vào
     } catch (err) {
       const { message, fields, status } = authError(err);
@@ -147,6 +151,20 @@ const Signup = () => {
           </ul>
         </div>
         <Checkbox checked={remember} onChange={setRemember} label="Giữ đăng nhập trên máy này" />
+        <div>
+          <Checkbox
+            checked={accept}
+            onChange={(v) => { setAccept(v); if (v) setFieldErr((fe) => ({ ...fe, acceptTerms: undefined })); }}
+            label="Tôi đồng ý Điều khoản sử dụng và Chính sách dữ liệu"
+          />
+          <p className="mt-1.5 pl-8 text-xs text-ink-lo">
+            Đọc{' '}
+            <a href="/dieu-khoan" target="_blank" rel="noopener" className="rounded-ctrl text-accent-hi underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-accent">Điều khoản sử dụng</a>
+            {' '}và{' '}
+            <a href="/chinh-sach-du-lieu" target="_blank" rel="noopener" className="rounded-ctrl text-accent-hi underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-accent">Chính sách dữ liệu</a>
+          </p>
+          {fieldErr.acceptTerms && <p role="alert" className="mt-1.5 pl-8 text-xs text-crit">{fieldErr.acceptTerms}</p>}
+        </div>
         {error && (
           <p role="alert" className="flex items-start gap-1.5 rounded-ctrl bg-crit/12 px-3 py-2.5 text-sm text-crit">
             <CircleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" /> {error}

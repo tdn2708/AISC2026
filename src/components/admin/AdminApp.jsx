@@ -13,6 +13,7 @@ import AdminForbidden from './AdminForbidden';
 import Overview from './Overview';
 import Accounts from './Accounts';
 import AuditLog from './AuditLog';
+import Billing from './Billing';
 
 /**
  * PHẦN QUẢN TRỊ MÁY CHỦ (/admin/*) — tải tách riêng (lazy) khỏi ứng dụng thường.
@@ -23,12 +24,14 @@ import AuditLog from './AuditLog';
 const ADMIN_TABS = [
   { value: 'overview', label: 'Tổng quan', path: '/admin', title: 'Máy chủ | Customer Radar' },
   { value: 'users', label: 'Tài khoản', path: '/admin/users', title: 'Tài khoản | Customer Radar' },
+  { value: 'billing', label: 'Thanh toán', path: '/admin/billing', title: 'Thanh toán | Customer Radar' },
   { value: 'audit', label: 'Nhật ký', path: '/admin/audit', title: 'Nhật ký | Customer Radar' }
 ];
 
 const tabFromPath = (pathname) => {
   if (pathname.startsWith('/admin/users')) return 'users';
   if (pathname.startsWith('/admin/audit')) return 'audit';
+  if (pathname.startsWith('/admin/billing')) return 'billing';
   return 'overview';
 };
 
@@ -224,6 +227,7 @@ const AdminApp = () => (
       <Route path="users" element={<Accounts />}>
         <Route path=":id" element={null} />
       </Route>
+      <Route path="billing" element={<Billing />} />
       <Route path="audit" element={<AuditLog />} />
     </Route>
     <Route path="*" element={<Navigate to="/admin" replace />} />

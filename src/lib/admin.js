@@ -115,6 +115,7 @@ const AUDIT_LABELS = {
   reset_password: 'Đặt lại mật khẩu',
   set_role: 'Đổi vai trò',
   delete_user: 'Xóa tài khoản',
+  confirm_payment: 'Xác nhận đã nhận tiền',
   login: 'Đăng nhập quản trị'
 };
 

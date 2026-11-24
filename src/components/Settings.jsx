@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { UserRound, Palette, Database, Save, Mail, FlaskConical, FileText, Store } from 'lucide-react';
+import { UserRound, Palette, Database, Save, Mail, FlaskConical, FileText, Store, Gem, Check, Minus } from 'lucide-react';
 import { currentAccount, updateAccount, authError } from '../lib/auth';
 import { useTheme, useGlass } from '../hooks/useTheme';
 import { PageHeader, GlassPanel, PanelHeader, Button, TextField, Select, RadioCards, Toast } from './ui';
@@ -33,6 +34,7 @@ const load = () => {
 
 const TABS = [
   { id: 'general', label: 'Hồ sơ', icon: UserRound },
+  { id: 'plan', label: 'Gói dùng', icon: Gem },
   { id: 'appearance', label: 'Giao diện', icon: Palette },
   { id: 'data', label: 'Dữ liệu và mô hình', icon: Database }
   // Tab "Bảo mật" đã bỏ: chưa có máy chủ xác thực, hai ô mật khẩu bị khóa không làm gì
@@ -65,6 +67,63 @@ const PRIVACY = [
   'Số điện thoại, email trong nội dung được che trước khi văn bản tới mô hình.',
   'Theo Nghị định 13/2023/NĐ-CP, doanh nghiệp là Bên Kiểm soát dữ liệu, Customer Radar là Bên Xử lý dữ liệu.'
 ];
+
+const FEATURE_WORDS = {
+  orders_import: 'Nạp đơn hàng từ sàn',
+  butler_commands: 'Lệnh Quản gia từ xa',
+  live: 'Đọc bình luận livestream'
+};
+const ORDER_STATUS = { pending: 'Chờ chuyển khoản', paid: 'Đã nhận tiền', cancelled: 'Đã hủy' };
+const day = (d) => (d ? new Date(d).toLocaleDateString('vi-VN') : '');
+
+/** Gói đang dùng, hạn, hạn mức tháng và các đơn gần đây (backend/routes/billing.js) */
+const PlanPanel = ({ account }) => {
+  const navigate = useNavigate();
+  const [bill, setBill] = useState(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    axios.get('/billing').then(({ data }) => alive && setBill(data)).catch(() => alive && setFailed(true));
+    return () => { alive = false; };
+  }, []);
+  if (failed) return <p className="text-sm text-ink-mid">Chưa tải được thông tin gói. Thử mở lại trang sau ít phút.</p>;
+  if (!bill) return <p className="text-sm text-ink-lo">Đang tải thông tin gói</p>;
+  return (
+    <>
+      <PanelHeader
+        title={`Gói ${bill.planName}`}
+        subtitle={account?.isDemo ? 'Tài khoản mẫu dùng chung đã mở mọi tính năng.' : bill.planUntil ? `Dùng tới ${day(bill.planUntil)}, hết hạn thì tự về gói Dùng thử, dữ liệu vẫn giữ.` : 'Miễn phí, không hết hạn.'}
+      />
+      {bill.room && bill.room.limit != null && (
+        <p className="mb-4 text-sm text-ink-mid">
+          Tháng này đã nạp <span className="font-semibold tabular-nums text-ink-hi">{bill.room.used.toLocaleString('vi-VN')}</span> trên {bill.room.limit.toLocaleString('vi-VN')} phản hồi.
+        </p>
+      )}
+      <ul className="mb-6 flex flex-col gap-2 text-sm">
+        {Object.entries(bill.features || {}).map(([k, on]) => (
+          <li key={k} className={`flex items-center gap-2 ${on ? 'text-ink-hi' : 'text-ink-lo'}`}>
+            {on ? <Check size={16} className="text-ok" aria-hidden="true" /> : <Minus size={16} aria-hidden="true" />}
+            {FEATURE_WORDS[k] || k}<span className="sr-only">{on ? ', đã mở' : ', chưa mở'}</span>
+          </li>
+        ))}
+      </ul>
+      {!account?.isDemo && <Button onClick={() => navigate('/bang-gia#chon-goi')}>{bill.plan === 'try' ? 'Nâng cấp gói' : 'Gia hạn hoặc đổi gói'}</Button>}
+      {bill.orders?.length > 0 && (
+        <div className="mt-8 border-t border-line-soft pt-6">
+          <PanelHeader title="Đơn gần đây" />
+          <ul className="flex flex-col gap-2 text-sm">
+            {bill.orders.map((o) => (
+              <li key={o.code} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <span className="text-ink-hi">{o.planName}, {o.months} tháng <span className="font-code text-ink-mid">{o.code}</span></span>
+                <span className="tabular-nums text-ink-mid">{o.amount.toLocaleString('vi-VN')} đ, {ORDER_STATUS[o.status] || o.status}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+};
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -213,12 +272,18 @@ const Settings = () => {
             </>
           )}
 
+          {tab === 'plan' && <PlanPanel account={account} />}
+
           {tab === 'data' && (
             <>
               <PanelHeader title="Quyền riêng tư" />
               <ul className="mb-8 flex list-disc flex-col gap-2 pl-5 text-sm leading-relaxed text-ink-mid">
                 {PRIVACY.map((p) => <li key={p}>{p}</li>)}
               </ul>
+              <p className="-mt-5 mb-8 text-sm text-ink-mid">
+                Đầy đủ ở <a href="/dieu-khoan" target="_blank" rel="noopener" className="rounded-ctrl text-accent-hi underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-accent">Điều khoản sử dụng</a> và{' '}
+                <a href="/chinh-sach-du-lieu" target="_blank" rel="noopener" className="rounded-ctrl text-accent-hi underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-accent">Chính sách dữ liệu</a>.
+              </p>
               <PanelHeader title="Mô hình và báo cáo" />
               <div className="flex flex-col gap-3">
                 <Row icon={FlaskConical} title="Phòng thí nghiệm mô hình" description="Thử bộ phân loại tiếng Việt với câu của bạn, so sánh mô hình với bộ luật.">
