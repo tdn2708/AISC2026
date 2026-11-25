@@ -428,190 +428,185 @@ const DEFAULT_ROOT_PACK = 'gia_dung';
  * Mỗi khóa L3 gắn cố định vào đúng một L2 cha (`parentCategory`, `parentCause`).
  * Chia theo gói ngành để sau mở rộng ngành khác (quần áo, công nghệ) không đụng gói cũ.
  */
+/**
+ * Gói gia_dung, bản 2 (25/11, Claude): chia để HAI NGƯỜI GÁN RA CÙNG NHÃN và để phân tích được.
+ *  - Trường 1 `rootCauses` (kiểu lỗi): mỗi khóa trả lời "hỏng KIỂU GÌ", có `notThis` ghi ranh giới
+ *    với khóa dễ nhầm. Bỏ EARLY_FAIL của bản 1 (đó là LÚC NÀO hỏng, chồng lên mọi khóa khác), tách
+ *    NOISE_SMELL thành NOISE và SMELL (nguyên nhân khác hẳn: động cơ, quạt và vật liệu), thêm
+ *    OTHER_DEFECT cho câu chê mà không nói lỗi gì (không có ô này thì mỗi người ép vào một khóa khác).
+ *  - Trường 2 `failureTiming` (lúc phát hiện): FAILURE_TIMINGS ở dưới. "Hỏng sớm" = khóa lỗi + EARLY.
+ *  - Trường 3 `owner` (khâu chịu trách nhiệm) và `component` (bộ phận): SUY RA từ khóa, người gán không
+ *    phải chọn. Dùng để giao việc: sản xuất, đóng gói và vận chuyển, người bán, hậu mãi.
+ * Hướng dẫn gán đầy đủ (cây quyết định, ví dụ thật): nlp_service/data/root_guide_gia_dung.md.
+ */
 const ROOT_PACKS = {
   gia_dung: {
     NO_POWER: {
       label: 'Không lên nguồn, chết máy',
-      parentCategory: 'ProductQuality',
-      parentCause: 'TechnicalDefect',
-      description: 'Cắm điện không vào điện, không lên đèn báo, máy không khởi động ngay khi nhận hoặc hoàn toàn tắt hẳn.',
-      examples: [
-        'Cắm thử không lên đèn, đổi ổ điện khác cũng im ru.',
-        'Lò vi sóng nhận về cắm nguồn không vào điện, bật không chạy.'
-      ]
+      parentCategory: 'ProductQuality', parentCause: 'TechnicalDefect', owner: 'manufacturer', component: 'Nguồn, mạch điện',
+      description: 'Máy không chạy được chức năng nào: cắm điện không lên đèn, không khởi động, hoặc đang dùng thì tắt hẳn không bật lại được.',
+      notThis: 'Máy vẫn chạy nhưng nóng yếu (WEAK_HEAT); chỉ một nút hay màn hình hỏng (CONTROL_FAULT).',
+      examples: ['Cắm thử không lên đèn, đổi ổ điện khác cũng im ru.', 'Mua cái đầu: có nguồn nhưng không nóng; đổi cái thứ hai thì hoàn toàn không có điện.']
     },
     WEAK_HEAT: {
       label: 'Nóng yếu, nấu lâu, không chín',
-      parentCategory: 'ProductQuality',
-      parentCause: 'TechnicalDefect',
-      description: 'Nhiệt không đạt, làm nóng kém, hâm lâu không nóng, nướng không chín đều hoặc hơi ủi yếu.',
-      examples: [
-        'Nhiệt kém, nướng khoai 30 phút chỉ xém vàng bên ngoài.',
-        'Lò vi sóng quay lâu mà thức ăn vẫn nguội, không nóng.'
-      ]
+      parentCategory: 'ProductQuality', parentCause: 'TechnicalDefect', owner: 'manufacturer', component: 'Bộ gia nhiệt',
+      description: 'Máy chạy nhưng nhiệt không đủ: hâm không nóng, nướng lâu không vàng, không chín, hơi ủi yếu, rã đông rất lâu.',
+      notThis: 'Chế độ cài sẵn lệch nhưng chỉnh tay là được và khách không chê nhiệt (USABILITY); không lên nguồn (NO_POWER).',
+      examples: ['Nhiệt kém, nướng thịt chỉ xém vàng trong khi nồi cũ vàng ruộm.', 'Máy khá yếu, rã đông và hâm nóng mất nhiều thời gian.']
     },
     CONTROL_FAULT: {
       label: 'Nút bấm, cảm ứng, màn hình lỗi',
-      parentCategory: 'ProductQuality',
-      parentCause: 'TechnicalDefect',
-      description: 'Phím bấm cứng/liệt/không nhạy, bảng cảm ứng nhảy loạn, núm vặn kẹt hoặc màn hình LED mất nét/tắt.',
-      examples: [
-        'Phím giảm nhiệt độ bấm rất ít nhạy, phải nhấn mạnh nhiều lần.',
-        'Màn hình hiển thị bị mất số sau vài lần sử dụng.'
-      ]
+      parentCategory: 'ProductQuality', parentCause: 'TechnicalDefect', owner: 'manufacturer', component: 'Bảng điều khiển',
+      description: 'Phần bấm, chạm, hiển thị không phản hồi đúng: phím đơ, không nhạy, cảm ứng loạn, màn hình mất số hoặc tắt.',
+      notThis: 'Nút cứng hay khó hiểu do thiết kế nhưng vẫn bấm được (USABILITY); bộ phận chuyển động (MECH_PART).',
+      examples: ['Phím giảm nhấn mãi không có phản ứng, nhấn 3 lần mới ăn một lần.', 'Dùng 1-2 lần màn hình hiển thị mất con số đầu tiên.']
     },
     MECH_PART: {
       label: 'Bộ phận cơ khí hỏng',
-      parentCategory: 'ProductQuality',
-      parentCause: 'TechnicalDefect',
-      description: 'Bộ phận chuyển động, khớp nối, lưỡi dao, mâm xoay, nắp khóa, công tắc cơ hoặc mối hàn bị hỏng/gãy/kẹt.',
-      examples: [
-        'Lò vi sóng đĩa không quay dù đèn vẫn sáng.',
-        'Que đánh trứng bị gãy mối hàn ngay lần đánh bột đầu tiên.'
-      ]
+      parentCategory: 'ProductQuality', parentCause: 'TechnicalDefect', owner: 'manufacturer', component: 'Bộ phận cơ khí',
+      description: 'Bộ phận chuyển động hoặc chịu lực bị hỏng, gãy, kẹt, lỏng: mâm xoay không quay, que đánh gãy, lưỡi dao, khớp khay, bản lề, tay cầm gãy.',
+      notThis: 'Khay chỉ khó kéo do thiết kế, không hỏng (USABILITY); vỏ móp do va đập khi giao (TRANSIT_DENT).',
+      examples: ['Bật chế độ nào đĩa cũng không quay, thức ăn chín không đều.', 'Thanh đánh bột mới dùng 2 lần đã gãy mối hàn chính giữa.']
     },
-    NOISE_SMELL: {
-      label: 'Ồn, rung, mùi nhựa, mùi khét',
-      parentCategory: 'ProductQuality',
-      parentCause: 'TechnicalDefect',
-      description: 'Máy kêu to bất thường, rung mạnh khi chạy, bốc mùi nhựa/hóa chất nồng kéo dài hoặc có mùi khét điện.',
-      examples: [
-        'Nồi chiên có mùi nhựa rất rõ sau 3 lần dùng vẫn chưa hết.',
-        'Lò chạy kêu to lạch cạch bất thường sau khi nhận.'
-      ]
+    NOISE: {
+      label: 'Ồn, rung bất thường',
+      parentCategory: 'ProductQuality', parentCause: 'TechnicalDefect', owner: 'manufacturer', component: 'Động cơ, quạt',
+      description: 'Tiếng kêu to, lạch cạch, rung mạnh khi máy chạy, hoặc linh kiện bên trong rơi kêu lộc cộc.',
+      notThis: 'Mùi (SMELL). Khen nhưng nói "hơi ồn" vẫn chọn NOISE (câu chê nhẹ vẫn là chê).',
+      examples: ['Bên trong máy linh kiện rớt ra kêu lộc cộc.', 'Khi chiên máy phát ra tiếng ồn, quạt quay vù vù.']
+    },
+    SMELL: {
+      label: 'Mùi nhựa, mùi khét',
+      parentCategory: 'ProductQuality', parentCause: 'TechnicalDefect', owner: 'manufacturer', component: 'Vật liệu',
+      description: 'Mùi nhựa, hóa chất, mùi khét kéo dài khi dùng.',
+      notThis: 'Tiếng ồn (NOISE); nilon cháy dính trong máy vì hàng đã qua sử dụng (USED_OPENED).',
+      examples: ['Mùi nhựa rất rõ dù đã dùng 2-3 lần, chán quá để một chỗ luôn.', 'Máy sấy dùng ổn nhưng hơi có mùi nhựa.']
     },
     LEAK: {
       label: 'Rò nước, hơi, nhỏ giọt',
-      parentCategory: 'ProductQuality',
-      parentCause: 'TechnicalDefect',
-      description: 'Chảy nước ở đáy/khớp, xì hơi qua gioăng nắp, hoặc bàn ủi nhỏ giọt nước ra quần áo thay vì phun hơi.',
-      examples: [
-        'Bàn ủi hơi nước nhỏ giọt liên tục khi phun làm ướt áo.',
-        'Nồi áp suất bị xì hơi quanh nắp khi đang ninh.'
-      ]
+      parentCategory: 'ProductQuality', parentCause: 'TechnicalDefect', owner: 'manufacturer', component: 'Gioăng, bình chứa',
+      description: 'Nước hoặc hơi thoát sai chỗ: rỉ nước, nhỏ giọt thay vì phun hơi, xì hơi quanh nắp.',
+      notThis: 'Hơi nước yếu nhưng không rò (WEAK_HEAT).',
+      examples: ['Hơi nước đọng lại và nhỏ giọt khi để chế độ phun tay.', 'Chế độ phun sương bị lỗi, nước rỉ ra.']
     },
-    EARLY_FAIL: {
-      label: 'Hỏng sau thời gian ngắn',
-      parentCategory: 'ProductQuality',
-      parentCause: 'TechnicalDefect',
-      description: 'Lúc mới nhận vẫn chạy bình thường nhưng nhanh chóng trục trặc hoặc ngừng hẳn chỉ sau vài lần dùng hoặc vài tuần.',
-      examples: [
-        'Mới dùng 1-2 lần màn hình đã hư, bật không điều chỉnh được.',
-        'Mua về chạy ổn được 2 tuần thì máy tự ngắt luôn.'
-      ]
+    OTHER_DEFECT: {
+      label: 'Lỗi máy khác, không nói rõ',
+      parentCategory: 'ProductQuality', parentCause: 'TechnicalDefect', owner: 'manufacturer', component: 'Không rõ',
+      description: 'Khách nói máy lỗi, hỏng, không dùng được, chất lượng có vấn đề nhưng không nêu lỗi gì cụ thể.',
+      notThis: 'Có nêu triệu chứng thì chọn khóa của triệu chứng đó, không chọn khóa này.',
+      examples: ['Chất lượng sản phẩm có vấn đề, mong được tư vấn.', 'Lỗi to như thế này mà không phát hiện ra vẫn gửi cho khách.']
     },
     FINISH_DEFECT: {
       label: 'Hoàn thiện kém: xước, bavia, sơn hoặc chống dính bong, gỉ',
-      parentCategory: 'ProductQuality',
-      parentCause: 'NotAsDescribed',
-      description: 'Lỗi gia công bề mặt: trầy xước, nhựa thừa/bavia, lớp sơn loang, lớp chống dính bong tróc hoặc chi tiết kim loại gỉ sét.',
-      examples: [
-        'Lòng nồi có đốm trắng như phun sơn lỗi, rửa nhẹ đã bong chống dính.',
-        'Vỏ inox có vết xước và gỉ sét ngay khi mở hộp.'
-      ]
+      parentCategory: 'ProductQuality', parentCause: 'NotAsDescribed', owner: 'manufacturer', component: 'Bề mặt, lòng nồi',
+      description: 'Lỗi bề mặt từ lúc sản xuất: xước, bavia nhựa, đốm sơn, chống dính bong, gỉ sét.',
+      notThis: 'Móp, vỡ do va đập khi giao (TRANSIT_DENT); dấu hiệu hàng cũ: bẩn, bao bì đã mở (USED_OPENED).',
+      examples: ['Mở nồi ra thấy cả hai lớp bị đốm trắng dày đặc giống phun sơn.', 'Mới xài vài lần đã bị gỉ sét.']
     },
     SIZE_CAPACITY: {
       label: 'Dung tích, kích thước khác mô tả',
-      parentCategory: 'ProductQuality',
-      parentCause: 'NotAsDescribed',
-      description: 'Dung tích sử dụng thực tế, kích cỡ lòng nồi/khoang lò nhỏ hơn hoặc khác thông số ghi trên trang bán.',
-      examples: [
-        'Ghi 5,5 lít mà ngăn chiên nhỏ như loại 4 lít, không vừa con gà.',
-        'Nồi ngoài đời bé hơn hẳn kích thước mô tả trên sàn.'
-      ]
+      parentCategory: 'ProductQuality', parentCause: 'NotAsDescribed', owner: 'seller', component: 'Thông tin sản phẩm',
+      description: 'Dung tích hay kích thước dùng được nhỏ hoặc khác so với thông số trên trang bán.',
+      notThis: 'Khách chỉ thấy nhỏ so với nhu cầu, không nói khác mô tả (để trống, câu nhận xét chứ không phải lỗi).',
+      examples: ['Nồi 5,5 lít mà ngăn nhỏ xíu y như 4 lít, thất vọng.']
     },
     USED_OPENED: {
       label: 'Hàng như đã qua sử dụng, đã mở',
-      parentCategory: 'ProductQuality',
-      parentCause: 'NotAsDescribed',
-      description: 'Dấu hiệu hàng cũ, hàng trưng bày hoặc hàng hoàn: rách niêm phong, xé nilon, có dấu vân tay/vết dầu mỡ/bụi bẩn.',
-      examples: [
-        'Túi nilon bên trong đã bị xé sẵn, có dấu vết như hàng trưng bày.',
-        'Giao hàng đã qua sử dụng, đáy nồi còn vết trầy và bụi.'
-      ]
+      parentCategory: 'ProductQuality', parentCause: 'NotAsDescribed', owner: 'seller', component: 'Bao bì, tình trạng hàng',
+      description: 'Dấu hiệu hàng cũ, hàng trưng bày, hàng hoàn: bao bì đã mở, nilon rách sẵn, bẩn, có vết dùng.',
+      notThis: 'Xước, sơn lỗi trên hàng mới nguyên hộp (FINISH_DEFECT); móp do giao (TRANSIT_DENT).',
+      examples: ['Mở ra thấy sản phẩm nằm ngoài vỏ nilon, nilon đã bị xé từ lúc nào.', 'Giao sản phẩm cũ, có trầy xước và dính bẩn.']
     },
     USABILITY: {
-      label: 'Khó dùng: khay khó mở, tay cầm, chế độ cài sẵn sai',
-      parentCategory: 'ProductQuality',
-      parentCause: 'NotAsDescribed',
-      description: 'Thiết kế gây bất tiện khi thao tác hằng ngày: rổ/khay khó tháo lắp, tay cầm lỏng/nóng, dây quá ngắn hoặc chế độ nấu cài sẵn không hợp lý.',
-      examples: [
-        'Thời gian và nhiệt độ cài sẵn không chuẩn, lần nào cũng phải chỉnh tay.',
-        'Khay chiên rất rít, kéo ra đẩy vào khó khăn.'
-      ]
+      label: 'Khó dùng do thiết kế',
+      parentCategory: 'ProductQuality', parentCause: 'NotAsDescribed', owner: 'manufacturer', component: 'Thiết kế',
+      description: 'Máy không hỏng nhưng thao tác bất tiện: khay khó kéo, tay cầm lỏng hoặc cứng, chế độ cài sẵn phải chỉnh lại, khó vệ sinh, khó hiểu cách dùng.',
+      notThis: 'Nút không phản hồi (CONTROL_FAULT); khay gãy, kẹt hỏng (MECH_PART); chê nhiệt không đủ (WEAK_HEAT).',
+      examples: ['Thời gian và nhiệt độ cài sẵn chưa chuẩn, phải chỉnh theo thực tế.', 'Rổ chiên bị vênh, tay cầm quá cứng nên mẹ không dám rút mạnh.']
     },
     NO_MANUAL: {
       label: 'Thiếu sách hướng dẫn, hướng dẫn lắp đặt',
-      parentCategory: 'ProductQuality',
-      parentCause: 'MissingAccessory',
-      description: 'Trong hộp không có sách hướng dẫn sử dụng/lắp đặt, chỉ có tiếng nước ngoài hoặc hướng dẫn quá sơ sài không biết cách đấu nối.',
-      examples: [
-        'Mở hộp không có sách hướng dẫn đấu nguồn cho bếp âm.',
-        'Không có hướng dẫn sử dụng tiếng Việt nên không rõ các chế độ.'
-      ]
+      parentCategory: 'ProductQuality', parentCause: 'MissingAccessory', owner: 'seller', component: 'Giấy tờ đi kèm',
+      description: 'Trong hộp không có sách hướng dẫn sử dụng hoặc hướng dẫn đấu nối, lắp đặt; hoặc có nhưng sơ sài, sai.',
+      notThis: 'Thiếu phiếu bảo hành (NO_WARRANTY_CARD); có hướng dẫn nhưng vẫn thấy khó dùng (USABILITY).',
+      examples: ['Giao hàng nhanh nhưng trong thùng không có sách hướng dẫn thì biết đường nào mà dùng.', 'Không có hướng dẫn đấu nguồn, có tới 4 dây không hiểu đấu kiểu gì.']
     },
     NO_WARRANTY_CARD: {
       label: 'Thiếu phiếu bảo hành',
-      parentCategory: 'ProductQuality',
-      parentCause: 'MissingAccessory',
-      description: 'Không tìm thấy phiếu/sổ bảo hành giấy hoặc tem thông tin bảo hành trong kiện hàng.',
-      examples: [
-        'Kiểm tra cả thùng không thấy phiếu bảo hành đâu.',
-        'Shop giao hàng không kèm phiếu bảo hành chính hãng.'
-      ]
+      parentCategory: 'ProductQuality', parentCause: 'MissingAccessory', owner: 'seller', component: 'Giấy tờ đi kèm',
+      description: 'Không thấy phiếu hay sổ bảo hành giấy trong kiện hàng.',
+      notThis: 'Có máy nhưng kích hoạt bảo hành điện tử báo lỗi (WARRANTY_ACTIVATION).',
+      examples: ['Sao không có phiếu bảo hành bạn ơi.', 'Bảo hành 2 năm mà giao đến không thấy có phiếu bảo hành.']
     },
     MISSING_PART: {
       label: 'Thiếu linh kiện, phụ kiện',
-      parentCategory: 'ProductQuality',
-      parentCause: 'MissingAccessory',
-      description: 'Thiếu bộ phận đi kèm theo máy: thiếu nắp, cốc đong, vỉ nướng, que đánh, dây nguồn hoặc chân đế.',
-      examples: [
-        'Bộ máy xay giao thiếu nắp cối nhỏ.',
-        'Nồi cơm không có muỗng và cốc đong gạo kèm theo.'
-      ]
+      parentCategory: 'ProductQuality', parentCause: 'MissingAccessory', owner: 'seller', component: 'Phụ kiện',
+      description: 'Thiếu bộ phận đi kèm theo máy: nắp, cốc đong, vỉ, que đánh, dây nguồn, chân đế.',
+      notThis: 'Thiếu quà tặng khuyến mãi (GIFT_NOT_DELIVERED); thiếu giấy tờ (NO_MANUAL, NO_WARRANTY_CARD).',
+      examples: ['Thiếu nắp cối nhỏ, mô tả ghi có 2 cối mà chỉ có 1.']
     },
     WARRANTY_ACTIVATION: {
       label: 'Không kích hoạt được bảo hành điện tử',
-      parentCategory: 'CustomerService',
-      parentCause: 'UnresolvedCase',
-      description: 'Quét mã QR/nhập số serial trên cổng bảo hành điện tử báo lỗi, không tìm thấy mã máy hoặc chưa được hãng hỗ trợ kích hoạt.',
-      examples: [
-        'Quét serial trên máy báo không tìm thấy dữ liệu bảo hành điện tử.',
-        'Nhập mã kích hoạt bảo hành online toàn báo lỗi, nhắn shop chưa xử lý.'
-      ]
+      parentCategory: 'CustomerService', parentCause: 'UnresolvedCase', owner: 'after_sales', component: 'Bảo hành điện tử',
+      description: 'Quét mã hoặc nhắn tin kích hoạt bảo hành báo lỗi, không tìm thấy serial, máy chưa được đăng ký.',
+      notThis: 'Không có phiếu giấy (NO_WARRANTY_CARD). Khách nghi hàng nhái VÌ không kích hoạt được thì vẫn chọn khóa này.',
+      examples: ['Quét serial để kích hoạt bảo hành nhưng hệ thống báo lỗi vì không tìm thấy serial.', 'Nhắn tin bảo hành thì người ta gửi lại máy chưa được đăng ký bảo hành.']
     },
     INSTALLATION: {
       label: 'Lắp đặt, kỹ thuật viên',
-      parentCategory: 'CustomerService',
-      parentCause: 'WrongInformation',
-      description: 'Vấn đề ở khâu lắp đặt hoặc kỹ thuật viên: hẹn lắp chậm, tư vấn sai quy cách lắp/cắt đá hoặc kỹ thuật viên thiếu chuyên môn.',
-      examples: [
-        'Nhân viên lắp ráp bếp không am hiểu, tư vấn sai kích thước khoét đá.',
-        'Mua máy lọc nước mà bên lắp đặt hẹn tới hẹn lui không qua.'
-      ]
+      parentCategory: 'CustomerService', parentCause: 'WrongInformation', owner: 'after_sales', component: 'Dịch vụ lắp đặt',
+      description: 'Vấn đề ở khâu lắp đặt: không hỗ trợ lắp, hẹn lắp chậm, kỹ thuật viên không hiểu sản phẩm, lắp sai.',
+      notThis: 'Thiếu giấy hướng dẫn lắp đặt (NO_MANUAL).',
+      examples: ['Nhân viên lắp ráp chẳng am hiểu về sản phẩm, chỉ có đấu dây điện.', 'Dùng tốt nhưng không hỗ trợ lắp đặt nên hơi mệt.']
     },
     GIFT_NOT_DELIVERED: {
       label: 'Quà tặng, khuyến mãi không giao',
-      parentCategory: 'PricePromotion',
-      parentCause: 'MisleadingPromo',
-      description: 'Chương trình bán có ghi tặng kèm quà (bình nước, chảo, cốc, túi...) nhưng khi nhận hàng không có quà.',
-      examples: [
-        'Trên gian hàng treo tặng bình nước nhưng nhận nồi không thấy quà đâu.',
-        'Đặt đơn theo combo tặng chảo chống dính mà giao thiếu quà.'
-      ]
+      parentCategory: 'PricePromotion', parentCause: 'MisleadingPromo', owner: 'seller', component: 'Chương trình khuyến mãi',
+      description: 'Trang bán hứa tặng kèm quà hoặc giảm giá nhưng khách không nhận được, nhận thiếu, hoặc quà bị tách đơn rồi hủy.',
+      notThis: 'Thiếu phụ kiện thuộc bộ máy (MISSING_PART).',
+      examples: ['Treo tặng bình nước nhưng đặt hàng vẫn không có.', 'Mua vào 9.11 có tặng 2 ly inox mà nhận hàng lại có 1.']
     },
     TRANSIT_DENT: {
       label: 'Móp, vỡ do vận chuyển',
-      parentCategory: 'Delivery',
-      parentCause: 'DamagedInTransit',
-      description: 'Thùng bẹp, vỏ máy móp méo, vỡ kính/nhựa do đóng gói sơ sài hoặc va đập trong quá trình giao hàng.',
-      examples: [
-        'Thùng giấy rách, mở ra thân lò vi sóng móp méo tùm lum.',
-        'Đóng gói không có xốp chống sốc làm vỡ nắp kính khi giao tới.'
-      ]
+      parentCategory: 'Delivery', parentCause: 'DamagedInTransit', owner: 'logistics', component: 'Đóng gói, vận chuyển',
+      description: 'Thùng bẹp, máy hoặc quà móp méo, vỡ, sứt do va đập khi giao hay đóng gói sơ sài.',
+      notThis: 'Xước, sơn lỗi từ nhà máy (FINISH_DEFECT). Phân vân giữa hai bên thì chọn khóa khách nói tới: "do vận chuyển", "đóng gói" là TRANSIT_DENT.',
+      examples: ['Lần 1 đóng gói không cẩn thận nên về đến tay móp méo tùm lum.', 'Mới nhận hàng mà chân kệ lưới bị sứt ra rồi.']
     }
   }
 };
+
+/** Trường 2: lúc khách phát hiện lỗi. Không nói thì UNKNOWN; câu không phải lỗi sản phẩm hoặc giao hàng thì để trống */
+const FAILURE_TIMINGS = {
+  ON_ARRIVAL: { label: 'Ngay khi nhận hoặc lần dùng đầu', description: 'Mở hộp đã thấy, hoặc vừa cắm thử, dùng lần đầu đã lỗi.' },
+  EARLY: { label: 'Sau vài lần dùng (dưới khoảng 1 tháng)', description: 'Lúc đầu chạy được rồi hỏng: "dùng 1-2 lần", "được 2 tuần", "mới mua chưa được 1 tháng".' },
+  LATER: { label: 'Sau thời gian dài', description: 'Dùng từ khoảng 1 tháng trở lên mới hỏng.' },
+  UNKNOWN: { label: 'Không rõ', description: 'Câu không cho biết lúc nào.' }
+};
+
+/** Trường 3 (suy ra): khâu chịu trách nhiệm sửa */
+const ROOT_OWNERS = {
+  manufacturer: 'Sản xuất, chất lượng máy',
+  logistics: 'Đóng gói và vận chuyển',
+  seller: 'Người bán, gian hàng',
+  after_sales: 'Bảo hành, lắp đặt'
+};
+
+function normalizeTiming(raw) {
+  if (raw == null) return null;
+  const k = String(raw).trim().toUpperCase();
+  return FAILURE_TIMINGS[k] ? k : null;
+}
+
+function timingLabel(key) {
+  return FAILURE_TIMINGS[key]?.label || null;
+}
+
+function rootOwnerOf(code, pack = DEFAULT_ROOT_PACK) {
+  const info = rootCauseInfo(code, pack);
+  return info?.owner || null;
+}
 
 function rootPack(pack = DEFAULT_ROOT_PACK) {
   return ROOT_PACKS[pack] || ROOT_PACKS[DEFAULT_ROOT_PACK];
@@ -646,7 +641,10 @@ function rootCausesFor(subCategory, pack = DEFAULT_ROOT_PACK) {
       label: v.label,
       parentCategory: v.parentCategory,
       parentCause: v.parentCause,
-      description: v.description
+      description: v.description,
+      notThis: v.notThis || null,
+      owner: v.owner || null,
+      component: v.component || null
     }));
 }
 
@@ -709,7 +707,11 @@ function flatRootPacks() {
       label: v.label,
       parentCategory: v.parentCategory,
       parentCause: v.parentCause,
-      description: v.description
+      description: v.description,
+      notThis: v.notThis || null,
+      owner: v.owner || null,
+      component: v.component || null,
+      examples: v.examples || []
     }));
   }
   return out;
@@ -806,6 +808,11 @@ module.exports = {
   TEST_SURFACE,
   DEFAULT_ROOT_PACK,
   ROOT_PACKS,
+  FAILURE_TIMINGS,
+  ROOT_OWNERS,
+  normalizeTiming,
+  timingLabel,
+  rootOwnerOf,
   normalizeCategory,
   normalizeCause,
   categoryLabel,

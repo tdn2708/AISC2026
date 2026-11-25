@@ -1251,7 +1251,8 @@ router.get('/audit/sample', wrap(async (req, res) => {
       labelVotes: f.labelVotes || null,
       needsReview: Boolean(f.needsReview),
       blindTest: insights.isBlindTest(f._id),
-      goldSplit: insights.goldSplit(f.productName)
+      goldSplit: insights.goldSplit(f.productName),
+      failureTiming: f.failureTiming || null
     })),
     remaining,
     queues,
@@ -1260,12 +1261,13 @@ router.get('/audit/sample', wrap(async (req, res) => {
       label: key === 'Other' ? 'Không nêu vấn đề' : taxonomy.categoryLabel(key),
       causes: key === 'Other' ? [] : taxonomy.flatTaxonomy().find((c) => c.key === key)?.causes.map((c) => ({ key: c.key, label: c.label })) || []
     })),
-    rootCauses: taxonomy.flatRootPacks().gia_dung
+    rootCauses: taxonomy.flatRootPacks().gia_dung,
+    timings: Object.entries(taxonomy.FAILURE_TIMINGS).map(([key, v]) => ({ key, label: v.label, description: v.description }))
   });
 }));
 
 router.post('/audit/label', wrap(async (req, res) => {
-  const { feedbackId, sentimentCorrect, categoryCorrect, correctSentiment, correctCategory, correctCause, correctRootCauses, sarcasm, sampleMode, by } = req.body || {};
+  const { feedbackId, sentimentCorrect, categoryCorrect, correctSentiment, correctCategory, correctCause, correctRootCauses, correctTiming, sarcasm, sampleMode, by } = req.body || {};
   if (!feedbackId || typeof sentimentCorrect !== 'boolean' || typeof categoryCorrect !== 'boolean') {
     return res.status(400).json({ error: 'Cần feedbackId, sentimentCorrect và categoryCorrect (true/false)' });
   }
@@ -1286,6 +1288,9 @@ router.post('/audit/label', wrap(async (req, res) => {
   const normalizedRoots = hasRootInput
     ? taxonomy.normalizeRootCauses(correctRootCauses, { nonComplaint: cat === 'Other' })
     : undefined;
+  // Lúc phát hiện lỗi: chỉ có nghĩa khi có L3; không gửi thì giữ nguyên nhãn cũ
+  const timingInput = correctTiming === undefined ? undefined
+    : (normalizedRoots && normalizedRoots.length ? taxonomy.normalizeTiming(correctTiming) : null);
   let finalCause = categoryCorrect
     ? (causeOk ? correctCause : machine.subCategory || null)
     : (causeOk ? correctCause : null);
@@ -1315,6 +1320,7 @@ router.post('/audit/label', wrap(async (req, res) => {
         correctCategory: cat,
         correctCause: finalCause,
         ...(normalizedRoots !== undefined ? { correctRootCauses: normalizedRoots } : {}),
+        ...(timingInput !== undefined ? { correctTiming: timingInput } : {}),
         // Có mỉa mai không (true/false); null = người duyệt không trả lời câu này
         sarcasm: typeof sarcasm === 'boolean' ? sarcasm : null,
         sampleMode: insights.AUDIT_MODES.includes(sampleMode) ? sampleMode : 'random',
@@ -1326,6 +1332,7 @@ router.post('/audit/label', wrap(async (req, res) => {
         aiCategory: machine.category || 'Other',
         aiCause: machine.subCategory || null,
         aiRootCauses: Array.isArray(machine.rootCauses) ? machine.rootCauses : [],
+        aiTiming: machine.failureTiming || null,
         aiSarcasm: item.sarcasm?.verdict ?? null,
         labelledBy: machine.labelledBy || 'synthetic',
         by: typeof by === 'string' ? by.slice(0, 80) : 'admin',

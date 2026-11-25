@@ -65,6 +65,7 @@ const EMPTY = {
   correctCategory: '',
   correctCause: '',
   correctRootCauses: [],
+  correctTiming: null,
   showAllRoots: false
 };
 
@@ -73,6 +74,7 @@ const Audit = () => {
   const [queue, setQueue] = useState([]);
   const [categories, setCategories] = useState([]);
   const [rootCatalog, setRootCatalog] = useState([]);
+  const [timingCatalog, setTimingCatalog] = useState([]);
   const [remaining, setRemaining] = useState(null);
   const [queues, setQueues] = useState({});
   const [loading, setLoading] = useState(true);
@@ -89,6 +91,7 @@ const Audit = () => {
     setQueues(data.queues || {});
     setCategories(data.categories || []);
     setRootCatalog(data.rootCauses || []);
+    setTimingCatalog(data.timings || []);
   }, []);
 
   useEffect(() => {
@@ -105,7 +108,8 @@ const Audit = () => {
     if (!item) return;
     setAns({
       ...EMPTY,
-      correctRootCauses: Array.isArray(item.rootCauses) ? item.rootCauses : []
+      correctRootCauses: Array.isArray(item.rootCauses) ? item.rootCauses : [],
+      correctTiming: item.failureTiming || null
     });
   }, [item]);
 
@@ -163,6 +167,7 @@ const Audit = () => {
         correctCategory: ans.cat ? undefined : ans.correctCategory,
         correctCause: ans.correctCause || undefined,
         correctRootCauses: isNonComplaint ? [] : ans.correctRootCauses,
+        correctTiming: isNonComplaint || ans.correctRootCauses.length === 0 ? null : (ans.correctTiming || 'UNKNOWN'),
         sarcasm: ans.sarcasm,
         sampleMode: mode,
         by: currentUser()
@@ -319,7 +324,7 @@ const Audit = () => {
                       size="sm"
                       onClick={() => setAns((a) => ({ ...a, showAllRoots: !a.showAllRoots }))}
                     >
-                      {ans.showAllRoots ? 'Chỉ hiện theo nguyên nhân cấp 2' : 'Hiện đủ 18 lỗi gia dụng'}
+                      {ans.showAllRoots ? 'Chỉ hiện theo nguyên nhân cấp 2' : `Hiện đủ ${fmtInt(rootCatalog.length)} lỗi gia dụng`}
                     </Button>
                   </div>
                   {visibleRoots.length > 0 ? (
@@ -332,7 +337,7 @@ const Audit = () => {
                             active={active}
                             icon={active ? Check : undefined}
                             onClick={() => toggleRoot(r)}
-                            title={r.description}
+                            title={r.notThis ? `${r.description} Không phải: ${r.notThis}` : r.description}
                           >
                             {r.label}
                           </Chip>
@@ -341,13 +346,36 @@ const Audit = () => {
                     </div>
                   ) : (
                     <p className="mt-2 text-xs text-ink-lo">
-                      Nguyên nhân cấp 2 này không có nhóm cấp 3 riêng. Để trống là hợp lệ, hoặc bấm Hiện đủ 18 lỗi gia dụng nếu câu nêu lỗi khác.
+                      Nguyên nhân cấp 2 này không có nhóm cấp 3 riêng. Để trống là hợp lệ, hoặc bấm Hiện đủ {fmtInt(rootCatalog.length)} lỗi gia dụng nếu câu nêu lỗi khác.
                     </p>
                   )}
                   {ans.correctRootCauses.length > 0 && (
                     <p className="mt-2 text-xs text-ink-mid">
                       Đã chọn {fmtInt(ans.correctRootCauses.length)} lỗi: {ans.correctRootCauses.map((k) => rootCatalog.find((r) => r.key === k)?.label || k).join(', ')}
                     </p>
+                  )}
+                  {ans.correctRootCauses.length > 0 && timingCatalog.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm text-ink-mid">
+                        <b className="text-ink-hi">Khách phát hiện lỗi lúc nào</b> (câu không nói thì chọn Không rõ)
+                      </p>
+                      <div role="group" aria-label="Lúc phát hiện lỗi" className="mt-2.5 flex flex-wrap gap-2">
+                        {timingCatalog.map((t) => {
+                          const active = (ans.correctTiming || 'UNKNOWN') === t.key;
+                          return (
+                            <Chip
+                              key={t.key}
+                              active={active}
+                              icon={active ? Check : undefined}
+                              onClick={() => setAns((a) => ({ ...a, correctTiming: t.key }))}
+                              title={t.description}
+                            >
+                              {t.label}
+                            </Chip>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}

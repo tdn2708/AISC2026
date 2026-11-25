@@ -48,6 +48,7 @@ function parseTeacherRow(r, model = 'Qwen/Qwen3-8B') {
 
   const rawRoots = r.rootCauses ?? r.root_causes ?? [];
   const rootCauses = taxonomy.normalizeRootCauses(rawRoots, { nonComplaint: primaryCat === 'Other' });
+  const failureTiming = rootCauses.length ? taxonomy.normalizeTiming(r.failureTiming ?? r.failure_timing) : null;
 
   // Nếu notebook chạy 2 lần nhiệt độ khác nhau: cờ `agreed` báo hai lần có trùng L2 không
   const agreed = typeof r.agreed === 'boolean' ? r.agreed : true;
@@ -60,6 +61,7 @@ function parseTeacherRow(r, model = 'Qwen/Qwen3-8B') {
     subCategory: primaryCause,
     issues,
     rootCauses,
+    failureTiming,
     agreed,
     ...(Array.isArray(r.pass2Issues) ? { pass2Issues: r.pass2Issues } : {}),
     sarcasm: typeof r.sarcasm === 'boolean' ? r.sarcasm : null,
@@ -77,7 +79,8 @@ function buildTeacherTaxonomy() {
       label: c.label,
       causes: c.causes.map((x) => ({ key: x.key, label: x.label }))
     })),
-    rootPacks: taxonomy.flatRootPacks()
+    rootPacks: taxonomy.flatRootPacks(),
+    failureTimings: Object.entries(taxonomy.FAILURE_TIMINGS).map(([key, v]) => ({ key, label: v.label, description: v.description }))
   };
 }
 

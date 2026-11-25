@@ -35,6 +35,7 @@ function normalizeLabels(fb) {
     category,
     subCategory: cause,
     rootCauses,
+    failureTiming: rootCauses.length ? taxonomy.normalizeTiming(fb.failureTiming) : null,
     categoryLabel: taxonomy.categoryLabel(category),
     causeLabel: taxonomy.causeLabel(category, cause),
     rootCauseLabels: rootCauses.map((k) => taxonomy.rootCauseLabel(k)).filter(Boolean)
@@ -60,6 +61,7 @@ function applyHumanLabels(feedbacks, labels) {
         category: f.category,
         subCategory: f.subCategory,
         rootCauses: Array.isArray(f.rootCauses) ? f.rootCauses.slice() : [],
+        failureTiming: f.failureTiming || null,
         labelledBy: f.labelledBy
       };
     }
@@ -77,6 +79,7 @@ function applyHumanLabels(feedbacks, labels) {
     f.categoryLabel = taxonomy.categoryLabel(f.category);
     f.causeLabel = taxonomy.causeLabel(f.category, f.subCategory);
     f.rootCauseLabels = (f.rootCauses || []).map((k) => taxonomy.rootCauseLabel(k)).filter(Boolean);
+    if (l.correctTiming !== undefined) f.failureTiming = (f.rootCauses || []).length ? taxonomy.normalizeTiming(l.correctTiming) : null;
     if (typeof l.sarcasm === 'boolean') {
       f.sarcasm = { ...(f.sarcasm || {}), verdict: l.sarcasm ? 'sarcastic' : 'literal', by: 'human' };
     }

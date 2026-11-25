@@ -279,6 +279,9 @@ function buildGoldExport(feedbacks, auditLabels) {
       category,
       cause,
       rootCauses,
+      // Lúc phát hiện lỗi và khâu chịu trách nhiệm (suy ra từ mã L3 đầu tiên)
+      failureTiming: rootCauses.length ? (taxonomy.normalizeTiming(l.correctTiming) || null) : null,
+      owners: [...new Set(rootCauses.map((r) => taxonomy.rootOwnerOf(r)).filter(Boolean))],
       sarcasm: typeof l.sarcasm === 'boolean' ? l.sarcasm : null,
       sampleMode: l.sampleMode || 'random',
       goldSplit: split,

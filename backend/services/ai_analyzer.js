@@ -118,7 +118,7 @@ function taxonomyPrompt() {
 function rootCausesPrompt(pack = taxonomy.DEFAULT_ROOT_PACK) {
   return taxonomy
     .rootCausesFor(null, pack)
-    .map((r) => `- ${r.key} [${r.parentCategory}.${r.parentCause}]: ${r.label}`)
+    .map((r) => `- ${r.key} [${r.parentCategory}.${r.parentCause}]: ${r.label}. ${r.description}${r.notThis ? ` Không phải: ${r.notThis}` : ''}`)
     .join('\n');
 }
 
@@ -200,11 +200,13 @@ function coerceResult(raw, originalText) {
   }
 
   const rootCauses = taxonomy.normalizeRootCauses(raw.rootCauses ?? raw.root_causes, { nonComplaint: category === 'Other' });
+  const failureTiming = rootCauses.length ? taxonomy.normalizeTiming(raw.failureTiming ?? raw.failure_timing) : null;
 
   return {
     category,
     subCategory: cause,
     rootCauses,
+    ...(failureTiming ? { failureTiming } : {}),
     sentiment,
     aspects: Array.isArray(raw.aspects)
       ? raw.aspects.slice(0, 5).map((a) => ({
@@ -359,7 +361,7 @@ async function analyzeChunkWithLLM(items) {
   }));
   const includeL3 = items.some((r) => taxonomy.isApplianceProduct(r.productName, r.productType));
   const l3Block = includeL3
-    ? `\nNGUYÊN NHÂN GỐC RỄ CẤP 3 CHO ĐỒ GIA DỤNG (mảng "rootCauses", chỉ dùng đúng mã sau; câu khen hoặc L2 không có L3 thì trả []):\n${rootCausesPrompt()}\n`
+    ? `\nNGUYÊN NHÂN GỐC RỄ CẤP 3 CHO ĐỒ GIA DỤNG (mảng "rootCauses", chỉ dùng đúng mã sau; câu khen hoặc L2 không có L3 thì trả []; khách chê lỗi máy mà không nói lỗi gì thì OTHER_DEFECT):\n${rootCausesPrompt()}\nKhi có rootCauses, thêm "failureTiming": ON_ARRIVAL (ngay khi nhận hoặc lần dùng đầu), EARLY (sau vài lần dùng, dưới khoảng 1 tháng), LATER (từ khoảng 1 tháng trở lên), UNKNOWN (câu không nói).\n`
     : '';
 
   const prompt = `Bạn là hệ thống gán nhãn phản hồi khách hàng tiếng Việt cho sàn thương mại điện tử.
@@ -392,6 +394,7 @@ Với MỖI bình luận trong mảng đầu vào, trả về một đối tư�
   "category": "<một mã Level 1 ở trên, hoặc 'Other'>",
   "subCategory": "<một mã Level 2 thuộc đúng category đó, hoặc null>",
   "rootCauses": ["<mã L3 nếu là lỗi đồ gia dụng ở trên, hoặc []>"],
+  "failureTiming": "<ON_ARRIVAL|EARLY|LATER|UNKNOWN khi có rootCauses, hoặc null>",
   "sentiment": "Positive" | "Negative" | "Neutral",
   "sarcasm": true | false,
   "aspects": [{"aspect": "<khía cạnh được nhắc tới>", "polarity": "Positive|Negative|Neutral"}],

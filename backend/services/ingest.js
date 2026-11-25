@@ -76,6 +76,8 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
     const productName = normalizer.decodeEntities(review.productName || meta.fallbackProduct) || 'Sản phẩm chưa xác định';
     const productType = review.productType || taxonomy.productTypeOf(productName) || null;
     const rootCauses = taxonomy.normalizeRootCauses(ai.rootCauses, { nonComplaint: category === 'Other' });
+    // Trường 2 của L3: lúc khách phát hiện lỗi (ON_ARRIVAL, EARLY, LATER, UNKNOWN); chỉ có khi có L3
+    const failureTiming = rootCauses.length ? taxonomy.normalizeTiming(ai.failureTiming) : null;
     const facts = review.platformFacts || null;
     const { rawCustomerId, ...publicFacts } = facts || {};
     return {
@@ -104,6 +106,7 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
       subCategory,
       // Nguyên nhân gốc rễ cấp 3 (L3, đa nhãn, tùy chọn; câu không phải khiếu nại là [])
       ...(rootCauses.length ? { rootCauses } : { rootCauses: [] }),
+      ...(failureTiming ? { failureTiming } : {}),
       sentiment: ai.sentiment || 'Neutral',
       aiSummary: ai.aiSummary || null,
       entities: ai.entities || null,

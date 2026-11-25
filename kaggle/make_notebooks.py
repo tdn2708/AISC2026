@@ -84,8 +84,10 @@ TAXONOMY = "\\n".join(
 )
 CATS = {c["key"]: {x["key"] for x in c["causes"]} for c in tax_cats}
 ROOTS_MAP = {r["key"]: (r["parentCategory"], r["parentCause"]) for r in root_pack}
+TIMINGS = {"ON_ARRIVAL", "EARLY", "LATER", "UNKNOWN"}
 ROOT_LIST = "\\n".join(
-    f"- {r['key']} [{r['parentCategory']}.{r['parentCause']}]: {r['label']} — {r.get('description', '')}"
+    f"- {r['key']} [{r['parentCategory']}.{r['parentCause']}]: {r['label']}. {r.get('description', '')}"
+    + (f" Không phải: {r['notThis']}" if r.get('notThis') else "")
     for r in root_pack
 )
 
@@ -103,11 +105,13 @@ Quy tắc:
 - Nếu L2 không thuộc các L2 cha có trong danh sách L3 (ví dụ giao chậm, thanh toán, đổi trả...) thì để root_causes = [], không ép vào mã gần giống.
 - MỈA MAI: khen ngoài miệng kèm sự việc tiêu cực hoặc sao thấp mà chữ khen -> sentiment theo Ý THẬT, issues và root_causes theo lỗi THẬT.
 - Một câu có thể nêu nhiều lỗi cùng lúc: liệt kê đủ issues và root_causes.
+- Khách chê lỗi máy mà không nói lỗi gì cụ thể thì dùng OTHER_DEFECT.
+- Khi có root_causes, ghi `failure_timing`: ON_ARRIVAL (ngay khi nhận hoặc lần dùng đầu), EARLY (sau vài lần dùng, dưới khoảng 1 tháng), LATER (từ khoảng 1 tháng trở lên), UNKNOWN (câu không nói). Không có root_causes thì null.
 
 Trả về DUY NHẤT một JSON:
 {{"sentiment": "Positive|Negative|Neutral", "sarcasm": true|false,
   "issues": [{{"category": "<mã L1>", "cause": "<mã L2>"}}],
-  "root_causes": ["<mã L3>"],
+  "root_causes": ["<mã L3>"], "failure_timing": "ON_ARRIVAL|EARLY|LATER|UNKNOWN|null",
   "reason": "<một câu ngắn>"}}'''
 
 def build(r):
@@ -141,6 +145,8 @@ def parse(text):
             roots.append(rk_s)
     if not issues:
         roots = []
+    timing = str(o.get("failure_timing") or o.get("failureTiming") or "").strip().upper()
+    timing = timing if roots and timing in TIMINGS else None
     first = issues[0] if issues else None
     return {
         "sentiment": o["sentiment"],
@@ -149,6 +155,7 @@ def parse(text):
         "category": first["category"] if first else "Other",
         "subCategory": first["cause"] if first else None,
         "rootCauses": roots,
+        "failureTiming": timing,
         "reason": str(o.get("reason") or "")[:300],
     }
 
@@ -179,6 +186,9 @@ with open(OUT, "a", encoding="utf-8") as f:
                 # Giữ các L3 hai lượt cùng đồng ý (nếu giao rỗng thì giữ lượt 1 khi lượt 1 có)
                 inter_r = [k for k in lab1["rootCauses"] if k in set(lab2["rootCauses"])]
                 roots_final = inter_r if inter_r else lab1["rootCauses"]
+                # Hai lượt khác nhau về lúc phát hiện thì ghi UNKNOWN, không đoán
+                if lab1["failureTiming"] and lab2["failureTiming"] and lab1["failureTiming"] != lab2["failureTiming"]:
+                    lab1 = {**lab1, "failureTiming": "UNKNOWN"}
             else:
                 disagreed_n += 1
                 roots_final = lab1["rootCauses"]
@@ -256,7 +266,7 @@ TRAIN_V5 = [
 # Customer Radar — huấn luyện ViSoBERT v5 (L3 gốc rễ gia dụng + loại hàng + số sao)
 
 **Chuẩn bị trên máy:**
-1. Chạy `cd backend && npm run nlp:prepare` để cập nhật `nlp_service/labels.json` có đầu `root` (18 mã L3 `gia_dung`).
+1. Chạy `cd backend && npm run nlp:prepare` để cập nhật `nlp_service/labels.json` có đầu `root` (19 mã L3 `gia_dung`).
 2. Xuất bộ huấn luyện chống rò rỉ theo sản phẩm & Jaccard >= 0,8:
    `cd backend && node scripts/export_training_data.js --dbs=customer_radar_real,cr_t_6b063cbc5122d551a58f9737`
    → `nlp_service/data/real/{train,dev,test}.jsonl` + `manifest.json`.

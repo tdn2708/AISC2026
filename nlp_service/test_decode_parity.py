@@ -128,7 +128,7 @@ def main():
                 {"ProductQuality": 1.8, "Delivery": 1.6},
                 {"ProductQuality.TechnicalDefect": 1.4, "Delivery.DamagedInTransit": 1.9},
                 False, False,
-                {"NOISE_SMELL": 1.2, "TRANSIT_DENT": 2.0},
+                {"NOISE": 1.2, "TRANSIT_DENT": 2.0},
             ),
         ),
         (
@@ -193,7 +193,7 @@ def main():
 
     # Kiểm tra hành vi phân cấp cụ thể
     assert js_results[0]["rootCauseKeys"] == ["MECH_PART", "CONTROL_FAULT"], "TRANSIT_DENT sai L2 cha phải bị lọc"
-    assert js_results[1]["rootCauseKeys"] == ["TRANSIT_DENT", "NOISE_SMELL"]
+    assert js_results[1]["rootCauseKeys"] == ["TRANSIT_DENT", "NOISE"]
     assert js_results[2]["pulledByRoot"] is True
     assert js_results[2]["category"] == "CustomerService" and js_results[2]["cause"] == "UnresolvedCase"
     assert js_results[2]["rootCauseKeys"] == ["WARRANTY_ACTIVATION"]

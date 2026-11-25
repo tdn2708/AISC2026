@@ -4396,18 +4396,20 @@ testAsync('Theo dõi kênh: kênh lên live thì tự mở phiên một lần; �
 // ------------------------------------------------------------------
 console.log('\nNGUYÊN NHÂN GỐC RỄ CẤP 3 (G0)');
 
-test('G0: ROOT_PACKS.gia_dung đủ 18 khóa, mỗi khóa gắn đúng một L2 cha hợp lệ và không đổi L1/L2 cũ', () => {
+test('G0: ROOT_PACKS.gia_dung đủ 19 khóa, mỗi khóa gắn đúng một L2 cha hợp lệ và không đổi L1/L2 cũ', () => {
   assert.strictEqual(taxonomy.CATEGORY_KEYS.length, 7);
   assert.strictEqual(taxonomy.CAUSE_COUNT, 27);
   const keys = taxonomy.rootCauseKeys('gia_dung');
-  assert.strictEqual(keys.length, 18, 'gói gia_dung phải có đúng 18 khóa L3');
+  assert.strictEqual(keys.length, 19, 'gói gia_dung phải có đúng 19 khóa L3');
   for (const k of keys) {
     const info = taxonomy.rootCauseInfo(k, 'gia_dung');
     assert.ok(info && info.label && info.description, `thiếu mô tả cho ${k}`);
+    assert.ok(info.notThis, `thiếu ranh giới (notThis) cho ${k}`);
+    assert.ok(taxonomy.ROOT_OWNERS[info.owner], `owner sai cho ${k}`);
     assert.ok(taxonomy.TAXONOMY[info.parentCategory], `parentCategory sai cho ${k}`);
     assert.ok(taxonomy.TAXONOMY[info.parentCategory].causes[info.parentCause], `parentCause sai cho ${k}`);
   }
-  assert.strictEqual(taxonomy.rootCausesFor('TechnicalDefect').length, 7);
+  assert.strictEqual(taxonomy.rootCausesFor('TechnicalDefect').length, 8);
   assert.strictEqual(taxonomy.rootCausesFor('NotAsDescribed').length, 4);
   assert.strictEqual(taxonomy.rootCausesFor('MissingAccessory').length, 3);
   assert.strictEqual(taxonomy.rootCausesFor('UnresolvedCase')[0].key, 'WARRANTY_ACTIVATION');
@@ -4415,10 +4417,24 @@ test('G0: ROOT_PACKS.gia_dung đủ 18 khóa, mỗi khóa gắn đúng một L2 
   assert.strictEqual(taxonomy.rootCausesFor('DamagedInTransit')[0].key, 'TRANSIT_DENT');
 });
 
+test('G0: lúc phát hiện lỗi chỉ nhận 4 mã; khâu chịu trách nhiệm suy từ mã L3', () => {
+  assert.strictEqual(taxonomy.normalizeTiming('early'), 'EARLY');
+  assert.strictEqual(taxonomy.normalizeTiming(' on_arrival '), 'ON_ARRIVAL');
+  assert.strictEqual(taxonomy.normalizeTiming('sau 2 tuần'), null);
+  assert.strictEqual(taxonomy.normalizeTiming(null), null);
+  assert.strictEqual(taxonomy.rootOwnerOf('TRANSIT_DENT'), 'logistics');
+  assert.strictEqual(taxonomy.rootOwnerOf('NO_POWER'), 'manufacturer');
+  assert.strictEqual(taxonomy.rootOwnerOf('GIFT_NOT_DELIVERED'), 'seller');
+  assert.strictEqual(taxonomy.rootOwnerOf('WARRANTY_ACTIVATION'), 'after_sales');
+  assert.strictEqual(taxonomy.rootOwnerOf('KHONG_CO'), null);
+  // Bản 1 có EARLY_FAIL và NOISE_SMELL chồng lên khóa khác: bản 2 bỏ hẳn
+  assert.deepStrictEqual(taxonomy.normalizeRootCauses(['EARLY_FAIL', 'NOISE_SMELL']), []);
+});
+
 test('G0: normalizeRootCauses làm sạch, khử trùng lặp, bỏ NONE/khóa lạ và tôn trọng strictParent', () => {
   assert.deepStrictEqual(
-    taxonomy.normalizeRootCauses(['weak_heat', 'NOISE_SMELL', 'WEAK_HEAT', 'NONE', 'KHONG_TON_TAI', '']),
-    ['WEAK_HEAT', 'NOISE_SMELL']
+    taxonomy.normalizeRootCauses(['weak_heat', 'NOISE', 'WEAK_HEAT', 'NONE', 'KHONG_TON_TAI', '']),
+    ['WEAK_HEAT', 'NOISE']
   );
   assert.deepStrictEqual(
     taxonomy.normalizeRootCauses('WARRANTY_ACTIVATION, Thiếu phiếu bảo hành'),
@@ -4661,7 +4677,8 @@ testAsync('G1: Route /audit/sample?mode=gold + POST /audit/label (5 câu BlueSto
     assert.strictEqual(sample.status, 200);
     assert.strictEqual(sample.body.mode, 'gold');
     assert.strictEqual(sample.body.items.length, 5);
-    assert.strictEqual(sample.body.rootCauses.length, 18);
+    assert.strictEqual(sample.body.rootCauses.length, 19);
+    assert.deepStrictEqual(sample.body.timings.map((t) => t.key), ['ON_ARRIVAL', 'EARLY', 'LATER', 'UNKNOWN']);
 
     const rootsById = {
       bs1: ['MECH_PART', 'CONTROL_FAULT'],
@@ -4670,12 +4687,15 @@ testAsync('G1: Route /audit/sample?mode=gold + POST /audit/label (5 câu BlueSto
       bs4: ['LEAK'],
       bs5: []
     };
+    // bs5 không có L3 nên lúc phát hiện phải bị bỏ (null) dù có gửi
+    const timingById = { bs1: 'EARLY', bs2: 'UNKNOWN', bs3: 'ON_ARRIVAL', bs4: 'later', bs5: 'LATER' };
     for (const it of sample.body.items) {
       const res = await reqJson('POST', '/api/audit/label', {
         feedbackId: it._id,
         sentimentCorrect: true,
         categoryCorrect: true,
         correctRootCauses: rootsById[it._id],
+        correctTiming: timingById[it._id],
         sarcasm: false,
         sampleMode: 'gold',
         by: 'nguoi_gan_thu'
@@ -4692,11 +4712,19 @@ testAsync('G1: Route /audit/sample?mode=gold + POST /audit/label (5 câu BlueSto
       assert.ok(doc.productName && doc.productType, 'thiếu productName/productType');
       assert.deepStrictEqual(doc.correctRootCauses, rootsById[doc.feedbackId]);
     }
+    const timingOf = (id) => store.audit_labels.find((d) => d.feedbackId === id).correctTiming;
+    assert.strictEqual(timingOf('bs1'), 'EARLY');
+    assert.strictEqual(timingOf('bs4'), 'LATER');
+    assert.strictEqual(timingOf('bs5'), null);
 
     const exported = await reqJson('GET', '/api/audit/gold-export?mode=gold');
     assert.strictEqual(exported.status, 200);
     assert.strictEqual(exported.body.rows.length, 5);
     assert.strictEqual(exported.body.manifest.rootCounts.WARRANTY_ACTIVATION, 1);
+    const row1 = exported.body.rows.find((r) => r.feedbackId === 'bs1');
+    assert.strictEqual(row1.failureTiming, 'EARLY');
+    assert.deepStrictEqual(row1.owners, ['manufacturer']);
+    assert.strictEqual(exported.body.rows.find((r) => r.feedbackId === 'bs5').failureTiming, null);
   } finally {
     server.close();
     if (prevWorker === undefined) delete process.env.CONTEXT_WORKER;
@@ -4713,19 +4741,27 @@ test('G3: teacher_io chuẩn hóa L3, giữ cờ trùng 2 lượt và dựng tax
   const teacherIo = require('../scripts/teacher_io');
   const tax = teacherIo.buildTeacherTaxonomy();
   assert.strictEqual(tax.categories.length, 7);
-  assert.strictEqual(tax.rootPacks.gia_dung.length, 18);
+  assert.strictEqual(tax.rootPacks.gia_dung.length, 19);
 
   const ok = teacherIo.parseTeacherRow({
     id: 'f10',
     sentiment: 'Negative',
     issues: [{ category: 'ProductQuality', cause: 'TechnicalDefect' }],
-    root_causes: ['weak_heat', 'NOISE_SMELL', 'INVALID_CODE'],
+    root_causes: ['weak_heat', 'NOISE', 'INVALID_CODE'],
     sarcasm: false,
     agreed: true
   }, 'Qwen/Qwen3-8B');
   assert.strictEqual(ok.category, 'ProductQuality');
   assert.strictEqual(ok.subCategory, 'TechnicalDefect');
-  assert.deepStrictEqual(ok.rootCauses, ['WEAK_HEAT', 'NOISE_SMELL']);
+  assert.deepStrictEqual(ok.rootCauses, ['WEAK_HEAT', 'NOISE']);
+  assert.strictEqual(ok.failureTiming, null, 'thầy không ghi lúc phát hiện thì để null');
+  const timed = teacherIo.parseTeacherRow({
+    id: 'f12', sentiment: 'Negative',
+    issues: [{ category: 'ProductQuality', cause: 'TechnicalDefect' }],
+    root_causes: ['NO_POWER'], failure_timing: 'on_arrival'
+  }, 'Qwen/Qwen3-8B');
+  assert.strictEqual(timed.failureTiming, 'ON_ARRIVAL');
+  assert.deepStrictEqual(teacherIo.buildTeacherTaxonomy().failureTimings.map((t) => t.key), ['ON_ARRIVAL', 'EARLY', 'LATER', 'UNKNOWN']);
   assert.strictEqual(ok.agreed, true);
 
   const dis = teacherIo.parseTeacherRow({
@@ -4898,7 +4934,7 @@ testAsync('G5: analyzeFeedbackBatch giữ câu ViSoBERT tự tin và chỉ gửi
 // ------------------------------------------------------------------
 console.log('\nPLAYBOOK & PHÂN TÍCH L3 (G6)');
 
-test('G6: ROOT_PLAYBOOKS phủ đủ 18 khóa L3, recommender gắn L3 vào dataProfile.facts & steps, chat_engine productFocus liệt kê L3', () => {
+test('G6: ROOT_PLAYBOOKS phủ đủ 19 khóa L3, recommender gắn L3 vào dataProfile.facts & steps, chat_engine productFocus liệt kê L3', () => {
   const pbLib = require('../services/playbook_library');
   const recommender = require('../services/recommender');
   const chatEngine = require('../services/chat_engine');
@@ -4919,7 +4955,7 @@ test('G6: ROOT_PLAYBOOKS phủ đủ 18 khóa L3, recommender gắn L3 vào data
     categoryLabel: 'Chất lượng sản phẩm',
     subCategory: 'TechnicalDefect',
     causeLabel: 'Lỗi kỹ thuật',
-    rootCauses: i < 8 ? ['WEAK_HEAT'] : ['NOISE_SMELL'],
+    rootCauses: i < 8 ? ['WEAK_HEAT'] : ['NOISE'],
     rootCauseLabels: i < 8 ? ['Nóng yếu, nấu lâu, không chín'] : ['Ồn, rung, mùi nhựa, mùi khét'],
     sentiment: 'Negative',
     timestamp: new Date(now.getTime() - (i + 1) * 3600 * 1000).toISOString(),

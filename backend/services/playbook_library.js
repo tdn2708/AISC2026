@@ -987,12 +987,19 @@ const ROOT_PLAYBOOKS = {
     expectedReduction: 0.3,
     template: 'Rà soát chi tiết cơ khí (mâm xoay, khớp nối, phụ kiện chuyển động) trên lô {scope} ({rootCount} phản hồi hỏng cơ khí) và làm việc với hãng về phương án đổi linh kiện.'
   },
-  NOISE_SMELL: {
-    id: 'L3-NOISE-SMELL',
+  NOISE: {
+    id: 'L3-NOISE',
+    kind: 'CONTACT_PARTNER',
+    effortDays: 3,
+    expectedReduction: 0.25,
+    template: 'Gửi hãng {rootCount} phản hồi ồn, rung bất thường của {scope} để kiểm động cơ, quạt và linh kiện lỏng theo lô; đổi máy cho khách có tiếng kêu lạch cạch.'
+  },
+  SMELL: {
+    id: 'L3-SMELL',
     kind: 'INTERNAL_FIX',
     effortDays: 2,
-    expectedReduction: 0.25,
-    template: 'Kiểm tra mùi nhựa hoặc độ ồn bất thường trên mẫu {scope} ({rootCount} phản hồi); bổ sung tờ hướng dẫn chạy khử mùi lần đầu và quy trình kiểm máy trước khi giao.'
+    expectedReduction: 0.3,
+    template: 'Bổ sung hướng dẫn chạy khử mùi lần đầu cho {scope} ({rootCount} phản hồi mùi nhựa, mùi khét) vào hộp và tin nhắn sau giao; mùi khét kéo dài thì đổi máy và báo hãng.'
   },
   LEAK: {
     id: 'L3-LEAK',
@@ -1001,12 +1008,12 @@ const ROOT_PLAYBOOKS = {
     expectedReduction: 0.3,
     template: 'Kiểm tra gioăng nắp, van xả hoặc đầu phun của {scope} ({rootCount} phản hồi rò nước, hơi, nhỏ giọt); gửi hướng dẫn lắp gioăng chuẩn và đổi sản phẩm lỗi cho khách.'
   },
-  EARLY_FAIL: {
-    id: 'L3-EARLY-FAIL',
-    kind: 'CONTACT_PARTNER',
-    effortDays: 3,
-    expectedReduction: 0.35,
-    template: 'Đối chiếu số serial và lô nhập của {scope} ({rootCount} phản hồi hỏng sau thời gian ngắn) để làm việc với hãng về tỉ lệ lỗi sớm và hỗ trợ bảo hành ưu tiên.'
+  OTHER_DEFECT: {
+    id: 'L3-OTHER-DEFECT',
+    kind: 'INVESTIGATE',
+    effortDays: 1,
+    expectedReduction: 0.15,
+    template: 'Nhắn {rootCount} khách chê lỗi {scope} mà chưa nói rõ lỗi gì để hỏi triệu chứng và ảnh; gom lại theo lô trước khi làm việc với hãng.'
   },
   FINISH_DEFECT: {
     id: 'L3-FINISH-DEFECT',
