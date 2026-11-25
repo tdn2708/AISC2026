@@ -12,13 +12,21 @@
  * về: ai nói gì, số sao là bao nhiêu, vì sao chọn nhãn này.
  */
 
+const taxonomy = require('./taxonomy');
 const { analyzeFeedbackBatch, judgeSarcasm } = require('./ai_analyzer');
 const { sarcasmSignals, resolveVotes, ratingVote, hasPraise } = require('./sarcasm');
 
-const toItem = (r) =>
-  typeof r === 'string'
-    ? { text: r, rating: null }
-    : { text: String(r?.text ?? r?.rawText ?? ''), rating: Number.isFinite(Number(r?.rating)) && r?.rating != null ? Number(r.rating) : null };
+const toItem = (r) => {
+  if (typeof r === 'string') return { text: r, rating: null, productName: null, productType: null };
+  const productName = r?.productName || null;
+  const productType = r?.productType || (productName ? taxonomy.productTypeOf(productName) : null);
+  return {
+    text: String(r?.text ?? r?.rawText ?? ''),
+    rating: Number.isFinite(Number(r?.rating)) && r?.rating != null ? Number(r.rating) : null,
+    productName,
+    productType
+  };
+};
 
 /**
  * Gắn kết quả kiểm tra mỉa mai và bỏ phiếu vào một nhãn đã có.
@@ -73,10 +81,12 @@ function applyJudgement(item, primary, judge) {
  * @param {Array<string|{text, rating}>} reviews
  * @returns {Promise<Array>} nhãn cùng thứ tự đầu vào
  */
-async function labelReviews(reviews) {
+async function labelReviews(reviews, deps = {}) {
   const items = (reviews || []).map(toItem);
   if (!items.length) return [];
-  const primary = await analyzeFeedbackBatch(items);
+  const analyzeFn = deps.analyzeFeedbackBatch || analyzeFeedbackBatch;
+  const judgeFn = deps.judgeSarcasm || judgeSarcasm;
+  const primary = await analyzeFn(items);
 
   const flaggedIdx = [];
   items.forEach((it, i) => {
@@ -86,7 +96,7 @@ async function labelReviews(reviews) {
 
   let judges = [];
   if (flaggedIdx.length) {
-    judges = (await judgeSarcasm(flaggedIdx.map((i) => ({ text: items[i].text, rating: items[i].rating, primary: primary[i] })))) || flaggedIdx.map(() => null);
+    judges = (await judgeFn(flaggedIdx.map((i) => ({ text: items[i].text, rating: items[i].rating, primary: primary[i] })))) || flaggedIdx.map(() => null);
   }
   const judgeAt = new Map(flaggedIdx.map((i, k) => [i, judges[k] || null]));
 

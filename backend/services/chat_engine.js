@@ -33,6 +33,7 @@ const { TOOLS } = require('./chat_tools');
 const { llmAvailability } = require('./ai_analyzer');
 const { canonicalize } = require('./normalizer');
 const { spanWords } = require('./cadence');
+const taxonomy = require('./taxonomy');
 
 // ==================================================================
 // BƯỚC 1 — ĐỊNH TUYẾN Ý ĐỊNH
@@ -265,14 +266,21 @@ function productFocus(ctx, question, filters) {
     const list = items.filter((f) => f.productName === name);
     const neg = list.filter(metrics.isComplaint);
     const causes = {};
+    const roots = {};
     for (const f of neg) {
       const k = f.causeLabel || f.categoryLabel;
       if (k && f.category !== 'Other') causes[k] = (causes[k] || 0) + 1;
+      for (const rk of Array.isArray(f.rootCauses) ? f.rootCauses : []) {
+        const lbl = taxonomy.rootCauseLabel(rk);
+        if (lbl) roots[lbl] = (roots[lbl] || 0) + 1;
+      }
     }
     const topCauses = Object.entries(causes).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => `${k} (${n})`);
+    const topRoots = Object.entries(roots).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => `${k} (${n})`);
     facts.push(`${name}: ${list.length} phản hồi được tính, ${neg.length} tiêu cực`
       + (list.length ? ` (${((neg.length / list.length) * 100).toFixed(1).replace('.', ',')}%)` : '')
-      + (topCauses.length ? `; bị chê nhiều nhất: ${topCauses.join(', ')}` : '') + '.');
+      + (topCauses.length ? `; bị chê nhiều nhất: ${topCauses.join(', ')}` : '')
+      + (topRoots.length ? `; lỗi cụ thể cấp 3: ${topRoots.join(', ')}` : '') + '.');
     evidence.push(...neg
       .filter((f) => f.originalText)
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
@@ -609,6 +617,7 @@ module.exports = {
   routeIntent,
   inferFilters,
   productsInQuestion,
+  productFocus,
   gatherBriefing,
   deterministicAnswer,
   suggestedQuestions,

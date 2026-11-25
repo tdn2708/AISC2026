@@ -572,6 +572,49 @@ function buildRecommendation(alert, options = {}) {
     };
   });
 
+  // Nguyên nhân gốc rễ cấp 3 (L3) trong tập bằng chứng: đưa vào dataProfile.facts
+  // ("80% khiếu nại Lỗi kỹ thuật lần này là Nóng yếu, nấu lâu, không chín") và gắn
+  // hành động cụ thể cho L3 trội nhất (mục 3.6 kế hoạch v5).
+  const rootSummary = library.summarizeRoots(evidence);
+  const facts = [...(profile.facts || [])];
+  if (rootSummary.list.length > 0 && evidence.length > 0) {
+    const topRoot = rootSummary.list[0];
+    const causeName = alert.causeLabel || alert.categoryLabel || 'nhóm này';
+    facts.unshift(
+      `${formatPct(topRoot.share, 0)} khiếu nại ${causeName} lần này là ${topRoot.label} (${topRoot.count}/${evidence.length} phản hồi).`
+    );
+    const scopeLabel = slots.product || alert.productName || 'sản phẩm liên quan';
+    const l3Acts = library.rootActionsFor(evidence, { scopeLabel })
+      .filter((a) => a.rootCount >= 2 || a.rootShare >= 0.25)
+      .slice(0, 2);
+    if (l3Acts.length) {
+      const l3Steps = l3Acts.map((a) => {
+        const kind = ACTION_KIND[a.kind] || ACTION_KIND.INVESTIGATE;
+        return {
+          order: 0,
+          actionId: a.id,
+          rootKey: a.rootKey,
+          text: a.text,
+          kind: kind.key,
+          kindLabel: kind.label,
+          incursCost: kind.cost,
+          touchesCustomer: kind.touchesCustomer,
+          requiresApproval: kind.cost || kind.touchesCustomer,
+          approvalRole: kind.cost ? 'Quản lý có thẩm quyền chi' : kind.touchesCustomer ? 'Trưởng bộ phận CSKH' : null,
+          effortDays: a.effortDays ?? 1,
+          reversible: true,
+          isInstrumentation: false,
+          score: steps.length ? Number((steps[0].score + 0.05).toFixed(3)) : 0.65,
+          scoreComponents: { rootCauseSpecific: true, rootShare: Number(a.rootShare.toFixed(2)) },
+          effectCheck: buildEffectCheck(alert, a, now)
+        };
+      });
+      steps.unshift(...l3Steps);
+      steps.splice(SCORE.maxActionsPerAlert);
+      steps.forEach((s, idx) => { s.order = idx + 1; });
+    }
+  }
+
   return {
     alertId: alert.id,
     ruleId: `${source}:${alert.severity === 'High' || alert.severity === 'Critical' ? 'ESCALATED' : 'BASELINE'}`,
@@ -585,7 +628,8 @@ function buildRecommendation(alert, options = {}) {
     dataProfile: {
       concentration: profile.concentration,
       focusedDimensions: profile.focusedDimensions,
-      facts: profile.facts,
+      facts,
+      rootCauses: rootSummary.list.slice(0, 5),
       revenue: profile.revenue,
       slots,
       gaps: profile.gaps

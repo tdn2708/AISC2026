@@ -508,7 +508,7 @@ router.post('/sessions/:id/push-feedback', wrap(async (req, res) => {
   const { invalidate } = require('../services/analysis_context');
   const SOURCE = { tiktok: 'TikTok', youtube: 'YouTube' };
   const names = new Map((s.products || []).map((p) => [p.id, p.name]));
-  const labels = await labelReviews(docs.map((d) => ({ text: d.text, rating: null })));
+  const labels = await labelReviews(docs.map((d) => ({ text: d.text, rating: null, productName: names.get(d.productId) || null })));
   // Mã bình luận live làm khóa chống trùng: tên đã che ("l***") và cùng một câu
   // khiếu nại quen thuộc của nhiều khách khác nhau không bị gộp nhầm làm một
   const raw = docs.map((d) => ({

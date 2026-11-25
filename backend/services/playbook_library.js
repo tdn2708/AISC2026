@@ -952,11 +952,208 @@ const GENERIC_FALLBACK = {
 
 const ACTION_COUNT = Object.values(LIBRARY).reduce((s, pb) => s + pb.actions.length, 0);
 
+// ==================================================================
+// PLAYBOOK HÀNH ĐỘNG THEO NGUYÊN NHÂN GỐC RỄ CẤP 3 (L3 — GÓI GIA DỤNG)
+// Chỉ dùng dữ kiện thật từ dữ liệu (`{scope}`, `{rootCount}`, `{rootShare}`),
+// không bịa số.
+// ==================================================================
+
+const ROOT_PLAYBOOKS = {
+  NO_POWER: {
+    id: 'L3-NO-POWER',
+    kind: 'CONTACT_PARTNER',
+    effortDays: 2,
+    expectedReduction: 0.35,
+    template: 'Tạm kiểm tra nguồn và dây cấp trên lô đang bán của {scope} ({rootCount} phản hồi không lên nguồn); đổi mới ngay cho khách gặp lỗi và gửi biên bản lỗi sang hãng.'
+  },
+  WEAK_HEAT: {
+    id: 'L3-WEAK-HEAT',
+    kind: 'INTERNAL_FIX',
+    effortDays: 2,
+    expectedReduction: 0.3,
+    template: 'Kiểm tra lô và nhiệt độ thực tế của {scope} ({rootCount} phản hồi nóng yếu, nấu lâu); đồng thời gửi khách hướng dẫn chọn chế độ nhiệt phù hợp.'
+  },
+  CONTROL_FAULT: {
+    id: 'L3-CONTROL-FAULT',
+    kind: 'CONTACT_PARTNER',
+    effortDays: 3,
+    expectedReduction: 0.3,
+    template: 'Gom {rootCount} phản hồi lỗi nút bấm, cảm ứng hoặc màn hình của {scope} gửi trung tâm kỹ thuật kiểm tra bo mạch điều khiển theo lô.'
+  },
+  MECH_PART: {
+    id: 'L3-MECH-PART',
+    kind: 'CONTACT_PARTNER',
+    effortDays: 3,
+    expectedReduction: 0.3,
+    template: 'Rà soát chi tiết cơ khí (mâm xoay, khớp nối, phụ kiện chuyển động) trên lô {scope} ({rootCount} phản hồi hỏng cơ khí) và làm việc với hãng về phương án đổi linh kiện.'
+  },
+  NOISE_SMELL: {
+    id: 'L3-NOISE-SMELL',
+    kind: 'INTERNAL_FIX',
+    effortDays: 2,
+    expectedReduction: 0.25,
+    template: 'Kiểm tra mùi nhựa hoặc độ ồn bất thường trên mẫu {scope} ({rootCount} phản hồi); bổ sung tờ hướng dẫn chạy khử mùi lần đầu và quy trình kiểm máy trước khi giao.'
+  },
+  LEAK: {
+    id: 'L3-LEAK',
+    kind: 'CONTACT_PARTNER',
+    effortDays: 2,
+    expectedReduction: 0.3,
+    template: 'Kiểm tra gioăng nắp, van xả hoặc đầu phun của {scope} ({rootCount} phản hồi rò nước, hơi, nhỏ giọt); gửi hướng dẫn lắp gioăng chuẩn và đổi sản phẩm lỗi cho khách.'
+  },
+  EARLY_FAIL: {
+    id: 'L3-EARLY-FAIL',
+    kind: 'CONTACT_PARTNER',
+    effortDays: 3,
+    expectedReduction: 0.35,
+    template: 'Đối chiếu số serial và lô nhập của {scope} ({rootCount} phản hồi hỏng sau thời gian ngắn) để làm việc với hãng về tỉ lệ lỗi sớm và hỗ trợ bảo hành ưu tiên.'
+  },
+  FINISH_DEFECT: {
+    id: 'L3-FINISH-DEFECT',
+    kind: 'INTERNAL_FIX',
+    effortDays: 2,
+    expectedReduction: 0.28,
+    template: 'Bổ sung bước kiểm ngoại quan bề mặt (xước, sơn, chống dính, gỉ) trước khi đóng gói {scope} ({rootCount} phản hồi hoàn thiện kém) và phản hồi nhà cung cấp.'
+  },
+  SIZE_CAPACITY: {
+    id: 'L3-SIZE-CAPACITY',
+    kind: 'INTERNAL_FIX',
+    effortDays: 1,
+    expectedReduction: 0.35,
+    template: 'Cập nhật lại mô tả kích thước lòng dùng thực tế kèm ảnh so sánh trực quan trên trang bán của {scope} ({rootCount} phản hồi dung tích khác mô tả).'
+  },
+  USED_OPENED: {
+    id: 'L3-USED-OPENED',
+    kind: 'INTERNAL_FIX',
+    effortDays: 1,
+    expectedReduction: 0.4,
+    template: 'Rà soát ngay khu vực kho hàng hoàn và quy trình niêm phong của {scope} ({rootCount} phản hồi nghi hàng đã mở) để tách riêng hàng trưng bày hoặc hàng trả.'
+  },
+  USABILITY: {
+    id: 'L3-USABILITY',
+    kind: 'INTERNAL_FIX',
+    effortDays: 1,
+    expectedReduction: 0.25,
+    template: 'Bổ sung video ngắn và bảng gợi ý thao tác, tháo lắp, chỉnh chế độ cho {scope} ({rootCount} phản hồi khó dùng) ngay trên trang sản phẩm và tin nhắn sau mua.'
+  },
+  NO_MANUAL: {
+    id: 'L3-NO-MANUAL',
+    kind: 'INTERNAL_FIX',
+    effortDays: 1,
+    expectedReduction: 0.45,
+    template: 'Chèn thẻ QR hướng dẫn sử dụng và lắp đặt tiếng Việt vào hộp {scope} ({rootCount} phản hồi thiếu sách hướng dẫn) và tự động gửi bản PDF sau khi giao.'
+  },
+  NO_WARRANTY_CARD: {
+    id: 'L3-NO-WARRANTY-CARD',
+    kind: 'INTERNAL_FIX',
+    effortDays: 1,
+    expectedReduction: 0.45,
+    template: 'Chèn QR kích hoạt bảo hành điện tử và phiếu bảo hành vào quy trình kiểm hộp của {scope} ({rootCount} phản hồi thiếu phiếu bảo hành).'
+  },
+  MISSING_PART: {
+    id: 'L3-MISSING-PART',
+    kind: 'INTERNAL_FIX',
+    effortDays: 1,
+    expectedReduction: 0.4,
+    template: 'Áp dụng bảng kiểm đủ phụ kiện theo từng mã trước khi dán niêm phong {scope} ({rootCount} phản hồi thiếu linh kiện, phụ kiện) và gửi bù ngay cho khách báo thiếu.'
+  },
+  WARRANTY_ACTIVATION: {
+    id: 'L3-WARRANTY-ACTIVATION',
+    kind: 'CUSTOMER_CONTACT',
+    effortDays: 1,
+    expectedReduction: 0.45,
+    template: 'Gửi khách hướng dẫn kích hoạt bảo hành điện tử kèm hotline hãng cho {scope} ({rootCount} phản hồi lỗi kích hoạt); đồng thời báo hãng cập nhật dải serial lô hàng lên hệ thống.'
+  },
+  INSTALLATION: {
+    id: 'L3-INSTALLATION',
+    kind: 'CONTACT_PARTNER',
+    effortDays: 2,
+    expectedReduction: 0.35,
+    template: 'Làm việc lại với đội lắp đặt và thống nhất phiếu thông số kỹ thuật chuẩn trước khi hẹn lắp {scope} ({rootCount} phản hồi về lắp đặt, kỹ thuật viên).'
+  },
+  GIFT_NOT_DELIVERED: {
+    id: 'L3-GIFT-NOT-DELIVERED',
+    kind: 'CUSTOMER_CONTACT',
+    effortDays: 1,
+    expectedReduction: 0.45,
+    template: 'Rà soát luồng tách đơn quà tặng khuyến mãi trên sàn cho {scope} ({rootCount} phản hồi chưa nhận quà) và nhắn chủ động cho khách thời điểm giao quà.'
+  },
+  TRANSIT_DENT: {
+    id: 'L3-TRANSIT-DENT',
+    kind: 'INTERNAL_FIX',
+    effortDays: 2,
+    expectedReduction: 0.35,
+    template: 'Đổi chuẩn đóng gói tăng lớp chống sốc góc hoặc rà đơn vị vận chuyển cho nhóm hàng cồng kềnh {scope} ({rootCount} phản hồi móp, vỡ khi vận chuyển).'
+  }
+};
+
+/**
+ * Thống kê L3 trong một tập bằng chứng và sinh hành động cụ thể từ ROOT_PLAYBOOKS.
+ * Chỉ dựa trên dữ kiện thật trong `members`, không bịa số.
+ */
+function summarizeRoots(members) {
+  const taxonomy = require('./taxonomy');
+  const counts = new Map();
+  let withRoot = 0;
+  for (const f of members || []) {
+    const roots = Array.isArray(f.rootCauses) ? f.rootCauses : [];
+    if (roots.length) withRoot += 1;
+    for (const k of roots) {
+      if (!taxonomy.rootCauseInfo(k)) continue;
+      counts.set(k, (counts.get(k) || 0) + 1);
+    }
+  }
+  const total = (members || []).length;
+  const list = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, count]) => {
+      const info = taxonomy.rootCauseInfo(key);
+      return {
+        key,
+        label: info.label,
+        parentCategory: info.parentCategory,
+        parentCause: info.parentCause,
+        count,
+        share: total ? count / total : 0
+      };
+    });
+  return { list, withRoot, total };
+}
+
+function rootActionsFor(members, { scopeLabel } = {}) {
+  const { list } = summarizeRoots(members);
+  const actions = [];
+  for (const item of list.slice(0, 3)) {
+    const pb = ROOT_PLAYBOOKS[item.key];
+    if (!pb) continue;
+    const scope = scopeLabel || 'nhóm sản phẩm liên quan';
+    const text = pb.template
+      .replace(/\{scope\}/g, scope)
+      .replace(/\{rootCount\}/g, Number(item.count).toLocaleString('vi-VN'))
+      .replace(/\{rootShare\}/g, `${Math.round(item.share * 100)}%`);
+    actions.push({
+      id: pb.id,
+      rootKey: item.key,
+      rootLabel: item.label,
+      rootCount: item.count,
+      rootShare: item.share,
+      kind: pb.kind,
+      effortDays: pb.effortDays,
+      expectedReduction: pb.expectedReduction,
+      text
+    });
+  }
+  return actions;
+}
+
 module.exports = {
   LIBRARY,
   CATEGORY_FALLBACK,
   GENERIC_FALLBACK,
   INSTRUMENTATION_ACTIONS,
+  ROOT_PLAYBOOKS,
+  summarizeRoots,
+  rootActionsFor,
   SLOTS,
   ACTION_COUNT
 };

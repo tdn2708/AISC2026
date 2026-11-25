@@ -1,34 +1,16 @@
 """
-HIỆU CHỈNH XÁC SUẤT VÀ NGƯỠNG SAU HUẤN LUYỆN
+HIỆU CHỈNH XÁC SUẤT VÀ NGƯỠNG SAU HUẤN LUYỆN (v5: thêm ngưỡng từng lớp L3 `root`)
 ==================================================================
 Chạy sau train.py, trên CHÍNH tập dev đã dùng để chọn epoch:
 
-  python calibrate.py --checkpoint checkpoints/visobert-absa-v4 --dev data/dev_combined.jsonl
+  python calibrate.py --checkpoint checkpoints/visobert-absa-v5 --dev data/real/dev.jsonl
 
-Hai việc, hai lý do khác nhau:
-
-1. NHIỆT ĐỘ (temperature) cho cảm xúc và rác.
-   Mô hình huấn luyện trên dữ liệu gần như không nhiễu nhãn nên xác suất
-   dồn hết về 1.0 — màn hình demo hiện "100%" cho cả câu nó đoán sai, và
-   người xem có lý khi mất tin. Chia logits cho một hằng số T học trên dev
-   kéo xác suất về mức phản ánh đúng tần suất đúng. T KHÔNG đổi nhãn thắng,
-   nên F1 giữ nguyên; thứ cải thiện là độ tin cậy của con số.
-
-2. NGƯỠNG RIÊNG cho từng danh mục và cho nguyên nhân.
-   Đầu ra đa nhãn dùng chung ngưỡng 0.5 là mặc định tiện, không phải mặc
-   định đúng: lớp hiếm cần ngưỡng thấp hơn mới được gọi tên. Ngưỡng được
-   chọn trên dev để tối đa F1 của chính lớp đó.
-
-Kết quả ghi vào `meta.json` của checkpoint, mục `calibration`. Dịch vụ tự
-đọc và áp dụng; checkpoint chưa hiệu chỉnh vẫn chạy với ngưỡng mặc định.
+Kết quả ghi vào `meta.json` của checkpoint, mục `calibration`.
+Ngưỡng L3 được chặn biên [0.20, 0.75] để tránh overfit ngưỡng trên lớp hiếm của dev.
 """
 
 import sys
 
-# Log in tiếng Việt có dấu. Trên Windows, khi stdout bị chuyển hướng (chạy nền,
-# ghi ra tệp log) Python dùng cp1252 và print đầu tiên ném UnicodeEncodeError —
-# với service.py là sập ngay lúc khởi động. Ép UTF-8 thay vì trông vào
-# PYTHONIOENCODING do script khởi chạy đặt.
 for _stream in (sys.stdout, sys.stderr):
     try:
         _stream.reconfigure(encoding="utf-8", errors="replace")
@@ -37,7 +19,6 @@ for _stream in (sys.stdout, sys.stderr):
 
 import argparse
 import json
-import math
 from pathlib import Path
 
 import torch
@@ -49,15 +30,16 @@ from visobert_model import (
     DEFAULT_CHECKPOINT,
     IGNORE,
     NONE,
-    cause_indexes_by_category,
+    ROOT_THRESHOLD,
     load_checkpoint,
 )
 
 GRID = [round(0.05 * i, 2) for i in range(1, 20)]  # 0.05 .. 0.95
+ROOT_GRID = [round(0.05 * i, 2) for i in range(4, 16)]  # 0.20 .. 0.75
 
 
 def collect_logits(model, tokenizer, rows, max_len, device, batch_size=32):
-    outs = {"sentiment": [], "spam": [], "category": [], "cause": []}
+    outs = {t: [] for t in model.tasks}
     model.eval()
     with torch.inference_mode():
         for i in range(0, len(rows), batch_size):
@@ -70,7 +52,6 @@ def collect_logits(model, tokenizer, rows, max_len, device, batch_size=32):
 
 
 def fit_temperature(logits, targets):
-    """Chọn T tối thiểu hóa NLL trên dev. Chỉ xét các câu CÓ nhãn cho đầu ra này."""
     mask = targets != IGNORE
     if mask.sum() < 10:
         return None, None, None
@@ -104,26 +85,26 @@ def fit_temperature(logits, targets):
     return best_t, before, after
 
 
-def fit_category_thresholds(probs, rows, labels):
-    """Ngưỡng cho từng danh mục: tối đa F1 của chính lớp đó trên dev"""
-    names = labels["category"]
-    none_idx = names.index(NONE)
-    keep = [i for i, r in enumerate(rows) if r["y"]["category"] is not None]
+def fit_per_class_thresholds(probs, rows, labels, task, default_th, grid=GRID, min_positives=2):
+    names = labels[task]
+    none_idx = names.index(NONE) if NONE in names else -1
+    keep = [i for i, r in enumerate(rows) if r["y"].get(task) is not None]
     if not keep:
         return {}, None
 
-    gold = [set(vector_labels(rows[i]["y"]["category"], names)) for i in keep]
+    gold = [set(vector_labels(rows[i]["y"][task], names)) for i in keep]
     out, report = {}, {}
     for j, name in enumerate(names):
         if j == none_idx:
             continue
         col = probs[keep, j]
         y = torch.tensor([1.0 if name in g else 0.0 for g in gold])
-        if y.sum() == 0:
-            out[name] = CATEGORY_THRESHOLD
+        pos = int(y.sum())
+        if pos < min_positives:
+            out[name] = default_th
             continue
-        best_t, best_f1 = CATEGORY_THRESHOLD, -1.0
-        for t in GRID:
+        best_t, best_f1 = default_th, -1.0
+        for t in grid:
             pred = (col >= t).float()
             tp = float((pred * y).sum())
             fp = float((pred * (1 - y)).sum())
@@ -132,22 +113,24 @@ def fit_category_thresholds(probs, rows, labels):
             if f1 > best_f1:
                 best_t, best_f1 = t, f1
         out[name] = best_t
-        report[name] = {"threshold": best_t, "devF1": round(best_f1, 4), "devPositives": int(y.sum())}
+        report[name] = {"threshold": best_t, "devF1": round(best_f1, 4), "devPositives": pos}
     return out, report
 
 
-def fit_cause_threshold(probs, rows, labels):
-    """Một ngưỡng chung cho nguyên nhân: tối đa micro-F1 trên dev"""
-    names = labels["cause"]
-    keep = [i for i, r in enumerate(rows) if r["y"]["cause"] is not None]
+def fit_micro_threshold(probs, rows, labels, task, default_th, grid=GRID):
+    names = labels[task]
+    none_idx = names.index(NONE) if NONE in names else -1
+    keep = [i for i, r in enumerate(rows) if r["y"].get(task) is not None]
     if not keep:
-        return CAUSE_THRESHOLD, None
-    y = torch.zeros(len(keep), len(names))
+        return default_th, None
+    cols = [j for j in range(len(names)) if j != none_idx]
+    y = torch.zeros(len(keep), len(cols))
     for k, i in enumerate(keep):
-        y[k] = torch.tensor(rows[i]["y"]["cause"])
-    sub = probs[keep]
-    best_t, best_f1 = CAUSE_THRESHOLD, -1.0
-    for t in GRID:
+        vec = rows[i]["y"][task]
+        y[k] = torch.tensor([vec[j] for j in cols])
+    sub = probs[keep][:, cols]
+    best_t, best_f1 = default_th, -1.0
+    for t in grid:
         pred = (sub >= t).float()
         tp = float((pred * y).sum())
         fp = float((pred * (1 - y)).sum())
@@ -171,12 +154,11 @@ def main():
     rows, _ = load_split([args.dev], labels)
     print(f"Dev: {len(rows)} câu | checkpoint train lúc {meta.get('trainedAt')}")
 
-    logits = collect_logits(model, tokenizer, rows, int(meta.get("maxLength") or 96), device)
-
+    logits = collect_logits(model, tokenizer, rows, int(meta.get("maxLength") or 128), device)
     calibration = {"fittedOn": str(args.dev), "devSize": len(rows)}
 
-    for task in ("sentiment", "spam"):
-        if not meta["trainedTasks"].get(task):
+    for task in ("sentiment", "spam", "sarcasm"):
+        if not meta["trainedTasks"].get(task) or task not in logits:
             continue
         targets = torch.tensor([r["y"][task] for r in rows])
         t, before, after = fit_temperature(logits[task], targets)
@@ -188,17 +170,26 @@ def main():
               f"độ tự tin TB {before['avgConfidence']:.3f} -> {after['avgConfidence']:.3f}")
 
     cat_probs = torch.sigmoid(logits["category"]) if meta.get("multiLabel") else torch.softmax(logits["category"], dim=1)
-    thresholds, report = fit_category_thresholds(cat_probs, rows, labels)
+    thresholds, report = fit_per_class_thresholds(cat_probs, rows, labels, "category", CATEGORY_THRESHOLD, GRID, min_positives=1)
     if thresholds:
         calibration["categoryThresholds"] = thresholds
         calibration["categoryThresholdReport"] = report
         print("Ngưỡng danh mục: " + ", ".join(f"{k}={v}" for k, v in thresholds.items()))
 
     cause_probs = torch.sigmoid(logits["cause"]) if meta.get("multiLabel") else torch.softmax(logits["cause"], dim=1)
-    cause_t, cause_report = fit_cause_threshold(cause_probs, rows, labels)
+    cause_t, cause_report = fit_micro_threshold(cause_probs, rows, labels, "cause", CAUSE_THRESHOLD, GRID)
     calibration["causeThreshold"] = cause_t
     calibration["causeThresholdReport"] = cause_report
-    print(f"Ngưỡng nguyên nhân: {cause_t} ({cause_report})")
+    print(f"Ngưỡng nguyên nhân L2: {cause_t} ({cause_report})")
+
+    if meta["trainedTasks"].get("root") and "root" in logits and "root" in labels:
+        root_probs = torch.sigmoid(logits["root"])
+        root_t, root_micro = fit_micro_threshold(root_probs, rows, labels, "root", ROOT_THRESHOLD, ROOT_GRID)
+        root_ths, root_rep = fit_per_class_thresholds(root_probs, rows, labels, "root", root_t, ROOT_GRID, min_positives=3)
+        calibration["rootThreshold"] = root_t
+        calibration["rootThresholds"] = root_ths
+        calibration["rootThresholdReport"] = {"micro": root_micro, "perRoot": root_rep}
+        print(f"Ngưỡng L3 chung: {root_t} ({root_micro}) | lớp có riêng: {len(root_rep or {})}")
 
     if args.dry:
         print("(--dry: không ghi meta.json)")

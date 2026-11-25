@@ -418,11 +418,394 @@ function flatTaxonomy() {
   }));
 }
 
+// ==================================================================
+// NGUYÊN NHÂN GỐC RỄ CẤP 3 (L3) THEO GÓI NGÀNH — KHÔNG ĐỔI L1/L2
+// ==================================================================
+
+const DEFAULT_ROOT_PACK = 'gia_dung';
+
+/**
+ * Mỗi khóa L3 gắn cố định vào đúng một L2 cha (`parentCategory`, `parentCause`).
+ * Chia theo gói ngành để sau mở rộng ngành khác (quần áo, công nghệ) không đụng gói cũ.
+ */
+const ROOT_PACKS = {
+  gia_dung: {
+    NO_POWER: {
+      label: 'Không lên nguồn, chết máy',
+      parentCategory: 'ProductQuality',
+      parentCause: 'TechnicalDefect',
+      description: 'Cắm điện không vào điện, không lên đèn báo, máy không khởi động ngay khi nhận hoặc hoàn toàn tắt hẳn.',
+      examples: [
+        'Cắm thử không lên đèn, đổi ổ điện khác cũng im ru.',
+        'Lò vi sóng nhận về cắm nguồn không vào điện, bật không chạy.'
+      ]
+    },
+    WEAK_HEAT: {
+      label: 'Nóng yếu, nấu lâu, không chín',
+      parentCategory: 'ProductQuality',
+      parentCause: 'TechnicalDefect',
+      description: 'Nhiệt không đạt, làm nóng kém, hâm lâu không nóng, nướng không chín đều hoặc hơi ủi yếu.',
+      examples: [
+        'Nhiệt kém, nướng khoai 30 phút chỉ xém vàng bên ngoài.',
+        'Lò vi sóng quay lâu mà thức ăn vẫn nguội, không nóng.'
+      ]
+    },
+    CONTROL_FAULT: {
+      label: 'Nút bấm, cảm ứng, màn hình lỗi',
+      parentCategory: 'ProductQuality',
+      parentCause: 'TechnicalDefect',
+      description: 'Phím bấm cứng/liệt/không nhạy, bảng cảm ứng nhảy loạn, núm vặn kẹt hoặc màn hình LED mất nét/tắt.',
+      examples: [
+        'Phím giảm nhiệt độ bấm rất ít nhạy, phải nhấn mạnh nhiều lần.',
+        'Màn hình hiển thị bị mất số sau vài lần sử dụng.'
+      ]
+    },
+    MECH_PART: {
+      label: 'Bộ phận cơ khí hỏng',
+      parentCategory: 'ProductQuality',
+      parentCause: 'TechnicalDefect',
+      description: 'Bộ phận chuyển động, khớp nối, lưỡi dao, mâm xoay, nắp khóa, công tắc cơ hoặc mối hàn bị hỏng/gãy/kẹt.',
+      examples: [
+        'Lò vi sóng đĩa không quay dù đèn vẫn sáng.',
+        'Que đánh trứng bị gãy mối hàn ngay lần đánh bột đầu tiên.'
+      ]
+    },
+    NOISE_SMELL: {
+      label: 'Ồn, rung, mùi nhựa, mùi khét',
+      parentCategory: 'ProductQuality',
+      parentCause: 'TechnicalDefect',
+      description: 'Máy kêu to bất thường, rung mạnh khi chạy, bốc mùi nhựa/hóa chất nồng kéo dài hoặc có mùi khét điện.',
+      examples: [
+        'Nồi chiên có mùi nhựa rất rõ sau 3 lần dùng vẫn chưa hết.',
+        'Lò chạy kêu to lạch cạch bất thường sau khi nhận.'
+      ]
+    },
+    LEAK: {
+      label: 'Rò nước, hơi, nhỏ giọt',
+      parentCategory: 'ProductQuality',
+      parentCause: 'TechnicalDefect',
+      description: 'Chảy nước ở đáy/khớp, xì hơi qua gioăng nắp, hoặc bàn ủi nhỏ giọt nước ra quần áo thay vì phun hơi.',
+      examples: [
+        'Bàn ủi hơi nước nhỏ giọt liên tục khi phun làm ướt áo.',
+        'Nồi áp suất bị xì hơi quanh nắp khi đang ninh.'
+      ]
+    },
+    EARLY_FAIL: {
+      label: 'Hỏng sau thời gian ngắn',
+      parentCategory: 'ProductQuality',
+      parentCause: 'TechnicalDefect',
+      description: 'Lúc mới nhận vẫn chạy bình thường nhưng nhanh chóng trục trặc hoặc ngừng hẳn chỉ sau vài lần dùng hoặc vài tuần.',
+      examples: [
+        'Mới dùng 1-2 lần màn hình đã hư, bật không điều chỉnh được.',
+        'Mua về chạy ổn được 2 tuần thì máy tự ngắt luôn.'
+      ]
+    },
+    FINISH_DEFECT: {
+      label: 'Hoàn thiện kém: xước, bavia, sơn hoặc chống dính bong, gỉ',
+      parentCategory: 'ProductQuality',
+      parentCause: 'NotAsDescribed',
+      description: 'Lỗi gia công bề mặt: trầy xước, nhựa thừa/bavia, lớp sơn loang, lớp chống dính bong tróc hoặc chi tiết kim loại gỉ sét.',
+      examples: [
+        'Lòng nồi có đốm trắng như phun sơn lỗi, rửa nhẹ đã bong chống dính.',
+        'Vỏ inox có vết xước và gỉ sét ngay khi mở hộp.'
+      ]
+    },
+    SIZE_CAPACITY: {
+      label: 'Dung tích, kích thước khác mô tả',
+      parentCategory: 'ProductQuality',
+      parentCause: 'NotAsDescribed',
+      description: 'Dung tích sử dụng thực tế, kích cỡ lòng nồi/khoang lò nhỏ hơn hoặc khác thông số ghi trên trang bán.',
+      examples: [
+        'Ghi 5,5 lít mà ngăn chiên nhỏ như loại 4 lít, không vừa con gà.',
+        'Nồi ngoài đời bé hơn hẳn kích thước mô tả trên sàn.'
+      ]
+    },
+    USED_OPENED: {
+      label: 'Hàng như đã qua sử dụng, đã mở',
+      parentCategory: 'ProductQuality',
+      parentCause: 'NotAsDescribed',
+      description: 'Dấu hiệu hàng cũ, hàng trưng bày hoặc hàng hoàn: rách niêm phong, xé nilon, có dấu vân tay/vết dầu mỡ/bụi bẩn.',
+      examples: [
+        'Túi nilon bên trong đã bị xé sẵn, có dấu vết như hàng trưng bày.',
+        'Giao hàng đã qua sử dụng, đáy nồi còn vết trầy và bụi.'
+      ]
+    },
+    USABILITY: {
+      label: 'Khó dùng: khay khó mở, tay cầm, chế độ cài sẵn sai',
+      parentCategory: 'ProductQuality',
+      parentCause: 'NotAsDescribed',
+      description: 'Thiết kế gây bất tiện khi thao tác hằng ngày: rổ/khay khó tháo lắp, tay cầm lỏng/nóng, dây quá ngắn hoặc chế độ nấu cài sẵn không hợp lý.',
+      examples: [
+        'Thời gian và nhiệt độ cài sẵn không chuẩn, lần nào cũng phải chỉnh tay.',
+        'Khay chiên rất rít, kéo ra đẩy vào khó khăn.'
+      ]
+    },
+    NO_MANUAL: {
+      label: 'Thiếu sách hướng dẫn, hướng dẫn lắp đặt',
+      parentCategory: 'ProductQuality',
+      parentCause: 'MissingAccessory',
+      description: 'Trong hộp không có sách hướng dẫn sử dụng/lắp đặt, chỉ có tiếng nước ngoài hoặc hướng dẫn quá sơ sài không biết cách đấu nối.',
+      examples: [
+        'Mở hộp không có sách hướng dẫn đấu nguồn cho bếp âm.',
+        'Không có hướng dẫn sử dụng tiếng Việt nên không rõ các chế độ.'
+      ]
+    },
+    NO_WARRANTY_CARD: {
+      label: 'Thiếu phiếu bảo hành',
+      parentCategory: 'ProductQuality',
+      parentCause: 'MissingAccessory',
+      description: 'Không tìm thấy phiếu/sổ bảo hành giấy hoặc tem thông tin bảo hành trong kiện hàng.',
+      examples: [
+        'Kiểm tra cả thùng không thấy phiếu bảo hành đâu.',
+        'Shop giao hàng không kèm phiếu bảo hành chính hãng.'
+      ]
+    },
+    MISSING_PART: {
+      label: 'Thiếu linh kiện, phụ kiện',
+      parentCategory: 'ProductQuality',
+      parentCause: 'MissingAccessory',
+      description: 'Thiếu bộ phận đi kèm theo máy: thiếu nắp, cốc đong, vỉ nướng, que đánh, dây nguồn hoặc chân đế.',
+      examples: [
+        'Bộ máy xay giao thiếu nắp cối nhỏ.',
+        'Nồi cơm không có muỗng và cốc đong gạo kèm theo.'
+      ]
+    },
+    WARRANTY_ACTIVATION: {
+      label: 'Không kích hoạt được bảo hành điện tử',
+      parentCategory: 'CustomerService',
+      parentCause: 'UnresolvedCase',
+      description: 'Quét mã QR/nhập số serial trên cổng bảo hành điện tử báo lỗi, không tìm thấy mã máy hoặc chưa được hãng hỗ trợ kích hoạt.',
+      examples: [
+        'Quét serial trên máy báo không tìm thấy dữ liệu bảo hành điện tử.',
+        'Nhập mã kích hoạt bảo hành online toàn báo lỗi, nhắn shop chưa xử lý.'
+      ]
+    },
+    INSTALLATION: {
+      label: 'Lắp đặt, kỹ thuật viên',
+      parentCategory: 'CustomerService',
+      parentCause: 'WrongInformation',
+      description: 'Vấn đề ở khâu lắp đặt hoặc kỹ thuật viên: hẹn lắp chậm, tư vấn sai quy cách lắp/cắt đá hoặc kỹ thuật viên thiếu chuyên môn.',
+      examples: [
+        'Nhân viên lắp ráp bếp không am hiểu, tư vấn sai kích thước khoét đá.',
+        'Mua máy lọc nước mà bên lắp đặt hẹn tới hẹn lui không qua.'
+      ]
+    },
+    GIFT_NOT_DELIVERED: {
+      label: 'Quà tặng, khuyến mãi không giao',
+      parentCategory: 'PricePromotion',
+      parentCause: 'MisleadingPromo',
+      description: 'Chương trình bán có ghi tặng kèm quà (bình nước, chảo, cốc, túi...) nhưng khi nhận hàng không có quà.',
+      examples: [
+        'Trên gian hàng treo tặng bình nước nhưng nhận nồi không thấy quà đâu.',
+        'Đặt đơn theo combo tặng chảo chống dính mà giao thiếu quà.'
+      ]
+    },
+    TRANSIT_DENT: {
+      label: 'Móp, vỡ do vận chuyển',
+      parentCategory: 'Delivery',
+      parentCause: 'DamagedInTransit',
+      description: 'Thùng bẹp, vỏ máy móp méo, vỡ kính/nhựa do đóng gói sơ sài hoặc va đập trong quá trình giao hàng.',
+      examples: [
+        'Thùng giấy rách, mở ra thân lò vi sóng móp méo tùm lum.',
+        'Đóng gói không có xốp chống sốc làm vỡ nắp kính khi giao tới.'
+      ]
+    }
+  }
+};
+
+function rootPack(pack = DEFAULT_ROOT_PACK) {
+  return ROOT_PACKS[pack] || ROOT_PACKS[DEFAULT_ROOT_PACK];
+}
+
+function rootCauseKeys(pack = DEFAULT_ROOT_PACK) {
+  return Object.keys(rootPack(pack));
+}
+
+function rootCauseInfo(code, pack = DEFAULT_ROOT_PACK) {
+  if (!code) return null;
+  const p = rootPack(pack);
+  const key = String(code).trim().toUpperCase();
+  if (p[key]) return { key, pack, ...p[key] };
+  // Tìm ngược theo nhãn hiển thị (không phân biệt hoa thường)
+  const low = String(code).trim().toLowerCase();
+  const hit = Object.entries(p).find(([, v]) => v.label.toLowerCase() === low);
+  return hit ? { key: hit[0], pack, ...hit[1] } : null;
+}
+
+function rootCauseLabel(code, pack = DEFAULT_ROOT_PACK) {
+  const info = rootCauseInfo(code, pack);
+  return info ? info.label : null;
+}
+
+function rootCausesFor(subCategory, pack = DEFAULT_ROOT_PACK) {
+  const p = rootPack(pack);
+  return Object.entries(p)
+    .filter(([, v]) => !subCategory || v.parentCause === subCategory)
+    .map(([key, v]) => ({
+      key,
+      label: v.label,
+      parentCategory: v.parentCategory,
+      parentCause: v.parentCause,
+      description: v.description
+    }));
+}
+
+/**
+ * Chuẩn hóa danh sách nguyên nhân gốc rễ cấp 3 (L3):
+ *  - Chấp nhận mảng, chuỗi đơn hoặc chuỗi phân cách dấu phẩy;
+ *  - Loại bỏ NONE, giá trị rỗng, khóa lạ, khử trùng lặp theo thứ tự;
+ *  - Tùy chọn lọc theo `subCategory` / `allowedCauses` khi `strictParent: true`;
+ *  - Trả `[]` nếu `nonComplaint: true` hoặc `category === 'Other'`.
+ */
+function normalizeRootCauses(raw, opts = {}) {
+  const {
+    pack = DEFAULT_ROOT_PACK,
+    subCategory = null,
+    allowedCauses = null,
+    strictParent = false,
+    category = null,
+    nonComplaint = false
+  } = opts || {};
+
+  if (nonComplaint || category === 'Other') return [];
+  if (raw == null) return [];
+
+  const list = Array.isArray(raw)
+    ? raw
+    : typeof raw === 'string'
+      ? raw.split(/[,;|]+/)
+      : [];
+
+  const allowedSet = Array.isArray(allowedCauses)
+    ? new Set(allowedCauses.filter(Boolean))
+    : allowedCauses instanceof Set
+      ? allowedCauses
+      : subCategory && strictParent
+        ? new Set([subCategory])
+        : null;
+
+  const seen = new Set();
+  const out = [];
+  for (const item of list) {
+    if (item == null) continue;
+    const rawStr = typeof item === 'object' ? (item.key || item.code || item.rootCause || '') : String(item);
+    const trimmed = rawStr.trim();
+    if (!trimmed || trimmed.toUpperCase() === 'NONE') continue;
+    const info = rootCauseInfo(trimmed, pack);
+    if (!info) continue;
+    if (strictParent && allowedSet && !allowedSet.has(info.parentCause)) continue;
+    if (seen.has(info.key)) continue;
+    seen.add(info.key);
+    out.push(info.key);
+  }
+  return out;
+}
+
+function flatRootPacks() {
+  const out = {};
+  for (const [packName, items] of Object.entries(ROOT_PACKS)) {
+    out[packName] = Object.entries(items).map(([key, v]) => ({
+      key,
+      label: v.label,
+      parentCategory: v.parentCategory,
+      parentCause: v.parentCause,
+      description: v.description
+    }));
+  }
+  return out;
+}
+
+// ==================================================================
+// LOẠI HÀNG GIA DỤNG (`productTypeOf`) — HÀM THUẦN
+// ==================================================================
+
+/**
+ * Từ điển nhận diện loại sản phẩm gia dụng từ tên sản phẩm (dùng làm tiền tố
+ * `[loại hàng]` cho mô hình v5 và chiều gom nhóm phân tích L3).
+ * Thứ tự ưu tiên cụm cụ thể trước cụm chung (ví dụ "nồi chiên không dầu" trước "nồi").
+ */
+const WB_L = '(?<![\\p{L}\\p{N}])';
+const WB_R = '(?![\\p{L}\\p{N}])';
+const viRe = (pattern) => new RegExp(`${WB_L}(?:${pattern})${WB_R}`, 'iu');
+
+const PRODUCT_TYPE_RULES = [
+  ['Nồi chiên không dầu', viRe('nồi\\s+chiên(?:\\s+không\\s+dầu|\\s+hơi\\s+nước|\\s+nướng)?|air\\s*fryer')],
+  ['Lò vi sóng', viRe('lò\\s+vi\\s+sóng|microwave')],
+  ['Lò nướng', viRe('lò\\s+nướng')],
+  ['Máy làm sữa hạt', viRe('máy\\s+(?:làm\\s+|nấu\\s+)?sữa\\s+hạt')],
+  ['Máy xay sinh tố', viRe('máy\\s+xay\\s+sinh\\s+tố|máy\\s+xay\\s+cầm\\s+tay|máy\\s+xay\\s+đa\\s+năng')],
+  ['Máy xay thịt', viRe('máy\\s+xay\\s+thịt|máy\\s+xay\\s+tỏi')],
+  ['Máy xay', viRe('máy\\s+xay')],
+  ['Máy ép chậm', viRe('máy\\s+ép\\s+(?:chậm|trái\\s+cây|hoa\\s+quả|cam)')],
+  ['Bếp từ', viRe('bếp\\s+(?:điện\\s+)?từ')],
+  ['Bếp hồng ngoại', viRe('bếp\\s+hồng\\s+ngoại')],
+  ['Bếp điện', viRe('bếp\\s+(?:điện|nướng|lẩu)')],
+  ['Nồi áp suất', viRe('nồi\\s+áp\\s+suất')],
+  ['Nồi cơm điện', viRe('nồi\\s+cơm(?:\\s+điện(?:\\s+tử)?)?')],
+  ['Nồi lẩu điện', viRe('nồi\\s+lẩu(?:\\s+điện)?|ca\\s+nấu\\s+mì')],
+  ['Nồi nấu chậm', viRe('nồi\\s+(?:nấu|hầm)\\s+chậm|nồi\\s+chưng\\s+yến')],
+  ['Ấm siêu tốc', viRe('(?:ấm|bình)\\s+(?:đun\\s+)?siêu\\s+tốc|ấm\\s+đun\\s+nước')],
+  ['Bình thủy điện', viRe('bình\\s+thủy(?:\\s+điện)?')],
+  ['Bàn ủi hơi nước', viRe('bàn\\s+(?:ủi|là)\\s+hơi\\s+nước')],
+  ['Bàn ủi', viRe('bàn\\s+(?:ủi|là)')],
+  ['Máy sấy tóc', viRe('máy\\s+sấy\\s+tóc')],
+  ['Máy đánh trứng', viRe('máy\\s+đánh\\s+trứng|máy\\s+trộn\\s+bột')],
+  ['Máy pha cà phê', viRe('máy\\s+pha\\s+cà\\s+phê')],
+  ['Máy hút bụi', viRe('máy\\s+hút\\s+bụi|robot\\s+hút\\s+bụi')],
+  ['Máy lọc không khí', viRe('máy\\s+lọc\\s+không\\s+khí')],
+  ['Máy lọc nước', viRe('máy\\s+lọc\\s+nước')],
+  ['Quạt điện', viRe('quạt\\s+(?:đứng|bàn|treo|tháp|hơi\\s+nước|điều\\s+hòa|tích\\s+điện|sạc|điện)')],
+  ['Máy hút mùi', viRe('máy\\s+hút\\s+mùi')],
+  ['Máy rửa chén', viRe('máy\\s+rửa\\s+(?:chén|bát)')],
+  ['Máy vắt cam', viRe('máy\\s+vắt\\s+cam')],
+  ['Máy nướng bánh', viRe('máy\\s+(?:nướng|làm)\\s+bánh')],
+  ['Nồi, chảo', viRe('bộ\\s+nồi|chảo\\s+chống\\s+dính|nồi\\s+inox|chảo\\s+từ')]
+];
+
+/** Tiền tố mã máy BlueStone dự phòng khi tên sản phẩm chỉ ghi mã model */
+const BLUESTONE_CODE_RULES = [
+  ['Nồi chiên không dầu', /\bAFB[-_\s]?\d{3,4}\b/i],
+  ['Lò vi sóng', /\bMOB[-_\s]?\d{3,4}\b/i],
+  ['Lò nướng', /\bEOB[-_\s]?\d{3,4}\b/i],
+  ['Bếp từ', /\bICB[-_\s]?\d{3,4}\b/i],
+  ['Nồi áp suất', /\bPCB[-_\s]?\d{3,4}\b/i],
+  ['Nồi cơm điện', /\bRCB[-_\s]?\d{3,4}\b/i],
+  ['Bàn ủi hơi nước', /\b(?:GSB|SIB)[-_\s]?\d{3,4}\b/i],
+  ['Bàn ủi', /\bDIB[-_\s]?\d{3,4}\b/i],
+  ['Máy sấy tóc', /\bHDB[-_\s]?\d{3,4}\b/i],
+  ['Máy đánh trứng', /\bHMB[-_\s]?\d{3,4}\b/i],
+  ['Ấm siêu tốc', /\bKTB[-_\s]?\d{3,4}\b/i],
+  ['Máy ép chậm', /\bSJB[-_\s]?\d{3,4}\b/i],
+  ['Máy làm sữa hạt', /\bSMB[-_\s]?\d{3,4}\b/i],
+  ['Máy xay sinh tố', /\bBLB[-_\s]?\d{3,4}\b/i]
+];
+
+function productTypeOf(productName) {
+  const s = String(productName || '').normalize('NFC').trim();
+  if (!s) return null;
+  for (const [label, re] of PRODUCT_TYPE_RULES) {
+    if (re.test(s)) return label;
+  }
+  for (const [label, re] of BLUESTONE_CODE_RULES) {
+    if (re.test(s)) return label;
+  }
+  return null;
+}
+
+const APPLIANCE_CAT_RE = /gia\s*dụng|nhà\s*bếp|điện\s*gia\s*dụng|thiết\s*bị\s*bếp|đồ\s*bếp|bluestone/i;
+
+function isApplianceProduct(productName, productCategory) {
+  if (productTypeOf(productName)) return true;
+  return APPLIANCE_CAT_RE.test(String(productCategory || '').normalize('NFC'));
+}
+
 module.exports = {
   TAXONOMY,
   CATEGORY_KEYS,
   CAUSE_COUNT,
   TEST_SURFACE,
+  DEFAULT_ROOT_PACK,
+  ROOT_PACKS,
   normalizeCategory,
   normalizeCause,
   categoryLabel,
@@ -432,5 +815,14 @@ module.exports = {
   classifyByRules,
   isCourierPraise,
   keywordForms,
-  flatTaxonomy
+  flatTaxonomy,
+  rootPack,
+  rootCauseKeys,
+  rootCauseInfo,
+  rootCauseLabel,
+  rootCausesFor,
+  normalizeRootCauses,
+  flatRootPacks,
+  productTypeOf,
+  isApplianceProduct
 };

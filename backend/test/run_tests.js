@@ -4391,6 +4391,566 @@ testAsync('Theo dõi kênh: kênh lên live thì tự mở phiên một lần; �
   }
 });
 
+// ------------------------------------------------------------------
+// G0: Nguyên nhân gốc rễ cấp 3 (L3), loại hàng và chia gold theo sản phẩm
+// ------------------------------------------------------------------
+console.log('\nNGUYÊN NHÂN GỐC RỄ CẤP 3 (G0)');
+
+test('G0: ROOT_PACKS.gia_dung đủ 18 khóa, mỗi khóa gắn đúng một L2 cha hợp lệ và không đổi L1/L2 cũ', () => {
+  assert.strictEqual(taxonomy.CATEGORY_KEYS.length, 7);
+  assert.strictEqual(taxonomy.CAUSE_COUNT, 27);
+  const keys = taxonomy.rootCauseKeys('gia_dung');
+  assert.strictEqual(keys.length, 18, 'gói gia_dung phải có đúng 18 khóa L3');
+  for (const k of keys) {
+    const info = taxonomy.rootCauseInfo(k, 'gia_dung');
+    assert.ok(info && info.label && info.description, `thiếu mô tả cho ${k}`);
+    assert.ok(taxonomy.TAXONOMY[info.parentCategory], `parentCategory sai cho ${k}`);
+    assert.ok(taxonomy.TAXONOMY[info.parentCategory].causes[info.parentCause], `parentCause sai cho ${k}`);
+  }
+  assert.strictEqual(taxonomy.rootCausesFor('TechnicalDefect').length, 7);
+  assert.strictEqual(taxonomy.rootCausesFor('NotAsDescribed').length, 4);
+  assert.strictEqual(taxonomy.rootCausesFor('MissingAccessory').length, 3);
+  assert.strictEqual(taxonomy.rootCausesFor('UnresolvedCase')[0].key, 'WARRANTY_ACTIVATION');
+  assert.strictEqual(taxonomy.rootCausesFor('MisleadingPromo')[0].key, 'GIFT_NOT_DELIVERED');
+  assert.strictEqual(taxonomy.rootCausesFor('DamagedInTransit')[0].key, 'TRANSIT_DENT');
+});
+
+test('G0: normalizeRootCauses làm sạch, khử trùng lặp, bỏ NONE/khóa lạ và tôn trọng strictParent', () => {
+  assert.deepStrictEqual(
+    taxonomy.normalizeRootCauses(['weak_heat', 'NOISE_SMELL', 'WEAK_HEAT', 'NONE', 'KHONG_TON_TAI', '']),
+    ['WEAK_HEAT', 'NOISE_SMELL']
+  );
+  assert.deepStrictEqual(
+    taxonomy.normalizeRootCauses('WARRANTY_ACTIVATION, Thiếu phiếu bảo hành'),
+    ['WARRANTY_ACTIVATION', 'NO_WARRANTY_CARD']
+  );
+  // strictParent lọc đúng theo L2 cha
+  assert.deepStrictEqual(
+    taxonomy.normalizeRootCauses(['WEAK_HEAT', 'TRANSIT_DENT', 'NO_POWER'], { subCategory: 'TechnicalDefect', strictParent: true }),
+    ['WEAK_HEAT', 'NO_POWER']
+  );
+  // Câu không phải khiếu nại luôn ra mảng rỗng
+  assert.deepStrictEqual(taxonomy.normalizeRootCauses(['WEAK_HEAT'], { category: 'Other' }), []);
+  assert.deepStrictEqual(taxonomy.normalizeRootCauses(['WEAK_HEAT'], { nonComplaint: true }), []);
+  assert.deepStrictEqual(taxonomy.normalizeRootCauses(null), []);
+});
+
+test('G0: productTypeOf nhận đúng các dòng sản phẩm BlueStone thật và trả null với hàng ngoài từ điển', () => {
+  assert.strictEqual(taxonomy.productTypeOf('Lò vi sóng điện tử có nướng BlueStone MOB-7815 20 lít'), 'Lò vi sóng');
+  assert.strictEqual(taxonomy.productTypeOf('Nồi chiên không dầu BlueStone AFB-5880 5.5L'), 'Nồi chiên không dầu');
+  assert.strictEqual(taxonomy.productTypeOf('Bàn ủi hơi nước đứng BlueStone GSB-3941'), 'Bàn ủi hơi nước');
+  assert.strictEqual(taxonomy.productTypeOf('Máy làm sữa hạt đa năng BlueStone BLB-6035'), 'Máy làm sữa hạt');
+  assert.strictEqual(taxonomy.productTypeOf('Máy xay sinh tố BlueStone BLB-5339'), 'Máy xay sinh tố');
+  assert.strictEqual(taxonomy.productTypeOf('Bếp từ đơn cảm ứng BlueStone ICB-6619'), 'Bếp từ');
+  assert.strictEqual(taxonomy.productTypeOf('Nồi áp suất điện tử BlueStone PCB-5629'), 'Nồi áp suất');
+  assert.strictEqual(taxonomy.productTypeOf('Nồi cơm điện tử BlueStone RCB-5938'), 'Nồi cơm điện');
+  assert.strictEqual(taxonomy.productTypeOf('Máy sấy tóc BlueStone HDB-1827'), 'Máy sấy tóc');
+  assert.strictEqual(taxonomy.productTypeOf('Máy đánh trứng cầm tay BlueStone HMB-6333S'), 'Máy đánh trứng');
+  assert.strictEqual(taxonomy.productTypeOf('Ấm đun siêu tốc BlueStone KTB-3426'), 'Ấm siêu tốc');
+  // Dự phòng theo mã model BlueStone khi tên ngắn gọn
+  assert.strictEqual(taxonomy.productTypeOf('BlueStone AFB-5880'), 'Nồi chiên không dầu');
+  assert.strictEqual(taxonomy.productTypeOf('BlueStone MOB-7815'), 'Lò vi sóng');
+  // Không thuộc gia dụng -> null (không gắn tiền tố bịa)
+  assert.strictEqual(taxonomy.productTypeOf('Áo thun nam cổ tròn cotton'), null);
+  assert.strictEqual(taxonomy.productTypeOf(''), null);
+});
+
+test('G0: goldSplit chia cố định theo sản phẩm (chống rò rỉ) và không đụng isBlindTest cũ', () => {
+  const s1 = insights.goldSplit('Lò vi sóng BlueStone MOB-7815');
+  const s2 = insights.goldSplit('  lò   vi sóng bluestone mob-7815 ');
+  assert.strictEqual(s1, s2, 'cùng sản phẩm khác hoa thường/khoảng trắng phải rơi cùng một phía');
+  assert.ok(['train', 'dev', 'test'].includes(s1));
+  const counts = { train: 0, dev: 0, test: 0 };
+  for (let i = 0; i < 400; i += 1) counts[insights.goldSplit(`BlueStone SP-${i}`)] += 1;
+  assert.ok(counts.test >= 100 && counts.test <= 190, `tỉ lệ test bất thường: ${counts.test}/400`);
+  assert.ok(counts.dev >= 30 && counts.dev <= 100, `tỉ lệ dev bất thường: ${counts.dev}/400`);
+  // isBlindTest cũ giữ nguyên hoạt động
+  assert.strictEqual(typeof insights.isBlindTest('fb-123'), 'boolean');
+});
+
+test('G0: buildFeedbackDocs và applyHumanLabels lưu/áp rootCauses & productType tương thích ngược dữ liệu cũ', () => {
+  const ingest = require('../services/ingest');
+  const ctxCompute = require('../services/context_compute');
+  const docs = ingest.buildFeedbackDocs(
+    [
+      {
+        source: 'Tiki',
+        rawText: 'Lò vi sóng MOB-7815 đĩa không quay, nút ít nhạy',
+        author: 'Nguyễn Văn An',
+        timestamp: new Date('2026-11-20T00:00:00Z'),
+        productName: 'Lò vi sóng BlueStone MOB-7815',
+        rating: 2
+      },
+      {
+        source: 'Tiki',
+        rawText: 'Nồi chiên dùng tốt lắm',
+        author: 'Trần Thị Bình',
+        timestamp: new Date('2026-11-20T00:00:00Z'),
+        productName: 'Nồi chiên không dầu BlueStone AFB-5880',
+        rating: 5
+      }
+    ],
+    [
+      { category: 'ProductQuality', subCategory: 'TechnicalDefect', rootCauses: ['MECH_PART', 'CONTROL_FAULT', 'BAD_KEY'], sentiment: 'Negative' },
+      { category: 'Other', subCategory: null, rootCauses: ['WEAK_HEAT'], sentiment: 'Positive' }
+    ],
+    { collectedVia: 'test' }
+  );
+  assert.strictEqual(docs[0].productType, 'Lò vi sóng');
+  assert.deepStrictEqual(docs[0].rootCauses, ['MECH_PART', 'CONTROL_FAULT']);
+  assert.strictEqual(docs[1].productType, 'Nồi chiên không dầu');
+  assert.deepStrictEqual(docs[1].rootCauses, [], 'câu không phải khiếu nại phải có rootCauses rỗng');
+
+  // Dữ liệu cũ thiếu rootCauses và productType vẫn chuẩn hóa bình thường
+  const oldDoc = ctxCompute.normalizeLabels({
+    _id: 'old1',
+    originalText: 'quét serial báo không tìm thấy',
+    productName: 'Nồi chiên không dầu BlueStone AFB-5880',
+    category: 'CustomerService',
+    subCategory: 'UnresolvedCase',
+    sentiment: 'Negative',
+    labelledBy: 'llm'
+  });
+  assert.strictEqual(oldDoc.productType, 'Nồi chiên không dầu');
+  assert.deepStrictEqual(oldDoc.rootCauses, []);
+
+  // Nhãn người ghi đè rootCauses và giữ nhãn máy gốc trong machineLabel
+  const items = [oldDoc];
+  const nApplied = ctxCompute.applyHumanLabels(items, [{
+    feedbackId: 'old1',
+    correctCategory: 'CustomerService',
+    correctCause: 'UnresolvedCase',
+    correctRootCauses: ['WARRANTY_ACTIVATION']
+  }]);
+  assert.strictEqual(nApplied, 1);
+  assert.deepStrictEqual(items[0].rootCauses, ['WARRANTY_ACTIVATION']);
+  assert.deepStrictEqual(items[0].rootCauseLabels, ['Không kích hoạt được bảo hành điện tử']);
+  assert.deepStrictEqual(items[0].machineLabel.rootCauses, []);
+  assert.strictEqual(items[0].labelledBy, 'human');
+});
+
+// ------------------------------------------------------------------
+// G1: Công cụ gán gold (mode=gold phân tầng, xuất gold, auditSummary)
+// ------------------------------------------------------------------
+console.log('\nCÔNG CỤ GÁN GOLD (G1)');
+
+test('G1: auditSample(mode=gold) ưu tiên đồ gia dụng, phân tầng theo khiếu nại/L2 và sao, không lệch CI ngẫu nhiên', () => {
+  const mk = (id, name, sent, cat, sub, rating) => ({
+    _id: id,
+    originalText: `Đánh giá thực tế cho ${name} (${id})`,
+    productName: name,
+    sentiment: sent,
+    category: cat,
+    subCategory: sub,
+    rating,
+    trust: { weight: 1 }
+  });
+  const pool = [
+    mk('b1', 'Lò vi sóng BlueStone MOB-7815', 'Negative', 'ProductQuality', 'TechnicalDefect', 1),
+    mk('b2', 'Nồi chiên không dầu BlueStone AFB-5880', 'Negative', 'CustomerService', 'UnresolvedCase', 2),
+    mk('b3', 'Bàn ủi hơi nước BlueStone GSB-3941', 'Negative', 'PricePromotion', 'MisleadingPromo', 2),
+    mk('b4', 'Máy xay sinh tố BlueStone BLB-5339', 'Neutral', 'ProductQuality', 'MissingAccessory', 3),
+    mk('b5', 'Lò vi sóng BlueStone MOB-7815', 'Positive', 'Other', null, 5),
+    mk('b6', 'Nồi chiên không dầu BlueStone AFB-5880', 'Positive', 'Other', null, 5),
+    mk('o1', 'Áo thun nam cotton', 'Negative', 'Delivery', 'LateDelivery', 1),
+    mk('o2', 'Tai nghe bluetooth X1', 'Positive', 'Other', null, 5)
+  ];
+  const { items: picked, remaining } = insights.auditSample(pool, new Set(['b6']), 5, () => 0.1, 'gold');
+  assert.strictEqual(remaining, 5, 'chỉ tính 5 câu gia dụng chưa gán (loại b6 đã gán và o1, o2 ngoài gia dụng)');
+  assert.strictEqual(picked.length, 5);
+  assert.ok(picked.every((f) => taxonomy.isApplianceProduct(f.productName)), 'hàng gold phải ưu tiên sản phẩm gia dụng');
+  assert.ok(picked.some((f) => f.sentiment === 'Positive'), 'lô gold phải giữ cả câu tích cực làm đối chứng');
+
+  // Nhãn mode=gold không được tính vào chỉ số CI ngẫu nhiên (random)
+  const sum = insights.auditSummary([
+    { feedbackId: 'b1', sampleMode: 'gold', sentimentCorrect: true, categoryCorrect: false, correctCategory: 'ProductQuality', correctRootCauses: ['MECH_PART'], productName: 'Lò vi sóng BlueStone MOB-7815', goldSplit: 'test' },
+    { feedbackId: 'r1', sampleMode: 'random', sentimentCorrect: true, categoryCorrect: true, productName: 'SP A' }
+  ]);
+  assert.strictEqual(sum.n, 1, 'CI ngẫu nhiên chỉ đếm nhãn mode=random');
+  assert.strictEqual(sum.gold.total, 1);
+  assert.strictEqual(sum.gold.withRootCauses, 1);
+  assert.strictEqual(sum.gold.bySplit.test, 1);
+});
+
+test('G1: buildGoldExport xuất đủ trường L3, productType, goldSplit và danh sách sản phẩm test', () => {
+  const feedbacks = [
+    { _id: 'f1', originalText: 'đĩa không quay và nút bấm liệt', rating: 1, productName: 'Lò vi sóng BlueStone MOB-7815', source: 'Tiki', sentiment: 'Negative' },
+    { _id: 'f2', originalText: 'dùng ổn lắm', rating: 5, productName: 'Nồi chiên không dầu BlueStone AFB-5880', source: 'Tiki', sentiment: 'Positive' }
+  ];
+  const labels = [
+    { feedbackId: 'f1', correctSentiment: 'Negative', correctCategory: 'ProductQuality', correctCause: 'TechnicalDefect', correctRootCauses: ['MECH_PART', 'CONTROL_FAULT'], sarcasm: false, sampleMode: 'gold', by: 'nguoi1', at: new Date('2026-11-25T00:00:00Z') },
+    { feedbackId: 'f2', correctSentiment: 'Positive', correctCategory: 'Other', correctCause: null, correctRootCauses: ['WEAK_HEAT'], sarcasm: false, sampleMode: 'gold', by: 'nguoi1', at: new Date('2026-11-25T00:00:00Z') }
+  ];
+  const exp = insights.buildGoldExport(feedbacks, labels);
+  assert.strictEqual(exp.rows.length, 2);
+  assert.strictEqual(exp.rows[0].productType, 'Lò vi sóng');
+  assert.deepStrictEqual(exp.rows[0].rootCauses, ['MECH_PART', 'CONTROL_FAULT']);
+  assert.strictEqual(exp.rows[0].labelSource, 'human');
+  assert.deepStrictEqual(exp.rows[1].rootCauses, [], 'nhãn Other không được mang L3');
+  assert.strictEqual(exp.manifest.total, 2);
+  assert.strictEqual(exp.manifest.rootCounts.MECH_PART, 1);
+});
+
+testAsync('G1: Route /audit/sample?mode=gold + POST /audit/label (5 câu BlueStone) lưu đủ trường trong audit_labels và xuất gold', async () => {
+  const express = require('express');
+  const http = require('http');
+  const apiRouter = require('../routes/api');
+  const prevWorker = process.env.CONTEXT_WORKER;
+  process.env.CONTEXT_WORKER = '0';
+
+  const feedbacks = [
+    { _id: 'bs1', source: 'Tiki', originalText: 'Lò vi sóng MOB-7815 đĩa không quay, nút giảm rất ít nhạy', productName: 'Lò vi sóng BlueStone MOB-7815', rating: 1, category: 'ProductQuality', subCategory: 'TechnicalDefect', sentiment: 'Negative', timestamp: new Date('2026-11-20T00:00:00Z'), labelledBy: 'llm' },
+    { _id: 'bs2', source: 'Tiki', originalText: 'Nồi chiên AFB-5880 quét serial không kích hoạt được bảo hành điện tử', productName: 'Nồi chiên không dầu BlueStone AFB-5880', rating: 2, category: 'CustomerService', subCategory: 'UnresolvedCase', sentiment: 'Negative', timestamp: new Date('2026-11-21T00:00:00Z'), labelledBy: 'llm' },
+    { _id: 'bs3', source: 'Tiki', originalText: 'Trang treo tặng bình nước nhưng nhận nồi không có quà', productName: 'Nồi chiên không dầu BlueStone AFB-5880', rating: 2, category: 'PricePromotion', subCategory: 'MisleadingPromo', sentiment: 'Negative', timestamp: new Date('2026-11-22T00:00:00Z'), labelledBy: 'llm' },
+    { _id: 'bs4', source: 'Tiki', originalText: 'Bàn ủi hơi nước GSB-3941 nhỏ giọt nước liên tục khi phun', productName: 'Bàn ủi hơi nước BlueStone GSB-3941', rating: 2, category: 'ProductQuality', subCategory: 'TechnicalDefect', sentiment: 'Negative', timestamp: new Date('2026-11-23T00:00:00Z'), labelledBy: 'llm' },
+    { _id: 'bs5', source: 'Tiki', originalText: 'Nồi chạy êm, nóng nhanh, rất hài lòng', productName: 'Nồi chiên không dầu BlueStone AFB-5880', rating: 5, category: 'Other', subCategory: null, sentiment: 'Positive', timestamp: new Date('2026-11-24T00:00:00Z'), labelledBy: 'llm' }
+  ];
+  const store = { feedbacks, transactions: [], audit_labels: [], review_labels: [], meta: [] };
+  const mkCursor = (arr) => ({
+    sort() { return this; },
+    limit(n) { arr = arr.slice(0, n); return this; },
+    batchSize() { return this; },
+    async next() { return arr[0] || null; },
+    async toArray() { return arr.slice(); }
+  });
+  const mockDb = {
+    databaseName: 'customer_radar_ui_test_g1',
+    collection(name) {
+      store[name] ||= [];
+      return {
+        async estimatedDocumentCount() { return store[name].length; },
+        find() { return mkCursor(store[name]); },
+        async findOne() { return null; },
+        async updateOne(filter, update, opts) {
+          const idx = store[name].findIndex((d) => d.feedbackId === filter.feedbackId);
+          const doc = { ...(idx >= 0 ? store[name][idx] : {}), ...(update.$set || {}) };
+          if (idx >= 0) store[name][idx] = doc;
+          else if (opts?.upsert) store[name].push(doc);
+          return { modifiedCount: idx >= 0 ? 1 : 0, upsertedCount: idx >= 0 ? 0 : 1 };
+        }
+      };
+    }
+  };
+
+  const app = express();
+  app.use(express.json());
+  app.use((req, _res, next) => { req.db = mockDb; req.workspace = 'real'; next(); });
+  app.use('/api', apiRouter);
+
+  const server = await new Promise((resolve) => {
+    const s = http.createServer(app).listen(0, '127.0.0.1', () => resolve(s));
+  });
+  const port = server.address().port;
+  const reqJson = (method, p, body) => new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : null;
+    const r = http.request({
+      hostname: '127.0.0.1', port, path: p, method,
+      headers: data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}
+    }, (res) => {
+      let buf = '';
+      res.on('data', (c) => { buf += c; });
+      res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(buf) }));
+    });
+    r.on('error', reject);
+    if (data) r.write(data);
+    r.end();
+  });
+
+  try {
+    const sample = await reqJson('GET', '/api/audit/sample?n=5&mode=gold');
+    assert.strictEqual(sample.status, 200);
+    assert.strictEqual(sample.body.mode, 'gold');
+    assert.strictEqual(sample.body.items.length, 5);
+    assert.strictEqual(sample.body.rootCauses.length, 18);
+
+    const rootsById = {
+      bs1: ['MECH_PART', 'CONTROL_FAULT'],
+      bs2: ['WARRANTY_ACTIVATION'],
+      bs3: ['GIFT_NOT_DELIVERED'],
+      bs4: ['LEAK'],
+      bs5: []
+    };
+    for (const it of sample.body.items) {
+      const res = await reqJson('POST', '/api/audit/label', {
+        feedbackId: it._id,
+        sentimentCorrect: true,
+        categoryCorrect: true,
+        correctRootCauses: rootsById[it._id],
+        sarcasm: false,
+        sampleMode: 'gold',
+        by: 'nguoi_gan_thu'
+      });
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.body.success, true);
+    }
+
+    assert.strictEqual(store.audit_labels.length, 5, 'phải lưu đủ 5 bản ghi vào audit_labels');
+    for (const doc of store.audit_labels) {
+      assert.strictEqual(doc.sampleMode, 'gold');
+      assert.ok(Array.isArray(doc.correctRootCauses), 'thiếu correctRootCauses');
+      assert.ok(['train', 'dev', 'test'].includes(doc.goldSplit), 'thiếu goldSplit');
+      assert.ok(doc.productName && doc.productType, 'thiếu productName/productType');
+      assert.deepStrictEqual(doc.correctRootCauses, rootsById[doc.feedbackId]);
+    }
+
+    const exported = await reqJson('GET', '/api/audit/gold-export?mode=gold');
+    assert.strictEqual(exported.status, 200);
+    assert.strictEqual(exported.body.rows.length, 5);
+    assert.strictEqual(exported.body.manifest.rootCounts.WARRANTY_ACTIVATION, 1);
+  } finally {
+    server.close();
+    if (prevWorker === undefined) delete process.env.CONTEXT_WORKER;
+    else process.env.CONTEXT_WORKER = prevWorker;
+  }
+});
+
+// ------------------------------------------------------------------
+// G3 & G4: Nhãn thầy L3, tiền tố loại hàng, chống rò rỉ train/test
+// ------------------------------------------------------------------
+console.log('\nNHÃN THẦY L3 & XUẤT DỮ LIỆU V5 (G3/G4)');
+
+test('G3: teacher_io chuẩn hóa L3, giữ cờ trùng 2 lượt và dựng taxonomy có gói gia_dung', () => {
+  const teacherIo = require('../scripts/teacher_io');
+  const tax = teacherIo.buildTeacherTaxonomy();
+  assert.strictEqual(tax.categories.length, 7);
+  assert.strictEqual(tax.rootPacks.gia_dung.length, 18);
+
+  const ok = teacherIo.parseTeacherRow({
+    id: 'f10',
+    sentiment: 'Negative',
+    issues: [{ category: 'ProductQuality', cause: 'TechnicalDefect' }],
+    root_causes: ['weak_heat', 'NOISE_SMELL', 'INVALID_CODE'],
+    sarcasm: false,
+    agreed: true
+  }, 'Qwen/Qwen3-8B');
+  assert.strictEqual(ok.category, 'ProductQuality');
+  assert.strictEqual(ok.subCategory, 'TechnicalDefect');
+  assert.deepStrictEqual(ok.rootCauses, ['WEAK_HEAT', 'NOISE_SMELL']);
+  assert.strictEqual(ok.agreed, true);
+
+  const dis = teacherIo.parseTeacherRow({
+    id: 'f11',
+    sentiment: 'Positive',
+    issues: [],
+    root_causes: ['WEAK_HEAT'],
+    agreed: false
+  });
+  assert.deepStrictEqual(dis.rootCauses, [], 'câu không phải khiếu nại không được giữ L3');
+  assert.strictEqual(dis.agreed, false);
+});
+
+test('G4: prepareInput ghép tiền tố [N sao] [loại hàng] và bỏ tiền tố khi thiếu dữ kiện', () => {
+  const vc = require('../services/visobert_client');
+  assert.strictEqual(
+    vc.prepareInput('đĩa không quay', 'masked', 2, 'Lò vi sóng'),
+    '[2 sao] [Lò vi sóng] đĩa không quay'
+  );
+  assert.strictEqual(
+    vc.prepareInput('đĩa không quay', 'masked', null, 'Lò vi sóng'),
+    '[Lò vi sóng] đĩa không quay'
+  );
+  assert.strictEqual(
+    vc.prepareInput('đĩa không quay', 'masked', 2, null),
+    '[2 sao] đĩa không quay'
+  );
+  assert.strictEqual(vc.prepareInput('đĩa không quay', 'masked'), 'đĩa không quay');
+});
+
+test('G4: buildV5Dataset chống rò rỉ theo sản phẩm & Jaccard>=0.8, đúng trọng số và loại nhãn luật', () => {
+  const { buildV5Dataset } = require('../scripts/export_training_data');
+  // Tìm 1 tên sản phẩm rơi vào test và 1 tên rơi vào train bằng chính goldSplit
+  let testProd = null;
+  let trainProd = null;
+  for (let i = 0; i < 100 && (!testProd || !trainProd); i += 1) {
+    const name = `Nồi chiên không dầu BlueStone AFB-${5000 + i}`;
+    const sp = insights.goldSplit(name);
+    if (sp === 'test' && !testProd) testProd = name;
+    if (sp === 'train' && !trainProd) trainProd = name;
+  }
+  assert.ok(testProd && trainProd);
+
+  const pickNonBlind = (prefix) => {
+    for (let i = 1; i < 100; i += 1) {
+      const id = `${prefix}_${i}`;
+      if (!insights.isBlindTest(id)) return id;
+    }
+    return prefix;
+  };
+  const idTeacherGood = pickNonBlind('t_good');
+  const idClaudeGood = pickNonBlind('c_good');
+
+  const docs = [
+    { _id: 'h_test', originalText: 'Nồi chiên nướng khoai rất lâu không chín, nhiệt yếu quá', rating: 1, productName: testProd, labelledBy: 'claude' },
+    { _id: 't_same_prod', originalText: 'Nồi bị móp vỏ do giao hàng ẩu', rating: 2, productName: testProd, labelledBy: 'llm' },
+    { _id: 't_near_dup', originalText: 'Nồi chiên nướng khoai rất lâu không chín, nhiệt yếu quá trời', rating: 1, productName: trainProd, labelledBy: 'llm' },
+    { _id: 't_disagree', originalText: 'Nút bấm hơi khó nhấn chút', rating: 3, productName: trainProd, labelledBy: 'llm' },
+    { _id: idTeacherGood, originalText: 'Mở hộp không thấy phiếu bảo hành chính hãng đâu', rating: 2, productName: trainProd, labelledBy: 'llm' },
+    { _id: idClaudeGood, originalText: 'Quét mã serial không kích hoạt được bảo hành điện tử', rating: 2, productName: trainProd, sentiment: 'Negative', category: 'CustomerService', subCategory: 'UnresolvedCase', rootCauses: ['WARRANTY_ACTIVATION'], labelledBy: 'claude' },
+    { _id: 'r_rules', originalText: 'Giao hơi chậm chút', rating: 3, productName: trainProd, sentiment: 'Negative', category: 'Delivery', subCategory: 'LateDelivery', labelledBy: 'rules' }
+  ];
+  const human = [
+    { feedbackId: 'h_test', correctSentiment: 'Negative', correctCategory: 'ProductQuality', correctCause: 'TechnicalDefect', correctRootCauses: ['WEAK_HEAT'], sarcasm: false }
+  ];
+  const teacher = [
+    { feedbackId: 't_same_prod', sentiment: 'Negative', category: 'Delivery', subCategory: 'DamagedInTransit', rootCauses: ['TRANSIT_DENT'], agreed: true },
+    { feedbackId: 't_near_dup', sentiment: 'Negative', category: 'ProductQuality', subCategory: 'TechnicalDefect', rootCauses: ['WEAK_HEAT'], agreed: true },
+    { feedbackId: 't_disagree', sentiment: 'Negative', category: 'ProductQuality', subCategory: 'TechnicalDefect', rootCauses: ['CONTROL_FAULT'], agreed: false },
+    { feedbackId: idTeacherGood, sentiment: 'Negative', category: 'ProductQuality', subCategory: 'MissingAccessory', rootCauses: ['NO_WARRANTY_CARD'], agreed: true }
+  ];
+
+  const ds = buildV5Dataset({ docs, human, teacher });
+  assert.strictEqual(ds.test.length, 1);
+  assert.strictEqual(ds.test[0].feedbackId, 'h_test');
+  assert.ok(ds.testProducts.includes(testProd));
+
+  const trainIds = ds.train.map((r) => r.feedbackId);
+  assert.ok(!trainIds.includes('t_same_prod'), 'câu cùng sản phẩm test phải bị loại khỏi train');
+  assert.ok(!trainIds.includes('t_near_dup'), 'câu gần trùng Jaccard >= 0.8 với gold test phải bị loại khỏi train');
+  assert.ok(!trainIds.includes('t_disagree'), 'nhãn thầy bất đồng 2 lượt không được vào train');
+  assert.ok(!trainIds.includes('r_rules'), 'nhãn luật không được vào train');
+  assert.strictEqual(ds.counts.droppedNearDupTest, 1);
+  assert.strictEqual(ds.counts.teacherSkippedDisagreed, 1);
+  assert.strictEqual(ds.counts.rulesSkipped, 1);
+
+  // Kiểm tra trọng số nguồn nhãn (teacher = 0.5, claude = 0.5) và tiền tố đầu vào
+  const tRow = ds.train.find((r) => r.feedbackId === idTeacherGood);
+  const cRow = ds.train.find((r) => r.feedbackId === idClaudeGood);
+  assert.ok(tRow && tRow.weight === 0.5 && tRow.source === 'teacher');
+  assert.ok(cRow && cRow.weight === 0.5 && cRow.source === 'claude');
+  assert.ok(tRow.input.startsWith('[2 sao] [Nồi chiên không dầu] '));
+});
+
+// ------------------------------------------------------------------
+// G5: Dịch vụ suy luận tắt mặc định & thứ tự ViSoBERT trước, LLM sau
+// ------------------------------------------------------------------
+console.log('\nTHỨ TỰ GÁN NHÃN VISOBERT TRƯỚC LLM SAU (G5)');
+
+test('G5: Dịch vụ ViSoBERT tắt mặc định khi chưa đặt VISOBERT_URL, và nhận VISOBERT_KEY', () => {
+  const vc = require('../services/visobert_client');
+  const prevUrl = process.env.VISOBERT_URL;
+  const prevKey = process.env.VISOBERT_KEY;
+  try {
+    delete process.env.VISOBERT_URL;
+    assert.strictEqual(vc.config().enabled, false, 'chưa đặt VISOBERT_URL thì dịch vụ phải tắt mặc định');
+    process.env.VISOBERT_URL = 'https://example.hf.space';
+    process.env.VISOBERT_KEY = 'secret-test-key';
+    const cfg = vc.config();
+    assert.strictEqual(cfg.enabled, true);
+    assert.strictEqual(cfg.apiKey, 'secret-test-key');
+  } finally {
+    if (prevUrl === undefined) delete process.env.VISOBERT_URL; else process.env.VISOBERT_URL = prevUrl;
+    if (prevKey === undefined) delete process.env.VISOBERT_KEY; else process.env.VISOBERT_KEY = prevKey;
+    vc.invalidateStatus();
+  }
+});
+
+testAsync('G5: analyzeFeedbackBatch giữ câu ViSoBERT tự tin và chỉ gửi câu chưa chắc sang LLM', async () => {
+  const vc = require('../services/visobert_client');
+  const ai = require('../services/ai_analyzer');
+  const items = [
+    { text: 'Lò vi sóng đĩa không quay', rating: 1, productName: 'Lò vi sóng BlueStone MOB-7815' },
+    { text: 'Nồi dùng rất tốt, ưng ý', rating: 5, productName: 'Nồi chiên không dầu BlueStone AFB-5880' },
+    { text: 'Cảm giác hơi lạ nhưng chưa rõ lỗi gì', rating: 3, productName: 'Nồi chiên không dầu BlueStone AFB-5880' }
+  ];
+  const mockPreds = [
+    vc.toAnalysis({
+      sentiment: 'Negative', sentimentConfidence: 0.95,
+      category: 'ProductQuality', categoryConfidence: 0.94,
+      cause: 'TechnicalDefect', causeConfidence: 0.91, causeUncertain: false,
+      rootCauseKeys: ['MECH_PART'], rootConfidence: 0.88, rootCauses: [{ root: 'MECH_PART', p: 0.88 }]
+    }),
+    vc.toAnalysis({
+      sentiment: 'Positive', sentimentConfidence: 0.98,
+      category: null, categoryConfidence: 0.96, noneProbability: 0.96,
+      cause: null, causeConfidence: null,
+      rootCauseKeys: [], rootConfidence: null, rootCauses: []
+    }),
+    vc.toAnalysis({
+      sentiment: 'Negative', sentimentConfidence: 0.58,
+      category: 'ProductQuality', categoryConfidence: 0.54,
+      cause: 'TechnicalDefect', causeConfidence: 0.38, causeUncertain: true,
+      rootCauseKeys: [], rootConfidence: null, rootCauses: []
+    })
+  ];
+  const llmSent = [];
+  const res = await ai.analyzeFeedbackBatch(items, {
+    hasLlm: true,
+    predictAnalysis: async () => mockPreds,
+    analyzeChunkWithLLM: async (chunk) => {
+      llmSent.push(...chunk);
+      return chunk.map(() => ({
+        category: 'ProductQuality', subCategory: 'NotAsDescribed', rootCauses: ['USABILITY'],
+        sentiment: 'Neutral', aspects: [], entities: {}, aiSummary: 'Khó dùng', labelledBy: 'llm'
+      }));
+    }
+  });
+  assert.strictEqual(llmSent.length, 1, 'chỉ được gửi duy nhất 1 câu chưa chắc sang LLM (giảm 67% lượt gọi)');
+  assert.strictEqual(res[0].labelledBy, 'visobert');
+  assert.deepStrictEqual(res[0].rootCauses, ['MECH_PART']);
+  assert.strictEqual(res[1].labelledBy, 'visobert');
+  assert.strictEqual(res[1].category, 'Other');
+  assert.strictEqual(res[2].labelledBy, 'llm');
+  assert.deepStrictEqual(res[2].rootCauses, ['USABILITY']);
+});
+
+// ------------------------------------------------------------------
+// G6: Playbook L3, dataProfile.facts, case_file, chat_engine và /root-causes
+// ------------------------------------------------------------------
+console.log('\nPLAYBOOK & PHÂN TÍCH L3 (G6)');
+
+test('G6: ROOT_PLAYBOOKS phủ đủ 18 khóa L3, recommender gắn L3 vào dataProfile.facts & steps, chat_engine productFocus liệt kê L3', () => {
+  const pbLib = require('../services/playbook_library');
+  const recommender = require('../services/recommender');
+  const chatEngine = require('../services/chat_engine');
+
+  const keys = taxonomy.rootCauseKeys('gia_dung');
+  for (const k of keys) {
+    assert.ok(pbLib.ROOT_PLAYBOOKS[k], `thiếu playbook L3 cho ${k}`);
+  }
+
+  const now = new Date('2026-11-25T00:00:00Z');
+  const items = Array.from({ length: 10 }, (_, i) => ({
+    _id: `bs_l3_${i}`,
+    source: 'Tiki',
+    originalText: i < 8 ? 'Nồi chiên AFB-5880 nóng yếu, nướng lâu không chín' : 'Nồi chiên bị tiếng kêu to',
+    productName: 'Nồi chiên không dầu BlueStone AFB-5880',
+    productType: 'Nồi chiên không dầu',
+    category: 'ProductQuality',
+    categoryLabel: 'Chất lượng sản phẩm',
+    subCategory: 'TechnicalDefect',
+    causeLabel: 'Lỗi kỹ thuật',
+    rootCauses: i < 8 ? ['WEAK_HEAT'] : ['NOISE_SMELL'],
+    rootCauseLabels: i < 8 ? ['Nóng yếu, nấu lâu, không chín'] : ['Ồn, rung, mùi nhựa, mùi khét'],
+    sentiment: 'Negative',
+    timestamp: new Date(now.getTime() - (i + 1) * 3600 * 1000).toISOString(),
+    trust: { weight: 1, tier: 'P1' }
+  }));
+
+  const alert = {
+    id: 'ProductQuality|TechnicalDefect|Nồi chiên không dầu BlueStone AFB-5880|*|2026-11-25',
+    category: 'ProductQuality',
+    categoryLabel: 'Chất lượng sản phẩm',
+    cause: 'TechnicalDefect',
+    causeLabel: 'Lỗi kỹ thuật',
+    productName: 'Nồi chiên không dầu BlueStone AFB-5880',
+    severity: 'High',
+    severityScore: 0.72,
+    owner: 'Sản phẩm / QC',
+    affectedCustomers: 10,
+    windowDays: 7,
+    baselineDays: 28,
+    statistics: { currentRate: 0.25, baselineRate: 0.05, deltaPP: 20 }
+  };
+
+  const rec = recommender.buildRecommendation(alert, { items, now });
+  assert.ok(rec.dataProfile.facts.some((f) => f.includes('80%') && f.includes('Nóng yếu')), 'dataProfile.facts phải có câu tỉ lệ L3 trội nhất');
+  assert.ok(rec.steps.some((s) => s.actionId === 'L3-WEAK-HEAT'), 'steps phải có hành động cụ thể cho WEAK_HEAT');
+
+  // Trợ lý productFocus liệt kê cả L2 lẫn L3
+  const focus = chatEngine.productFocus({ items, asOf: now.toISOString() }, 'Nồi chiên AFB-5880 bị lỗi gì?');
+  assert.ok(focus && focus.section.facts.some((f) => f.includes('Nóng yếu')), 'productFocus phải liệt kê L3');
+});
+
 (async () => {
   for (const t of asyncTests) {
     try {

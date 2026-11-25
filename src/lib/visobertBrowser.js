@@ -16,9 +16,9 @@
 const MODEL_BASE = (import.meta.env?.VITE_VISOBERT_MODEL_URL ||
   'https://huggingface.co/tdn278/customer-radar-visobert-onnx/resolve/main').replace(/\/+$/, '');
 const CACHE_NAME = 'cr-visobert-v1';
-// Đầu ra có thể có; mỗi checkpoint chỉ có một phần (bản cũ không có "sarcasm").
+// Đầu ra có thể có; mỗi checkpoint chỉ có một phần (bản cũ không có "sarcasm"/"root").
 // Đầu ra thật đọc từ outputNames của phiên ONNX — xem eng.tasks.
-const TASKS = ['sentiment', 'category', 'cause', 'spam', 'sarcasm'];
+const TASKS = ['sentiment', 'category', 'cause', 'spam', 'sarcasm', 'root'];
 const NONE = 'NONE';
 const PAD_ID = 1;
 const OCCLUSION_MAX_WORDS = 60;
@@ -213,16 +213,38 @@ function causeGroups(labels) {
   return groups;
 }
 
-/** Bản JavaScript của visobert_model.decode cho MỘT câu */
-function decodeOne(eng, lg) {
+function rootParentMap(labels) {
+  const raw = labels.rootParents || {};
+  const out = {};
+  for (const [k, val] of Object.entries(raw)) {
+    if (typeof val === 'string' && val.includes('.')) {
+      const idx = val.indexOf('.');
+      out[k] = [val.slice(0, idx), val.slice(idx + 1)];
+    }
+  }
+  return out;
+}
+
+/** Bản JavaScript của visobert_model.decode cho MỘT câu (khớp 100% với Python decode và service /explain) */
+export function decodeOne(eng, lg) {
   const { labels, trainedTasks: trained, multiLabel } = eng.meta;
   const cal = eng.meta.calibration || {};
   const catThresholds = cal.categoryThresholds || {};
   const catThreshold = eng.meta.thresholds?.category ?? 0.5;
   const causeThreshold = cal.causeThreshold ?? eng.meta.thresholds?.cause ?? 0.3;
+  const rootThresholds = cal.rootThresholds || {};
+  const rootThreshold = cal.rootThreshold ?? eng.meta.thresholds?.root ?? 0.4;
   const groups = causeGroups(labels);
+  const rParents = rootParentMap(labels);
   const noneIdx = labels.category.indexOf(NONE);
   const r = {};
+
+  const catRow = trained.category ? (multiLabel ? lg.category.map(sigmoid) : softmax(lg.category)) : null;
+  const causeP = trained.category && lg.cause ? (multiLabel ? lg.cause.map(sigmoid) : softmax(lg.cause)) : null;
+  const causeIdxMap = {};
+  if (Array.isArray(labels.cause)) {
+    labels.cause.forEach((key, idx) => { causeIdxMap[key] = idx; });
+  }
 
   if (trained.sentiment) {
     const p = softmax(lg.sentiment, cal.sentimentTemperature || 1);
@@ -232,10 +254,9 @@ function decodeOne(eng, lg) {
   }
 
   if (trained.category) {
-    const row = multiLabel ? lg.category.map(sigmoid) : softmax(lg.category);
-    const causeP = multiLabel ? lg.cause.map(sigmoid) : softmax(lg.cause);
+    const row = catRow;
     const bestCause = (cat) => {
-      if (!trained.cause || !groups[cat]) return { cause: null, p: null, uncertain: false };
+      if (!trained.cause || !groups[cat]) return { cause: null, p: null, uncertain: false, causes: [] };
       const idxs = groups[cat];
       let sub = idxs.map((i) => causeP[i]);
       if (!multiLabel) { const s = Math.max(sub.reduce((a, b) => a + b, 0), 1e-9); sub = sub.map((v) => v / s); }
@@ -278,6 +299,79 @@ function decodeOne(eng, lg) {
     }
   }
 
+  // Giải mã phân cấp L3 (`root`): khớp 100% với visobert_model.py::decode
+  if (trained.root && lg.root && Array.isArray(labels.root)) {
+    const rRow = lg.root.map(sigmoid);
+    const rawRoots = [];
+    labels.root.forEach((rk, j) => {
+      if (rk === NONE) return;
+      const pVal = rRow[j];
+      const th = rootThresholds[rk] ?? rootThreshold;
+      if (pVal >= th) {
+        const [pCat, pCz] = rParents[rk] || [null, null];
+        rawRoots.push([rk, pVal, pCat, pCz, j]);
+      }
+    });
+    rawRoots.sort((a, b) => (b[1] - a[1]) || (a[4] - b[4]));
+
+    const activeL2 = new Set();
+    for (const entry of r.categories || []) {
+      const ec = entry.category;
+      if (!ec) continue;
+      if (entry.cause) activeL2.add(`${ec}.${entry.cause}`);
+      for (const sub of entry.causes || []) {
+        if (sub.cause) activeL2.add(`${ec}.${sub.cause}`);
+      }
+    }
+    if (trained.cause && causeP) {
+      for (const [ckey, cidx] of Object.entries(causeIdxMap)) {
+        if (ckey !== NONE && causeP[cidx] >= causeThreshold) activeL2.add(ckey);
+      }
+    }
+
+    if (!activeL2.size && rawRoots.length) {
+      const [, topP, topCat, topCz] = rawRoots[0];
+      if (topCat && topCz) {
+        const parentKey = `${topCat}.${topCz}`;
+        activeL2.add(parentKey);
+        const catIdx = labels.category.indexOf(topCat);
+        const czIdx = causeIdxMap[parentKey] ?? -1;
+        const catProb = catIdx >= 0 && catRow ? r4(catRow[catIdx]) : r4(topP);
+        const czProb = czIdx >= 0 && causeP ? r4(causeP[czIdx]) : r4(topP);
+        r.category = topCat;
+        r.categoryConfidence = catProb;
+        r.cause = topCz;
+        r.causeConfidence = czProb;
+        r.causeUncertain = false;
+        r.categories = [{
+          category: topCat,
+          p: catProb,
+          cause: topCz,
+          causeConfidence: czProb,
+          causeUncertain: false,
+          causes: [{ cause: topCz, p: czProb }]
+        }];
+        r.pulledByRoot = true;
+      }
+    }
+
+    const hasParentMap = Object.keys(rParents).length > 0;
+    const keptRoots = [];
+    for (const [rk, pVal, pCat, pCz] of rawRoots) {
+      if (!hasParentMap || (pCat && pCz && activeL2.has(`${pCat}.${pCz}`))) {
+        keptRoots.push({
+          root: rk,
+          p: r4(pVal),
+          parentCategory: pCat,
+          parentCause: pCz
+        });
+      }
+    }
+    r.rootCauses = keptRoots;
+    r.rootCauseKeys = keptRoots.map((x) => x.root);
+    r.rootConfidence = keptRoots.length ? keptRoots[0].p : null;
+  }
+
   if (trained.spam) {
     const p = softmax(lg.spam, cal.spamTemperature || 1);
     r.spamProbability = r4(p[labels.spam.indexOf('spam')]);
@@ -310,7 +404,7 @@ export async function browserExplain(text) {
 
   const lg = pick(await logits(eng, [text]), 0);
   const toProbs = (task, row) =>
-    multiLabel && (task === 'category' || task === 'cause') ? row.map(sigmoid) : softmax(row, cal[`${task}Temperature`] || 1);
+    task === 'root' || (multiLabel && (task === 'category' || task === 'cause')) ? row.map(sigmoid) : softmax(row, cal[`${task}Temperature`] || 1);
   const probs = Object.fromEntries(Object.keys(lg).map((t) => [t, toProbs(t, lg[t])]));
   const prediction = decodeOne(eng, lg);
   const t2 = performance.now();
@@ -330,6 +424,9 @@ export async function browserExplain(text) {
         .sort((a, b) => b.p - a.p)
         .slice(0, 5);
     }
+  }
+  if (trained.root && probs.root) {
+    distributions.root = dist('root').filter((x) => x.label !== NONE).slice(0, 6);
   }
   if (trained.spam) distributions.spam = r4(probs.spam[labels.spam.indexOf('spam')]);
 

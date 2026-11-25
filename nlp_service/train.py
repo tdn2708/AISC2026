@@ -60,6 +60,7 @@ from visobert_model import (
     HERE,
     IGNORE,
     NONE,
+    ROOT_THRESHOLD,
     TASKS,
     ViSoBertMultiTask,
     decode,
@@ -90,18 +91,27 @@ def text_key(text):
     return re.sub(r"\s+", " ", str(text or "").lower()).strip()
 
 
+def token_set(text):
+    return set(re.findall(r"[^\W_]+", str(text or "").lower(), flags=re.UNICODE))
+
+
+def jaccard_sim(a, b):
+    if not a or not b:
+        return 0.0
+    inter = len(a & b)
+    union = len(a) + len(b) - inter
+    return inter / union if union else 0.0
+
+
 def encode_row(row, labels, where):
     """
     Nhãn dạng chữ -> số.
 
-    Cảm xúc và rác là MỘT nhãn: lưu chỉ số, thiếu thì IGNORE.
-    Danh mục và nguyên nhân là ĐA NHÃN: lưu vector 0/1, thiếu thì None. Một
-    phản hồi thật thường nêu nhiều vấn đề ("giao chậm, nhắn shop không ai
-    trả lời"), nên ép về một nhãn là bóp méo bài toán ngay từ dữ liệu.
-
-    Nhận cả `category`/`cause` (một nhãn) lẫn `categories`/`causes` (nhiều nhãn).
+    Cảm xúc, rác và mỉa mai là MỘT nhãn: lưu chỉ số, thiếu thì IGNORE.
+    Danh mục (L1), nguyên nhân (L2) và nguyên nhân gốc rễ (L3 `root`) là ĐA NHÃN:
+    lưu vector 0/1, thiếu thì None.
     """
-    y = {"sentiment": IGNORE, "spam": IGNORE, "sarcasm": IGNORE, "category": None, "cause": None}
+    y = {"sentiment": IGNORE, "spam": IGNORE, "sarcasm": IGNORE, "category": None, "cause": None, "root": None}
 
     if "sentiment" in row and row["sentiment"] is not None:
         if row["sentiment"] not in labels["sentiment"]:
@@ -114,6 +124,24 @@ def encode_row(row, labels, where):
     # Mỉa mai (bản v4): chỉ câu có nhãn mỉa mai rõ ràng mới đóng góp vào đầu ra này
     if "sarcasm" in row and row["sarcasm"] is not None and "sarcasm" in labels:
         y["sarcasm"] = labels["sarcasm"].index("sarcastic" if row["sarcasm"] in (True, 1, "sarcastic") else "literal")
+
+    # Nguyên nhân gốc rễ cấp 3 (bản v5): `roots` hoặc `rootCauses`
+    raw_roots = None
+    if "roots" in row and row["roots"] is not None:
+        raw_roots = list(row["roots"])
+    elif "rootCauses" in row and row["rootCauses"] is not None:
+        raw_roots = list(row["rootCauses"])
+    if raw_roots is not None and "root" in labels:
+        rvec = [0.0] * len(labels["root"])
+        valid_roots = [rk for rk in raw_roots if rk and rk != NONE]
+        if not valid_roots:
+            rvec[labels["root"].index(NONE)] = 1.0
+        else:
+            for rk in valid_roots:
+                if rk not in labels["root"]:
+                    raise ValueError(f"{where}: root '{rk}' không có trong labels['root']")
+                rvec[labels["root"].index(rk)] = 1.0
+        y["root"] = rvec
 
     cats = None
     if "categories" in row:
@@ -172,12 +200,18 @@ def load_split(paths, labels, input_mode=None):
                 input_mode = mode
             elif mode != input_mode:
                 sys.exit(f"{p}:{i} inputMode '{mode}' khác '{input_mode}' — không trộn hai kiểu tiền xử lý")
-            # Trọng số mẫu: nhãn người = 1, nhãn mô hình thầy (Qwen) thấp hơn — chỗ
-            # hai nguồn nói khác nhau thì nhãn người thắng
             w = float(row.get("weight", 1.0) or 1.0)
-            rows.append({"text": row.get("text", row["input"]), "input": row["input"], "w": w,
-                         "rating": bool(row.get("inputRating")),
-                         "y": encode_row(row, labels, f"{p}:{i}")})
+            rows.append({
+                "text": row.get("text", row["input"]),
+                "input": row["input"],
+                "productName": row.get("productName") or "",
+                "productType": row.get("productType"),
+                "source": row.get("source"),
+                "w": w,
+                "rating": bool(row.get("inputRating")),
+                "hasProductType": bool(row.get("inputProductType")),
+                "y": encode_row(row, labels, f"{p}:{i}"),
+            })
     return rows, input_mode
 
 
@@ -209,7 +243,9 @@ def batches(rows, tokenizer, batch_size, max_len, shuffle, rng=None, labels=None
             "sarcasm": torch.tensor([r["y"]["sarcasm"] for r in batch]),
             "weight": torch.tensor([r.get("w", 1.0) for r in batch], dtype=torch.float)
         }
-        for task in ("category", "cause"):
+        for task in ("category", "cause", "root"):
+            if task not in labels:
+                continue
             size = len(labels[task])
             out[task] = torch.tensor([r["y"][task] or [0.0] * size for r in batch], dtype=torch.float)
             # mask = câu này CÓ nhãn cho đầu ra đó (UIT-ViSFD chỉ có nhãn cảm xúc)
@@ -226,14 +262,14 @@ def vector_labels(vec, names):
     return [names[i] for i, v in enumerate(vec) if v >= 0.5]
 
 
-def evaluate(model, rows, tokenizer, labels, trained, device, max_len):
+def evaluate(model, rows, tokenizer, labels, trained, device, max_len, calibration=None):
     if not rows:
         return {}
     model.eval()
     preds = []
     for enc in batches(rows, tokenizer, 32, max_len, shuffle=False, labels=labels):
         logits = model(enc["input_ids"].to(device), enc["attention_mask"].to(device))
-        preds.extend(decode({k: v.cpu() for k, v in logits.items()}, labels, trained, multi_label=True))
+        preds.extend(decode({k: v.cpu() for k, v in logits.items()}, labels, trained, multi_label=True, calibration=calibration))
 
     report = {}
     # Mỉa mai đo F1 của lớp "sarcastic" (lớp hiếm, thứ ta thật sự cần bắt)
@@ -295,6 +331,46 @@ def evaluate(model, rows, tokenizer, labels, trained, device, max_len):
         if gold:
             report["cause"] = {"macroF1": round(float(f1_score(gold, pred, average="macro", zero_division=0)), 4),
                                "n": len(gold)}
+
+    # Nguyên nhân gốc rễ cấp 3 (v5): macro-F1 trên các lớp L3 có mặt, micro-F1, và tỉ lệ hành động được
+    if trained.get("root") and "root" in labels:
+        root_keys = [k for k in labels["root"] if k != NONE]
+        g_rows, p_rows = [], []
+        complaints_total, complaints_actionable = 0, 0
+        for r, p in zip(rows, preds):
+            vec = r["y"]["root"]
+            if vec is None:
+                continue
+            g_set = {x for x in vector_labels(vec, labels["root"]) if x != NONE}
+            p_set = set(p.get("rootCauseKeys") or [])
+            g_rows.append([1 if k in g_set else 0 for k in root_keys])
+            p_rows.append([1 if k in p_set else 0 for k in root_keys])
+            cat_vec = r["y"]["category"]
+            is_comp = bool(cat_vec is not None and any(x != NONE for x in vector_labels(cat_vec, labels["category"])))
+            if is_comp:
+                complaints_total += 1
+                if p_set:
+                    complaints_actionable += 1
+        if g_rows:
+            g_arr = np.asarray(g_rows, dtype=int)
+            p_arr = np.asarray(p_rows, dtype=int)
+            present = [j for j in range(len(root_keys)) if g_arr[:, j].sum() > 0]
+            per_root = {}
+            for j in present:
+                per_root[root_keys[j]] = {
+                    "f1": round(float(f1_score(g_arr[:, j], p_arr[:, j], zero_division=0)), 4),
+                    "support": int(g_arr[:, j].sum()),
+                }
+            macro_root = float(np.mean([v["f1"] for v in per_root.values()])) if per_root else 0.0
+            micro_root = float(f1_score(g_arr.ravel(), p_arr.ravel(), zero_division=0))
+            report["root"] = {
+                "macroF1": round(macro_root, 4),
+                "microF1": round(micro_root, 4),
+                "n": len(g_rows),
+                "classesEvaluated": len(present),
+                "actionableRate": round(complaints_actionable / complaints_total, 4) if complaints_total else None,
+                "perRoot": per_root,
+            }
     return report
 
 
@@ -335,11 +411,29 @@ def main():
 
     exclude_rows = read_jsonl(args.exclude)
     test_keys = {text_key(r.get("text", r.get("input"))) for r in exclude_rows}
+    test_tok_sets = [token_set(r.get("text", r.get("input"))) for r in exclude_rows]
+    test_products = {text_key(r.get("productName")) for r in exclude_rows if r.get("productName")}
     before = len(train_rows)
-    train_rows = [r for r in train_rows if text_key(r["text"]) not in test_keys]
+    clean_train = []
+    near_dup_removed = 0
+    prod_removed = 0
+    for r in train_rows:
+        pk = text_key(r.get("productName"))
+        if pk and pk in test_products:
+            prod_removed += 1
+            continue
+        if text_key(r["text"]) in test_keys:
+            continue
+        ts = token_set(r["text"])
+        if any(jaccard_sim(ts, tts) >= 0.8 for tts in test_tok_sets):
+            near_dup_removed += 1
+            continue
+        clean_train.append(r)
+    train_rows = clean_train
     leaked = before - len(train_rows)
     if leaked:
-        print(f"CẢNH BÁO: đã loại {leaked} câu huấn luyện trùng tập kiểm tra giữ riêng.")
+        print(f"CẢNH BÁO: đã loại {leaked} câu huấn luyện rò rỉ với tập kiểm tra "
+              f"(trùng sản phẩm: {prod_removed}, gần trùng Jaccard>=0.8: {near_dup_removed}).")
 
     dev_rows = []
     if args.dev and args.dev.exists():
@@ -364,19 +458,21 @@ def main():
         "spam": sum(1 for r in train_rows if r["y"]["spam"] != IGNORE),
         "sarcasm": sum(1 for r in train_rows if r["y"]["sarcasm"] != IGNORE),
         "category": sum(1 for r in train_rows if r["y"]["category"] is not None),
-        "cause": sum(1 for r in train_rows if r["y"]["cause"] is not None)
+        "cause": sum(1 for r in train_rows if r["y"]["cause"] is not None),
+        "root": sum(1 for r in train_rows if r["y"]["root"] is not None),
     }
     multi_issue_rows = sum(1 for r in train_rows
                            if r["y"]["category"] is not None and sum(r["y"]["category"]) > 1)
     trained = {t: counts[t] > 0 for t in TASKS if t in labels}
-    # Có dòng nào mang tiền tố số sao thì checkpoint phải được chạy với số sao
+    # Có dòng nào mang tiền tố số sao / loại hàng thì checkpoint lưu cờ để lúc chạy khớp
     input_rating = any(r.get("rating") for r in train_rows)
+    input_product_type = any(r.get("hasProductType") for r in train_rows)
     sarcastic_rows = sum(1 for r in train_rows if r["y"]["sarcasm"] == labels.get("sarcasm", ["", ""]).index("sarcastic")) if "sarcasm" in labels else 0
     if trained["cause"] and not trained["category"]:
         sys.exit("Có nhãn cause nhưng không có nhãn category.")
     print(f"Thiết bị: {device} | inputMode: {input_mode} | mẫu huấn luyện: {len(train_rows)}")
     print("Số nhãn theo đầu ra:", counts)
-    print(f"Câu mang nhiều danh mục cùng lúc: {multi_issue_rows} | câu mỉa mai: {sarcastic_rows} | có số sao: {input_rating}")
+    print(f"Câu nhiều danh mục: {multi_issue_rows} | mỉa mai: {sarcastic_rows} | số sao: {input_rating} | loại hàng: {input_product_type}")
     if not any(trained.values()):
         sys.exit("Không có nhãn nào để huấn luyện.")
 
@@ -414,7 +510,24 @@ def main():
         t: nn.CrossEntropyLoss(ignore_index=IGNORE, weight=class_weights(t), reduction="none")
         for t in ("sentiment", "spam", "sarcasm") if t in labels
     }
-    bce = nn.BCEWithLogitsLoss(reduction="none")
+
+    def multi_pos_weight(task):
+        """Trọng số dương cho BCE đa nhãn (chặn [1.0, 10.0]) để lớp L2/L3 hiếm không bị tắt."""
+        if task not in labels:
+            return None
+        valid = [r["y"][task] for r in train_rows if r["y"][task] is not None]
+        if not valid:
+            return None
+        arr = np.asarray(valid, dtype=np.float32)
+        pos = arr.sum(axis=0)
+        neg = len(valid) - pos
+        pw = np.where(pos > 0, np.clip(neg / np.maximum(pos, 1.0), 1.0, 10.0), 1.0)
+        return torch.tensor(pw, dtype=torch.float, device=device)
+
+    bce_by_task = {
+        t: nn.BCEWithLogitsLoss(pos_weight=multi_pos_weight(t), reduction="none")
+        for t in ("category", "cause", "root") if t in labels
+    }
 
     best_score, best_report, step = -1.0, None, 0
     started = time.time()
@@ -430,20 +543,18 @@ def main():
             for t in ce_by_task:
                 y = enc["labels"][t].to(device)
                 valid = (y != IGNORE).float()
-                # Lô không có nhãn nào cho đầu ra này thì bỏ qua — chia cho 0 cho NaN
                 if float(valid.sum()) > 0:
                     per = ce_by_task[t](logits[t], y)
                     loss = loss + (per * w * valid).sum() / (w * valid).sum()
-            # Danh mục và nguyên nhân: BCE trên từng lớp độc lập, nhờ vậy một câu
-            # mang được nhiều nhãn. Mask loại các câu không có nhãn cho đầu ra đó.
-            for t in ("category", "cause"):
+            # Danh mục (L1), nguyên nhân (L2) và gốc rễ (L3): BCE đa nhãn cộng theo lớp
+            for t in ("category", "cause", "root"):
+                if t not in bce_by_task or t not in logits:
+                    continue
                 mask = enc["labels"][t + "_mask"].to(device)
                 if float(mask.sum()) > 0:
                     y = enc["labels"][t].to(device)
-                    # CỘNG trên các lớp, không lấy trung bình: vector nhãn hầu hết là 0
-                    # (1-3 lớp dương trên 8 hoặc 28), lấy trung bình sẽ nén tín hiệu học
-                    # của hai đầu ra này xuống mức không đáng kể so với cảm xúc và rác
-                    per_row = bce(logits[t], y).sum(dim=1)
+                    # CỘNG trên các lớp, không lấy trung bình: tránh mất mát biến mất ở lớp hiếm
+                    per_row = bce_by_task[t](logits[t], y).sum(dim=1)
                     loss = loss + (per_row * mask * w).sum() / (mask * w).sum()
             if not torch.is_tensor(loss):
                 continue
@@ -471,17 +582,18 @@ def main():
             save_checkpoint(model, tokenizer, args.out, {
                 "model": "ViSoBERT đa nhiệm (" + " + ".join(t for t in TASKS if trained.get(t)) + ")",
                 "inputRating": input_rating,
+                "inputProductType": input_product_type,
                 "sarcasticTrainRows": sarcastic_rows,
                 "base": "uitnlp/visobert",
                 "labels": labels,
                 "inputMode": input_mode,
                 "maxLength": args.max_len,
                 "multiLabel": True,
-                "thresholds": {"category": CATEGORY_THRESHOLD, "cause": CAUSE_THRESHOLD},
+                "thresholds": {"category": CATEGORY_THRESHOLD, "cause": CAUSE_THRESHOLD, "root": ROOT_THRESHOLD},
                 "trainedTasks": trained,
                 "trainCounts": counts,
                 "multiIssueTrainRows": multi_issue_rows,
-                "classWeighted": list(ce_by_task.keys()),
+                "classWeighted": list(ce_by_task.keys()) + list(bce_by_task.keys()),
                 "trainFiles": [str(p) for p in args.train],
                 "dataManifests": manifests,
                 "bestEpoch": epoch,
@@ -495,7 +607,7 @@ def main():
                                     if k in ("epochs", "batch_size", "lr", "head_lr", "max_len", "warmup", "seed", "max_steps")},
                 "device": device,
                 "trainedAt": datetime.now(timezone.utc).isoformat(),
-                "note": "Số dev chỉ dùng chọn epoch; con số báo cáo lấy từ `npm run eval` trên tập kiểm tra giữ riêng.",
+                "note": "Số dev chỉ dùng chọn epoch; con số báo cáo lấy từ eval_real.py trên tập gold test giữ riêng.",
             })
             print(f"  -> lưu checkpoint vào {args.out}")
         if args.max_steps and step >= args.max_steps:

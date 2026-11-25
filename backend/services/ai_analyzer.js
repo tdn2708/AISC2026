@@ -115,6 +115,13 @@ function taxonomyPrompt() {
     .join('\n');
 }
 
+function rootCausesPrompt(pack = taxonomy.DEFAULT_ROOT_PACK) {
+  return taxonomy
+    .rootCausesFor(null, pack)
+    .map((r) => `- ${r.key} [${r.parentCategory}.${r.parentCause}]: ${r.label}`)
+    .join('\n');
+}
+
 /**
  * PHÂN LOẠI BẰNG LUẬT — dùng khi mô hình lỗi hoặc trả nhãn ngoài taxonomy.
  *
@@ -192,9 +199,12 @@ function coerceResult(raw, originalText) {
     return { ...fb, sentiment: sentiment !== 'Neutral' ? sentiment : fb.sentiment };
   }
 
+  const rootCauses = taxonomy.normalizeRootCauses(raw.rootCauses ?? raw.root_causes, { nonComplaint: category === 'Other' });
+
   return {
     category,
     subCategory: cause,
+    rootCauses,
     sentiment,
     aspects: Array.isArray(raw.aspects)
       ? raw.aspects.slice(0, 5).map((a) => ({
@@ -229,34 +239,71 @@ function coerceResult(raw, originalText) {
  * ViSoBERT đứng đầu vì đây là đường chạy nóng: chạy cục bộ, không tốn phí
  * theo lượt, không gửi văn bản khách hàng ra dịch vụ bên ngoài.
  */
-/** Đầu vào nhận chuỗi (kiểu cũ) hoặc {text, rating}: số sao là tín hiệu mạnh nhất để nhận ra mỉa mai */
-const toItem = (r) =>
-  typeof r === 'string'
-    ? { text: r, rating: null }
-    : { text: String(r?.text ?? r?.rawText ?? ''), rating: Number.isFinite(Number(r?.rating)) && r?.rating != null ? Number(r.rating) : null };
+/** Đầu vào nhận chuỗi (kiểu cũ) hoặc {text, rating, productName, productType} */
+const toItem = (r) => {
+  if (typeof r === 'string') return { text: r, rating: null, productName: null, productType: null };
+  const productName = r?.productName || null;
+  const productType = r?.productType || (productName ? taxonomy.productTypeOf(productName) : null);
+  return {
+    text: String(r?.text ?? r?.rawText ?? ''),
+    rating: Number.isFinite(Number(r?.rating)) && r?.rating != null ? Number(r.rating) : null,
+    productName,
+    productType
+  };
+};
 
-const analyzeFeedbackBatch = async (reviewsInput) => {
-  if (!Array.isArray(reviewsInput) || reviewsInput.length === 0) return [];
-  const reviewsArray = reviewsInput.map(toItem);
-
-  const viaModel = await visobert.predictAnalysis(reviewsArray.map((r) => r.text), reviewsArray.map((r) => r.rating));
-  if (viaModel) return viaModel;
-
-  // Chia lô: một prompt chứa vài trăm bình luận dễ vượt giới hạn token, và
-  // khi đó CẢ lô rơi về lớp luật. Lô nhỏ thì lỗi chỉ ảnh hưởng một phần.
-  // Các lô chạy song song (tối đa LLM_CONCURRENCY cùng lúc): chạy lần lượt
-  // thì 50 bình luận mất gần 2 phút, quá lâu cho một lần đồng bộ
+async function runLlmBatches(items, llmChunkFn = analyzeChunkWithLLM) {
+  if (!items.length) return [];
   const chunks = [];
-  for (let i = 0; i < reviewsArray.length; i += LLM_BATCH_SIZE) chunks.push(reviewsArray.slice(i, i + LLM_BATCH_SIZE));
+  for (let i = 0; i < items.length; i += LLM_BATCH_SIZE) chunks.push(items.slice(i, i + LLM_BATCH_SIZE));
   const results = new Array(chunks.length);
   let next = 0;
   await Promise.all(Array.from({ length: Math.min(LLM_CONCURRENCY, chunks.length) }, async () => {
     while (next < chunks.length) {
       const k = next++;
-      results[k] = await analyzeChunkWithLLM(chunks[k]);
+      results[k] = await llmChunkFn(chunks[k]);
     }
   }));
   return results.flat();
+}
+
+const analyzeFeedbackBatch = async (reviewsInput, deps = {}) => {
+  if (!Array.isArray(reviewsInput) || reviewsInput.length === 0) return [];
+  const reviewsArray = reviewsInput.map(toItem);
+  const predictFn = deps.predictAnalysis || visobert.predictAnalysis;
+  const llmChunkFn = deps.analyzeChunkWithLLM || analyzeChunkWithLLM;
+  const hasLlm = deps.hasLlm !== undefined
+    ? deps.hasLlm
+    : Boolean(process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY);
+
+  // Thứ tự gán nhãn v5 (mục 3.5): ViSoBERT v5 trước. Câu nào đủ tự tin (isConfidentPrediction)
+  // thì nhận luôn (`labelledBy: 'visobert'`), chỉ gửi câu CHƯA CHẮC sang LLM để giảm >= 60% lượt gọi LLM.
+  const viaModel = await predictFn(
+    reviewsArray.map((r) => r.text),
+    reviewsArray.map((r) => r.rating),
+    reviewsArray.map((r) => r.productType)
+  );
+  if (viaModel && viaModel.length === reviewsArray.length) {
+    if (!hasLlm) return viaModel;
+    const out = viaModel.slice();
+    const uncertainIdx = [];
+    for (let i = 0; i < reviewsArray.length; i += 1) {
+      const isApp = taxonomy.isApplianceProduct(reviewsArray[i].productName, reviewsArray[i].productType);
+      if (!visobert.isConfidentPrediction(viaModel[i], { isAppliance: isApp })) {
+        uncertainIdx.push(i);
+      }
+    }
+    if (uncertainIdx.length === 0) return out;
+    const llmOut = await runLlmBatches(uncertainIdx.map((i) => reviewsArray[i]), llmChunkFn);
+    uncertainIdx.forEach((origIdx, k) => {
+      const res = llmOut[k];
+      // Chỉ thay thế khi LLM thật sự trả nhãn (nếu LLM lỗi rơi về luật thì giữ dự đoán ViSoBERT)
+      if (res && res.labelledBy !== 'rules') out[origIdx] = res;
+    });
+    return out;
+  }
+
+  return runLlmBatches(reviewsArray, llmChunkFn);
 };
 
 // 10 bình luận mỗi lượt: lô 40 làm đầu ra JSON dài vượt giới hạn và bị cắt
@@ -305,13 +352,21 @@ async function analyzeChunkWithLLM(items) {
   // Che PII TRƯỚC khi văn bản rời khỏi tiến trình. Bản cũ gửi nguyên văn
   // (kèm số điện thoại, email, mã đơn) sang Groq — trái với chính nguyên tắc
   // "PII không bao giờ chạm tới mô hình" ở normalizer.js.
-  const maskedReviews = items.map((r) => ({ text: maskPII(stripHtml(r.text)).text, rating: r.rating }));
+  const maskedReviews = items.map((r) => ({
+    text: maskPII(stripHtml(r.text)).text,
+    rating: r.rating,
+    ...(r.productType ? { productType: r.productType } : {})
+  }));
+  const includeL3 = items.some((r) => taxonomy.isApplianceProduct(r.productName, r.productType));
+  const l3Block = includeL3
+    ? `\nNGUYÊN NHÂN GỐC RỄ CẤP 3 CHO ĐỒ GIA DỤNG (mảng "rootCauses", chỉ dùng đúng mã sau; câu khen hoặc L2 không có L3 thì trả []):\n${rootCausesPrompt()}\n`
+    : '';
 
   const prompt = `Bạn là hệ thống gán nhãn phản hồi khách hàng tiếng Việt cho sàn thương mại điện tử.
 
 TAXONOMY BẮT BUỘC (chỉ được dùng đúng các mã dưới đây, không tự tạo mã mới):
 ${taxonomyPrompt()}
-
+${l3Block}
 QUY TẮC PHÂN NHÁNH QUAN TRỌNG: hư hỏng trong quá trình vận chuyển thuộc
 nhánh Delivery (DamagedInTransit), KHÔNG thuộc ProductQuality — vì bộ
 phận chịu trách nhiệm khắc phục là khâu vận chuyển.
@@ -336,6 +391,7 @@ Với MỖI bình luận trong mảng đầu vào, trả về một đối tư�
 {
   "category": "<một mã Level 1 ở trên, hoặc 'Other'>",
   "subCategory": "<một mã Level 2 thuộc đúng category đó, hoặc null>",
+  "rootCauses": ["<mã L3 nếu là lỗi đồ gia dụng ở trên, hoặc []>"],
   "sentiment": "Positive" | "Negative" | "Neutral",
   "sarcasm": true | false,
   "aspects": [{"aspect": "<khía cạnh được nhắc tới>", "polarity": "Positive|Negative|Neutral"}],

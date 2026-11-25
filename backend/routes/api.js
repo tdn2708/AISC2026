@@ -63,6 +63,7 @@ function publicItem(f) {
     _id: f._id,
     source: f.source,
     productName: f.productName,
+    productType: f.productType || taxonomy.productTypeOf(f.productName) || null,
     region: f.region,
     author: shownName(f.author),
     originalText: f.originalText,
@@ -72,6 +73,10 @@ function publicItem(f) {
     categoryLabel: f.categoryLabel || taxonomy.categoryLabel(f.category),
     subCategory: f.subCategory,
     causeLabel: f.causeLabel || taxonomy.causeLabel(f.category, f.subCategory),
+    rootCauses: Array.isArray(f.rootCauses) ? f.rootCauses : [],
+    rootCauseLabels: Array.isArray(f.rootCauseLabels)
+      ? f.rootCauseLabels
+      : (Array.isArray(f.rootCauses) ? f.rootCauses.map((k) => taxonomy.rootCauseLabel(k)).filter(Boolean) : []),
     sentiment: f.sentiment,
     aiSummary: f.aiSummary,
     entities: f.entities || null,
@@ -139,11 +144,17 @@ const slimItem = (f) => ({
   timestamp: f.timestamp,
   source: f.source,
   productName: f.productName,
+  productType: f.productType || taxonomy.productTypeOf(f.productName) || null,
+  rating: f.rating ?? null,
   sentiment: f.sentiment,
   category: f.category,
   categoryLabel: f.categoryLabel || taxonomy.categoryLabel(f.category),
   subCategory: f.subCategory,
   causeLabel: f.causeLabel || taxonomy.causeLabel(f.category, f.subCategory),
+  rootCauses: Array.isArray(f.rootCauses) ? f.rootCauses : [],
+  rootCauseLabels: Array.isArray(f.rootCauseLabels)
+    ? f.rootCauseLabels
+    : (Array.isArray(f.rootCauses) ? f.rootCauses.map((k) => taxonomy.rootCauseLabel(k)).filter(Boolean) : []),
   originalText: f.originalText
 });
 
@@ -310,7 +321,7 @@ router.get('/categories', wrap(async (req, res) => {
   res.json(data);
 }));
 
-/** Bóc tách nguyên nhân cốt lõi trong một danh mục (Level 1 -> Level 2) */
+/** Bóc tách nguyên nhân cốt lõi trong một danh mục (Level 1 -> Level 2 -> Level 3) */
 router.get('/root-causes', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const items = applyFilters(ctx.items, req.query, ctx.asOf).filter(metrics.isCountable);
@@ -321,6 +332,53 @@ router.get('/root-causes', wrap(async (req, res) => {
     : items;
 
   const agg = new Map();
+  const rootGlobal = new Map();
+
+  const bumpRoot = (bucket, f, rk, info) => {
+    if (!bucket.has(rk)) {
+      bucket.set(rk, {
+        key: rk,
+        label: info.label,
+        parentCategory: info.parentCategory,
+        parentCause: info.parentCause,
+        count: 0,
+        products: new Map(),
+        productTypes: new Map(),
+        examples: []
+      });
+    }
+    const r = bucket.get(rk);
+    r.count += 1;
+    if (f.productName) r.products.set(f.productName, (r.products.get(f.productName) || 0) + 1);
+    const pt = f.productType || taxonomy.productTypeOf(f.productName);
+    if (pt) r.productTypes.set(pt, (r.productTypes.get(pt) || 0) + 1);
+    if (f.originalText && r.examples.length < 3) {
+      r.examples.push({
+        id: String(f._id),
+        text: f.originalText,
+        productName: f.productName || null,
+        productType: pt || null,
+        source: f.source || null,
+        rating: f.rating ?? null,
+        timestamp: f.timestamp || null
+      });
+    }
+  };
+
+  const formatRoots = (bucket, denom) => [...bucket.values()]
+    .map((r) => ({
+      key: r.key,
+      label: r.label,
+      parentCategory: r.parentCategory,
+      parentCause: r.parentCause,
+      count: r.count,
+      share: denom ? Number(((r.count / denom) * 100).toFixed(1)) : 0,
+      byProduct: [...r.products.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count })),
+      byProductType: [...r.productTypes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count })),
+      examples: r.examples
+    }))
+    .sort((a, b) => b.count - a.count);
+
   for (const f of scope) {
     if (!f.subCategory) continue;
     const key = `${f.category}||${f.subCategory}`;
@@ -330,18 +388,34 @@ router.get('/root-causes', wrap(async (req, res) => {
         categoryLabel: f.categoryLabel,
         cause: f.subCategory,
         causeLabel: f.causeLabel,
-        count: 0
+        count: 0,
+        roots: new Map()
       });
     }
-    agg.get(key).count += 1;
+    const row = agg.get(key);
+    row.count += 1;
+    for (const rk of Array.isArray(f.rootCauses) ? f.rootCauses : []) {
+      const info = taxonomy.rootCauseInfo(rk);
+      if (!info) continue;
+      bumpRoot(row.roots, f, info.key, info);
+      bumpRoot(rootGlobal, f, info.key, info);
+    }
   }
 
   const total = [...agg.values()].reduce((s, v) => s + v.count, 0);
   const data = [...agg.values()]
-    .map((v) => ({ ...v, share: total ? Number(((v.count / total) * 100).toFixed(1)) : 0 }))
+    .map((v) => ({
+      category: v.category,
+      categoryLabel: v.categoryLabel,
+      cause: v.cause,
+      causeLabel: v.causeLabel,
+      count: v.count,
+      share: total ? Number(((v.count / total) * 100).toFixed(1)) : 0,
+      rootCauses: formatRoots(v.roots, v.count)
+    }))
     .sort((a, b) => b.count - a.count);
 
-  res.json({ total, causes: data });
+  res.json({ total, causes: data, rootCauses: formatRoots(rootGlobal, total) });
 }));
 
 router.get('/sentiment', wrap(async (req, res) => {
@@ -598,12 +672,13 @@ router.get('/trust/impact', wrap(async (req, res) => {
   res.json(impact);
 }));
 
-/** Cây taxonomy nhãn (7 danh mục x các nguyên nhân cốt lõi) */
+/** Cây taxonomy nhãn (7 danh mục x các nguyên nhân cốt lõi + gói L3) */
 router.get('/taxonomy', wrap(async (req, res) => {
   res.json({
     categories: taxonomy.flatTaxonomy(),
     categoryCount: taxonomy.CATEGORY_KEYS.length,
-    causeCount: taxonomy.CAUSE_COUNT
+    causeCount: taxonomy.CAUSE_COUNT,
+    rootPacks: taxonomy.flatRootPacks()
   });
 }));
 
@@ -1162,7 +1237,12 @@ router.get('/audit/sample', wrap(async (req, res) => {
   const doneIds = new Set(done.map((d) => d.feedbackId));
   const { items, remaining } = insights.auditSample(ctx.items, doneIds, n, Math.random, mode);
   // Số câu còn chờ ở từng hàng, để người duyệt biết nên làm hàng nào trước
-  const queues = Object.fromEntries(['sarcasm', 'review'].map((m) => [m, ctx.items.filter((f) => insights.inQueue(f, m) && !doneIds.has(String(f._id))).length]));
+  const goldRemaining = insights.auditSample(ctx.items, doneIds, 1, Math.random, 'gold').remaining;
+  const queues = {
+    sarcasm: ctx.items.filter((f) => insights.inQueue(f, 'sarcasm') && !doneIds.has(String(f._id))).length,
+    review: ctx.items.filter((f) => insights.inQueue(f, 'review') && !doneIds.has(String(f._id))).length,
+    gold: goldRemaining
+  };
   res.json({
     mode,
     items: items.map((f) => ({
@@ -1170,7 +1250,8 @@ router.get('/audit/sample', wrap(async (req, res) => {
       sarcasm: f.sarcasm || null,
       labelVotes: f.labelVotes || null,
       needsReview: Boolean(f.needsReview),
-      blindTest: insights.isBlindTest(f._id)
+      blindTest: insights.isBlindTest(f._id),
+      goldSplit: insights.goldSplit(f.productName)
     })),
     remaining,
     queues,
@@ -1178,12 +1259,13 @@ router.get('/audit/sample', wrap(async (req, res) => {
       key,
       label: key === 'Other' ? 'Không nêu vấn đề' : taxonomy.categoryLabel(key),
       causes: key === 'Other' ? [] : taxonomy.flatTaxonomy().find((c) => c.key === key)?.causes.map((c) => ({ key: c.key, label: c.label })) || []
-    }))
+    })),
+    rootCauses: taxonomy.flatRootPacks().gia_dung
   });
 }));
 
 router.post('/audit/label', wrap(async (req, res) => {
-  const { feedbackId, sentimentCorrect, categoryCorrect, correctSentiment, correctCategory, correctCause, sarcasm, sampleMode, by } = req.body || {};
+  const { feedbackId, sentimentCorrect, categoryCorrect, correctSentiment, correctCategory, correctCause, correctRootCauses, sarcasm, sampleMode, by } = req.body || {};
   if (!feedbackId || typeof sentimentCorrect !== 'boolean' || typeof categoryCorrect !== 'boolean') {
     return res.status(400).json({ error: 'Cần feedbackId, sentimentCorrect và categoryCorrect (true/false)' });
   }
@@ -1200,13 +1282,28 @@ router.post('/audit/label', wrap(async (req, res) => {
   const machine = item.machineLabel || item;
   const cat = categoryCorrect ? machine.category || 'Other' : correctCategory;
   const causeOk = correctCause && cat !== 'Other' && taxonomy.normalizeCause(cat, correctCause) === correctCause;
+  const hasRootInput = Array.isArray(correctRootCauses);
+  const normalizedRoots = hasRootInput
+    ? taxonomy.normalizeRootCauses(correctRootCauses, { nonComplaint: cat === 'Other' })
+    : undefined;
+  let finalCause = categoryCorrect
+    ? (causeOk ? correctCause : machine.subCategory || null)
+    : (causeOk ? correctCause : null);
+  // Nếu L2 đang trống nhưng người duyệt chọn L3 thuộc đúng nhóm L1 hiện tại thì suy ra L2 cha
+  if (!finalCause && normalizedRoots && normalizedRoots.length > 0 && cat !== 'Other') {
+    const firstInfo = taxonomy.rootCauseInfo(normalizedRoots[0]);
+    if (firstInfo && firstInfo.parentCategory === cat) finalCause = firstInfo.parentCause;
+  }
   const humanLabel = {
     feedbackId: String(feedbackId),
     correctSentiment: sentimentCorrect ? machine.sentiment : correctSentiment,
     correctCategory: cat,
-    correctCause: categoryCorrect ? machine.subCategory || null : causeOk ? correctCause : null,
+    correctCause: finalCause,
+    ...(normalizedRoots !== undefined ? { correctRootCauses: normalizedRoots } : {}),
     sarcasm: typeof sarcasm === 'boolean' ? sarcasm : null
   };
+  const productType = item.productType || taxonomy.productTypeOf(item.productName) || null;
+  const split = insights.goldSplit(item.productName);
   await req.db.collection('audit_labels').updateOne(
     { feedbackId: String(feedbackId) },
     {
@@ -1214,15 +1311,21 @@ router.post('/audit/label', wrap(async (req, res) => {
         feedbackId: String(feedbackId),
         sentimentCorrect,
         categoryCorrect,
-        correctSentiment: sentimentCorrect ? machine.sentiment : correctSentiment,
+        correctSentiment: humanLabel.correctSentiment,
         correctCategory: cat,
-        correctCause: categoryCorrect ? machine.subCategory || null : causeOk ? correctCause : null,
+        correctCause: finalCause,
+        ...(normalizedRoots !== undefined ? { correctRootCauses: normalizedRoots } : {}),
         // Có mỉa mai không (true/false); null = người duyệt không trả lời câu này
         sarcasm: typeof sarcasm === 'boolean' ? sarcasm : null,
         sampleMode: insights.AUDIT_MODES.includes(sampleMode) ? sampleMode : 'random',
         blindTest: insights.isBlindTest(feedbackId),
+        goldSplit: split,
+        productName: item.productName || null,
+        productType,
         aiSentiment: machine.sentiment,
         aiCategory: machine.category || 'Other',
+        aiCause: machine.subCategory || null,
+        aiRootCauses: Array.isArray(machine.rootCauses) ? machine.rootCauses : [],
         aiSarcasm: item.sarcasm?.verdict ?? null,
         labelledBy: machine.labelledBy || 'synthetic',
         by: typeof by === 'string' ? by.slice(0, 80) : 'admin',
@@ -1245,6 +1348,26 @@ router.post('/audit/label', wrap(async (req, res) => {
   });
   const labels = await req.db.collection('audit_labels').find({}).toArray();
   res.json({ success: true, summary: insights.auditSummary(labels) });
+}));
+
+router.get('/audit/gold-export', wrap(async (req, res) => {
+  const [feedbacks, labels] = await Promise.all([
+    req.db.collection('feedbacks').find({}, {
+      projection: { originalText: 1, rating: 1, productName: 1, productType: 1, productCategory: 1, source: 1, sentiment: 1 }
+    }).toArray(),
+    req.db.collection('audit_labels').find({}).toArray()
+  ]);
+  const modeFilter = req.query.mode;
+  const filtered = modeFilter && insights.AUDIT_MODES.includes(modeFilter)
+    ? labels.filter((l) => (l.sampleMode || 'random') === modeFilter)
+    : labels;
+  const exported = insights.buildGoldExport(feedbacks, filtered);
+  if (req.query.format === 'jsonl') {
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="gold_gia_dung.jsonl"');
+    return res.send(exported.rows.map((r) => JSON.stringify(r)).join('\n') + (exported.rows.length ? '\n' : ''));
+  }
+  res.json(exported);
 }));
 
 router.get('/audit/summary', wrap(async (req, res) => {
@@ -1437,10 +1560,10 @@ router.post('/scrape', collectLimit, wrap(async (req, res) => {
   }
 
   // Gán nhãn nhiều tầng: kèm số sao, câu nghi mỉa mai được hỏi thêm mô hình thứ hai
-  const aiResults = await labelReviews(rawReviews.map((r) => ({ text: r.rawText, rating: r.rating })));
-
   const fallbackProduct =
     url.split('/').pop()?.split('?')[0]?.replace(/-/g, ' ') || 'Sản phẩm chưa xác định';
+  // Kèm tên sản phẩm: đồ gia dụng thì gán thêm nguyên nhân gốc rễ cấp 3 (rootCauses)
+  const aiResults = await labelReviews(rawReviews.map((r) => ({ text: r.rawText, rating: r.rating, productName: r.productName || fallbackProduct })));
 
   // Che tên người mua, giữ dữ kiện sàn xác nhận (đã mua, mốc giao, câu khách tự chọn)
   const analyzed = buildFeedbackDocs(rawReviews, aiResults, { fallbackProduct, collectedVia: 'scrape', sourceUrl: url });
@@ -1669,7 +1792,7 @@ router.post('/import/feedbacks', importLimit, wrap(async (req, res) => {
   const overQuota = fresh.length > left ? fresh.length - left : 0;
   raw.splice(0, raw.length, ...fresh.slice(0, left));
 
-  const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating })));
+  const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating, productName: r.productName || null })));
   const docs = buildFeedbackDocs(raw, ai, { collectedVia: 'import', sourceUrl: fileName ? `file:${fileName}` : null, fallbackProduct: 'Sản phẩm chưa ghi tên' });
   docs.forEach((d, i) => {
     d.customerId = raw[i].customerId;

@@ -160,7 +160,8 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, o
 
         // Kèm số sao; câu nghi mỉa mai được hỏi thêm mô hình thứ hai rồi bỏ phiếu
         stage(query, product, `gán nhãn ${raw.length} đánh giá`);
-        const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating })));
+        // Kèm tên sản phẩm: đồ gia dụng thì mô hình gán thêm nguyên nhân gốc rễ cấp 3 (rootCauses)
+        const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating, productName: r.productName || product.name })));
         if (token.cancelled) return;
         for (const a of ai) totals.byLabeller[a?.labelledBy || 'none'] = (totals.byLabeller[a?.labelledBy || 'none'] || 0) + 1;
         const docs = buildFeedbackDocs(raw, ai, { fallbackProduct: product.name, collectedVia: 'bulk', sourceUrl: product.url });

@@ -3,12 +3,12 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { readStorage, writeStorage } from '../lib/storage';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, GitCompareArrows, Crosshair } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, GitCompareArrows, Crosshair, ChevronDown } from 'lucide-react';
 import FilterBar from './FilterBar';
 import Segments from './Segments';
 import Compare from './analytics/Compare';
 import PainPoints from './analytics/PainPoints';
-import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat, ChartTooltip, Skeleton } from './ui';
+import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat, ChartTooltip, Skeleton, Segmented, Badge } from './ui';
 import { buildQuery, fmtInt, fmtPct, fmtGrowth, fmtDate, upFirst, spanWords, cadenceWords } from '../lib/format';
 import { useDataVersion } from '../lib/dataVersion';
 import { AXIS_TICK } from '../lib/tokens';
@@ -106,21 +106,66 @@ const groupCount = (items, keyFn, labelFn) => {
   return [...m.values()].sort((a, b) => b.count - a.count);
 };
 
+/** Gom nhóm nguyên nhân gốc rễ cấp 3 (L3) cho một L2 đang chọn, kèm sản phẩm, loại hàng và bằng chứng thật */
+const groupRootCauses = (items) => {
+  const map = new Map();
+  for (const f of items) {
+    const codes = Array.isArray(f.rootCauses) ? f.rootCauses : [];
+    const labels = Array.isArray(f.rootCauseLabels) ? f.rootCauseLabels : [];
+    codes.forEach((code, idx) => {
+      if (!code) return;
+      if (!map.has(code)) {
+        map.set(code, {
+          key: code,
+          label: labels[idx] || code,
+          count: 0,
+          products: new Map(),
+          productTypes: new Map(),
+          examples: []
+        });
+      }
+      const entry = map.get(code);
+      entry.count += 1;
+      if (f.productName) entry.products.set(f.productName, (entry.products.get(f.productName) || 0) + 1);
+      if (f.productType) entry.productTypes.set(f.productType, (entry.productTypes.get(f.productType) || 0) + 1);
+      if (f.originalText && entry.examples.length < 3) {
+        entry.examples.push(f);
+      }
+    });
+  }
+  return [...map.values()]
+    .map((e) => ({
+      key: e.key,
+      label: e.label,
+      count: e.count,
+      byProduct: [...e.products.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([name, count]) => ({ name, count })),
+      byProductType: [...e.productTypes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([name, count]) => ({ name, count })),
+      examples: e.examples
+    }))
+    .sort((a, b) => b.count - a.count);
+};
+
 /** Hàng xếp hạng — chỉ là nút khi có hành động; không thì là khối thường */
-const RankBar = ({ label, count, max, total, active, onClick, tone = 'bg-neg', index = 0 }) => {
+const RankBar = ({ label, count, max, total, active, onClick, expandable = false, tone = 'bg-neg', index = 0 }) => {
   const reduced = useReducedMotion();
   const Tag = onClick ? 'button' : 'div';
   return (
   <Tag
-    {...(onClick ? { type: 'button', onClick, 'aria-pressed': active } : {})}
+    {...(onClick ? { type: 'button', onClick, 'aria-pressed': active, 'aria-expanded': expandable ? active : undefined } : {})}
     className={`block w-full rounded-ctrl border px-3 py-2.5 text-left transition-[background-color,border-color] duration-micro ease-out ${
       active ? 'border-accent bg-accent-dim' : onClick ? 'border-transparent hover:bg-raised' : 'border-transparent'
     }`}
   >
-    <div className="flex items-baseline justify-between gap-3">
+    <div className="flex items-center justify-between gap-3">
       <span className={`min-w-0 truncate text-sm ${active ? 'font-semibold text-ink-hi' : 'text-ink-hi'}`}>{label}</span>
-      <span className="shrink-0 tabular-nums text-xs text-ink-mid">
-        {fmtInt(count)} <span className="text-ink-lo">({fmtPct(total ? count / total : null, 0)})</span>
+      <span className="flex shrink-0 items-center gap-1.5 tabular-nums text-xs text-ink-mid">
+        <span>{fmtInt(count)} <span className="text-ink-lo">({fmtPct(total ? count / total : null, 0)})</span></span>
+        {expandable && (
+          <ChevronDown
+            size={14}
+            className={`text-ink-lo transition-transform duration-micro ease-out ${active ? 'rotate-180 text-accent-hi' : ''}`}
+          />
+        )}
       </span>
     </div>
     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-raised">
@@ -147,10 +192,13 @@ const RootCauses = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [selectedCause, setSelectedCause] = useState(null);
+  const [rootGroupBy, setRootGroupBy] = useState('product');
   const drillRef = useRef(null);
   // Màn hẹp: phần bóc tách nằm DƯỚI danh sách nhóm — chọn xong phải cuộn tới đó
   const pick = (key) => {
     setSelected(key);
+    setSelectedCause(null);
     if (window.matchMedia('(max-width: 1023px)').matches) {
       requestAnimationFrame(() => drillRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     }
@@ -191,6 +239,13 @@ const RootCauses = () => {
   const current = categories.find((c) => c.key === selected) || categories[0] || null;
   const scoped = useMemo(() => (current ? complaints.filter((f) => f.category === current.key) : []), [complaints, current]);
   const causes = useMemo(() => groupCount(scoped, (f) => f.subCategory, (f) => f.causeLabel || f.subCategory), [scoped]);
+  const activeCause = causes.find((c) => c.key === selectedCause) || null;
+  const scopedByCause = useMemo(
+    () => (activeCause ? scoped.filter((f) => f.subCategory === activeCause.key) : []),
+    [scoped, activeCause]
+  );
+  const l3Roots = useMemo(() => groupRootCauses(scopedByCause), [scopedByCause]);
+  const hasProductTypes = useMemo(() => l3Roots.some((r) => r.byProductType.length > 0), [l3Roots]);
   const products = useMemo(() => groupCount(scoped, (f) => f.productName, (f) => f.productName).slice(0, 5), [scoped]);
   const anchor = useMemo(() => (anchorAt && anchorAt < Date.now() ? anchorAt : anchorOf(items)), [anchorAt, items]);
   const cw = cadenceWords(cadence);
@@ -284,14 +339,93 @@ const RootCauses = () => {
 
           <div className="grid gap-6 xl:grid-cols-2">
             <GlassPanel tone="strong" className="p-5">
-              <PanelHeader title="Nguyên nhân" />
+              <PanelHeader title="Nguyên nhân" subtitle={causes.length > 0 ? 'Bấm một nguyên nhân cấp 2 để mở lỗi gốc rễ cấp 3' : undefined} />
               {causes.length === 0 ? (
                 <p className="text-sm text-ink-lo">Nhóm này chưa có nguyên nhân cấp 2 nào được gán.</p>
               ) : (
                 <div className="flex flex-col gap-1">
-                  {causes.slice(0, 7).map((c, i) => (
-                    <RankBar index={i} key={c.key} label={c.label} count={c.count} max={causes[0].count} total={current.count} tone="bg-accent" />
-                  ))}
+                  {causes.slice(0, 7).map((c, i) => {
+                    const isOpen = activeCause?.key === c.key;
+                    return (
+                      <RankBar
+                        index={i}
+                        key={c.key}
+                        label={c.label}
+                        count={c.count}
+                        max={causes[0].count}
+                        total={current.count}
+                        active={isOpen}
+                        expandable
+                        onClick={() => setSelectedCause(isOpen ? null : c.key)}
+                        tone="bg-accent"
+                      />
+                    );
+                  })}
+                </div>
+              )}
+              {activeCause && (
+                <div className="paper mt-4 border-t border-line-soft p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-ink-hi">
+                      Lỗi gốc rễ cấp 3 trong {activeCause.label}
+                    </p>
+                    {hasProductTypes && (
+                      <Segmented
+                        size="sm"
+                        label="Chiều gom nhóm lỗi cấp 3"
+                        value={rootGroupBy}
+                        onChange={setRootGroupBy}
+                        options={[
+                          { value: 'product', label: 'Theo sản phẩm' },
+                          { value: 'type', label: 'Theo loại hàng' }
+                        ]}
+                      />
+                    )}
+                  </div>
+                  {l3Roots.length === 0 ? (
+                    <p className="mt-2 text-xs text-ink-lo">
+                      Chưa có nhãn nguyên nhân gốc rễ cấp 3 cho nhóm {activeCause.label.toLowerCase()} trong phạm vi đang lọc.
+                    </p>
+                  ) : (
+                    <ul className="mt-3 flex list-none flex-col divide-y divide-line-soft">
+                      {l3Roots.map((r) => {
+                        const breakdown = rootGroupBy === 'type' && r.byProductType.length ? r.byProductType : r.byProduct;
+                        return (
+                          <li key={r.key} className="py-3 first:pt-0 last:pb-0">
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className="text-sm font-semibold text-ink-hi">{r.label}</span>
+                              <span className="shrink-0 tabular-nums text-xs text-ink-mid">
+                                {fmtInt(r.count)} khách ({fmtPct(activeCause.count ? r.count / activeCause.count : null, 0)})
+                              </span>
+                            </div>
+                            {breakdown.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {breakdown.map((b) => (
+                                  <Badge key={b.name} tone="neutral">
+                                    {b.name}: {fmtInt(b.count)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                            {r.examples.length > 0 && (
+                              <ul className="mt-2 flex list-none flex-col gap-1.5">
+                                {r.examples.map((ex) => (
+                                  <li key={ex._id} className="border-l-2 border-line pl-3 text-xs leading-relaxed text-ink-mid">
+                                    <p className="line-clamp-2 text-ink-hi">“{ex.originalText}”</p>
+                                    <p className="mt-0.5 flex flex-wrap gap-x-2 text-ink-lo">
+                                      {ex.productName && <span className="truncate">{ex.productName}</span>}
+                                      {ex.rating != null && <span className="tabular-nums">{ex.rating} sao</span>}
+                                      {ex.timestamp && <span className="tabular-nums">{fmtDate(ex.timestamp)}</span>}
+                                    </p>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </div>
               )}
             </GlassPanel>

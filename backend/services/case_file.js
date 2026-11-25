@@ -12,7 +12,7 @@
  * Mọi con số trong câu chữ đều lấy từ dữ liệu; LLM (nếu có) chỉ viết lại câu.
  */
 
-const { LIBRARY, CATEGORY_FALLBACK, INSTRUMENTATION_ACTIONS, SLOTS } = require('./playbook_library');
+const { LIBRARY, CATEGORY_FALLBACK, INSTRUMENTATION_ACTIONS, SLOTS, summarizeRoots, rootActionsFor } = require('./playbook_library');
 const { ACTION_KIND } = require('./playbook');
 const taxonomy = require('./taxonomy');
 const metrics = require('./metrics');
@@ -95,6 +95,7 @@ function buildCaseFile(point, group, ctx) {
   if (!regions.length) missing1.push('Không có khu vực giao hàng nên chưa khoanh được theo vùng.');
   if (members.every((f) => !f.productName)) missing1.push('Không có tên sản phẩm.');
 
+  const rootInfo = summarizeRoots(members);
   const scope = {
     count: members.length,
     customers: point.customers,
@@ -104,6 +105,7 @@ function buildCaseFile(point, group, ctx) {
     products: products.slice(0, 8),
     sources,
     regions: regions.slice(0, 6),
+    rootCauses: rootInfo.list.slice(0, 5),
     orders: { withOrder: withOrder.length, matched: matchedTx.length, value: orderValue },
     // Kỳ của biểu đồ theo nhịp kho: kho dày 7 ngày, kho thưa trải đủ độ dài nền
     weekStep: Math.max(7, Math.ceil((ctx.cadence?.trendSpanDays || 0) / WEEKS)),
@@ -151,6 +153,20 @@ function buildCaseFile(point, group, ctx) {
   const raw = pb ? pb.actions : (CATEGORY_FALLBACK[category] || []);
   const actions = [];
   const dropped = [];
+  // Hành động cụ thể từ nguyên nhân gốc rễ cấp 3 (nếu các phản hồi đã có nhãn L3)
+  for (const rAct of rootActionsFor(members, { scopeLabel: slots.product || group?.label })) {
+    const kind = ACTION_KIND[rAct.kind] || ACTION_KIND.INVESTIGATE;
+    actions.push({
+      id: rAct.id,
+      rootKey: rAct.rootKey,
+      text: rAct.text,
+      kind: kind.key,
+      kindLabel: kind.label,
+      escalated: false,
+      requiresApproval: kind.cost || kind.touchesCustomer,
+      effortDays: rAct.effortDays ?? null
+    });
+  }
   for (const a of raw) {
     const text = fill(a.template, slots);
     const kind = ACTION_KIND[a.kind] || ACTION_KIND.INVESTIGATE;

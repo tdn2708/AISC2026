@@ -37,7 +37,8 @@ if (Test-Port 8001) {
 if (Test-Port 5000) {
   Write-Host 'Backend: cổng 5000 đã có dịch vụ chạy, bỏ qua.'
 } else {
-  Start-Window 'Backend :5000' (Join-Path $root 'backend') 'node server.js'
+  # ViSoBERT tắt mặc định khi thiếu VISOBERT_URL (visobert_client.js): trỏ backend vào dịch vụ :8001 vừa mở
+  Start-Window 'Backend :5000' (Join-Path $root 'backend') "`$env:VISOBERT_URL='http://127.0.0.1:8001'; node server.js"
 }
 
 if (Test-Port 5173) {

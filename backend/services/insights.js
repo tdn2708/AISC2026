@@ -30,16 +30,143 @@ function isBlindTest(id) {
   return h.readUInt32BE(0) % 100 < BLIND_PERCENT;
 }
 
-/** Ba hàng đợi duyệt: chỉ "random" được dùng để đo độ chính xác */
-const AUDIT_MODES = ['random', 'sarcasm', 'review'];
+/**
+ * CHIA BỘ GOLD THEO SẢN PHẨM (chống rò rỉ giữa train/dev/test của ViSoBERT v5):
+ * Băm SHA-1 tên sản phẩm đã chuẩn hóa để MỌI đánh giá của cùng một sản phẩm
+ * luôn nằm trọn về một phía (`test` ~35%, `dev` ~15%, `train` ~50%).
+ * Không đụng `isBlindTest` cũ (đang dùng ở hàng đợi kiểm tra cũ).
+ */
+const GOLD_TEST_PERCENT = 35;
+const GOLD_DEV_PERCENT = 15;
+function normalizeProductKey(productName) {
+  return String(productName || '')
+    .normalize('NFC')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function goldSplit(productName, { testPercent = GOLD_TEST_PERCENT, devPercent = GOLD_DEV_PERCENT } = {}) {
+  const key = normalizeProductKey(productName);
+  if (!key) return 'train';
+  const h = crypto.createHash('sha1').update(`gold-v5|${key}`).digest();
+  const bucket = h.readUInt32BE(0) % 100;
+  if (bucket < testPercent) return 'test';
+  if (bucket < testPercent + devPercent) return 'dev';
+  return 'train';
+}
+
+/** Bốn hàng đợi duyệt: chỉ "random" được dùng để đo độ chính xác */
+const AUDIT_MODES = ['random', 'sarcasm', 'review', 'gold'];
 const inQueue = (f, mode) =>
   mode === 'sarcasm' ? Boolean(f.sarcasm?.suspected) && f.sarcasm?.by !== 'human'
     : mode === 'review' ? f.needsReview === true
-      : true;
+      : mode === 'gold' ? Boolean(f.originalText && String(f.originalText).trim().length >= 4)
+        : true;
 
 // ==================================================================
-// 1. KIỂM TRA NGẪU NHIÊN
+// 1. KIỂM TRA NGẪU NHIÊN & LẤY MẪU BỘ CHUẨN (GOLD)
 // ==================================================================
+
+function shuffleWith(arr, rand) {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/**
+ * Lấy mẫu phân tầng cho hàng đợi `mode=gold` (mục 3.4 kế hoạch v5):
+ *  - Ưu tiên sản phẩm đồ gia dụng (`isApplianceProduct`); nếu kho thử không có
+ *    tên gia dụng thì lấy trên toàn kho để vẫn chạy được khi kiểm thử.
+ *  - Trong mỗi lô `n` câu: ~75% là khiếu nại/câu có nhóm vấn đề (xoay vòng theo L2
+ *    để các L2 hiếm cũng có mẫu, ưu tiên BlueStone nếu có), ~25% phân tầng theo sao
+ *    (1-2 sao, 3 sao, 4-5 sao) để bộ gold có đủ câu đối chứng tích cực/trung tính.
+ */
+function sampleGoldStratified(items, labelledIds, n = 10, rand = Math.random) {
+  const unlabelled = items.filter((f) => inQueue(f, 'gold') && !labelledIds.has(String(f._id)));
+  const appliances = unlabelled.filter((f) => taxonomy.isApplianceProduct(f.productName, f.productCategory));
+  const pool = appliances.length > 0 ? appliances : unlabelled;
+  if (!pool.length) return { items: [], remaining: 0 };
+
+  const isIssue = (f) => f.sentiment === 'Negative' || (f.sentiment === 'Neutral' && f.category && f.category !== 'Other');
+  const isBlueStone = (f) => /bluestone/i.test(String(f.productName || ''));
+
+  // Chia nhóm khiếu nại theo L2 để quay vòng công bằng
+  const issueByCause = new Map();
+  const restByStar = { low: [], mid: [], high: [] };
+  for (const f of pool) {
+    if (isIssue(f)) {
+      const k = f.subCategory || f.category || 'Other';
+      if (!issueByCause.has(k)) issueByCause.set(k, []);
+      issueByCause.get(k).push(f);
+    } else {
+      const r = Number(f.rating);
+      if (Number.isFinite(r) && r <= 2) restByStar.low.push(f);
+      else if (Number.isFinite(r) && r === 3) restByStar.mid.push(f);
+      else restByStar.high.push(f);
+    }
+  }
+
+  // Xáo trong từng nhóm nhưng đưa BlueStone lên trước nếu có
+  const sortGroup = (arr) => {
+    const bs = shuffleWith(arr.filter(isBlueStone), rand);
+    const other = shuffleWith(arr.filter((f) => !isBlueStone(f)), rand);
+    return [...bs, ...other];
+  };
+  for (const [k, arr] of issueByCause.entries()) issueByCause.set(k, sortGroup(arr));
+  restByStar.low = sortGroup(restByStar.low);
+  restByStar.mid = sortGroup(restByStar.mid);
+  restByStar.high = sortGroup(restByStar.high);
+
+  const picked = [];
+  const pickedIds = new Set();
+  const take = (f) => {
+    if (!f || pickedIds.has(String(f._id))) return false;
+    pickedIds.add(String(f._id));
+    picked.push(f);
+    return true;
+  };
+
+  const issueTarget = Math.min(pool.length, Math.max(1, Math.round(n * 0.75)));
+  const causeKeys = shuffleWith([...issueByCause.keys()], rand);
+  let progressed = true;
+  while (picked.length < issueTarget && progressed) {
+    progressed = false;
+    for (const k of causeKeys) {
+      if (picked.length >= issueTarget) break;
+      const arr = issueByCause.get(k);
+      if (arr && arr.length) {
+        take(arr.shift());
+        progressed = true;
+      }
+    }
+  }
+
+  const starBuckets = [restByStar.low, restByStar.mid, restByStar.high];
+  progressed = true;
+  while (picked.length < n && progressed) {
+    progressed = false;
+    for (const b of starBuckets) {
+      if (picked.length >= n) break;
+      if (b.length) {
+        take(b.shift());
+        progressed = true;
+      }
+    }
+  }
+
+  // Nếu vẫn chưa đủ n (ví dụ kho toàn khiếu nại), lấy nốt từ các nhóm còn lại
+  if (picked.length < n) {
+    for (const f of shuffleWith(pool, rand)) {
+      if (picked.length >= n) break;
+      take(f);
+    }
+  }
+
+  return { items: picked, remaining: pool.length };
+}
 
 /**
  * Lấy ngẫu nhiên ĐỀU trên các phản hồi được tính vào chỉ số, bỏ những phản
@@ -47,6 +174,7 @@ const inQueue = (f, mode) =>
  * kiểm duyệt) là điều kiện để tỉ lệ đúng đo được đại diện cho cả kho.
  */
 function auditSample(items, labelledIds, n = 10, rand = Math.random, mode = 'random') {
+  if (mode === 'gold') return sampleGoldStratified(items, labelledIds, n, rand);
   // Hàng nghi mỉa mai / cần duyệt lấy cả phản hồi trọng số 0 (vd. bị hạ trọng số oan vì lệch sao)
   const pool = items.filter((f) => (mode === 'random' ? metrics.isCountable(f) : true) && inQueue(f, mode) && !labelledIds.has(String(f._id)));
   // Fisher–Yates một phần: chỉ xáo n phần tử đầu
@@ -65,6 +193,12 @@ function auditSummary(allLabels) {
   // câu khó, tính vào sẽ kéo con số xuống và không đại diện cho cả kho
   const labels = allLabels.filter((l) => !l.sampleMode || l.sampleMode === 'random');
   const sarcasmLabelled = allLabels.filter((l) => typeof l.sarcasm === 'boolean');
+  const goldLabels = allLabels.filter((l) => l.sampleMode === 'gold' || Array.isArray(l.correctRootCauses));
+  const goldBySplit = { train: 0, dev: 0, test: 0 };
+  for (const l of goldLabels) {
+    const sp = l.goldSplit || goldSplit(l.productName);
+    if (goldBySplit[sp] != null) goldBySplit[sp] += 1;
+  }
   const n = labels.length;
   const cat = labels.filter((l) => l.categoryCorrect).length;
   const sent = labels.filter((l) => l.sentimentCorrect).length;
@@ -102,7 +236,68 @@ function auditSummary(allLabels) {
     totalReviewed: allLabels.length,
     byMode: Object.fromEntries(AUDIT_MODES.map((m) => [m, allLabels.filter((l) => (l.sampleMode || 'random') === m).length])),
     sarcasm: { labelled: sarcasmLabelled.length, sarcastic: sarcasmLabelled.filter((l) => l.sarcasm).length },
+    gold: {
+      total: goldLabels.length,
+      withRootCauses: goldLabels.filter((l) => Array.isArray(l.correctRootCauses) && l.correctRootCauses.length > 0).length,
+      bySplit: goldBySplit
+    },
     blindTest: allLabels.filter((l) => isBlindTest(l.feedbackId)).length
+  };
+}
+
+/** Dựng danh sách bản ghi bộ gold (nhãn người) kèm thông tin chia theo sản phẩm */
+function buildGoldExport(feedbacks, auditLabels) {
+  const byId = new Map((feedbacks || []).map((f) => [String(f._id), f]));
+  const rows = [];
+  const bySplit = { train: 0, dev: 0, test: 0 };
+  const testProducts = new Set();
+  const rootCounts = {};
+
+  for (const l of auditLabels || []) {
+    const fb = byId.get(String(l.feedbackId));
+    if (!fb) continue;
+    const productName = fb.productName || l.productName || '';
+    const productType = fb.productType || taxonomy.productTypeOf(productName) || null;
+    const split = l.goldSplit || goldSplit(productName);
+    const category = l.correctCategory === 'Other' ? null : (l.correctCategory || null);
+    const cause = category ? (l.correctCause || null) : null;
+    const rootCauses = taxonomy.normalizeRootCauses(l.correctRootCauses, { nonComplaint: !category });
+
+    if (bySplit[split] != null) bySplit[split] += 1;
+    if (split === 'test' && productName) testProducts.add(productName);
+    for (const r of rootCauses) rootCounts[r] = (rootCounts[r] || 0) + 1;
+
+    rows.push({
+      feedbackId: String(l.feedbackId),
+      text: fb.originalText || '',
+      rating: fb.rating ?? null,
+      productName,
+      productType,
+      productCategory: fb.productCategory || null,
+      source: fb.source || null,
+      sentiment: l.correctSentiment || fb.sentiment || 'Neutral',
+      category,
+      cause,
+      rootCauses,
+      sarcasm: typeof l.sarcasm === 'boolean' ? l.sarcasm : null,
+      sampleMode: l.sampleMode || 'random',
+      goldSplit: split,
+      blindTest: isBlindTest(l.feedbackId),
+      labelSource: 'human',
+      by: l.by || null,
+      at: l.at ? new Date(l.at).toISOString() : null
+    });
+  }
+
+  return {
+    rows,
+    manifest: {
+      total: rows.length,
+      labelSource: 'human',
+      bySplit,
+      testProducts: [...testProducts].sort(),
+      rootCounts
+    }
   };
 }
 
@@ -301,9 +496,14 @@ module.exports = {
   AUDIT_MODES,
   BLIND_PERCENT,
   isBlindTest,
+  GOLD_TEST_PERCENT,
+  GOLD_DEV_PERCENT,
+  normalizeProductKey,
+  goldSplit,
   inQueue,
   auditSample,
   auditSummary,
+  buildGoldExport,
   decisionEffect,
   productList,
   productProfile,

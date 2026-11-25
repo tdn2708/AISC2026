@@ -72,6 +72,10 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
   return rawReviews.map((review, index) => {
     const ai = aiResults[index] || {};
     const category = taxonomy.normalizeCategory(ai.category);
+    const subCategory = taxonomy.normalizeCause(category, ai.subCategory);
+    const productName = normalizer.decodeEntities(review.productName || meta.fallbackProduct) || 'Sản phẩm chưa xác định';
+    const productType = review.productType || taxonomy.productTypeOf(productName) || null;
+    const rootCauses = taxonomy.normalizeRootCauses(ai.rootCauses, { nonComplaint: category === 'Other' });
     const facts = review.platformFacts || null;
     const { rawCustomerId, ...publicFacts } = facts || {};
     return {
@@ -84,9 +88,11 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
       // Dòng nạp từ file không có ngày: timestamp là ngày nạp, không dùng cho phép so thời gian
       ...(review.timeInferred ? { timeInferred: true } : {}),
       ...(review.importRef ? { importRef: review.importRef } : {}),
-      productName: normalizer.decodeEntities(review.productName || meta.fallbackProduct) || 'Sản phẩm chưa xác định',
+      productName,
       // Mảng hàng: danh mục của sàn hoặc cột danh mục trong file shop nạp lên (product_group.js)
       productCategory: review.productCategory || meta.productCategory || null,
+      // Loại hàng gia dụng suy từ tên sản phẩm (tùy chọn, dùng cho tiền tố v5 và phân tích L3)
+      ...(productType ? { productType } : {}),
       accountAgeDays: review.accountAgeDays ?? null,
       rating: review.rating ?? null,
       orderId: review.orderId ?? null,
@@ -95,7 +101,9 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
       deliveredAt: facts?.deliveredAt || null,
       platformFacts: facts ? publicFacts : null,
       category,
-      subCategory: taxonomy.normalizeCause(category, ai.subCategory),
+      subCategory,
+      // Nguyên nhân gốc rễ cấp 3 (L3, đa nhãn, tùy chọn; câu không phải khiếu nại là [])
+      ...(rootCauses.length ? { rootCauses } : { rootCauses: [] }),
       sentiment: ai.sentiment || 'Neutral',
       aiSummary: ai.aiSummary || null,
       entities: ai.entities || null,

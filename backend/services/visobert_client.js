@@ -21,26 +21,29 @@ const { normalize, maskPII, stripHtml } = require('./normalizer');
 
 const INPUT_MODES = ['masked', 'normalized'];
 const STATUS_TTL_MS = 15 * 1000;
-const CHUNK_SIZE = 64;
+// Khớp MAX_TEXTS = 32 của nlp_service/service.py (mục 3.5 kế hoạch v5)
+const CHUNK_SIZE = 32;
 const CACHE_LIMIT = 20000;
 
 function config() {
   const raw = process.env.VISOBERT_URL;
-  const disabled =
-    raw !== undefined && ['', 'off', 'false', '0'].includes(raw.trim().toLowerCase());
+  // Dịch vụ suy luận TẮT MẶC ĐỊNH khi chưa đặt VISOBERT_URL (hoặc đặt off/false/0)
+  const trimmed = raw == null ? '' : raw.trim();
+  const enabled = Boolean(trimmed) && !['off', 'false', '0'].includes(trimmed.toLowerCase());
   const mode = process.env.VISOBERT_INPUT_MODE;
   return {
-    enabled: !disabled,
-    url: (raw && !disabled ? raw.trim() : 'http://127.0.0.1:8001').replace(/\/+$/, ''),
+    enabled,
+    url: (enabled ? trimmed : 'http://127.0.0.1:8001').replace(/\/+$/, ''),
     timeoutMs: Number(process.env.VISOBERT_TIMEOUT_MS) || 30000,
-    // Dịch vụ đặt trên máy chủ từ xa (Hugging Face Spaces) phản hồi chậm hơn
-    // localhost; quá ngắn thì cứ bị coi là "không kết nối được"
     healthTimeoutMs: Number(process.env.VISOBERT_HEALTH_TIMEOUT_MS) || 8000,
-    // Khóa xác thực khi dịch vụ chạy công khai (VISOBERT_API_KEY ở cả hai phía)
-    apiKey: (process.env.VISOBERT_API_KEY || '').trim(),
-    configured: Boolean(raw && !disabled),
+    // Hỗ trợ cả VISOBERT_KEY (mục 3.5) và VISOBERT_API_KEY (tương thích cũ)
+    apiKey: (process.env.VISOBERT_KEY || process.env.VISOBERT_API_KEY || '').trim(),
+    configured: enabled,
     inputMode: INPUT_MODES.includes(mode) ? mode : 'masked',
-    trustSignals: process.env.VISOBERT_TRUST_SIGNALS === '1'
+    trustSignals: process.env.VISOBERT_TRUST_SIGNALS === '1',
+    confL2: Number(process.env.VISOBERT_CONF_L2) || 0.65,
+    confL3: Number(process.env.VISOBERT_CONF_L3) || 0.50,
+    confNone: Number(process.env.VISOBERT_CONF_NONE) || 0.80
   };
 }
 
@@ -53,15 +56,23 @@ function config() {
  *              Mặc định, vì ViSoBERT được huấn luyện trên chính dạng văn
  *              bản thô này.
  *   normalized đi qua toàn bộ normalizer (dịch teencode, emoji thành chữ).
- *              Giữ lại để chạy ablation: dịch teencode có còn giúp ích
- *              khi mô hình đã hiểu teencode hay không.
+ *              Giữ lại để chạy ablation.
  *
- * PII luôn bị che ở cả hai chế độ — văn bản chưa che không bao giờ rời
- * khỏi tiến trình Node.
+ * Tiền tố "[N sao] [loại hàng] " chỉ thêm khi checkpoint được huấn luyện với nó
+ * (meta inputRating, inputProductType). PII luôn bị che ở cả hai chế độ — văn
+ * bản chưa che không bao giờ rời khỏi tiến trình Node.
+ *
+ * Dịch vụ TẮT khi chưa đặt VISOBERT_URL (prod không có dịch vụ này; trước đây
+ * backend vẫn gọi thử 127.0.0.1:8001 ở mỗi lần kiểm trạng thái). start-demo.ps1
+ * tự đặt VISOBERT_URL khi mở dịch vụ ở máy.
  */
 /** Header gửi kèm mọi lệnh gọi sang dịch vụ */
 function authHeaders(cfg = config()) {
-  return cfg.apiKey ? { Authorization: `Bearer ${cfg.apiKey}` } : {};
+  if (!cfg.apiKey) return {};
+  return {
+    Authorization: `Bearer ${cfg.apiKey}`,
+    'X-Api-Key': cfg.apiKey
+  };
 }
 
 /**
@@ -71,12 +82,16 @@ function authHeaders(cfg = config()) {
  * số sao (Facebook, TikTok) thì không có tiền tố, đúng như lúc huấn luyện.
  */
 const RATING_PREFIX = (rating) => (Number.isFinite(rating) && rating >= 1 && rating <= 5 ? `[${Math.round(rating)} sao] ` : '');
+const PRODUCT_TYPE_PREFIX = (productType) => {
+  const s = String(productType || '').normalize('NFC').replace(/[[\]]/g, '').trim();
+  return s ? `[${s}] ` : '';
+};
 
-function prepareInput(text, mode = 'masked', rating = null) {
+function prepareInput(text, mode = 'masked', rating = null, productType = null) {
   const body = mode === 'normalized'
     ? normalize(text).normalized
     : maskPII(stripHtml(text)).text.replace(/\s+/g, ' ').trim();
-  return RATING_PREFIX(rating) + body;
+  return RATING_PREFIX(rating) + PRODUCT_TYPE_PREFIX(productType) + body;
 }
 
 let statusCache = { at: 0, value: null };
@@ -90,7 +105,8 @@ async function status({ fresh = false } = {}) {
   if (!cfg.enabled) {
     return {
       enabled: false, reachable: false, encoderLoaded: false, finetuned: false,
-      reason: 'Đã tắt bằng VISOBERT_URL=off'
+      canLabel: false, canScoreSpam: false, canLabelRoot: false,
+      reason: 'Dịch vụ ViSoBERT đang tắt mặc định (đặt VISOBERT_URL để bật)'
     };
   }
   if (!fresh && statusCache.value && Date.now() - statusCache.at < STATUS_TTL_MS) {
@@ -113,6 +129,7 @@ async function status({ fresh = false } = {}) {
       finetuned: Boolean(data.finetuned),
       canLabel,
       canScoreSpam: Boolean(data.finetuned && tasks.spam),
+      canLabelRoot: Boolean(data.finetuned && tasks.root),
       checkpoint,
       // Mô hình phải nhận đầu vào đúng kiểu nó đã học, bất kể cấu hình hiện tại
       inputMode: checkpoint?.inputMode || cfg.inputMode,
@@ -230,14 +247,20 @@ function guardPrediction(pred, rawText) {
  * `cache: false` chạy thẳng, không dùng bộ đệm — dùng khi cần ĐO tốc độ thật,
  * vì đọc từ đệm sẽ cho ra một con số throughput không có thật.
  */
-async function predict(texts, { cache = true, ratings = null } = {}) {
+async function predict(texts, { cache = true, ratings = null, productTypes = null } = {}) {
   if (!Array.isArray(texts) || texts.length === 0) return [];
   const s = await status();
   if (!s.finetuned) return null;
   try {
-    // Chỉ thêm số sao khi checkpoint được huấn luyện với số sao
+    // Chỉ thêm số sao / loại hàng khi checkpoint được huấn luyện với tiền tố tương ứng
     const useRating = Boolean(s.checkpoint?.inputRating);
-    const inputs = texts.map((t, i) => prepareInput(t, s.inputMode, useRating && ratings ? ratings[i] : null));
+    const useProductType = Boolean(s.checkpoint?.inputProductType);
+    const inputs = texts.map((t, i) => prepareInput(
+      t,
+      s.inputMode,
+      useRating && ratings ? ratings[i] : null,
+      useProductType && productTypes ? productTypes[i] : null
+    ));
     const guard = (preds) => preds.map((p, i) => guardPrediction(p, texts[i]));
     if (!cache) return guard(await postChunked('/predict', inputs, 'predictions'));
     // Khóa đệm gắn với thời điểm train: đổi checkpoint thì kết quả cũ tự vô hiệu
@@ -324,10 +347,19 @@ function toAnalysis(pred) {
   const catLabel = category ? taxonomy.categoryLabel(category) : null;
   const causeLbl = category ? taxonomy.causeLabel(category, cause) : null;
   const aspects = detectedAspects(pred);
+  const rawRoots = Array.isArray(pred?.rootCauseKeys)
+    ? pred.rootCauseKeys
+    : Array.isArray(pred?.rootCauses)
+      ? pred.rootCauses.map((x) => (typeof x === 'string' ? x : x?.root))
+      : [];
+  const rootCauses = taxonomy.normalizeRootCauses(rawRoots, { nonComplaint: !category });
+  const hasRootHead = Array.isArray(pred?.rootCauses) || Array.isArray(pred?.rootCauseKeys);
+
   return {
     // Danh mục CHÍNH dùng cho bản ghi và cho mọi chỉ số đếm theo danh mục
     category: category || 'Other',
     subCategory: cause,
+    rootCauses,
     sentiment,
     // Toàn bộ khía cạnh: một phản hồi thật thường nêu nhiều vấn đề cùng lúc
     aspects: aspects.map((a) => ({
@@ -346,26 +378,65 @@ function toAnalysis(pred) {
       : (category ? `${catLabel} — ${causeLbl || 'chưa rõ nguyên nhân'}` : 'Không thuộc nhóm khiếu nại nào trong taxonomy'),
     labelledBy: 'visobert',
     // Checkpoint v4 có đầu ra mỉa mai riêng; bản cũ không có thì để trống
-    ...(Number.isFinite(pred.sarcasmProbability) ? { sarcasm: pred.sarcasmProbability >= 0.5, sarcasmProbability: round2(pred.sarcasmProbability) } : {}),
+    ...(Number.isFinite(pred?.sarcasmProbability) ? { sarcasm: pred.sarcasmProbability >= 0.5, sarcasmProbability: round2(pred.sarcasmProbability) } : {}),
     modelConfidence: {
-      sentiment: round2(pred.sentimentConfidence),
-      category: round2(pred.categoryConfidence),
-      cause: round2(pred.causeConfidence)
+      sentiment: round2(pred?.sentimentConfidence),
+      category: round2(pred?.categoryConfidence),
+      cause: round2(pred?.causeConfidence),
+      causeUncertain: Boolean(pred?.causeUncertain),
+      none: round2(pred?.noneProbability),
+      root: round2(pred?.rootConfidence),
+      hasRootHead
     }
   };
+}
+
+/**
+ * Cổng tự tin cho thứ tự gán nhãn ViSoBERT v5 trước, LLM sau (mục 3.5.2):
+ *  - Không phải khiếu nại chắc chắn (`Other`, không tiêu cực, không mỉa mai, none/cat >= confNone) -> nhận luôn.
+ *  - Khiếu nại có L2 chắc (`!causeUncertain`, p(L2) >= confL2): nếu L2 có bộ L3 gia dụng
+ *    và checkpoint có đầu `root` thì cần thêm L3 đạt ngưỡng (`p(L3) >= confL3`).
+ *  - Câu chưa đủ chắc -> chuyển sang LLM xử lý.
+ */
+function isConfidentPrediction(analysis, opts = {}) {
+  if (!analysis || analysis.labelledBy !== 'visobert') return false;
+  const cfg = config();
+  const l2Min = opts.confL2 ?? cfg.confL2;
+  const l3Min = opts.confL3 ?? cfg.confL3;
+  const noneMin = opts.confNone ?? cfg.confNone;
+  const mc = analysis.modelConfidence || {};
+
+  // Câu nghi mỉa mai luôn để tầng sau / LLM kiểm tra kỹ hơn
+  if (analysis.sarcasm === true) return false;
+
+  if (!analysis.category || analysis.category === 'Other') {
+    if (analysis.sentiment === 'Negative') return false;
+    const pNone = mc.none ?? mc.category ?? 0;
+    return pNone >= noneMin;
+  }
+
+  if (!analysis.subCategory || mc.causeUncertain) return false;
+  if ((mc.cause ?? 0) < l2Min) return false;
+
+  const needsL3 = mc.hasRootHead && taxonomy.rootCausesFor(analysis.subCategory).length > 0 && opts.isAppliance !== false;
+  if (needsL3) {
+    return Array.isArray(analysis.rootCauses) && analysis.rootCauses.length > 0 && (mc.root ?? 0) >= l3Min;
+  }
+  return true;
 }
 
 /** Dạng dự đoán mà khung đánh giá (evaluation/) dùng */
 function toBaselinePrediction(pred) {
   const { category, cause, sentiment } = taxonomyLabels(pred);
-  return { category, cause, sentiment, labelledBy: 'visobert' };
+  const rootCauses = taxonomy.normalizeRootCauses(pred?.rootCauseKeys || [], { nonComplaint: !category });
+  return { category, cause, rootCauses, sentiment, labelledBy: 'visobert' };
 }
 
 /** Gán nhãn theo lô bằng ViSoBERT; trả null nếu checkpoint chưa gán nhãn được */
-async function predictAnalysis(texts, ratings = null) {
+async function predictAnalysis(texts, ratings = null, productTypes = null) {
   const s = await status();
   if (!s.canLabel) return null;
-  const preds = await predict(texts, { ratings });
+  const preds = await predict(texts, { ratings, productTypes });
   return preds ? preds.map(toAnalysis) : null;
 }
 
@@ -427,6 +498,8 @@ function sanitizeClientPrediction(p) {
     causeUncertain: Boolean(p.causeUncertain),
     noneProbability: num01(p.noneProbability),
     spamProbability: num01(p.spamProbability),
+    ...(Array.isArray(p.rootCauseKeys) ? { rootCauseKeys: taxonomy.normalizeRootCauses(p.rootCauseKeys) } : {}),
+    ...(num01(p.rootConfidence) != null ? { rootConfidence: num01(p.rootConfidence) } : {}),
     categories: cats
       .filter((c) => c && typeof c === 'object')
       .map((c) => ({
@@ -503,6 +576,7 @@ module.exports = {
   predictAnalysis,
   trustSignals,
   toAnalysis,
+  isConfidentPrediction,
   toBaselinePrediction,
   detectedAspects,
   guardPrediction,

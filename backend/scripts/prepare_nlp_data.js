@@ -55,6 +55,12 @@ function buildLabels() {
   for (const cat of taxonomy.CATEGORY_KEYS) {
     for (const key of Object.keys(taxonomy.TAXONOMY[cat].causes)) cause.push(`${cat}.${key}`);
   }
+  const rootKeys = taxonomy.rootCauseKeys('gia_dung');
+  const rootParents = {};
+  for (const k of rootKeys) {
+    const info = taxonomy.rootCauseInfo(k, 'gia_dung');
+    rootParents[k] = `${info.parentCategory}.${info.parentCause}`;
+  }
   return {
     sentiment: ['Positive', 'Negative', 'Neutral'],
     category: [...taxonomy.CATEGORY_KEYS, 'NONE'],
@@ -62,6 +68,10 @@ function buildLabels() {
     spam: ['not_spam', 'spam'],
     // Bản v4: đầu ra mỉa mai. Checkpoint cũ không có khóa này vẫn chạy bình thường
     sarcasm: ['literal', 'sarcastic'],
+    // Bản v5: nguyên nhân gốc rễ cấp 3 (gói gia_dung). Checkpoint cũ không có khóa này vẫn nạp được
+    root: ['NONE', ...rootKeys],
+    rootParents,
+    rootPack: 'gia_dung',
     generatedFrom: 'backend/services/taxonomy.js'
   };
 }
@@ -106,10 +116,18 @@ function validateRow(row) {
 }
 
 function toRow(src, mode) {
-  const row = { text: String(src.text), input: prepareInput(src.text, mode), inputMode: mode };
+  const rating = Number.isFinite(src.rating) ? src.rating : null;
+  const productType = src.productType || (src.productName ? taxonomy.productTypeOf(src.productName) : null);
+  const row = {
+    text: String(src.text),
+    input: prepareInput(src.text, mode, rating, productType),
+    inputMode: mode,
+    ...(rating !== null ? { inputRating: true } : {}),
+    ...(productType ? { inputProductType: true, productType } : {})
+  };
   // `category`/`cause` là dạng một nhãn; `categories`/`causes` là dạng đa nhãn
   // (một phản hồi nêu nhiều vấn đề). Hai dạng dùng lẫn nhau được trong cùng tập.
-  for (const k of ['sentiment', 'category', 'cause', 'spam', 'categories', 'causes']) {
+  for (const k of ['sentiment', 'category', 'cause', 'spam', 'sarcasm', 'categories', 'causes', 'roots', 'rootCauses', 'weight']) {
     if (k in src) row[k] = src[k];
   }
   return row;
@@ -216,7 +234,7 @@ function readVisfd(file) {
 
 function readJsonlFile(file) {
   return fs.readFileSync(file, 'utf8').split(/\r?\n/).filter((l) => l.trim()).map((l, i) => {
-    try { return JSON.parse(l); } catch (e) { throw new Error(`${file}:${i + 1} không phải JSON hợp lệ`); }
+    try { return JSON.parse(l); } catch { throw new Error(`${file}:${i + 1} không phải JSON hợp lệ`); }
   });
 }
 

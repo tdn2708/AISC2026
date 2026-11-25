@@ -20,16 +20,24 @@ const { findPainPoints } = require('./pain_points');
 
 /** Chuẩn hóa nhãn danh mục/nguyên nhân về taxonomy hiện hành */
 function normalizeLabels(fb) {
+  const productName = typeof fb.productName === 'string' && fb.productName.includes('&')
+    ? decodeEntities(fb.productName)
+    : fb.productName;
   const category = taxonomy.normalizeCategory(fb.category);
   const cause = taxonomy.normalizeCause(category, fb.subCategory);
+  const rootCauses = taxonomy.normalizeRootCauses(fb.rootCauses, { nonComplaint: category === 'Other' });
+  const productType = fb.productType || taxonomy.productTypeOf(productName) || null;
   return {
     ...fb,
     // Tên lưu từ trước còn mã HTML ("&amp;") thì giải ngay lúc đọc
-    ...(typeof fb.productName === 'string' && fb.productName.includes('&') ? { productName: decodeEntities(fb.productName) } : {}),
+    ...(productName !== fb.productName ? { productName } : {}),
+    ...(productType ? { productType } : {}),
     category,
     subCategory: cause,
+    rootCauses,
     categoryLabel: taxonomy.categoryLabel(category),
-    causeLabel: taxonomy.causeLabel(category, cause)
+    causeLabel: taxonomy.causeLabel(category, cause),
+    rootCauseLabels: rootCauses.map((k) => taxonomy.rootCauseLabel(k)).filter(Boolean)
   };
 }
 
@@ -47,7 +55,13 @@ function applyHumanLabels(feedbacks, labels) {
     if (!l) continue;
     // Áp lại lên phản hồi đã có nhãn người (sửa nhãn lần hai): giữ nhãn máy GỐC
     if (!f.machineLabel) {
-      f.machineLabel = { sentiment: f.sentiment, category: f.category, subCategory: f.subCategory, labelledBy: f.labelledBy };
+      f.machineLabel = {
+        sentiment: f.sentiment,
+        category: f.category,
+        subCategory: f.subCategory,
+        rootCauses: Array.isArray(f.rootCauses) ? f.rootCauses.slice() : [],
+        labelledBy: f.labelledBy
+      };
     }
     if (l.correctSentiment) f.sentiment = l.correctSentiment;
     if (l.correctCategory) {
@@ -55,6 +69,14 @@ function applyHumanLabels(feedbacks, labels) {
       f.category = l.correctCategory;
     }
     if (l.correctCause) f.subCategory = l.correctCause;
+    if (Array.isArray(l.correctRootCauses)) {
+      f.rootCauses = taxonomy.normalizeRootCauses(l.correctRootCauses, { nonComplaint: f.category === 'Other' });
+    } else if (f.category === 'Other') {
+      f.rootCauses = [];
+    }
+    f.categoryLabel = taxonomy.categoryLabel(f.category);
+    f.causeLabel = taxonomy.causeLabel(f.category, f.subCategory);
+    f.rootCauseLabels = (f.rootCauses || []).map((k) => taxonomy.rootCauseLabel(k)).filter(Boolean);
     if (typeof l.sarcasm === 'boolean') {
       f.sarcasm = { ...(f.sarcasm || {}), verdict: l.sarcasm ? 'sarcastic' : 'literal', by: 'human' };
     }
