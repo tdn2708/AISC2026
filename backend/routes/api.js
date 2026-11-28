@@ -4,7 +4,7 @@ const router = express.Router();
 const { scrapeShopeeReviews } = require('../services/scraper');
 const { classifyByRulesFallback } = require('../services/ai_analyzer');
 const { findDecision } = require('../services/decision_match');
-const { getContext, invalidate, isRefreshing, patchServing, applyFilters, scopeTransactions, ctxNow, cadenceOf, timeBounds, applyHumanLabels, applyReviewLabel } = require('../services/analysis_context');
+const { getContext, invalidate, isRefreshing, patchServing, applyFilters, scopeTransactions, ctxNow, cadenceOf, healthNow, timeBounds, applyHumanLabels, applyReviewLabel } = require('../services/analysis_context');
 const workItems = require('../services/work_items');
 const { detectAlertsCached, buildRecommendationsCached, painPointsFor, buildInboxItems, recordDecision } = workItems;
 const { rateLimit } = require('../services/rate_limit');
@@ -246,7 +246,18 @@ router.get('/stats', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
   const memoKey = `${ctx.dbName}|${ctx.computedAt}|${ctx.refreshing ? 'stale' : 'ok'}|${ctx.patchedAt || 0}|${JSON.stringify([req.query.time, req.query.source, req.query.product, req.query.region])}`;
   const hit = statsMemo.get(memoKey);
-  if (hit && Date.now() - hit.at < ALERT_MEMO_TTL_MS) return res.json(hit.body);
+  if (hit && Date.now() - hit.at < ALERT_MEMO_TTL_MS) {
+    const h = healthNow(ctx);
+    return res.json({
+      ...hit.body,
+      dataHealthScore: h ? h.dataHealthScore : hit.body.dataHealthScore,
+      healthComponents: h ? h.components : hit.body.healthComponents,
+      channelCoverage: h ? h.channelCoverage : hit.body.channelCoverage,
+      lastSyncAt: h?.lastSyncAt ?? ctx.lastSyncAt ?? null,
+      lastSyncSource: h?.lastSyncSource ?? ctx.lastSyncSource ?? null,
+      ingestedAt: h?.lastSyncAt || ctx.ingestedAt
+    });
+  }
   const sendStats = res.json.bind(res);
   res.json = (body) => {
     if (statsMemo.size > 60) statsMemo.clear();
@@ -259,6 +270,7 @@ router.get('/stats', wrap(async (req, res) => {
   const scopedTxns = scopeTransactions(ctx.transactions, req.query, ctx.asOf);
   const cadence = cadenceOf(ctx);
   const cards = metrics.buildMetricCards(items, scopedTxns.length, ctxNow(ctx), cadence);
+  const health = healthNow(ctx);
 
   res.json({
     ...cards,
@@ -267,10 +279,11 @@ router.get('/stats', wrap(async (req, res) => {
     comparison: metrics.periodComparison(items, scopedTxns, ctxNow(ctx), cadence.windowDays),
     // Nhịp phân tích của kho: giao diện ghi đúng "6 tháng gần nhất" thay vì viết cứng "7 ngày"
     cadence,
-    dataHealthScore: ctx.funnel.dataHealthScore,
+    dataHealthScore: health.dataHealthScore,
     // Thành phần bằng chứng của từng thẻ: đối soát được / người duyệt / suy luận
     evidence: metrics.buildEvidence(items, ctxNow(ctx), 5, cadence.windowDays),
-    healthComponents: ctx.funnel.components,
+    healthComponents: health.components,
+    channelCoverage: health.channelCoverage,
     // Giữ các khóa cũ để giao diện chưa nâng cấp không vỡ
     totalComplaints: items.filter((f) => metrics.isCountable(f) && metrics.isComplaint(f)).length,
     complaintRate: cards.weightedComplaintRate.display,
@@ -280,7 +293,9 @@ router.get('/stats', wrap(async (req, res) => {
     workspace: req.workspace,
     asOf: ctx.asOf,
     halfLifeDays: ctx.halfLifeDays,
-    ingestedAt: ctx.ingestedAt
+    lastSyncAt: health.lastSyncAt ?? ctx.lastSyncAt ?? null,
+    lastSyncSource: health.lastSyncSource ?? ctx.lastSyncSource ?? null,
+    ingestedAt: health.lastSyncAt || ctx.ingestedAt
   });
 }));
 
@@ -500,12 +515,13 @@ router.get('/bi/cube', wrap(async (req, res) => {
 /** Phễu dữ liệu + Chỉ số Sức khỏe Dữ liệu */
 router.get('/trust/health', wrap(async (req, res) => {
   const ctx = await getContext(req.db);
+  const health = healthNow(ctx);
   res.json({
-    ...ctx.funnel,
+    ...health,
     workspace: req.workspace,
     asOf: ctx.asOf,
     halfLifeDays: ctx.halfLifeDays,
-    ingestedAt: ctx.ingestedAt,
+    ingestedAt: health.lastSyncAt || ctx.ingestedAt,
     provenanceTiers: trustLayer.PROVENANCE_TIERS,
     tierBreakdown: ['P1', 'P2', 'P3', 'P4', 'P5'].map((tier) => ({
       tier,
@@ -592,7 +608,7 @@ router.get('/nav/status', wrap(async (req, res) => {
     totalAlerts: alerts.length,
     criticalAlerts: pending.filter((a) => a.severity === 'Critical' || a.severity === 'High').length,
     reviewQueue: queueCount,
-    dataHealth: ctx.funnel.dataHealthScore ?? null,
+    dataHealth: healthNow(ctx)?.dataHealthScore ?? null,
     validFeedbacks: ctx.items.filter((f) => f.trust && f.trust.weight > 0).length,
     computedAt: ctx.computedAt,
     // Vừa có thao tác ghi: số liệu đang được tính lại ở nền, giao diện báo và tự tải lại khi xong
@@ -1545,6 +1561,53 @@ router.post('/collector/run', collectLimit, wrap(async (req, res) => {
   res.status(202).json({ started: true, status });
 }));
 
+// Cấu hình tự thu thập Tiki theo từng kho shop (A4): kho riêng chủ shop tự sửa; kho chung chỉ admin sửa
+const canManageCollectConfig = (req) => {
+  const key = req.wsKey || req.workspace;
+  if (key && key !== 'real' && key !== 'demo') return true;
+  return req.user?.role === 'admin';
+};
+
+router.get('/collect/config', wrap(async (req, res) => {
+  if (req.workspace !== 'real') return res.json({ applicable: false });
+  const data = await realCollector.getCollectConfig(req.db);
+  res.json({ applicable: true, editable: canManageCollectConfig(req), ...data });
+}));
+
+router.put('/collect/config', wrap(async (req, res) => {
+  if (req.workspace !== 'real') return res.status(400).json({ error: 'Chỉ cấu hình tự thu thập trên kho Dữ liệu thật' });
+  if (!canManageCollectConfig(req)) {
+    return res.status(403).json({ error: 'Kho dữ liệu thật dùng chung chỉ quản trị viên mới sửa được cấu hình' });
+  }
+  const by = req.user?.name || req.user?.email || null;
+  const data = await realCollector.saveCollectConfig(req.db, req.body, by);
+  res.json({ applicable: true, editable: true, ...data });
+}));
+
+router.post('/collect/run', collectLimit, wrap(async (req, res) => {
+  if (req.workspace !== 'real') return res.status(400).json({ error: 'Chỉ kho Dữ liệu thật mới thu thập được' });
+  if (!canManageCollectConfig(req)) {
+    return res.status(403).json({ error: 'Kho dữ liệu thật dùng chung chỉ quản trị viên mới chạy thu thập theo cấu hình' });
+  }
+  const { config } = await realCollector.getCollectConfig(req.db);
+  const isSharedReal = (req.wsKey || 'real') === 'real';
+  if (!config.queries.length && !isSharedReal) {
+    return res.status(400).json({ error: 'Chưa có từ khóa thu thập. Hãy lưu từ khóa trước khi thu ngay.' });
+  }
+  const opts = config.queries.length
+    ? { queries: config.queries, productsPerQuery: config.productsPerQuery ?? 25, pages: config.pages ?? 3, minReviews: config.minReviews ?? 1, pauseMs: 1500 }
+    : { productsPerQuery: 4, pages: 2, pauseMs: 5000 };
+  const r = await realCollector.runOnce(req.db, { trigger: 'manual', minGapMs: 0, opts });
+  const status = await realCollector.collectorStatus(req.db);
+  if (!r.started) {
+    return res.status(409).json({
+      error: 'Đang có một lượt thu thập chạy, vui lòng đợi xong.',
+      status
+    });
+  }
+  res.status(202).json({ started: true, status });
+}));
+
 router.post('/scrape', collectLimit, wrap(async (req, res) => {
   const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
   if (!url) return res.status(400).json({ error: 'Cần trường url' });
@@ -1598,13 +1661,14 @@ router.post('/scrape', collectLimit, wrap(async (req, res) => {
 
   // Chạy lại Trust Layer để báo ngay lô mới ảnh hưởng thế nào tới chất lượng dữ liệu
   const ctx = await getContext(req.db, { force: inserted > 0 });
+  const health = healthNow(ctx);
 
   res.json({
     message: inserted > 0 ? 'Đã thu thập và phân tích xong' : 'Mọi bình luận lấy được đều đã có trong kho',
     count: inserted,
     duplicatesSkipped: analyzed.length - inserted,
-    dataHealthScore: ctx.funnel.dataHealthScore,
-    funnel: ctx.funnel,
+    dataHealthScore: health.dataHealthScore,
+    funnel: health,
     productName: analyzed[0]?.productName || null,
     // Nguồn + sản phẩm để giao diện mở thẳng kho phản hồi đã lọc đúng lô vừa thu thập
     source: analyzed[0]?.source || null,
@@ -1793,7 +1857,19 @@ router.post('/import/feedbacks', importLimit, wrap(async (req, res) => {
   const keys = raw.map(keyOf);
   const seen = new Set((await req.db.collection('feedbacks').find({ dedupKey: { $in: keys } }, { projection: { dedupKey: 1 } }).toArray()).map((d) => d.dedupKey));
   const fresh = raw.filter((r, i) => !seen.has(keys[i]));
-  if (!fresh.length) return res.json({ inserted: 0, duplicates: raw.length, skipped, labelledBy: [], negatives: 0 });
+  if (!fresh.length) {
+    const syncAt = new Date();
+    await req.db.collection('meta').updateOne({ _id: 'last_import' }, { $set: { at: syncAt, kind: 'feedbacks', source: fileSource } }, { upsert: true });
+    const iso = syncAt.toISOString();
+    patchServing(req.db, (c) => {
+      c.lastSyncAt = iso;
+      c.lastSyncSource = 'import';
+      c.ingestedAt = iso;
+      if (c.funnel) { c.funnel.lastSyncAt = iso; c.funnel.lastSyncSource = 'import'; }
+      c.patchedAt = Date.now();
+    });
+    return res.json({ inserted: 0, duplicates: raw.length, skipped, labelledBy: [], negatives: 0 });
+  }
   // Gói Dùng thử: cắt phần vượt hạn mức tháng TRƯỚC khi gán nhãn (không tốn lượt AI cho dòng không lưu)
   const { left, room } = await feedbackRoomOr402(req);
   const overQuota = fresh.length > left ? fresh.length - left : 0;
@@ -1805,6 +1881,7 @@ router.post('/import/feedbacks', importLimit, wrap(async (req, res) => {
     d.customerId = raw[i].customerId;
   });
   const { inserted, duplicates } = await saveFeedbacks(req.db, docs);
+  await req.db.collection('meta').updateOne({ _id: 'last_import' }, { $set: { at: new Date(), kind: 'feedbacks', source: fileSource } }, { upsert: true });
   if (inserted > 0) {
     await req.db.collection('predictions').deleteMany({});
     invalidate(req.db);
@@ -1844,7 +1921,10 @@ const toDate = (v) => {
   const d = new Date(v);
   return Number.isNaN(d.getTime()) || d.getTime() > Date.now() + 86400000 ? null : d;
 };
-const CANCELLED = /(huy|cancel|that bai|failed|tra hang hoan tien toan bo)/;
+const { modelCodeOf, listingTagOf } = require('../services/product_group');
+const orderInsights = require('../services/order_insights');
+
+const cleanOrderText = (v, max = 120) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
 
 router.post('/import/orders', importLimit, billing.requireFeature('orders_import'), wrap(async (req, res) => {
   if (req.workspace !== 'real') return res.status(403).json({ error: 'Chỉ nạp file vào kho Dữ liệu thật. Chọn kho ở góc trên thanh bên.' });
@@ -1852,53 +1932,192 @@ router.post('/import/orders', importLimit, billing.requireFeature('orders_import
   if (!rows || !rows.length) return res.status(400).json({ error: 'Cần ít nhất một dòng' });
   if (rows.length > ORDER_IMPORT_MAX) return res.status(400).json({ error: `Mỗi lần gửi tối đa ${ORDER_IMPORT_MAX} dòng` });
   const channel = IMPORT_SOURCES.includes(req.body?.source) ? req.body.source : 'Khác';
+  const buyerPlatform = channel.toLowerCase();
   const skipped = [];
-  const byOrder = new Map();
+  const activeByOrder = new Map();
+  const cancelledByOrder = new Map();
+
   rows.forEach((r, i) => {
     const orderId = typeof r?.orderId === 'string' || typeof r?.orderId === 'number' ? String(r.orderId).trim().slice(0, 60) : '';
     if (!orderId) { skipped.push({ row: r?.row ?? i, reason: 'Không có mã đơn' }); return; }
-    if (r?.status && CANCELLED.test(foldVi(r.status))) { skipped.push({ row: r?.row ?? i, reason: 'Đơn đã hủy' }); return; }
+
+    const status = cleanOrderText(r?.status, 120);
+    const isCancelled = orderInsights.classifyOrderStatus(status) === 'cancelled';
+    const targetMap = isCancelled ? cancelledByOrder : activeByOrder;
+
+    const productName = cleanOrderText(r?.product, 200);
+    const sku = cleanOrderText(r?.sku, 80);
+    const modelCode = modelCodeOf(productName);
+    const listingTag = listingTagOf(productName);
     const amount = Number(r?.amount);
+    const unitPrice = Number(r?.unitPrice);
     const quantity = Number(r?.quantity);
-    const prev = byOrder.get(orderId);
-    // File Shopee ghi mỗi sản phẩm trong đơn một dòng: gộp về một đơn, giữ sản phẩm đầu
+    const returnQty = Number(r?.returnQty);
+    const qtyClean = Number.isFinite(quantity) && quantity > 0 ? Math.round(quantity) : 1;
+    const retQtyClean = Number.isFinite(returnQty) && returnQty >= 0 ? Math.round(returnQty) : 0;
+    const unitPriceClean = Number.isFinite(unitPrice) && unitPrice > 0 ? Math.round(unitPrice) : null;
+    const rawBuyer = cleanOrderText(r?.buyer, 100);
+    // Chỉ lưu mã băm có muối của tài khoản người mua, tuyệt đối không lưu chuỗi gốc
+    const buyerKey = rawBuyer ? pseudoCustomerId(buyerPlatform, rawBuyer) : null;
+
+    const lineItem = {
+      sku,
+      productName,
+      modelCode,
+      listingTag,
+      quantity: qtyClean,
+      returnQty: retQtyClean,
+      unitPrice: unitPriceClean
+    };
+
+    const prev = targetMap.get(orderId);
+    // Nhiều dòng sản phẩm trong cùng một đơn: cộng số lượng, giữ tổng giá trị đơn một lần, lưu đủ từng dòng vào `lines`
     if (prev) {
-      if (Number.isFinite(quantity) && quantity > 0) prev.quantity = (prev.quantity || 0) + Math.round(quantity);
-      if (!prev.amount && Number.isFinite(amount) && amount > 0) prev.amount = amount;
+      prev.quantity = (prev.quantity || 0) + qtyClean;
+      prev.returnQty = (prev.returnQty || 0) + retQtyClean;
+      if (!prev.amount && Number.isFinite(amount) && amount > 0) prev.amount = Math.round(amount);
+      if (!prev.modelCode && modelCode) prev.modelCode = modelCode;
+      if (!prev.listingTag && listingTag) prev.listingTag = listingTag;
+      if (!prev.returnStatus && r?.returnStatus) prev.returnStatus = cleanOrderText(r.returnStatus, 80);
+      prev.lines.push(lineItem);
       return;
     }
-    byOrder.set(orderId, {
+
+    const baseDoc = {
       orderId,
-      productName: typeof r?.product === 'string' && r.product.trim() ? r.product.trim().slice(0, 200) : null,
-      productCategory: typeof r?.category === 'string' && r.category.trim() ? r.category.trim().slice(0, 80) : null,
+      productName,
+      productCategory: cleanOrderText(r?.category, 80),
+      sku,
+      modelCode,
+      listingTag,
       region: normRegion(r?.region),
       orderedAt: toDate(r?.orderedAt),
       deliveredAt: toDate(r?.deliveredAt),
+      shippedAt: toDate(r?.shippedAt),
+      completedAt: toDate(r?.completedAt),
       amount: Number.isFinite(amount) && amount > 0 ? Math.round(amount) : null,
-      quantity: Number.isFinite(quantity) && quantity > 0 ? Math.round(quantity) : 1,
+      unitPrice: unitPriceClean,
+      quantity: qtyClean,
+      returnStatus: cleanOrderText(r?.returnStatus, 80),
+      returnQty: retQtyClean,
+      carrier: cleanOrderText(r?.carrier, 80),
+      orderType: cleanOrderText(r?.orderType, 60),
+      shopVoucher: cleanOrderText(r?.shopVoucher, 80),
+      buyerKey,
       channel,
-      status: typeof r?.status === 'string' ? r.status.trim().slice(0, 60) : null
-    });
-  });
-  const docs = [...byOrder.values()];
-  if (!docs.length) return res.json({ upserted: 0, updated: 0, skipped });
-  await req.db.collection('transactions').createIndex({ orderId: 1 }, { unique: true }).catch(() => {});
-  const now = new Date();
-  const out = await req.db.collection('transactions').bulkWrite(docs.map((d) => ({
-    updateOne: {
-      filter: { orderId: d.orderId },
-      update: { $set: { ...Object.fromEntries(Object.entries(d).filter(([, v]) => v != null)), importedAt: now }, $setOnInsert: { collectedVia: 'import' } },
-      upsert: true
+      status,
+      lines: [lineItem]
+    };
+
+    if (isCancelled) {
+      const parsedCancel = orderInsights.parseCancelReason(r?.cancelReason);
+      targetMap.set(orderId, {
+        ...baseDoc,
+        cancelReason: parsedCancel.cancelReason,
+        cancelGroup: parsedCancel.cancelGroup,
+        cancelledBy: parsedCancel.cancelledBy,
+        cancelledAt: toDate(r?.cancelledAt)
+      });
+    } else {
+      targetMap.set(orderId, baseDoc);
     }
-  })), { ordered: false });
+  });
+
+  const docs = [...activeByOrder.values()];
+  const cancelDocs = [...cancelledByOrder.values()];
+  if (!docs.length && !cancelDocs.length) {
+    return res.json({ upserted: 0, updated: 0, cancelled: 0, skipped });
+  }
+
+  const now = new Date();
+  let upserted = 0;
+  let updated = 0;
+  let cancelledSaved = 0;
+
+  if (docs.length > 0) {
+    await req.db.collection('transactions').createIndex({ orderId: 1 }, { unique: true }).catch(() => {});
+    const out = await req.db.collection('transactions').bulkWrite(docs.map((d) => ({
+      updateOne: {
+        filter: { orderId: d.orderId },
+        update: {
+          $set: { ...Object.fromEntries(Object.entries(d).filter(([, v]) => v != null)), importedAt: now },
+          $setOnInsert: { collectedVia: 'import' }
+        },
+        upsert: true
+      }
+    })), { ordered: false });
+    upserted = out.upsertedCount;
+    updated = out.modifiedCount;
+  }
+
+  if (cancelDocs.length > 0) {
+    const cancelCol = req.db.collection('order_cancellations');
+    await Promise.allSettled([
+      cancelCol.createIndex({ orderId: 1 }, { unique: true }),
+      cancelCol.createIndex({ orderedAt: 1 }),
+      cancelCol.createIndex({ modelCode: 1 })
+    ]);
+    const outCancel = await cancelCol.bulkWrite(cancelDocs.map((d) => ({
+      updateOne: {
+        filter: { orderId: d.orderId },
+        update: {
+          $set: { ...Object.fromEntries(Object.entries(d).filter(([, v]) => v != null)), importedAt: now },
+          $setOnInsert: { collectedVia: 'import' }
+        },
+        upsert: true
+      }
+    })), { ordered: false });
+    cancelledSaved = (outCancel.upsertedCount || 0) + (outCancel.modifiedCount || 0) || cancelDocs.length;
+  }
+
+  await req.db.collection('meta').updateOne({ _id: 'last_import' }, { $set: { at: now, kind: 'orders', source: channel } }, { upsert: true });
+  orderInsightsMemo.delete(req.db.databaseName);
   invalidate(req.db);
   res.json({
-    upserted: out.upsertedCount,
-    updated: out.modifiedCount,
+    upserted,
+    updated,
+    cancelled: cancelledSaved,
     skipped,
     withDelivery: docs.filter((d) => d.deliveredAt).length,
     withAmount: docs.filter((d) => d.amount).length
   });
+}));
+
+const orderInsightsMemo = new Map();
+router.get('/orders/insights', wrap(async (req, res) => {
+  const ctx = await getContext(req.db);
+  const [txnCount, cancelCount] = await Promise.all([
+    req.db.collection('transactions').estimatedDocumentCount(),
+    req.db.collection('order_cancellations').estimatedDocumentCount().catch(() => 0)
+  ]);
+  const memoKey = `${ctx.dbName}|${ctx.computedAt}|${txnCount}|${cancelCount}`;
+  const hit = orderInsightsMemo.get(ctx.dbName);
+  if (hit && hit.key === memoKey && Date.now() - hit.at < ALERT_MEMO_TTL_MS) {
+    return res.json(hit.body);
+  }
+
+  // Kho mô phỏng có 60 nghìn giao dịch giả lập không phải đơn sàn nạp file: chỉ tính trên đơn nạp file hoặc kho có đơn hủy
+  const isDemo = req.workspace === 'demo';
+  const txnFilter = isDemo ? { collectedVia: 'import' } : {};
+  const [txns, cancellations, liveSessions] = await Promise.all([
+    req.db.collection('transactions').find(txnFilter, { projection: { _id: 0 } }).batchSize(5000).toArray(),
+    req.db.collection('order_cancellations').find({}, { projection: { _id: 0 } }).batchSize(5000).toArray().catch(() => []),
+    req.db.collection('live_sessions')
+      .find({ platform: { $ne: 'simulator' }, simulated: { $ne: true } }, { projection: { _id: 1, platform: 1, startedAt: 1, endedAt: 1, lastActiveAt: 1 } })
+      .limit(100)
+      .toArray()
+      .catch(() => [])
+  ]);
+
+  const body = orderInsights.analyzeOrders({
+    transactions: txns,
+    cancellations,
+    feedbacks: ctx.items,
+    liveSessions
+  });
+  if (orderInsightsMemo.size > 20) orderInsightsMemo.clear();
+  orderInsightsMemo.set(ctx.dbName, { key: memoKey, at: Date.now(), body });
+  res.json(body);
 }));
 
 const { seedRouteCheck } = require('../services/write_guard');
@@ -1925,7 +2144,7 @@ router.post('/seed', wrap(async (req, res) => {
     message: 'Đã nạp dữ liệu thử nghiệm',
     feedbacks: feedbacks.length,
     transactions: orders.length,
-    funnel: ctx.funnel
+    funnel: healthNow(ctx)
   });
 }));
 
@@ -2038,7 +2257,7 @@ router.get('/chat/suggestions', wrap(async (req, res) => {
   const chatEngine = require('../services/chat_engine');
   res.json({
     suggestions: chatEngine.suggestedQuestions(ctx),
-    dataHealthScore: ctx.funnel.dataHealthScore,
+    dataHealthScore: healthNow(ctx)?.dataHealthScore ?? null,
     validFeedbacks: ctx.items.filter(metrics.isCountable).length
   });
 }));

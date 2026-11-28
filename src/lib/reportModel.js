@@ -10,6 +10,7 @@
  * dữ liệu thì nói là thiếu, không làm tròn thành một nhận định đẹp.
  */
 import { fmtInt, buildTakeaways, buildPareto, findPeak } from '../components/report_kit';
+import { lastSyncLine, missingChannelsLine } from './format';
 
 const TIME_LABEL = {
   All: 'Toàn bộ thời gian',
@@ -206,8 +207,8 @@ export function buildReportModel({ data, filters = {}, workspaceLabel, generated
   const components = health?.components ? [
     { label: 'Tỉ lệ qua bộ lọc', value: `${String(health.components.passRate).replace('.', ',')}%` },
     // Mọi phần trăm viết kiểu Việt (97,3%): trước đây ba dòng này in "97.3%"
-    { label: 'Độ phủ kênh', value: `${String(health.components.channelCoverage).replace('.', ',')}%` },
-    { label: 'Độ mới của dữ liệu', value: `${String(health.components.freshness).replace('.', ',')}%` },
+    { label: 'Độ phủ kênh', value: `${String(health.components.channelCoverage).replace('.', ',')}%`, sub: missingChannelsLine(health.channelCoverage?.missing) },
+    { label: 'Độ mới của dữ liệu', value: `${String(health.components.freshness).replace('.', ',')}%`, sub: lastSyncLine(health.lastSyncAt || health.ingestedAt, health.lastSyncSource) },
     { label: 'Tỉ lệ đối soát được', value: `${String(health.components.reconciliation).replace('.', ',')}%` }
   ] : [];
 

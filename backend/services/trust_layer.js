@@ -23,6 +23,7 @@
 
 const { normalize, spamSignals, keyboardMash } = require('./normalizer');
 const { isolationForestScores, variance } = require('./anomaly');
+const { channelKey } = require('./channels');
 
 // ==================================================================
 // T0 — PHÂN HẠNG NGUỒN GỐC
@@ -1043,7 +1044,16 @@ function runTrustLayer(feedbacks, options = {}) {
     };
   }
 
-  const funnel = buildFunnel(items, clusters, now, { ingestedAt: options.ingestedAt });
+  const funnel = buildFunnel(items, clusters, now, {
+    orders: options.orders,
+    orderCancellations: options.orderCancellations,
+    liveSessions: options.liveSessions,
+    sellingChannels: options.sellingChannels,
+    lastSyncAt: options.lastSyncAt,
+    lastSyncSource: options.lastSyncSource,
+    ingestedAt: options.ingestedAt,
+    realNow: options.realNow
+  });
 
   return {
     items,
@@ -1079,6 +1089,55 @@ function runTrustLayer(feedbacks, options = {}) {
 const EXPECTED_CHANNELS = 5;
 
 const HEALTH_WEIGHTS = { passRate: 0.4, channelCoverage: 0.2, freshness: 0.2, reconciliation: 0.2 };
+const FRESH_FULL_H = Number(process.env.FRESH_FULL_H) || 26;
+const FRESH_ZERO_H = Number(process.env.FRESH_ZERO_H) || 72;
+
+function freshnessFromLag(lagHours) {
+  if (lagHours === null || !Number.isFinite(lagHours)) return 0;
+  const fullH = Number(process.env.FRESH_FULL_H) || FRESH_FULL_H;
+  const zeroH = Math.max(fullH + 1, Number(process.env.FRESH_ZERO_H) || FRESH_ZERO_H);
+  if (lagHours <= fullH) return 1;
+  if (lagHours >= zeroH) return 0;
+  return Math.max(0, Math.min(1, 1 - (lagHours - fullH) / (zeroH - fullH)));
+}
+
+/**
+ * Tính lại độ tươi, độ trễ thu thập và điểm độ tin số liệu tại thời điểm `now`,
+ * giữ nguyên 3 thành phần còn lại để điểm không bị đông cứng trong thời gian giữ ngữ cảnh.
+ */
+function healthAt(funnel, now = new Date()) {
+  if (!funnel) return null;
+  if (funnel.lastSyncAt === undefined) return funnel;
+  const comps = funnel.components || {};
+  let lagHours = null;
+  if (funnel.lastSyncAt !== null) {
+    const syncMs = new Date(funnel.lastSyncAt).getTime();
+    const nowMs = new Date(now).getTime();
+    if (Number.isFinite(syncMs) && Number.isFinite(nowMs)) {
+      lagHours = Math.max(0, (nowMs - syncMs) / 3600000);
+    }
+  }
+  const freshness = freshnessFromLag(lagHours);
+  const freshnessPct = Number((freshness * 100).toFixed(1));
+  const passRatePct = comps.passRate ?? 0;
+  const channelCovPct = comps.channelCoverage ?? 0;
+  const reconciliationPct = comps.reconciliation ?? 0;
+  const scorePct =
+    HEALTH_WEIGHTS.passRate * passRatePct +
+    HEALTH_WEIGHTS.channelCoverage * channelCovPct +
+    HEALTH_WEIGHTS.freshness * (freshness * 100) +
+    HEALTH_WEIGHTS.reconciliation * reconciliationPct;
+
+  return {
+    ...funnel,
+    ingestionLagMinutes: lagHours === null ? null : Math.round(lagHours * 60),
+    dataHealthScore: Math.round(scorePct),
+    components: {
+      ...comps,
+      freshness: freshnessPct
+    }
+  };
+}
 
 function buildFunnel(items, clusters, now = new Date(), options = {}) {
   const total = items.length;
@@ -1087,7 +1146,28 @@ function buildFunnel(items, clusters, now = new Date(), options = {}) {
   const gray = items.filter((it) => it.trust.band === 'GRAY_ZONE');
   const accepted = items.filter((it) => it.trust.band === 'ACCEPTED');
 
-  const channels = new Set(items.map((it) => it.source).filter(Boolean));
+  // Kênh shop thật sự đang bán = hợp của phản hồi, đơn hàng, đơn hủy và phiên live thật (bỏ 'khac')
+  const feedbackChannels = new Set();
+  for (const it of items) {
+    const k = channelKey(it.source);
+    if (k !== 'khac') feedbackChannels.add(k);
+  }
+  const activeChannels = new Set(feedbackChannels);
+  const addChannel = (raw) => {
+    const k = channelKey(raw);
+    if (k !== 'khac') activeChannels.add(k);
+  };
+  for (const o of options.orders || []) addChannel(o?.channel);
+  for (const c of options.orderCancellations || []) addChannel(c?.channel);
+  for (const s of options.liveSessions || []) {
+    if (s && s.platform !== 'simulator' && !s.simulated) addChannel(s.platform);
+  }
+  for (const ch of options.sellingChannels || []) addChannel(ch);
+
+  const missingChannels = [...activeChannels].filter((k) => !feedbackChannels.has(k)).sort();
+  const coveredChannels = feedbackChannels.size;
+  const expectedChannels = Math.max(1, activeChannels.size);
+
   const reconcilable = items.filter(
     (it) => it.trust.tier === 'P1' || it.trust.tier === 'P2'
   ).length;
@@ -1097,33 +1177,38 @@ function buildFunnel(items, clusters, now = new Date(), options = {}) {
   );
   const medianAge = ages.length ? ages.slice().sort((a, b) => a - b)[Math.floor(ages.length / 2)] : 0;
 
-  // Độ tươi đo ĐỘ TRỄ THU THẬP, không phải bề dày lịch sử. Có 60 ngày
-  // dữ liệu quá khứ là điểm mạnh chứ không phải điểm yếu; thứ đáng lo
-  // là luồng dữ liệu đã ngừng chảy. Vì vậy đo theo phản hồi mới nhất.
-  const newestAgeDays = ages.length ? Math.min(...ages) : Infinity;
-  // Kho tính theo mốc dữ liệu: "now" là đánh giá mới nhất nên tuổi luôn ~0; độ
-  // trễ thật là từ lần thu thập gần nhất tới giờ thật
-  const ingestionLagHours = options.ingestedAt
-    ? Math.max(0, (Date.now() - new Date(options.ingestedAt).getTime()) / 3600000)
-    : Number.isFinite(newestAgeDays) ? newestAgeDays * 24 : null;
+  // Mốc đồng bộ cuối: ưu tiên lastSyncAt (thu thập, nạp file, live, phản hồi); kho mô phỏng lấy phản hồi mới nhất
+  let lastSyncAt = null;
+  let lastSyncSource = null;
+  let refNow = now;
+  const explicitSync = options.lastSyncAt || options.ingestedAt || null;
+  if (explicitSync) {
+    const d = new Date(explicitSync);
+    if (!Number.isNaN(d.getTime())) {
+      lastSyncAt = d.toISOString();
+      lastSyncSource = options.lastSyncSource || 'feedback';
+      refNow = options.realNow ? new Date(options.realNow) : new Date();
+    }
+  } else if (items.length > 0) {
+    let newestMs = -Infinity;
+    for (const it of items) {
+      const ms = new Date(it.collectedAt || it.timestamp || now).getTime();
+      if (Number.isFinite(ms) && ms > newestMs) newestMs = ms;
+    }
+    if (Number.isFinite(newestMs)) {
+      lastSyncAt = new Date(newestMs).toISOString();
+      lastSyncSource = 'feedback';
+      refNow = now;
+    }
+  }
 
   const passRate = total ? (accepted.length + gray.length) / total : 0;
-  const channelCoverage = Math.min(1, channels.size / EXPECTED_CHANNELS);
-  // Trễ dưới 1 giờ là đầy đủ điểm; quá 24 giờ coi như luồng đã đứt
-  const freshness = ingestionLagHours === null
-    ? 0
-    : Math.max(0, Math.min(1, 1 - (ingestionLagHours - 1) / 23));
+  const channelCoverage = Math.min(1, coveredChannels / expectedChannels);
   const reconciliationRate = total ? reconcilable / total : 0;
-
-  const score =
-    HEALTH_WEIGHTS.passRate * passRate +
-    HEALTH_WEIGHTS.channelCoverage * channelCoverage +
-    HEALTH_WEIGHTS.freshness * freshness +
-    HEALTH_WEIGHTS.reconciliation * reconciliationRate;
 
   const pct = (n) => (total ? Number(((n / total) * 100).toFixed(1)) : 0);
 
-  return {
+  const baseFunnel = {
     rawCollected: total,
     spamRemoved: { count: spam.length, pct: pct(spam.length) },
     inauthenticFlagged: {
@@ -1143,19 +1228,26 @@ function buildFunnel(items, clusters, now = new Date(), options = {}) {
     effectiveWeight: Number(
       items.reduce((sum, it) => sum + (it.trust.weight || 0), 0).toFixed(2)
     ),
-    // Có thêm kênh ngoài danh sách dự kiến (như livestream) thì mẫu số nới theo, không hiện kiểu 6/5
-    channelCoverage: { covered: channels.size, expected: Math.max(EXPECTED_CHANNELS, channels.size) },
+    channelCoverage: {
+      covered: coveredChannels,
+      expected: expectedChannels,
+      missing: missingChannels
+    },
     reconciliationRate: Number((reconciliationRate * 100).toFixed(1)),
     medianAgeDays: Number(medianAge.toFixed(1)),
-    ingestionLagMinutes: ingestionLagHours === null ? null : Math.round(ingestionLagHours * 60),
-    dataHealthScore: Math.round(score * 100),
+    lastSyncAt,
+    lastSyncSource,
+    ingestionLagMinutes: null,
+    dataHealthScore: 0,
     components: {
       passRate: Number((passRate * 100).toFixed(1)),
       channelCoverage: Number((channelCoverage * 100).toFixed(1)),
-      freshness: Number((freshness * 100).toFixed(1)),
+      freshness: 0,
       reconciliation: Number((reconciliationRate * 100).toFixed(1))
     }
   };
+
+  return healthAt(baseFunnel, refNow);
 }
 
 /**
@@ -1190,7 +1282,11 @@ module.exports = {
   DEFAULT_HALF_LIFE_DAYS,
   DUPLICATE_CONFIG,
   SPAM_MODEL_THRESHOLD,
+  EXPECTED_CHANNELS,
   HEALTH_WEIGHTS,
+  FRESH_FULL_H,
+  FRESH_ZERO_H,
+  healthAt,
   assignProvenanceTier,
   runSpamFilter,
   detectNearDuplicateClusters,

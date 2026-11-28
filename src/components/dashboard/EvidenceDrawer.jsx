@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { Drawer, Button, EvidenceBar, EvidenceLegend } from '../ui';
-import { fmtInt, fmtPct, fmtDate, LABELLER_LABEL, spanWords } from '../../lib/format';
+import { fmtInt, fmtPct, fmtDate, fmtRelative, LABELLER_LABEL, SYNC_SOURCE_LABEL, missingChannelsLine, spanWords } from '../../lib/format';
 
 /**
  * NGĂN KÉO "VÌ SAO TIN ĐƯỢC?"
@@ -82,11 +82,17 @@ const METRICS = {
       'Điểm gồm bốn phần: tỉ lệ phản hồi vượt qua Trust Layer (40%), số kênh đang có dữ liệu (20%), độ mới của lần thu thập gần nhất (20%) và tỉ lệ đối soát được với giao dịch (20%).',
     stats: (s) => {
       const c = s?.healthComponents || {};
+      const pctVi = (v) => (v != null ? `${String(v).replace('.', ',')}%` : '—');
+      const syncAt = s?.lastSyncAt || s?.ingestedAt;
+      const syncText = syncAt && !Number.isNaN(new Date(syncAt).getTime())
+        ? `${SYNC_SOURCE_LABEL[s?.lastSyncSource] || 'đồng bộ'}, ${fmtRelative(syncAt)}`
+        : null;
       return [
-        ['Vượt qua Trust Layer', c.passRate != null ? `${c.passRate}%` : '—'],
-        ['Độ phủ kênh', c.channelCoverage != null ? `${c.channelCoverage}%` : '—'],
-        ['Độ mới', c.freshness != null ? `${c.freshness}%` : '—'],
-        ['Đối soát giao dịch', c.reconciliation != null ? `${c.reconciliation}%` : '—']
+        ['Vượt qua Trust Layer', pctVi(c.passRate)],
+        ['Độ phủ kênh', pctVi(c.channelCoverage)],
+        ['Độ mới', pctVi(c.freshness)],
+        ...(syncText ? [['Lần đồng bộ cuối', syncText]] : []),
+        ['Đối soát giao dịch', pctVi(c.reconciliation)]
       ];
     }
   }
@@ -191,6 +197,12 @@ const EvidenceDrawer = ({ metric, stats, onClose }) => {
                 </React.Fragment>
               ))}
             </dl>
+            {metric === 'health' && missingChannelsLine(stats?.channelCoverage?.missing) && (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line-soft pt-3 text-xs text-ink-mid">
+                <span>{missingChannelsLine(stats.channelCoverage.missing)}</span>
+                <Button variant="link" size="sm" onClick={() => go('/data?tab=file')}>Nạp đánh giá</Button>
+              </div>
+            )}
           </Section>
         </>
       )}

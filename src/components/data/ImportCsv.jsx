@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FileUp, Upload, ArrowRight } from 'lucide-react';
 import { GlassPanel, PanelHeader, Button, Select, ProgressBar, Badge, Segmented } from '../ui';
-import { parseCsv, guessMapping, parseVnDate, guessOrderMapping, parseMoney, rowsFromSheet, ORDER_FIELDS } from '../../lib/csv';
+import { parseCsv, guessMapping, parseVnDate, guessOrderMapping, rowsFromSheet, ORDER_FIELDS, isForbiddenOrderColumn, buildOrderPayloadRow } from '../../lib/csv';
 import { fmtInt } from '../../lib/format';
 import { getWorkspace } from '../../lib/workspace';
 
@@ -29,7 +29,7 @@ const FIELDS = [
   { key: 'source', label: 'Nguồn từng dòng' }
 ];
 const SOURCES = ['Shopee', 'Lazada', 'Tiki', 'TikTok', 'Facebook', 'Zalo', 'Website', 'CSKH', 'Email', 'Hotline', 'Form', 'Khác'];
-const CHUNK = { feedbacks: 50, orders: 200 };
+const CHUNK = { feedbacks: 50, orders: 500 };
 const MAX_ROWS = { feedbacks: 2000, orders: 20000 };
 
 const isExcel = (f) => /\.xlsx$/i.test(f.name) || f.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -85,18 +85,9 @@ const ImportCsv = () => {
     const list = parsed.rows.slice(0, MAX_ROWS[kind]);
     if (orders) {
       if (!map.orderId) return [];
-      return list.map((r, i) => ({
-        row: i + 2,
-        orderId: r[map.orderId] || '',
-        orderedAt: map.orderedAt ? parseVnDate(r[map.orderedAt]) : null,
-        deliveredAt: map.deliveredAt ? parseVnDate(r[map.deliveredAt]) : null,
-        amount: map.amount ? parseMoney(r[map.amount]) : null,
-        quantity: map.quantity ? parseMoney(r[map.quantity]) : null,
-        product: map.product ? r[map.product] : null,
-        category: map.category ? r[map.category] : null,
-        region: map.region ? r[map.region] : null,
-        status: map.status ? r[map.status] : null
-      })).filter((r) => String(r.orderId).trim());
+      return list
+        .map((r, i) => buildOrderPayloadRow(r, map, i + 2))
+        .filter((r) => String(r.orderId).trim());
     }
     if (!map.text) return [];
     return list.map((r, i) => ({
@@ -120,14 +111,25 @@ const ImportCsv = () => {
     const size = CHUNK[kind];
     setProgress({ done: 0, total: rows.length });
     try {
-      for (let i = 0; i < rows.length; i += size) {
-        const batch = rows.slice(i, i + size);
+      let i = 0;
+      while (i < rows.length) {
+        let end = Math.min(rows.length, i + size);
+        // Không cắt đôi các dòng cùng một mã đơn giữa hai lượt gửi
+        if (orders && end < rows.length) {
+          const tailOrder = rows[end - 1].orderId;
+          let probe = end;
+          while (probe < rows.length && rows[probe].orderId === tailOrder && probe - i < 500) probe += 1;
+          if (probe < rows.length || rows[probe - 1]?.orderId === tailOrder) {
+            if (probe - i <= 500) end = probe;
+          }
+        }
+        const batch = rows.slice(i, end);
         if (orders) {
           const { data } = await axios.post('/import/orders', { rows: batch, source, fileName: file?.name }, { timeout: 120000 });
-          total.inserted += data.upserted;
-          total.updated += data.updated;
-          total.cancelled += data.skipped.filter((s) => s.reason === 'Đơn đã hủy').length;
-          total.skipped += data.skipped.filter((s) => s.reason !== 'Đơn đã hủy').length;
+          total.inserted += data.upserted || 0;
+          total.updated += data.updated || 0;
+          total.cancelled += data.cancelled ?? data.skipped.filter((s) => s.reason === 'Đơn đã hủy').length;
+          total.skipped += (data.skipped || []).filter((s) => s.reason !== 'Đơn đã hủy').length;
         } else {
           const { data } = await axios.post('/import/feedbacks', { rows: batch, source, fileName: file?.name }, { timeout: 180000 });
           total.inserted += data.inserted;
@@ -136,7 +138,8 @@ const ImportCsv = () => {
           total.negatives += data.negatives || 0;
           (data.labelledBy || []).forEach((l) => total.labelledBy.add(l));
         }
-        setProgress({ done: Math.min(rows.length, i + size), total: rows.length });
+        i = end;
+        setProgress({ done: i, total: rows.length });
       }
       setResult({ ...total, labelledBy: [...total.labelledBy] });
     } catch (e) {
@@ -184,15 +187,18 @@ const ImportCsv = () => {
           <h3 className="mt-6 text-sm font-semibold text-ink-hi">Cột nào là gì</h3>
           <p className="mt-1 text-xs text-ink-lo">{orders ? 'Chỉ cột mã đơn là bắt buộc.' : 'Chỉ cột nội dung là bắt buộc.'}</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {fields.map((f) => (
+            {fields.map((f) => {
+              const allowedHeaders = orders ? parsed.header.filter((h) => !isForbiddenOrderColumn(h)) : parsed.header;
+              return (
               <Select
                 key={f.key}
                 label={f.label}
                 value={map[f.key] || ''}
                 onChange={(e) => setMap((m) => ({ ...m, [f.key]: e.target.value || undefined }))}
-                options={[{ value: '', label: f.required ? 'Chọn cột' : 'Không có' }, ...parsed.header.map((h) => ({ value: h, label: h }))]}
+                options={[{ value: '', label: f.required ? 'Chọn cột' : 'Không có' }, ...allowedHeaders.map((h) => ({ value: h, label: h }))]}
               />
-            ))}
+              );
+            })}
             <Select label={orders ? 'Sàn của file' : 'Nguồn của cả file'} value={source} onChange={(e) => setSource(e.target.value)} options={SOURCES.map((x) => ({ value: x, label: x }))} />
           </div>
 
@@ -251,7 +257,7 @@ const ImportCsv = () => {
             <p className="text-sm text-ink-hi">
               {result.partial ? 'Đã nạp một phần: ' : 'Xong: '}
               <span className="tabular-nums font-semibold">{fmtInt(result.inserted)}</span> đơn mới, {fmtInt(result.updated)} đơn cập nhật,{' '}
-              {fmtInt(result.cancelled)} đơn hủy bỏ qua{result.skipped ? `, ${fmtInt(result.skipped)} dòng thiếu mã đơn` : ''}.
+              <span className="tabular-nums font-semibold">{fmtInt(result.cancelled)}</span> đơn hủy đã lưu riêng{result.skipped ? `, ${fmtInt(result.skipped)} dòng thiếu mã đơn` : ''}.
             </p>
           ) : (
             <p className="text-sm text-ink-hi">
@@ -266,10 +272,15 @@ const ImportCsv = () => {
               Xem điểm đau
             </Button>
           )}
-          {orders && result.inserted + result.updated > 0 && (
-            <Button className="mt-3" size="sm" variant="secondary" iconRight={ArrowRight} onClick={() => navigate('/dashboard')}>
-              Xem tỉ lệ khiếu nại trên đơn
-            </Button>
+          {orders && result.inserted + result.updated + result.cancelled > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" iconRight={ArrowRight} onClick={() => navigate('/analytics?tab=orders')}>
+                Xem phân tích đơn hàng
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => navigate('/dashboard')}>
+                Về Tổng quan
+              </Button>
+            </div>
           )}
         </div>
       )}

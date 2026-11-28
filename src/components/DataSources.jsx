@@ -4,9 +4,10 @@ import axios from 'axios';
 import {
   Link2, RefreshCw, Store, ShoppingBag, Music2, Globe, Plus, Trash2, Boxes, Activity, Clock, CircleCheck, CircleX, CircleDashed, Unplug, History, Info, FileUp } from 'lucide-react';
 import ImportCsv from './data/ImportCsv';
-import { PageHeader, GlassPanel, PanelHeader, Tabs, Button, IconButton, TextField, Select, Modal, Badge, EmptyState } from './ui';
-import { fmtInt } from '../lib/format';
+import { PageHeader, GlassPanel, PanelHeader, Tabs, Button, IconButton, TextField, Select, Switch, Modal, Badge, EmptyState } from './ui';
+import { fmtInt, fmtRelative } from '../lib/format';
 import { readStorage, writeStorage } from '../lib/storage';
+import { getWorkspace } from '../lib/workspace';
 import { reportRefreshing } from '../lib/dataVersion';
 import AutoCollect from './datasources/AutoCollect';
 import { MOTION, EASE, useReducedMotion, PageEnter } from './motion';
@@ -146,6 +147,179 @@ const SyncProgress = () => {
   );
 };
 
+const REAL_HEADER = { headers: { 'X-Workspace': 'real' } };
+const splitQueries = (text) =>
+  String(text || '')
+    .split(',')
+    .map((s) => s.trim().replace(/\s+/g, ' '))
+    .filter(Boolean);
+
+/** Khối Tự thu thập đánh giá Tiki cho kho riêng của từng shop (A4) */
+const ShopTikiAutoCollect = () => {
+  const [data, setData] = useState(null);
+  const [kwText, setKwText] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [wasRunning, setWasRunning] = useState(false);
+
+  const loadConfig = async (syncInput = false) => {
+    try {
+      const r = await axios.get('/collect/config', REAL_HEADER);
+      setData(r.data);
+      if (syncInput && r.data?.config?.queries) {
+        setKwText(r.data.config.queries.join(', '));
+      }
+    } catch {
+      setData(null);
+    }
+  };
+
+  useEffect(() => { loadConfig(true); }, []);
+
+  useEffect(() => {
+    if (!data?.status?.running) return undefined;
+    const id = setInterval(() => loadConfig(false), 6000);
+    return () => clearInterval(id);
+  }, [data?.status?.running]);
+
+  useEffect(() => {
+    if (data?.status?.running) {
+      setWasRunning(true);
+    } else if (wasRunning && data?.status) {
+      setWasRunning(false);
+      if (data.status.lastResult?.inserted > 0 && getWorkspace() === 'real') {
+        reportRefreshing(true);
+      }
+    }
+  }, [data?.status, wasRunning]);
+
+  if (!data?.applicable) return null;
+
+  const cfg = data.config || {};
+  const status = data.status || {};
+  const editable = Boolean(data.editable);
+
+  const save = async (nextEnabled, customText = kwText) => {
+    const queries = splitQueries(customText);
+    setSaving(true);
+    setFeedback(null);
+    try {
+      const r = await axios.put('/collect/config', {
+        enabled: nextEnabled,
+        queries,
+        productsPerQuery: cfg.productsPerQuery ?? 25,
+        pages: cfg.pages ?? 3,
+        minReviews: cfg.minReviews ?? 1
+      }, REAL_HEADER);
+      setData(r.data);
+      setKwText((r.data.config?.queries || []).join(', '));
+      setFeedback({ tone: 'ok', text: nextEnabled ? 'Đã bật tự thu thập mỗi 24 giờ.' : 'Đã lưu cấu hình thu thập.' });
+    } catch (e) {
+      setFeedback({ tone: 'crit', text: e.response?.data?.error || 'Không lưu được cấu hình.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const runNow = async () => {
+    const typed = splitQueries(kwText);
+    const saved = (cfg.queries || []).join(', ');
+    setRunning(true);
+    setFeedback(null);
+    try {
+      if (editable && typed.length > 0 && typed.join(', ') !== saved) {
+        const up = await axios.put('/collect/config', {
+          enabled: Boolean(cfg.enabled),
+          queries: typed,
+          productsPerQuery: cfg.productsPerQuery ?? 25,
+          pages: cfg.pages ?? 3,
+          minReviews: cfg.minReviews ?? 1
+        }, REAL_HEADER);
+        setData(up.data);
+      }
+      const r = await axios.post('/collect/run', {}, REAL_HEADER);
+      setData((prev) => (prev ? { ...prev, status: r.data.status } : prev));
+    } catch (e) {
+      setFeedback({ tone: 'crit', text: e.response?.data?.error || 'Không chạy được lượt thu thập.' });
+      if (e.response?.data?.status) {
+        setData((prev) => (prev ? { ...prev, status: e.response.data.status } : prev));
+      }
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const lastSummary = status.running
+    ? (status.progress
+      ? `Đang thu thập: đã quét ${fmtInt(status.progress.products)} sản phẩm, thêm ${fmtInt(status.progress.inserted)} đánh giá mới`
+      : 'Đang thu thập đánh giá Tiki...')
+    : status.lastFinishedAt
+      ? `Lần thu cuối: ${fmtRelative(status.lastFinishedAt)}, thêm ${fmtInt(status.lastResult?.inserted ?? 0)} đánh giá mới`
+      : 'Lần thu cuối: chưa thu lần nào';
+
+  return (
+    <GlassPanel tone="strong" className="mb-6 p-6">
+      <PanelHeader
+        title="Tự thu thập đánh giá Tiki"
+        subtitle="Tìm sản phẩm theo từ khóa thương hiệu hoặc tên shop và lấy đánh giá mới mỗi 24 giờ."
+        right={
+          <label className="flex shrink-0 items-center gap-3 rounded-ctrl border border-line bg-surface py-1.5 pr-1.5 pl-3">
+            <span className={`text-sm font-semibold ${cfg.enabled ? 'text-ok' : 'text-ink-mid'}`}>
+              {cfg.enabled ? 'Đang bật' : 'Đang tắt'}
+            </span>
+            <Switch
+              checked={Boolean(cfg.enabled)}
+              disabled={!editable || saving}
+              onChange={(checked) => save(checked)}
+              label="Bật hoặc tắt tự thu thập đánh giá Tiki"
+            />
+          </label>
+        }
+      />
+      <form
+        onSubmit={(e) => { e.preventDefault(); save(Boolean(cfg.enabled)); }}
+        className="flex flex-col gap-3 sm:flex-row sm:items-end"
+      >
+        <TextField
+          className="flex-1"
+          label="Từ khóa thương hiệu hoặc tên shop (tối đa 5 từ, cách bằng dấu phẩy)"
+          icon={Store}
+          value={kwText}
+          onChange={(e) => setKwText(e.target.value)}
+          placeholder="Ví dụ: bluestone"
+          disabled={!editable || saving}
+        />
+        {editable && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Button type="submit" variant="secondary" loading={saving} disabled={saving}>
+              Lưu từ khóa
+            </Button>
+            <Button
+              type="button"
+              icon={RefreshCw}
+              loading={running || Boolean(status.running)}
+              disabled={Boolean(status.running) || saving || splitQueries(kwText).length === 0}
+              onClick={runNow}
+            >
+              Thu ngay
+            </Button>
+          </div>
+        )}
+      </form>
+      <p className="mt-3 text-xs text-ink-mid">{lastSummary}</p>
+      {!editable && (
+        <p className="mt-1.5 text-xs text-ink-lo">Kho dữ liệu thật dùng chung chỉ quản trị viên mới sửa được cấu hình.</p>
+      )}
+      {feedback && (
+        <p role="status" className={`mt-2 text-xs ${feedback.tone === 'crit' ? 'text-crit' : 'text-ok'}`}>
+          {feedback.text}
+        </p>
+      )}
+    </GlassPanel>
+  );
+};
+
 const DataSources = () => {
   // Thu thập theo liên kết là đường duy nhất đang chạy thật, nên mở trước
   // ?tab=url|file|shops|history: khối "Bắt đầu" khi kho trống dẫn thẳng tới đúng tab
@@ -265,7 +439,9 @@ const DataSources = () => {
       />
 
       {tab === 'shops' && (
-        shops.length === 0 ? (
+        <>
+          <ShopTikiAutoCollect />
+          {shops.length === 0 ? (
           <GlassPanel>
             <EmptyState
               title="Chưa có gian hàng nào"
@@ -304,7 +480,8 @@ const DataSources = () => {
               );
             })}
           </div>
-        )
+          )}
+        </>
       )}
 
       {tab === 'url' && (

@@ -268,9 +268,28 @@ async function buildReport(db, session) {
     total: Math.round(stockoutLost + missedValue)
   };
 
+  // ---------- Đơn đặt trên sàn trong giờ live (B8: chỉ phiên thật khi kho có đơn hàng) ----------
+  let orderUplift = null;
+  if (!session.simulated && session.platform !== 'simulator' && session.startedAt) {
+    try {
+      const { computeSessionOrderUplift } = require('../order_insights');
+      const proj = { projection: { _id: 0, orderedAt: 1, productName: 1, listingTag: 1, lines: 1 } };
+      const [txns, cancellations] = await Promise.all([
+        db.collection('transactions').find({}, proj).batchSize(5000).toArray().catch(() => []),
+        db.collection('order_cancellations').find({}, proj).batchSize(5000).toArray().catch(() => [])
+      ]);
+      if (txns.length || cancellations.length) {
+        orderUplift = computeSessionOrderUplift({ transactions: txns, cancellations, session });
+      }
+    } catch {
+      orderUplift = null;
+    }
+  }
+
   return {
     session: { id: String(session._id), title: session.title, platform: session.platform, simulated: Boolean(session.simulated), startedAt: session.startedAt || null, endedAt: session.endedAt || null },
     opportunity,
+    orderUplift,
     totals: snap.totals,
     funnel,
     revenue: { estimated: money.revenue, confirmed: money.revenueConfirmed, unpricedOrders: money.unpricedOrders, lost: money.lost, lostTotal: money.lost.reduce((s, l) => s + l.value, 0) },

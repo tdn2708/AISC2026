@@ -17,6 +17,7 @@ const taxonomy = require('./taxonomy');
 const { decodeEntities } = require('./normalizer');
 const { analysisCadence } = require('./cadence');
 const { findPainPoints } = require('./pain_points');
+const { modelCodeOf } = require('./product_group');
 
 /** Chuẩn hóa nhãn danh mục/nguyên nhân về taxonomy hiện hành */
 function normalizeLabels(fb) {
@@ -27,11 +28,13 @@ function normalizeLabels(fb) {
   const cause = taxonomy.normalizeCause(category, fb.subCategory);
   const rootCauses = taxonomy.normalizeRootCauses(fb.rootCauses, { nonComplaint: category === 'Other' });
   const productType = fb.productType || taxonomy.productTypeOf(productName) || null;
+  const modelCode = fb.modelCode || modelCodeOf(productName) || null;
   return {
     ...fb,
     // Tên lưu từ trước còn mã HTML ("&amp;") thì giải ngay lúc đọc
     ...(productName !== fb.productName ? { productName } : {}),
     ...(productType ? { productType } : {}),
+    ...(modelCode ? { modelCode } : {}),
     category,
     subCategory: cause,
     rootCauses,
@@ -112,29 +115,77 @@ function applyReviewLabel(item, label) {
 }
 
 /**
+ * Chọn mốc đồng bộ mới nhất giữa 4 nguồn (A1):
+ *   collect  — meta._id='autocollect'.finishedAt (khi lần chạy không có lastError)
+ *   import   — meta._id='last_import'.at
+ *   live     — live_sessions.lastActiveAt mới nhất (không phải mô phỏng)
+ *   feedback — feedbacks.collectedAt mới nhất
+ */
+function resolveLastSync(syncMeta = {}, feedbacks = []) {
+  let bestMs = 0;
+  let bestSource = null;
+  const consider = (val, source) => {
+    if (!val) return;
+    const ms = new Date(val).getTime();
+    if (Number.isFinite(ms) && ms > 0 && ms >= bestMs) {
+      bestMs = ms;
+      bestSource = source;
+    }
+  };
+  let maxCollectedMs = 0;
+  if (syncMeta?.lastFeedbackCollectedAt) {
+    const t = new Date(syncMeta.lastFeedbackCollectedAt).getTime();
+    if (Number.isFinite(t) && t > maxCollectedMs) maxCollectedMs = t;
+  }
+  for (const f of feedbacks || []) {
+    const t = f?.collectedAt ? new Date(f.collectedAt).getTime() : 0;
+    if (Number.isFinite(t) && t > maxCollectedMs) maxCollectedMs = t;
+  }
+  if (maxCollectedMs > 0) consider(maxCollectedMs, 'feedback');
+  if (syncMeta?.lastLiveAt) consider(syncMeta.lastLiveAt, 'live');
+  if (syncMeta?.lastImportAt) consider(syncMeta.lastImportAt, 'import');
+  if (syncMeta?.autocollect && syncMeta.autocollect.finishedAt && !syncMeta.autocollect.lastError) {
+    consider(syncMeta.autocollect.finishedAt, 'collect');
+  }
+  if (!bestMs) return { lastSyncAt: null, lastSyncSource: null };
+  return { lastSyncAt: new Date(bestMs).toISOString(), lastSyncSource: bestSource };
+}
+
+/**
  * @param {object} input
  *   rawFeedbacks  đã sắp mới nhất trước, `_id` là chuỗi
  *   transactions, auditLabels, reviewLabels
  *   anchorToData  kho thật: mọi mốc thời gian tính theo đánh giá mới nhất
- *   halfLifeDays, modelSignals
+ *   halfLifeDays, modelSignals, syncMeta, sellingChannels, orderCancellations, liveSessions
  * @returns phần kết quả phụ thuộc dữ liệu của ngữ cảnh (không gồm transactions)
  */
 function computeContext(input) {
-  const { rawFeedbacks, transactions, auditLabels = [], reviewLabels = [], anchorToData, halfLifeDays, modelSignals } = input;
+  const {
+    rawFeedbacks,
+    transactions,
+    orderCancellations = [],
+    liveSessions = [],
+    sellingChannels = [],
+    syncMeta = null,
+    auditLabels = [],
+    reviewLabels = [],
+    anchorToData,
+    halfLifeDays,
+    modelSignals
+  } = input;
   const feedbacks = rawFeedbacks.map(normalizeLabels);
 
   let dataAsOf = null;
-  let ingestedAt = null;
   if (anchorToData && feedbacks.length) {
     // Mốc dữ liệu: phản hồi mới nhất CÓ ngày thật (dòng nạp không ngày mang ngày nạp)
     const dated = feedbacks.find((f) => !f.timeInferred) || feedbacks[0];
     dataAsOf = new Date(dated.timestamp);
     if (Number.isNaN(dataAsOf.getTime())) dataAsOf = null;
-    ingestedAt = feedbacks.reduce((max, f) => {
-      const t = f.collectedAt ? new Date(f.collectedAt).getTime() : 0;
-      return t > max ? t : max;
-    }, 0) || null;
   }
+
+  const sync = (anchorToData || syncMeta)
+    ? resolveLastSync(syncMeta || {}, feedbacks)
+    : { lastSyncAt: null, lastSyncSource: null };
 
   // NHÃN NGƯỜI DUYỆT THẮNG NHÃN MÁY, áp TRƯỚC Trust Layer vì luật lệch sao đọc
   // chính nhãn cảm xúc này. Nhãn máy cũ giữ ở `machineLabel`.
@@ -142,10 +193,14 @@ function computeContext(input) {
 
   const result = runTrustLayer(feedbacks, {
     orders: transactions,
+    orderCancellations,
+    liveSessions,
+    sellingChannels,
     orderBookSize: Number.isFinite(input.orderBookSize) ? input.orderBookSize : undefined,
     halfLifeDays,
     now: dataAsOf || undefined,
-    ingestedAt: ingestedAt ? new Date(ingestedAt) : undefined,
+    lastSyncAt: sync.lastSyncAt || undefined,
+    lastSyncSource: sync.lastSyncSource || undefined,
     modelSignals: modelSignals || undefined
   });
 
@@ -192,8 +247,10 @@ function computeContext(input) {
     funnel: result.funnel,
     modelSignals: result.modelSignals,
     asOf: dataAsOf ? dataAsOf.toISOString() : null,
-    ingestedAt: ingestedAt ? new Date(ingestedAt).toISOString() : null
+    lastSyncAt: result.funnel.lastSyncAt || sync.lastSyncAt || null,
+    lastSyncSource: result.funnel.lastSyncSource || sync.lastSyncSource || null,
+    ingestedAt: result.funnel.lastSyncAt || sync.lastSyncAt || null
   };
 }
 
-module.exports = { computeContext, normalizeLabels, applyHumanLabels, applyReviewLabel };
+module.exports = { computeContext, resolveLastSync, normalizeLabels, applyHumanLabels, applyReviewLabel };

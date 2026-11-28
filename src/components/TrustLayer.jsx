@@ -3,11 +3,11 @@ import axios from 'axios';
 import {
   Copy, Zap, UserX, Star, Receipt, HelpCircle, CheckCircle2, XCircle, Ban, ChevronDown, ShieldCheck, ShieldOff
 } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader, GlassPanel, PanelHeader, Switch, Badge, ProgressBar, EmptyState, Button, Tabs, Skeleton } from './ui';
 import Audit from './trust/Audit';
 import { LedgerRun, Pulse, PageEnter, prefersReducedMotion } from './motion';
-import { fmtInt, fmtDateTime } from '../lib/format';
+import { fmtInt, fmtDateTime, lastSyncLine, missingChannelsLine } from '../lib/format';
 import { reportRefreshing } from '../lib/dataVersion';
 
 /**
@@ -54,6 +54,7 @@ const HealthDial = ({ score = 0 }) => {
 };
 
 const TrustOverview = () => {
+  const navigate = useNavigate();
   const [health, setHealth] = useState(null);
   const [clusters, setClusters] = useState([]);
   const [queue, setQueue] = useState([]);
@@ -128,6 +129,8 @@ const TrustOverview = () => {
 
   const shown = trustOn ? impact?.withTrustLayer : impact?.withoutTrustLayer;
   const comps = health.components || {};
+  const syncLine = lastSyncLine(health.lastSyncAt || health.ingestedAt, health.lastSyncSource);
+  const missingLine = missingChannelsLine(health.channelCoverage?.missing);
 
   return (
     <div>
@@ -161,8 +164,19 @@ const TrustOverview = () => {
           <HealthDial score={health.dataHealthScore} />
           <div className="mt-6 flex w-full flex-col gap-3 border-t border-line-soft pt-5">
             <ProgressBar label="Vượt qua kiểm tra tin cậy" value={(comps.passRate ?? 0) / 100} showValue />
-            <ProgressBar label="Số kênh có dữ liệu" value={(comps.channelCoverage ?? 0) / 100} showValue />
-            <ProgressBar label="Độ mới của dữ liệu" value={(comps.freshness ?? 0) / 100} showValue />
+            <div>
+              <ProgressBar label="Số kênh có dữ liệu" value={(comps.channelCoverage ?? 0) / 100} showValue />
+              {missingLine && (
+                <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-ink-mid">
+                  <span>{missingLine}</span>
+                  <Button variant="link" size="sm" onClick={() => navigate('/data?tab=file')}>Nạp đánh giá</Button>
+                </div>
+              )}
+            </div>
+            <div>
+              <ProgressBar label="Độ mới của dữ liệu" value={(comps.freshness ?? 0) / 100} showValue />
+              {syncLine && <p className="mt-1 text-xs text-ink-lo">{syncLine}</p>}
+            </div>
             <ProgressBar label="Khớp với đơn hàng" value={(comps.reconciliation ?? 0) / 100} showValue />
           </div>
         </GlassPanel>

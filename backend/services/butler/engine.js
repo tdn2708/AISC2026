@@ -107,9 +107,10 @@ async function buildTaskItems(db, ws, ctx) {
   }
   for (const it of inboxSorted) {
     if (combined.length >= 8) break;
+    const isOrderAlert = Boolean(it.alertId && String(it.alertId).startsWith('Orders|'));
     combined.push({
-      kind: 'inbox',
-      id: it.id,
+      kind: isOrderAlert ? 'alert' : 'inbox',
+      id: isOrderAlert ? it.alertId : it.id,
       severity: it.severity || 'medium',
       title: it.title,
       why: stripTitlePrefix(it.title, it.why || ''),
@@ -117,6 +118,16 @@ async function buildTaskItems(db, ws, ctx) {
     });
   }
   return combined.slice(0, 8).map((it, idx) => ({ ...it, n: idx + 1 }));
+}
+
+async function findAnyPendingAlert(db, ctx, id) {
+  if (String(id || '').startsWith('Orders|')) {
+    const { pendingOrderAlerts } = require('../order_alerts');
+    const ord = await pendingOrderAlerts(db, ctx);
+    return ord.find((a) => a.id === id) || null;
+  }
+  const alerts = await pendingAlerts(db, ctx);
+  return alerts.find((a) => a.id === id) || null;
 }
 
 async function handle({ authDb, workspaces, user, link: initialLink, text, channel = 'web', workspace }) {
@@ -198,17 +209,18 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
 
         if (item.kind === 'alert') {
           const ctx = await withTimeout(getContext(listDb), 20000, 'Tính số liệu');
-          const alerts = await pendingAlerts(listDb, ctx);
-          const found = alerts.find((a) => a.id === item.id);
-          const steps = (found?.recommendation?.steps || []).slice(0, 4).map(
+          const found = await findAnyPendingAlert(listDb, ctx, item.id);
+          const steps = (found?.recommendation?.steps || found?.steps || []).slice(0, 4).map(
             (s, idx) => `${idx + 1}. ${s.text}${s.approvalRole ? ` (cần ${s.approvalRole} duyệt)` : ''}`
           );
+          const to = String(item.to || '/risk');
+          const url = `${baseAppUrl}${to.startsWith('/') ? to : '/' + to}`;
           const lines = [
             `Việc ${item.n}: [${severityWord(item.severity)}] ${item.title}`,
-            stripTitlePrefix(item.title, found?.summary || item.why || ''),
+            stripTitlePrefix(item.title, found?.summary || found?.why || item.why || ''),
             ...(steps.length ? ['Kế hoạch đề xuất:', ...steps] : []),
             `Nhắn "duyệt ${item.n}" để chấp nhận hoặc "bỏ qua ${item.n} vì <lý do>".`,
-            `${baseAppUrl}/risk`
+            url
           ].filter(Boolean);
           return { text: lines.join('\n'), kind: 'detail' };
         }
@@ -244,9 +256,8 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
         const listWs = list.workspace === 'demo' ? 'demo' : require('../tenants').keyFor(user, 'real');
         const listDb = workspaces[listWs] || db;
         const ctx = await withTimeout(getContext(listDb), 20000, 'Tính số liệu');
-        const alerts = await pendingAlerts(listDb, ctx);
-        const found = alerts.find((a) => a.id === item.id);
-        const steps = found?.recommendation?.steps || [];
+        const found = await findAnyPendingAlert(listDb, ctx, item.id);
+        const steps = found?.recommendation?.steps || found?.steps || [];
         const prompt = `Chấp nhận kế hoạch cho "${item.title}"? Nhắn "có" trong 5 phút để ghi, "thôi" để bỏ.`;
 
         await store.setPending(authDb, user._id, {
@@ -257,7 +268,7 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
             alertId: item.id,
             title: item.title,
             actionIds: steps.map((s) => s.actionId).filter(Boolean),
-            scopeKey: found?.recommendation?.scopeKey || null,
+            scopeKey: found?.recommendation?.scopeKey || found?.modelKey || null,
             snapshot: {
               title: found?.title || item.title,
               productName: found?.productName || null,
@@ -300,9 +311,8 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
         const listWs = list.workspace === 'demo' ? 'demo' : require('../tenants').keyFor(user, 'real');
         const listDb = workspaces[listWs] || db;
         const ctx = await withTimeout(getContext(listDb), 20000, 'Tính số liệu');
-        const alerts = await pendingAlerts(listDb, ctx);
-        const found = alerts.find((a) => a.id === item.id);
-        const steps = found?.recommendation?.steps || [];
+        const found = await findAnyPendingAlert(listDb, ctx, item.id);
+        const steps = found?.recommendation?.steps || found?.steps || [];
         const prompt = `Bỏ qua "${item.title}" với lý do "${cmd.reason}"? Nhắn "có" để ghi.`;
 
         await store.setPending(authDb, user._id, {
@@ -314,7 +324,7 @@ async function handle({ authDb, workspaces, user, link: initialLink, text, chann
             title: item.title,
             reason: cmd.reason,
             actionIds: steps.map((s) => s.actionId).filter(Boolean),
-            scopeKey: found?.recommendation?.scopeKey || null,
+            scopeKey: found?.recommendation?.scopeKey || found?.modelKey || null,
             snapshot: {
               title: found?.title || item.title,
               productName: found?.productName || null,

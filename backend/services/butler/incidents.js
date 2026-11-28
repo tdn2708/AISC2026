@@ -6,6 +6,7 @@
  */
 
 const { pendingAlerts, buildInboxItems } = require('../work_items');
+const { healthNow } = require('../analysis_context');
 const metrics = require('../metrics');
 const { vnParts, inQuiet, severityWord, fromAlertSeverity, ago, viDate, viTime, stripTitlePrefix } = require('./text');
 
@@ -40,9 +41,10 @@ async function collectIncidents(db, workspace, ctx, { collectorStatus } = {}) {
     const inbox = await buildInboxItems(db, workspace, ctx);
     for (const item of inbox) {
       if (item.severity !== 'critical' && item.severity !== 'high') continue;
+      const isOrderAlert = Boolean(item.alertId && String(item.alertId).startsWith('Orders|'));
       out.push({
-        key: `inbox|${item.id}`,
-        kind: item.source || 'inbox',
+        key: isOrderAlert ? `alert|${item.alertId}` : `inbox|${item.id}`,
+        kind: isOrderAlert ? 'alert' : (item.source || 'inbox'),
         severity: item.severity,
         title: item.title,
         why: stripTitlePrefix(item.title, item.why || ''),
@@ -158,8 +160,9 @@ function buildAlertMessage(items, { workspaceLabel = 'Dữ liệu thật', appUr
 function summarizeContext(ctx) {
   if (!ctx) return {};
   const counted = Array.isArray(ctx.items) ? ctx.items.filter(metrics.isCountable).length : undefined;
-  const health = Number.isFinite(ctx.funnel?.dataHealthScore) ? ctx.funnel.dataHealthScore : undefined;
-  const freshAt = ctx.ingestedAt || ctx.asOf || undefined;
+  const h = healthNow(ctx);
+  const health = Number.isFinite(h?.dataHealthScore) ? h.dataHealthScore : undefined;
+  const freshAt = h?.lastSyncAt || ctx.lastSyncAt || ctx.ingestedAt || ctx.asOf || undefined;
   return { counted, health, freshAt };
 }
 
@@ -197,6 +200,19 @@ function buildDigest({ workspaceLabel = 'Dữ liệu thật', ctxSummary = {}, i
     if (v.live?.lostFlagged > 0) parts.push(`báo kịp ${vnd(v.live.lostFlagged)} lỡ vì hết hàng khi live`);
     if (v.atRisk?.amount > 0) parts.push(`doanh thu đang có rủi ro ${vnd(v.atRisk.amount)}`);
     if (parts.length) lines.push(`${v.windowDays || 30} ngày qua: ${parts.join(', ')}.`);
+  }
+
+  // Cảnh báo đơn hàng mới (B4: bản tin sáng Zalo thêm 1 dòng khi có cảnh báo đơn mới)
+  const explicitOrderAlerts = Array.isArray(ctxSummary?.newOrderAlerts) ? ctxSummary.newOrderAlerts : null;
+  const incidentOrderAlerts = explicitOrderAlerts || [
+    ...(Array.isArray(incidents) ? incidents.filter((i) => String(i?.key || i?.id || '').includes('Orders|')) : []),
+    ...(Array.isArray(tasks) ? tasks.filter((t) => String(t?.id || '').includes('Orders|')) : [])
+  ];
+  const uniqueOrderTitles = [...new Set(incidentOrderAlerts.map((x) => x.title).filter(Boolean))];
+  if (uniqueOrderTitles.length === 1) {
+    lines.push(`Đơn hàng có 1 cảnh báo mới: ${uniqueOrderTitles[0]}.`);
+  } else if (uniqueOrderTitles.length > 1) {
+    lines.push(`Đơn hàng có ${uniqueOrderTitles.length.toLocaleString('vi-VN')} cảnh báo mới, nổi bật: ${uniqueOrderTitles[0]}.`);
   }
 
   const taskVnd = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1).replace('.', ',')} tỉ đ` : n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} triệu đ` : `${Math.round(n / 1000).toLocaleString('vi-VN')} nghìn đ`);

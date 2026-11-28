@@ -20,6 +20,7 @@ const playbook = require('./playbook');
 const trustLayer = require('./trust_layer');
 const painPoints = require('./pain_points');
 const caseFile = require('./case_file');
+const { pendingOrderAlerts } = require('./order_alerts');
 const { findDecision } = require('./decision_match');
 const { issueTitle } = require('./wording');
 const { spanWords } = require('./cadence');
@@ -255,9 +256,31 @@ async function buildInboxItems(db, workspace, ctx) {
     console.warn('[INBOX] Bỏ qua phần hồ sơ:', e.message);
   }
 
+  // ---------- Cảnh báo đơn hàng (tối đa 2 mục, chỉ kho thật có đơn) ----------
+  if (isRealKey(workspace)) {
+    try {
+      const ordAlerts = (await pendingOrderAlerts(db, ctx)).slice(0, 2);
+      for (const oa of ordAlerts) {
+        items.push({
+          id: `orderalert|${oa.id}`,
+          alertId: oa.id,
+          source: 'orders',
+          severity: oa.severity === 'Critical' ? 'critical' : 'high',
+          score: oa.severityScore,
+          title: oa.title,
+          why: oa.why,
+          actions: oa.actions || [{ label: 'Xem phân tích đơn', to: '/analytics?tab=orders' }]
+        });
+      }
+    } catch (e) {
+      console.warn('[INBOX] Bỏ qua phần cảnh báo đơn hàng:', e.message);
+    }
+  }
+
   // ---------- Độ tươi của dữ liệu thật ----------
-  if (isRealKey(workspace) && ctx.ingestedAt) {
-    const days = Math.floor((Date.now() - new Date(ctx.ingestedAt).getTime()) / DAY);
+  const syncAt = ctx.lastSyncAt || ctx.funnel?.lastSyncAt || ctx.ingestedAt;
+  if (isRealKey(workspace) && syncAt) {
+    const days = Math.floor((Date.now() - new Date(syncAt).getTime()) / DAY);
     if (days >= 2) {
       items.push({
         id: 'data|stale', source: 'data', severity: days >= 7 ? 'high' : 'medium',

@@ -23,7 +23,7 @@ const { spanWords } = require('./cadence');
 const taxonomy = require('./taxonomy');
 const playbook = require('./playbook');
 const retrieval = require('./retrieval');
-const { applyFilters, scopeTransactions, ctxNow, cadenceOf } = require('./analysis_context');
+const { applyFilters, scopeTransactions, ctxNow, cadenceOf, healthNow } = require('./analysis_context');
 
 const pct = (n) => `${(n * 100).toFixed(1).replace('.', ',')}%`;
 const num = (n) => new Intl.NumberFormat('vi-VN').format(n);
@@ -46,7 +46,7 @@ const TOOLS = {
         `Tổng phản hồi thô trong phạm vi đang xét: ${num(items.length)}`,
         `Phản hồi hợp lệ sau Trust Layer: ${num(valid.length)}`,
         `Đã loại: ${num(items.length - valid.length)} phản hồi không đạt ngưỡng tin cậy`,
-        `Điểm Sức khỏe Dữ liệu: ${ctx.funnel.dataHealthScore}/100`
+        `Điểm Sức khỏe Dữ liệu: ${healthNow(ctx).dataHealthScore}/100`
       ];
 
       if (cards.weightedComplaintRate.available) {
@@ -208,7 +208,7 @@ const TOOLS = {
   trust_health: {
     description: 'Phễu Trust Layer, điểm sức khỏe dữ liệu, cụm đánh giá nghi vấn',
     run(ctx) {
-      const f = ctx.funnel;
+      const f = healthNow(ctx);
       const facts = [
         // Cùng phép trừ với sổ đối chiếu trên Tổng quan (metrics.ledgerSplit), để số khớp mọi trang
         ((L) => `Sổ đối chiếu: ${num(f.rawCollected)} thu thập, trừ ${num(L.spam)} rác, ${num(L.inauthentic)} nghi ảo, ${num(L.pendingNotCounted)} chờ duyệt chưa tính, ${num(L.aged)} quá cũ, còn ${num(L.counted)} được tính vào chỉ số (${num(L.pendingCounted)} câu chờ duyệt vẫn được tính tạm)`)(metrics.ledgerSplit(ctx.items)),

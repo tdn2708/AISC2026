@@ -91,7 +91,7 @@ function buildGrouper(items) {
   };
 }
 
-/** Danh mục lá từ breadcrumb Tiki: [..., "Nồi chiên", "<tên sản phẩm>"] -> "Nồi chiên" */
+/** Danh mục lá từ breadcrumb: [..., "Nhóm con", "<tên sản phẩm>"] -> "Nhóm con" */
 function leafFromBreadcrumbs(breadcrumbs, productName) {
   const names = (Array.isArray(breadcrumbs) ? breadcrumbs : [])
     .map((b) => (typeof b === 'string' ? b : b?.name))
@@ -100,4 +100,27 @@ function leafFromBreadcrumbs(breadcrumbs, productName) {
   return names.length ? names[names.length - 1] : null;
 }
 
-module.exports = { buildGrouper, leafFromBreadcrumbs, nameTokens, SOURCE_LABEL, ALL_SHOP };
+/**
+ * Rút mã máy dạng [A-Z]{3}-?\d{4}[A-Z]? (không phân biệt hoa thường) từ tên sản phẩm,
+ * trả về dạng không gạch nối, viết hoa; không có thì trả null.
+ */
+function modelCodeOf(name) {
+  if (!name || typeof name !== 'string') return null;
+  const m = name.match(/(?<![\p{L}\p{N}])([A-Za-z]{3})-?(\d{4}[A-Za-z]?)(?![\p{L}\p{N}])/u);
+  return m ? `${m[1].toUpperCase()}${m[2].toUpperCase()}` : null;
+}
+
+/**
+ * Nhãn nguồn đăng bán trong tên sản phẩm trên sàn:
+ * - 'kol' khi có dạng [<tên> x <thương hiệu>]
+ * - 'live' khi có [LIVE]
+ * - còn lại null
+ */
+function listingTagOf(name) {
+  if (!name || typeof name !== 'string') return null;
+  if (/\[[^\]]+\s+[x×]\s+[^\]]+\]/iu.test(name)) return 'kol';
+  if (/\[\s*live(?:\s+[^\]]*)?\]/iu.test(name)) return 'live';
+  return null;
+}
+
+module.exports = { buildGrouper, leafFromBreadcrumbs, nameTokens, modelCodeOf, listingTagOf, SOURCE_LABEL, ALL_SHOP };

@@ -12,8 +12,8 @@
  */
 
 const path = require('path');
-const { DEFAULT_HALF_LIFE_DAYS } = require('./trust_layer');
-const { computeContext, normalizeLabels, applyHumanLabels, applyReviewLabel } = require('./context_compute');
+const { DEFAULT_HALF_LIFE_DAYS, healthAt } = require('./trust_layer');
+const { computeContext, resolveLastSync, normalizeLabels, applyHumanLabels, applyReviewLabel } = require('./context_compute');
 const visobert = require('./visobert_client');
 const { analysisCadence, DEFAULT_CADENCE } = require('./cadence');
 
@@ -73,6 +73,8 @@ const REAL_HALF_LIFE_DAYS = Number(process.env.REAL_HALF_LIFE_DAYS) || 180;
 const ctxNow = (ctx) => (ctx && ctx.asOf ? new Date(ctx.asOf) : new Date());
 /** Nhịp phân tích của kho (services/cadence.js): cửa sổ gần đây và nền, chọn theo mật độ dữ liệu */
 const cadenceOf = (ctx) => (ctx && ctx.cadence) || DEFAULT_CADENCE;
+/** Phễu sức khỏe dữ liệu tính lại độ tươi tại thời điểm hiện tại (không bị đông cứng trong cache) */
+const healthNow = (ctx, now = new Date()) => (ctx && ctx.funnel ? healthAt(ctx.funnel, now) : null);
 
 /** Ghép lại danh sách phản hồi thành viên của từng điểm đau (worker chỉ gửi mã) */
 function attachPainMembers(pain, items) {
@@ -89,8 +91,8 @@ function attachPainMembers(pain, items) {
   }
   return pain;
 }
-// Chỉ các trường giao dịch thật sự được dùng (đối soát, doanh thu rủi ro, vùng)
-const TXN_PROJECTION = { _id: 0, orderId: 1, productName: 1, region: 1, orderedAt: 1, deliveredAt: 1, amount: 1 };
+// Chỉ các trường giao dịch thật sự được dùng (đối soát, doanh thu rủi ro, vùng, phủ kênh, mã máy)
+const TXN_PROJECTION = { _id: 0, orderId: 1, productName: 1, region: 1, orderedAt: 1, deliveredAt: 1, amount: 1, channel: 1, modelCode: 1, sku: 1, quantity: 1 };
 
 /**
  * Trạng thái bộ đệm RIÊNG cho từng database. Máy chủ phục vụ cùng lúc kho mô
@@ -304,19 +306,59 @@ function refresh(db, { onlyIfChanged }) {
   return promise;
 }
 
+async function distinctField(db, collName, field, filter = {}) {
+  try {
+    const col = db.collection(collName);
+    if (typeof col.distinct === 'function') return await col.distinct(field, filter);
+    const docs = await col.find(filter, { projection: { [field]: 1 } }).toArray();
+    return [...new Set(docs.map((d) => d?.[field]).filter(Boolean))];
+  } catch {
+    return [];
+  }
+}
+
 async function doFetch(db, gen, onlyIfChanged) {
   const st = stateFor(db);
   const { cache } = st;
   const t0 = Date.now();
   const lastId = (name) =>
     db.collection(name).find({}, { projection: { _id: 1 } }).sort({ _id: -1 }).limit(1).next();
-  const [feedbackCount, txnCount, lastFeedback, lastTxn, labelsMeta] = await Promise.all([
+  const [
+    feedbackCount,
+    txnCount,
+    cancelCount,
+    lastFeedback,
+    lastTxn,
+    labelsMeta,
+    autocollectMeta,
+    lastImportMeta,
+    lastLiveSession,
+    newestCollectedFb
+  ] = await Promise.all([
     db.collection('feedbacks').estimatedDocumentCount(),
     db.collection('transactions').estimatedDocumentCount(),
+    db.collection('order_cancellations').estimatedDocumentCount().catch(() => 0),
     lastId('feedbacks'),
     lastId('transactions'),
-    db.collection('meta').findOne({ _id: 'labels' })
+    db.collection('meta').findOne({ _id: 'labels' }),
+    db.collection('meta').findOne({ _id: 'autocollect' }, { projection: { finishedAt: 1, lastError: 1 } }),
+    db.collection('meta').findOne({ _id: 'last_import' }, { projection: { at: 1 } }),
+    db.collection('live_sessions').findOne(
+      { platform: { $ne: 'simulator' }, simulated: { $ne: true }, lastActiveAt: { $ne: null } },
+      { projection: { lastActiveAt: 1 }, sort: { lastActiveAt: -1 } }
+    ),
+    db.collection('feedbacks').findOne(
+      { collectedAt: { $ne: null } },
+      { projection: { collectedAt: 1 }, sort: { collectedAt: -1 } }
+    )
   ]);
+
+  const syncMeta = {
+    autocollect: autocollectMeta || null,
+    lastImportAt: lastImportMeta?.at || null,
+    lastLiveAt: lastLiveSession?.lastActiveAt || null,
+    lastFeedbackCollectedAt: newestCollectedFb?.collectedAt || null
+  };
 
   // Khóa cache: số bản ghi + _id mới nhất của mỗi bảng. Chỉ đếm thì không
   // nhận ra khi kho bị nạp lại bằng script bên ngoài với ĐÚNG số lượng cũ
@@ -324,12 +366,24 @@ async function doFetch(db, gen, onlyIfChanged) {
   // mục mặc định nên gần như không tốn gì.
   // Script sửa nhãn tại chỗ (không thêm bản ghi) tăng meta.labels.version
   // để mọi máy chủ đang chạy biết mà nạp lại.
-  const key = `${feedbackCount}:${txnCount}:${lastFeedback?._id ?? ''}:${lastTxn?._id ?? ''}:${labelsMeta?.version ?? 0}`;
+  const key = `${feedbackCount}:${txnCount}:${cancelCount}:${lastFeedback?._id ?? ''}:${lastTxn?._id ?? ''}:${labelsMeta?.version ?? 0}`;
   const maxAge = cache.value?.replay ? REPLAY_MAX_AGE_MS : MAX_AGE_MS;
   if (
     onlyIfChanged && cache.value && cache.generation === gen &&
     cache.key === key && Date.now() - cache.computedAt < maxAge
   ) {
+    if (anchorsToData(db)) {
+      const sync = resolveLastSync(syncMeta, []);
+      if (sync.lastSyncAt) {
+        cache.value.lastSyncAt = sync.lastSyncAt;
+        cache.value.lastSyncSource = sync.lastSyncSource;
+        cache.value.ingestedAt = sync.lastSyncAt;
+        if (cache.value.funnel) {
+          cache.value.funnel.lastSyncAt = sync.lastSyncAt;
+          cache.value.funnel.lastSyncSource = sync.lastSyncSource;
+        }
+      }
+    }
     cache.at = Date.now();
     return cache.value;
   }
@@ -362,12 +416,14 @@ async function doFetch(db, gen, onlyIfChanged) {
     return list;
   };
   // eslint-disable-next-line prefer-const -- rawFeedbacks được nhả (gán null) sau khi gửi sang luồng tính
-  let [rawFeedbacks, transactions, upcoming, auditLabels, reviewLabels] = await Promise.all([
+  let [rawFeedbacks, transactions, upcoming, auditLabels, reviewLabels, cancelChannels, livePlatforms] = await Promise.all([
     readFeedbacks(),
     db.collection('transactions').find({ deliveredAt: { $not: { $gt: asOf } } }, { projection: TXN_PROJECTION }).batchSize(FETCH_BATCH).toArray(),
     db.collection('feedbacks').findOne({ timestamp: { $gt: asOf } }, { projection: { _id: 1 } }),
     db.collection('audit_labels').find({}).toArray(),
-    db.collection('review_labels').find({}).toArray()
+    db.collection('review_labels').find({}).toArray(),
+    distinctField(db, 'order_cancellations', 'channel'),
+    distinctField(db, 'live_sessions', 'platform', { platform: { $ne: 'simulator' }, simulated: { $ne: true } })
   ]);
   for (const l of auditLabels) l._id = String(l._id);
   for (const l of reviewLabels) l._id = String(l._id);
@@ -389,13 +445,19 @@ async function doFetch(db, gen, onlyIfChanged) {
   // tổng số đơn, không chép cả sổ 77 nghìn đơn (đo 23/11 trên Linux: đỉnh khởi động 575 MB, Render cho 512)
   const fbOrderIds = new Set();
   for (const f of rawFeedbacks) if (f.orderId) fbOrderIds.add(f.orderId);
+  const txnChannels = new Set();
+  for (const t of transactions) if (t.channel) txnChannels.add(t.channel);
+  const sellingChannels = [...txnChannels, ...cancelChannels, ...livePlatforms];
+  const isAnchored = anchorsToData(db);
   const input = {
     rawFeedbacks,
     transactions: transactions.filter((t) => fbOrderIds.has(t.orderId)),
+    sellingChannels,
+    syncMeta: isAnchored ? syncMeta : null,
     orderBookSize: transactions.length,
     auditLabels,
     reviewLabels,
-    anchorToData: anchorsToData(db),
+    anchorToData: isAnchored,
     halfLifeDays,
     modelSignals: nlp ? nlp.signals : null
   };
@@ -418,6 +480,8 @@ async function doFetch(db, gen, onlyIfChanged) {
     dbName: db.databaseName,
     asOf: computed.asOf,
     halfLifeDays,
+    lastSyncAt: computed.lastSyncAt,
+    lastSyncSource: computed.lastSyncSource,
     ingestedAt: computed.ingestedAt,
     // Một cửa sổ chung cho cảnh báo, so sánh kỳ, tốc độ tiêu cực, xu hướng
     cadence: computed.cadence || analysisCadence(computed.items, computed.asOf ? new Date(computed.asOf) : new Date()),
@@ -589,4 +653,4 @@ function scopeTransactions(transactions, query = {}, nowRef = null) {
   return out;
 }
 
-module.exports = { getContext, invalidate, isRefreshing, patchServing, applyFilters, scopeTransactions, timeBounds, normalizeLabels, ctxNow, cadenceOf, applyHumanLabels, applyReviewLabel };
+module.exports = { getContext, invalidate, isRefreshing, patchServing, applyFilters, scopeTransactions, timeBounds, normalizeLabels, ctxNow, cadenceOf, healthNow, applyHumanLabels, applyReviewLabel };

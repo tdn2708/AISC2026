@@ -4987,6 +4987,1346 @@ test('G6: ROOT_PLAYBOOKS phủ đủ 19 khóa L3, recommender gắn L3 vào data
   assert.ok(focus && focus.section.facts.some((f) => f.includes('Nóng yếu')), 'productFocus phải liệt kê L3');
 });
 
+// ------------------------------------------------------------------
+// PHẦN A (A0-A3): Lọc trùng trước gán nhãn, độ tươi đồng bộ, phủ kênh thật
+// ------------------------------------------------------------------
+console.log('\nĐỘ TIN SỐ LIỆU — PHẦN A (A0-A3)');
+
+test('A0: dedupKeyRaw trước khi gán nhãn trùng khớp tuyệt đối với dedupKey sau buildFeedbackDocs trên 20 đánh giá mẫu', () => {
+  const ingest = require('../services/ingest');
+  const samples = Array.from({ length: 20 }, (_, i) => {
+    const hasReviewId = i % 2 === 0;
+    const isImport = i % 5 === 1;
+    const raw = {
+      source: ['Tiki', 'Shopee', 'TikTok', 'Lazada', 'Facebook'][i % 5],
+      rawText: `Đánh giá mẫu số ${i} sản phẩm A&amp;B liên hệ 090123456${i % 10} email test${i}@mail.com`,
+      author: i % 4 === 0 ? 'Ẩn danh' : i % 4 === 1 ? 'Lan' : `Nguyễn Văn Mẫu ${i}`,
+      rating: (i % 5) + 1,
+      timestamp: new Date(Date.UTC(2026, 10, (i % 25) + 1, 8, 30)),
+      productName: i % 3 === 0 ? `Nồi chiên &amp; nướng mã ${i}` : null,
+      ...(isImport ? { collectedVia: 'import', importRef: `file.csv#${i}`, customerId: `imp:${i}` } : {}),
+      platformFacts: i % 3 !== 2 ? {
+        platform: 'Tiki',
+        reviewId: hasReviewId ? 900000 + i : null,
+        verifiedPurchase: true,
+        rawCustomerId: 5000 + i
+      } : null
+    };
+    const meta = {
+      fallbackProduct: 'Sản phẩm dự phòng &amp; chuẩn',
+      collectedVia: isImport ? 'import' : 'bulk',
+      sourceUrl: 'https://tiki.vn/sp-p123.html'
+    };
+    return { raw, meta };
+  });
+
+  for (let i = 0; i < samples.length; i += 1) {
+    const { raw, meta } = samples[i];
+    const beforeKey = ingest.dedupKeyRaw(raw, meta);
+    const [doc] = ingest.buildFeedbackDocs([raw], [{ category: 'ProductQuality', subCategory: 'TechnicalDefect', sentiment: 'Negative', labelledBy: 'llm' }], meta);
+    if (raw.customerId !== undefined) doc.customerId = raw.customerId;
+    const afterKey = ingest.dedupKey(doc);
+    assert.strictEqual(beforeKey, afterKey, `mẫu thứ ${i} lệch khóa dedup trước và sau khi gán nhãn`);
+  }
+});
+
+testAsync('A0: collectReal chạy hai lần trên cùng dữ liệu giả, lần hai gửi 0 câu cho labelReviews', async () => {
+  const realCollector = require('../services/real_collector');
+  const fbDocs = [];
+  const mockDb = {
+    databaseName: 'customer_radar_ui_test_a0',
+    collection(name) {
+      if (name === 'feedbacks') {
+        return {
+          async createIndex() { return 'ok'; },
+          find(q) {
+            const set = new Set(q?.dedupKey?.$in || []);
+            const matched = fbDocs.filter((d) => set.has(d.dedupKey)).map((d) => ({ dedupKey: d.dedupKey }));
+            return { async toArray() { return matched; } };
+          },
+          async bulkWrite(ops) {
+            let upsertedCount = 0;
+            for (const op of ops) {
+              const key = op.updateOne.filter.dedupKey;
+              if (!fbDocs.some((d) => d.dedupKey === key)) {
+                fbDocs.push({ ...op.updateOne.update.$setOnInsert });
+                upsertedCount += 1;
+              }
+            }
+            return { upsertedCount };
+          }
+        };
+      }
+      return {
+        async createIndex() { return 'ok'; },
+        async insertOne() { return { insertedId: 'p1' }; }
+      };
+    }
+  };
+
+  const fakeProducts = [{ productId: 101, name: 'Máy sấy tóc BlueStone HDB-1827', url: 'https://tiki.vn/may-say-p101.html', reviewCount: 30 }];
+  const fakeReviews = Array.from({ length: 5 }, (_, i) => ({
+    source: 'Tiki',
+    rawText: `Máy sấy dùng êm và nóng nhanh câu ${i}`,
+    author: `Khách ${i}`,
+    rating: 5,
+    timestamp: new Date('2026-11-20T08:00:00Z'),
+    productName: 'Máy sấy tóc BlueStone HDB-1827',
+    platformFacts: { platform: 'Tiki', reviewId: 7700 + i, verifiedPurchase: true }
+  }));
+
+  let labelledBatchSizes = [];
+  const opts = { queries: ['bluestone'], productsPerQuery: 1, pages: 1, minReviews: 1, pauseMs: 0 };
+  const deps = {
+    searchFn: async () => fakeProducts,
+    fetchFn: async () => fakeReviews,
+    labelFn: async (items) => {
+      labelledBatchSizes.push(items.length);
+      return items.map(() => ({ category: 'Other', subCategory: null, sentiment: 'Positive', labelledBy: 'visobert' }));
+    }
+  };
+
+  const r1 = await realCollector.collectReal(mockDb, opts, deps);
+  assert.strictEqual(r1.fetched, 5);
+  assert.strictEqual(r1.inserted, 5);
+  assert.strictEqual(r1.skippedKnown, 0);
+  assert.deepStrictEqual(labelledBatchSizes, [5]);
+  assert.strictEqual(r1.byLabeller.visobert, 5);
+
+  labelledBatchSizes = [];
+  const r2 = await realCollector.collectReal(mockDb, opts, deps);
+  assert.strictEqual(r2.fetched, 5);
+  assert.strictEqual(r2.skippedKnown, 5, 'lần 2 phải nhận ra cả 5 câu đã có trong kho');
+  assert.strictEqual(r2.inserted, 0);
+  const totalLabelledSecondRun = labelledBatchSizes.reduce((s, n) => s + n, 0);
+  assert.strictEqual(totalLabelledSecondRun, 0, 'lần 2 không được gửi câu nào sang labelReviews');
+  assert.deepStrictEqual(r2.byLabeller, {}, 'byLabeller chỉ đếm câu mới');
+});
+
+test('A1 & A2: Độ tươi theo lần đồng bộ cuối (thu xong 0 câu mới vẫn tươi) và healthAt tính động theo thời gian', () => {
+  const ctxCompute = require('../services/context_compute');
+  const realNow = new Date('2026-11-28T10:00:00Z');
+  const fiveDaysAgo = new Date(realNow.getTime() - 5 * 86400 * 1000);
+  const twoHoursAgo = new Date(realNow.getTime() - 2 * 3600 * 1000);
+
+  // Kho chỉ có đánh giá thu từ 5 ngày trước, nhưng bộ tự thu thập vừa chạy xong 2 giờ trước (0 câu mới, không lỗi)
+  const rawFeedbacks = [
+    {
+      _id: 'fb_old_collect',
+      source: 'Tiki',
+      originalText: 'Nồi chiên chạy tốt, giao đúng hẹn',
+      author: 'Trần Văn B',
+      rating: 5,
+      verifiedPurchase: true,
+      category: 'Other',
+      sentiment: 'Positive',
+      timestamp: new Date('2026-11-20T00:00:00Z'),
+      collectedAt: fiveDaysAgo
+    }
+  ];
+
+  const computed = ctxCompute.computeContext({
+    rawFeedbacks,
+    transactions: [],
+    anchorToData: true,
+    halfLifeDays: 180,
+    syncMeta: {
+      autocollect: { finishedAt: twoHoursAgo, lastError: null },
+      lastImportAt: null,
+      lastLiveAt: null
+    }
+  });
+
+  assert.strictEqual(computed.lastSyncSource, 'collect', 'nguồn đồng bộ mới nhất phải là collect');
+  assert.strictEqual(computed.lastSyncAt, twoHoursAgo.toISOString());
+
+  // A2: cùng một funnel, healthAt tại +1h tươi 100%, tại +30h giảm nhưng > 0, tại +80h về 0
+  const syncMs = new Date(computed.funnel.lastSyncAt).getTime();
+  const h1 = trust.healthAt(computed.funnel, new Date(syncMs + 1 * 3600 * 1000));
+  const h30 = trust.healthAt(computed.funnel, new Date(syncMs + 30 * 3600 * 1000));
+  const h80 = trust.healthAt(computed.funnel, new Date(syncMs + 80 * 3600 * 1000));
+
+  assert.strictEqual(h1.components.freshness, 100, 'dưới 26 giờ độ tươi phải đạt 100%');
+  assert.ok(h30.components.freshness < h1.components.freshness && h30.components.freshness > 0, 'ở 30 giờ độ tươi phải giảm dần');
+  assert.strictEqual(h80.components.freshness, 0, 'quá 72 giờ độ tươi phải về 0');
+  assert.strictEqual(h80.components.passRate, h1.components.passRate, 'passRate giữ nguyên');
+  assert.strictEqual(h80.components.channelCoverage, h1.components.channelCoverage, 'channelCoverage giữ nguyên');
+  assert.strictEqual(h80.components.reconciliation, h1.components.reconciliation, 'reconciliation giữ nguyên');
+  assert.ok(h80.dataHealthScore < h1.dataHealthScore, 'điểm tổng phải giảm khi độ tươi về 0');
+
+  // Lần thu bị lỗi (lastError khác rỗng) không được tính là đồng bộ thành công
+  const errSync = ctxCompute.resolveLastSync(
+    { autocollect: { finishedAt: twoHoursAgo, lastError: 'timeout' }, lastImportAt: new Date(realNow.getTime() - 10 * 3600 * 1000) },
+    rawFeedbacks
+  );
+  assert.strictEqual(errSync.lastSyncSource, 'import', 'lần thu lỗi phải lùi về mốc nạp file hợp lệ');
+});
+
+test('A3: channelKey gom kênh và phủ kênh tính theo kênh shop thật sự bán (2/2 rồi 2/3 khi thêm đơn Shopee)', () => {
+  const { channelKey } = require('../services/channels');
+  assert.strictEqual(channelKey('Shopee'), 'shopee');
+  assert.strictEqual(channelKey('Tiki'), 'tiki');
+  assert.strictEqual(channelKey('TikTok Shop'), 'tiktok');
+  assert.strictEqual(channelKey('TikTok Live'), 'tiktok');
+  assert.strictEqual(channelKey('tiktok'), 'tiktok');
+  assert.strictEqual(channelKey('Lazada'), 'lazada');
+  assert.strictEqual(channelKey('Facebook'), 'facebook');
+  assert.strictEqual(channelKey('Website'), 'website');
+  assert.strictEqual(channelKey('CSKH'), 'khac');
+
+  const now = new Date('2026-11-28T00:00:00Z');
+  const feedbacks = [
+    { _id: 'f1', source: 'Tiki', originalText: 'Máy xay khỏe, dùng êm', author: 'Lê Thị C', rating: 5, verifiedPurchase: true, category: 'Other', sentiment: 'Positive', timestamp: now },
+    { _id: 'f2', source: 'TikTok', originalText: 'Giao hàng nhanh đóng gói kỹ', author: 'Phạm Văn D', rating: 5, verifiedPurchase: true, category: 'Other', sentiment: 'Positive', timestamp: now }
+  ];
+
+  // Có Tiki + TikTok (cùng phiên live TikTok): 2/2 kênh = 100%, không thiếu kênh nào
+  const before = trust.runTrustLayer(feedbacks, {
+    now,
+    liveSessions: [{ platform: 'tiktok' }, { platform: 'simulator' }]
+  });
+  assert.strictEqual(before.funnel.channelCoverage.covered, 2);
+  assert.strictEqual(before.funnel.channelCoverage.expected, 2);
+  assert.deepStrictEqual(before.funnel.channelCoverage.missing, []);
+  assert.strictEqual(before.funnel.components.channelCoverage, 100);
+
+  // Sau khi nạp đơn hàng Shopee: thành 2/3 kênh, missing = ['shopee']
+  const after = trust.runTrustLayer(feedbacks, {
+    now,
+    orders: [{ orderId: 'SP001', channel: 'Shopee', amount: 850000 }],
+    liveSessions: [{ platform: 'tiktok' }]
+  });
+  assert.strictEqual(after.funnel.channelCoverage.covered, 2);
+  assert.strictEqual(after.funnel.channelCoverage.expected, 3);
+  assert.deepStrictEqual(after.funnel.channelCoverage.missing, ['shopee']);
+  near(after.funnel.components.channelCoverage, 66.7, 0.1, '2/3 kênh tương ứng 66,7%');
+});
+
+test('A4: validateCollectConfig kiểm kiểu chặt (số từ khóa, độ dài, productsPerQuery, pages)', () => {
+  const rc = require('../services/real_collector');
+  const ok = rc.validateCollectConfig({ enabled: true, queries: ['  bluestone ', 'BlueStone', 'lock&lock'], productsPerQuery: 25, pages: 3 });
+  assert.ok(!ok.error, `cấu hình hợp lệ không được báo lỗi: ${ok.error}`);
+  assert.deepStrictEqual(ok.value, { enabled: true, queries: ['bluestone', 'lock&lock'], productsPerQuery: 25, pages: 3, minReviews: 1 });
+
+  assert.ok(rc.validateCollectConfig({ enabled: true, queries: [] }).error, 'bật tự thu mà trống từ khóa phải lỗi');
+  assert.ok(rc.validateCollectConfig({ enabled: false, queries: ['a'] }).error, 'từ khóa dưới 2 ký tự phải lỗi');
+  assert.ok(rc.validateCollectConfig({ enabled: false, queries: ['x'.repeat(41)] }).error, 'từ khóa quá 40 ký tự phải lỗi');
+  assert.ok(rc.validateCollectConfig({ enabled: false, queries: ['k1', 'k2', 'k3', 'k4', 'k5', 'k6'] }).error, 'quá 5 từ khóa phải lỗi');
+  assert.ok(rc.validateCollectConfig({ enabled: false, queries: ['bluestone'], productsPerQuery: 0 }).error, 'productsPerQuery < 1 phải lỗi');
+  assert.ok(rc.validateCollectConfig({ enabled: false, queries: ['bluestone'], productsPerQuery: 31 }).error, 'productsPerQuery > 30 phải lỗi');
+  assert.ok(rc.validateCollectConfig({ enabled: false, queries: ['bluestone'], pages: 0 }).error, 'pages < 1 phải lỗi');
+  assert.ok(rc.validateCollectConfig({ enabled: false, queries: ['bluestone'], pages: 11 }).error, 'pages > 10 phải lỗi');
+});
+
+testAsync('A4: autoCollectTick hoãn khi có phiên live, bỏ qua kho chưa bật và chỉ chạy tối đa 1 kho mỗi nhịp', async () => {
+  const rc = require('../services/real_collector');
+  const now = new Date('2026-11-28T12:00:00Z');
+  const oldAt = new Date(now.getTime() - 26 * 3600 * 1000);
+  const freshAt = new Date(now.getTime() - 2 * 3600 * 1000);
+
+  const mkWsDb = (name, stateDoc, cfgDoc) => {
+    const docs = {
+      ...(stateDoc ? { autocollect: { _id: 'autocollect', ...stateDoc } } : {}),
+      ...(cfgDoc ? { autocollect_config: { _id: 'autocollect_config', ...cfgDoc } } : {})
+    };
+    return {
+      databaseName: name,
+      docs,
+      collection(c) {
+        assert.strictEqual(c, 'meta');
+        return {
+          async findOne(q) { return docs[q._id] || null; }
+        };
+      }
+    };
+  };
+
+  const wsMap = {
+    real: mkWsDb('cr_test_real', { finishedAt: oldAt }, null),
+    t_111111111111111111111111: mkWsDb('cr_test_t_111111111111111111111111', null, { enabled: true, queries: ['bluestone'], productsPerQuery: 10, pages: 2 }),
+    t_222222222222222222222222: mkWsDb('cr_test_t_222222222222222222222222', { finishedAt: freshAt }, { enabled: true, queries: ['sunhouse'] }),
+    t_333333333333333333333333: mkWsDb('cr_test_t_333333333333333333333333', null, { enabled: false, queries: ['philips'] }),
+    t_444444444444444444444444: mkWsDb('cr_test_t_444444444444444444444444', null, null)
+  };
+
+  const prevAuto = process.env.AUTO_COLLECT;
+  try {
+    process.env.AUTO_COLLECT = '0';
+    const disabledRes = await rc.autoCollectTick(wsMap, { now, liveBusyFn: () => false });
+    assert.strictEqual(disabledRes.ran, false);
+    assert.strictEqual(disabledRes.reason, 'disabled');
+
+    delete process.env.AUTO_COLLECT;
+    const liveRes = await rc.autoCollectTick(wsMap, { now, liveBusyFn: () => true });
+    assert.strictEqual(liveRes.ran, false);
+    assert.strictEqual(liveRes.reason, 'live_active', 'đang có phiên live phải hoãn thu thập');
+
+    const ranKeys = [];
+    const runFn = async (db) => {
+      const hitKey = Object.keys(wsMap).find((k) => wsMap[k] === db);
+      ranKeys.push(hitKey);
+      db.docs.autocollect = { _id: 'autocollect', running: true, lockedAt: now };
+      return { started: true };
+    };
+
+    // Nhịp 1: chỉ chạy đúng 1 kho lâu nhất (chưa từng chạy: t_111...)
+    const tick1 = await rc.autoCollectTick(wsMap, { now, liveBusyFn: () => false, runFn });
+    assert.strictEqual(tick1.ran, true);
+    assert.strictEqual(tick1.key, 't_111111111111111111111111');
+    assert.strictEqual(ranKeys.length, 1, 'mỗi nhịp chỉ được chạy tối đa 1 kho');
+
+    // Khi kho đó đang chạy dở: nhịp kế tiếp không chạy song song kho thứ hai
+    const tickBusy = await rc.autoCollectTick(wsMap, { now, liveBusyFn: () => false, runFn });
+    assert.strictEqual(tickBusy.ran, false);
+    assert.strictEqual(tickBusy.reason, 'already_running');
+
+    // Kho 1 xong -> nhịp kế tiếp chạy kho đến hạn còn lại (real), bỏ qua kho mới thu (t_222), đang tắt (t_333), chưa cấu hình (t_444)
+    wsMap.t_111111111111111111111111.docs.autocollect = { _id: 'autocollect', running: false, finishedAt: now };
+    const tick2 = await rc.autoCollectTick(wsMap, { now, liveBusyFn: () => false, runFn });
+    assert.strictEqual(tick2.ran, true);
+    assert.strictEqual(tick2.key, 'real');
+    wsMap.real.docs.autocollect = { _id: 'autocollect', running: false, finishedAt: now };
+
+    const tick3 = await rc.autoCollectTick(wsMap, { now, liveBusyFn: () => false, runFn });
+    assert.strictEqual(tick3.ran, false);
+    assert.strictEqual(tick3.reason, 'none_due');
+    assert.deepStrictEqual(ranKeys, ['t_111111111111111111111111', 'real']);
+  } finally {
+    if (prevAuto === undefined) delete process.env.AUTO_COLLECT; else process.env.AUTO_COLLECT = prevAuto;
+  }
+});
+
+testAsync('A4: API /collect/config và /collect/run phân quyền đúng kho riêng / kho chung và trả 409 khi đang bận', async () => {
+  const express = require('express');
+  const http = require('http');
+  const apiRouter = require('../routes/api');
+  const scraper = require('../services/scraper');
+  const labelCascade = require('../services/label_cascade');
+
+  const metaDocs = {};
+  const mockDb = {
+    databaseName: 'cr_test_t_aaaaaaaaaaaaaaaaaaaaaaaa',
+    collection(name) {
+      if (name === 'meta') {
+        return {
+          async findOne(q) { return metaDocs[q._id] || null; },
+          async updateOne(q, u, opts) {
+            if (!metaDocs[q._id] && opts?.upsert) metaDocs[q._id] = { _id: q._id, ...(u.$setOnInsert || {}) };
+            if (metaDocs[q._id] && u.$set) Object.assign(metaDocs[q._id], u.$set);
+            return {};
+          },
+          async findOneAndUpdate(q, u) {
+            const cur = metaDocs[q._id];
+            if (cur?.running) return null;
+            metaDocs[q._id] = { ...(cur || { _id: q._id }), ...(u.$set || {}) };
+            return metaDocs[q._id];
+          }
+        };
+      }
+      return {
+        async createIndex() { return 'ok'; },
+        find() { return { async toArray() { return []; } }; },
+        async bulkWrite() { return { upsertedCount: 0 }; },
+        async insertOne() { return {}; },
+        async deleteMany() { return {}; }
+      };
+    }
+  };
+
+  let currentCtx = { wsKey: 'real', user: { _id: 'u1', role: 'user', name: 'Chủ shop' } };
+  const app = express();
+  app.use(express.json());
+  app.use((req, _res, next) => {
+    req.db = mockDb;
+    req.workspace = 'real';
+    req.wsKey = currentCtx.wsKey;
+    req.user = currentCtx.user;
+    next();
+  });
+  app.use('/api', apiRouter);
+
+  const origLabel = labelCascade.labelReviews;
+  const origFetch = scraper.fetchTikiReviews;
+  labelCascade.labelReviews = async (items) => items.map(() => ({ category: 'Other', sentiment: 'Positive', labelledBy: 'rules' }));
+  scraper.fetchTikiReviews = async () => [];
+
+  const server = await new Promise((resolve) => {
+    const s = http.createServer(app).listen(0, '127.0.0.1', () => resolve(s));
+  });
+  const port = server.address().port;
+  const reqJson = (method, p, body) => new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : null;
+    const r = http.request({
+      hostname: '127.0.0.1', port, path: p, method,
+      headers: data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}
+    }, (res) => {
+      let buf = '';
+      res.on('data', (c) => { buf += c; });
+      res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(buf) }));
+    });
+    r.on('error', reject);
+    if (data) r.write(data);
+    r.end();
+  });
+
+  try {
+    // Người thường không được sửa cấu hình kho chung
+    const denied = await reqJson('PUT', '/api/collect/config', { enabled: true, queries: ['bluestone'] });
+    assert.strictEqual(denied.status, 403);
+
+    // Chủ shop sửa được kho riêng của mình
+    currentCtx = { wsKey: 't_aaaaaaaaaaaaaaaaaaaaaaaa', user: { _id: 'aaaaaaaaaaaaaaaaaaaaaaaa', role: 'user', name: 'BlueStone Shop' } };
+    const saved = await reqJson('PUT', '/api/collect/config', { enabled: true, queries: ['bluestone'], productsPerQuery: 2, pages: 1 });
+    assert.strictEqual(saved.status, 200);
+    assert.strictEqual(saved.body.config.enabled, true);
+    assert.deepStrictEqual(saved.body.config.queries, ['bluestone']);
+
+    // Khóa đang bận thì /collect/run trả 409
+    metaDocs.autocollect = { _id: 'autocollect', running: true, lockedAt: new Date() };
+    const busy = await reqJson('POST', '/api/collect/run', {});
+    assert.strictEqual(busy.status, 409);
+  } finally {
+    server.close();
+    labelCascade.labelReviews = origLabel;
+    scraper.fetchTikiReviews = origFetch;
+  }
+});
+
+// ------------------------------------------------------------------
+// PHẦN B (B2, B1, B3): Mã máy, nạp đơn Shopee (chặn cột cấm) và phân tích hủy/trả
+// ------------------------------------------------------------------
+console.log('\nĐƠN HÀNG SHOPEE — PHẦN B (B2, B1, B3)');
+
+test('B2: modelCodeOf rút đúng 10 tên có mã máy, trả null với 5 tên không mã, gắn lúc đọc/ingest và không viết cứng thương hiệu', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const { modelCodeOf, listingTagOf } = require('../services/product_group');
+  const ingest = require('../services/ingest');
+  const ctxCompute = require('../services/context_compute');
+
+  const withCode = [
+    ['Nồi chiên không dầu AFB-5851 5.5L', 'AFB5851'],
+    ['Máy đánh trứng cầm tay HMB-6333S', 'HMB6333S'],
+    ['Bếp từ đôi cảm ứng ICB-6920', 'ICB6920'],
+    ['Nồi áp suất điện tử PCB-5648', 'PCB5648'],
+    ['Máy xay sinh tố đa năng BLB-5323', 'BLB5323'],
+    ['Máy sấy tóc công suất lớn HDB-1827', 'HDB1827'],
+    ['Máy sấy tóc tạo ion HDB-1846', 'HDB1846'],
+    ['Nồi áp suất điện PCB-5760', 'PCB5760'],
+    ['[Võ Hà Linh x Thương Hiệu] Nồi chiên afb5880 chính hãng', 'AFB5880'],
+    ['[LIVE] Ấm đun siêu tốc KTB-3426 inox 304', 'KTB3426']
+  ];
+  for (const [name, expected] of withCode) {
+    assert.strictEqual(modelCodeOf(name), expected, `sai mã máy cho "${name}"`);
+  }
+
+  const withoutCode = [
+    'Áo thun cotton unisex form rộng',
+    'Kem chống nắng dưỡng ẩm SPF50',
+    'Bàn phím cơ không dây 3068',
+    'Sữa rửa mặt dịu nhẹ 473ml',
+    'BLUSAYHDB1975'
+  ];
+  for (const name of withoutCode) {
+    assert.strictEqual(modelCodeOf(name), null, `không được sinh mã giả cho "${name}"`);
+  }
+
+  assert.strictEqual(listingTagOf('[Võ Hà Linh x Hãng Gia Dụng] Bếp từ ICB-6920'), 'kol');
+  assert.strictEqual(listingTagOf('[LIVE] Máy đánh trứng HMB-6333S'), 'live');
+  assert.strictEqual(listingTagOf('Máy sấy tóc HDB-1827'), null);
+
+  // Gắn lúc ingest và lúc đọc normalizeLabels
+  const [ingested] = ingest.buildFeedbackDocs(
+    [{ source: 'Tiki', rawText: 'Máy chạy êm', author: 'Khách A', timestamp: new Date(), productName: 'Máy xay BLB-5323', rating: 5 }],
+    [{ category: 'Other', sentiment: 'Positive', labelledBy: 'rules' }],
+    { collectedVia: 'test' }
+  );
+  assert.strictEqual(ingested.modelCode, 'BLB5323');
+
+  const normalized = ctxCompute.normalizeLabels({
+    _id: 'old_mc',
+    originalText: 'Bếp báo lỗi E1',
+    productName: 'Bếp từ đôi ICB-6920',
+    category: 'ProductQuality',
+    subCategory: 'TechnicalDefect',
+    sentiment: 'Negative'
+  });
+  assert.strictEqual(normalized.modelCode, 'ICB6920');
+
+  // Kiểm grep: không viết cứng tên thương hiệu hay mã máy trong product_group.js và order_insights.js
+  const codeSrc = ['product_group.js', 'order_insights.js']
+    .map((f) => fs.readFileSync(path.join(__dirname, '..', 'services', f), 'utf8'))
+    .join('\n')
+    .toLowerCase();
+  for (const banned of ['bluestone', 'võ hà linh', 'vo ha linh', 'afb5851', 'icb6920', 'hmb6333s']) {
+    assert.ok(!codeSrc.includes(banned), `không được viết cứng "${banned}" trong tầng dịch vụ`);
+  }
+});
+
+const SHOPEE_61_COLS = [
+  'Mã đơn hàng', 'Mã Kiện Hàng', 'Ngày đặt hàng', 'Trạng Thái Đơn Hàng', 'Sản Phẩm Bán Chạy',
+  'Lý do hủy', 'Nhận xét từ Người mua', 'Mã vận đơn', 'Đơn Vị Vận Chuyển', 'Phương thức giao hàng',
+  'Loại đơn hàng', 'Ngày xuất hàng', 'Ngày giao hàng dự kiến', 'Ngày giao hàng nội địa', 'Thời gian giao hàng',
+  'Thời gian hoàn thành đơn hàng', 'Trạng thái Trả hàng/Hoàn tiền', 'Ngày hủy thành công', 'Đơn hàng được xử lý bởi Shopee', 'SKU sản phẩm',
+  'Tên sản phẩm', 'Cân nặng sản phẩm', 'Tổng cân nặng', 'Tên kho hàng', 'SKU phân loại hàng',
+  'Tên phân loại hàng', 'Sở hữu bởi Shopee', 'Giá gốc', 'Người bán trợ giá', 'Được Shopee trợ giá',
+  'Tổng số tiền được người bán trợ giá', 'Giá ưu đãi', 'Số lượng', 'Số lượng sản phẩm được hoàn trả', 'Tổng số tiền Người mua thanh toán',
+  'Tổng giá trị đơn hàng (VND)', 'Mã giảm giá của Shop', 'Hoàn Xu', 'Mã giảm giá của Shopee', 'Chỉ tiêu Combo Khuyến Mãi',
+  'Giảm giá từ combo Shopee', 'Giảm giá từ Combo của Shop', 'Shopee Xu được hoàn', 'Số tiền được giảm khi thanh toán bằng thẻ Ghi nợ', 'Trade-in Discount',
+  'Trade-in Bonus', 'Người Mua', 'Tên Người nhận', 'Số điện thoại', 'Tỉnh/Thành phố',
+  'TP / Quận / Huyện', 'Quận', 'Địa chỉ nhận hàng', 'Quốc gia', 'Ghi chú',
+  'Yêu cầu hóa đơn', 'Loại hóa đơn', 'Họ & Tên', 'Mã số thuế', 'Địa chỉ', 'Email'
+];
+
+testAsync('B1: guessOrderMapping khớp chính xác trên đủ 61 cột Shopee và trình duyệt loại bỏ tuyệt đối mọi cột cấm PII', async () => {
+  const path = require('path');
+  const { pathToFileURL } = require('url');
+  const csv = await import(pathToFileURL(path.join(__dirname, '..', '..', 'src', 'lib', 'csv.js')).href);
+
+  assert.strictEqual(SHOPEE_61_COLS.length, 61, 'danh sách mẫu phải đủ 61 cột Shopee');
+  const map = csv.guessOrderMapping(SHOPEE_61_COLS);
+  assert.strictEqual(map.orderId, 'Mã đơn hàng');
+  assert.strictEqual(map.orderedAt, 'Ngày đặt hàng');
+  assert.strictEqual(map.status, 'Trạng Thái Đơn Hàng');
+  assert.strictEqual(map.cancelReason, 'Lý do hủy');
+  assert.strictEqual(map.carrier, 'Đơn Vị Vận Chuyển');
+  assert.strictEqual(map.orderType, 'Loại đơn hàng');
+  assert.strictEqual(map.deliveredAt, 'Ngày giao hàng nội địa', 'deliveredAt không được ăn nhầm Thời gian giao hàng');
+  assert.strictEqual(map.shippedAt, 'Thời gian giao hàng');
+  assert.strictEqual(map.completedAt, 'Thời gian hoàn thành đơn hàng');
+  assert.strictEqual(map.returnStatus, 'Trạng thái Trả hàng/Hoàn tiền');
+  assert.strictEqual(map.cancelledAt, 'Ngày hủy thành công');
+  assert.strictEqual(map.sku, 'SKU sản phẩm');
+  assert.strictEqual(map.product, 'Tên sản phẩm');
+  assert.strictEqual(map.unitPrice, 'Giá ưu đãi');
+  assert.strictEqual(map.quantity, 'Số lượng');
+  assert.strictEqual(map.returnQty, 'Số lượng sản phẩm được hoàn trả');
+  assert.strictEqual(map.amount, 'Tổng giá trị đơn hàng (VND)', 'amount không được ăn nhầm trợ giá');
+  assert.strictEqual(map.shopVoucher, 'Mã giảm giá của Shop');
+  assert.strictEqual(map.buyer, 'Người Mua');
+  assert.strictEqual(map.region, 'Tỉnh/Thành phố');
+
+  // Dự phòng: không có Giá ưu đãi thì lấy Giá gốc; không có Tổng giá trị đơn hàng thì không ăn nhầm trợ giá
+  const fallbackHeader = SHOPEE_61_COLS.filter((c) => c !== 'Giá ưu đãi' && c !== 'Tổng giá trị đơn hàng (VND)');
+  const fallbackMap = csv.guessOrderMapping(fallbackHeader);
+  assert.strictEqual(fallbackMap.unitPrice, 'Giá gốc');
+  assert.strictEqual(fallbackMap.amount, 'Tổng số tiền Người mua thanh toán');
+
+  // Kiểm tra loại bỏ cột thông tin cá nhân khách hàng (kể cả khi người dùng cố tình trỏ nhầm cột)
+  const rawRow = Object.fromEntries(SHOPEE_61_COLS.map((c) => [c, '']));
+  Object.assign(rawRow, {
+    'Mã đơn hàng': '261111ABC001',
+    'Ngày đặt hàng': '2026-11-11 20:15',
+    'Trạng Thái Đơn Hàng': 'Hoàn thành',
+    'SKU sản phẩm': 'BLUSAYHDB1827',
+    'Tên sản phẩm': 'Máy sấy tóc HDB-1827',
+    'Giá ưu đãi': '499000.00',
+    'Số lượng': '1',
+    'Tổng giá trị đơn hàng (VND)': '499000.00',
+    'Người Mua': 'tai_khoan_gia_01',
+    'Tỉnh/Thành phố': 'Thành phố Hồ Chí Minh',
+    // Giá trị giả cho mọi cột cấm
+    'Tên Người nhận': 'Khách Hàng Giả A',
+    'Số điện thoại': '0900000001',
+    'Địa chỉ nhận hàng': 'Số 1 Đường Giả, Phường 1',
+    'TP / Quận / Huyện': 'Quận 1',
+    'Quận': 'Phường Bến Nghé',
+    'Email': 'khachgia@example.com',
+    'Họ & Tên': 'Công Ty Giả A',
+    'Mã số thuế': '0312345678',
+    'Địa chỉ': 'Tầng 2 Tòa Nhà Giả',
+    'Nhận xét từ Người mua': 'Nhớ gọi trước khi giao',
+    'Ghi chú': 'Giao buổi sáng'
+  });
+
+  const payloadNormal = csv.buildOrderPayloadRow(rawRow, map, 2);
+  const serializedNormal = JSON.stringify(payloadNormal);
+  for (const col of csv.FORBIDDEN_ORDER_COLUMNS) {
+    assert.strictEqual(col in payloadNormal, false, `payload không được chứa khóa cấm ${col}`);
+  }
+  for (const secret of ['Khách Hàng Giả A', '0900000001', 'Số 1 Đường Giả', 'Quận 1', 'Phường Bến Nghé', 'khachgia@example.com', '0312345678', 'Nhớ gọi trước khi giao', 'Giao buổi sáng']) {
+    assert.ok(!serializedNormal.includes(secret), `payload rò rỉ dữ liệu cấm: ${secret}`);
+  }
+  assert.strictEqual(payloadNormal.orderedAt, '2026-11-11T13:15:00.000Z', '2026-11-11 20:15 giờ VN phải đổi đúng sang UTC');
+
+  // Kể cả khi người dùng chọn nhầm cột cấm vào map, giá trị cấm vẫn bị chặn sạch
+  const badUserMap = { ...map, buyer: 'Số điện thoại', product: 'Địa chỉ nhận hàng', region: 'TP / Quận / Huyện' };
+  const payloadMisconfigured = csv.buildOrderPayloadRow(rawRow, badUserMap, 2);
+  assert.strictEqual(payloadMisconfigured.buyer, null);
+  assert.strictEqual(payloadMisconfigured.product, null);
+  assert.strictEqual(payloadMisconfigured.region, null);
+});
+
+testAsync('B1 & B3: POST /import/orders tách đơn thường / đơn hủy, băm buyerKey, và GET /orders/insights khớp đáp số biết trước', async () => {
+  const express = require('express');
+  const http = require('http');
+  const apiRouter = require('../routes/api');
+  const oi = require('../services/order_insights');
+
+  // Kiểm đủ 13 lý do hủy ở mục 3
+  const reasonCases = [
+    ['Hủy bởi người mua  lí do là: Thay đổi đơn hàng', 'buyer', 'edit', 'Thay đổi đơn hàng'],
+    ['Tự động hủy bởi hệ thống Shopee  lí do là: Chưa được Thanh Toán', 'system', 'unpaid', 'Chưa được Thanh Toán'],
+    ['Hủy bởi người mua  lí do là: Lý do khác', 'buyer', 'other', 'Lý do khác'],
+    ['Hủy bởi người mua  lí do là: Muốn nhập/thay đổi mã Voucher', 'buyer', 'edit', 'Muốn nhập/thay đổi mã Voucher'],
+    ['Hủy bởi người mua  lí do là: Muốn thay đổi sản phẩm trong đơn hàng', 'buyer', 'edit', 'Muốn thay đổi sản phẩm trong đơn hàng'],
+    ['Hủy bởi người mua  lí do là: Đổi ý, không muốn mua nữa', 'buyer', 'lost', 'Đổi ý, không muốn mua nữa'],
+    ['Hủy bởi người mua  lí do là: Need to change delivery address', 'buyer', 'edit', 'Need to change delivery address'],
+    ['Hủy bởi người mua  lí do là: Muốn thay đổi địa chỉ giao hàng', 'buyer', 'edit', 'Muốn thay đổi địa chỉ giao hàng'],
+    ['Tự động hủy bởi hệ thống Shopee  lí do là: Giao hàng thất bại', 'system', 'delivery', 'Giao hàng thất bại'],
+    ['Hủy bởi người mua  lí do là: Tìm thấy giá rẻ hơn ở chỗ khác', 'buyer', 'lost', 'Tìm thấy giá rẻ hơn ở chỗ khác'],
+    ['Hủy bởi người mua  lí do là: Thủ tục thanh toán quá rắc rối', 'buyer', 'unpaid', 'Thủ tục thanh toán quá rắc rối'],
+    ['Hủy bởi người mua  lí do là: Người bán không trả lời thắc mắc / yêu cầu của người mua', 'buyer', 'service', 'Người bán không trả lời thắc mắc / yêu cầu của người mua'],
+    ['Hủy bởi người mua  lí do là: Lí do khác', 'buyer', 'other', 'Lí do khác']
+  ];
+  for (const [raw, expectBy, expectGroup, expectClean] of reasonCases) {
+    const p = oi.parseCancelReason(raw);
+    assert.strictEqual(p.cancelledBy, expectBy, `sai cancelledBy cho "${raw}"`);
+    assert.strictEqual(p.cancelGroup, expectGroup, `sai cancelGroup cho "${raw}"`);
+    assert.strictEqual(p.cancelReason, expectClean, `sai chuỗi cắt tiền tố cho "${raw}"`);
+  }
+
+  // Kiểm băm buyerKey và lưu tách biệt transactions / order_cancellations qua API
+  const prevSalt = process.env.PII_SALT;
+  const prevWorker = process.env.CONTEXT_WORKER;
+  process.env.PII_SALT = 'test-salt-for-order-import-only-32chars';
+  process.env.CONTEXT_WORKER = '0';
+
+  const collections = { feedbacks: [], transactions: [], order_cancellations: [], audit_labels: [], review_labels: [], live_sessions: [], meta: [] };
+  const mkCursor = (arr) => ({
+    sort() { return this; },
+    limit(n) { arr = arr.slice(0, n); return this; },
+    batchSize() { return this; },
+    async next() { return arr[0] || null; },
+    async toArray() { return arr.slice(); }
+  });
+  const mockDb = {
+    databaseName: 'cr_test_t_bbbbbbbbbbbbbbbbbbbbbbbb',
+    collection(name) {
+      collections[name] ||= [];
+      return {
+        async estimatedDocumentCount() { return collections[name].length; },
+        async createIndex() { return 'ok'; },
+        find() { return mkCursor(collections[name]); },
+        async findOne(q) { return collections[name].find((d) => d._id === q?._id) || null; },
+        async updateOne(q, u, opts) {
+          const idx = collections[name].findIndex((d) => d._id === q._id);
+          const doc = { ...(idx >= 0 ? collections[name][idx] : { _id: q._id }), ...(u.$set || {}) };
+          if (idx >= 0) collections[name][idx] = doc;
+          else if (opts?.upsert) collections[name].push(doc);
+          return {};
+        },
+        async bulkWrite(ops) {
+          let upsertedCount = 0;
+          let modifiedCount = 0;
+          for (const op of ops) {
+            const orderId = op.updateOne.filter.orderId;
+            const idx = collections[name].findIndex((d) => d.orderId === orderId);
+            if (idx >= 0) {
+              collections[name][idx] = { ...collections[name][idx], ...(op.updateOne.update.$set || {}) };
+              modifiedCount += 1;
+            } else {
+              collections[name].push({ ...(op.updateOne.update.$setOnInsert || {}), ...(op.updateOne.update.$set || {}) });
+              upsertedCount += 1;
+            }
+          }
+          return { upsertedCount, modifiedCount };
+        }
+      };
+    }
+  };
+
+  // 25 đánh giá Tiki thật (khác câu chữ và thời điểm) cho mã ICB6920, trong đó 5 câu chê để kiểm ước lượng chéo kênh (>=50 đơn & >=20 đánh giá)
+  const negTexts = [
+    'Bếp từ đôi ICB-6920 quạt tản nhiệt kêu rất to khi đun mức cao',
+    'Mới dùng một tuần mà mặt cảm ứng bên trái bấm lúc ăn lúc không',
+    'Đóng gói sơ sài, nhận hàng hộp móp méo và thiếu sách hướng dẫn',
+    'Bếp kén nồi quá, bộ nồi inox đáy từ ở nhà đặt lên báo lỗi liên tục',
+    'Giao hàng lâu hơn dự kiến, gọi tổng đài kích hoạt bảo hành mãi chưa được'
+  ];
+  const posTexts = [
+    'Nấu nước sôi cực nhanh, mặt kính sáng bóng dễ lau chùi sau khi nấu',
+    'Gia đình bốn người dùng bếp đôi này rất tiện, hẹn giờ chuẩn xác',
+    'Thiết kế gọn đẹp, lắp âm vừa khít mặt đá bếp cũ của nhà mình',
+    'Cảm ứng mượt, khóa trẻ em an toàn khi nhà có bé nhỏ hay nghịch',
+    'Đun lẩu và xào nấu cùng lúc đều khỏe, tiết kiệm thời gian nấu nướng'
+  ];
+  for (let i = 0; i < 25; i += 1) {
+    collections.feedbacks.push({
+      _id: `fb_icb_${i}`,
+      source: 'Tiki',
+      productName: 'Bếp từ đôi cảm ứng ICB-6920',
+      originalText: i < 5 ? negTexts[i] : `${posTexts[i % posTexts.length]} (đơn tháng ${(i % 9) + 1}, mã khách ${i + 10})`,
+      author: `Nguyễn Thị Khách ${i}`,
+      customerId: `tiki:cust_${i}`,
+      rating: i < 5 ? 2 : 5,
+      verifiedPurchase: true,
+      category: i < 5 ? 'ProductQuality' : 'Other',
+      subCategory: i < 5 ? 'TechnicalDefect' : null,
+      sentiment: i < 5 ? 'Negative' : 'Positive',
+      timestamp: new Date(Date.UTC(2026, 9, (i % 25) + 1, 8 + (i % 10), 0)),
+      collectedAt: new Date('2026-11-26T04:00:00Z')
+    });
+  }
+
+  const app = express();
+  app.use(express.json({ limit: '2mb' }));
+  app.use((req, _res, next) => {
+    req.db = mockDb;
+    req.workspace = 'real';
+    req.wsKey = 't_bbbbbbbbbbbbbbbbbbbbbbbb';
+    req.user = { _id: 'bbbbbbbbbbbbbbbbbbbbbbbb', role: 'user', name: 'Shop Thử' };
+    next();
+  });
+  app.use('/api', apiRouter);
+
+  const server = await new Promise((resolve) => {
+    const s = http.createServer(app).listen(0, '127.0.0.1', () => resolve(s));
+  });
+  const port = server.address().port;
+  const reqJson = (method, p, body) => new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : null;
+    const r = http.request({
+      hostname: '127.0.0.1', port, path: p, method,
+      headers: data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}
+    }, (res) => {
+      let buf = '';
+      res.on('data', (c) => { buf += c; });
+      res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(buf) }));
+    });
+    r.on('error', reject);
+    if (data) r.write(data);
+    r.end();
+  });
+
+  try {
+    // Sinh tập đơn giả có đáp số chính xác:
+    // - 5 ngày thường (05/11..09/11): mỗi ngày 12 đơn HDB-1827 (10 hoàn thành x 500.000đ, 2 hủy đổi ý x 500.000đ) -> 60 đơn (50 xong, 10 hủy)
+    // - 1 ngày sale 11/11 (>= 3 x trung vị 12): 60 đơn đặt lúc 20:15 giờ VN:
+    //     + 50 đơn [KOL A x Hãng] Bếp từ đôi ICB-6920 giá 2.000.000đ: 10 hoàn thành, 40 hủy (30 sửa voucher, 10 chưa thanh toán)
+    //       trong 30 người hủy sửa voucher có đúng 10 người đặt lại đúng SKU ICB6920 lúc 21:00 cùng ngày (nằm trong 10 đơn hoàn thành trên!)
+    //     + 10 đơn [LIVE] Máy đánh trứng HMB-6333S giá 600.000đ: 9 hoàn thành (2 đơn có hoàn trả), 1 đơn đang giao
+    const rows = [];
+    for (let day = 5; day <= 9; day += 1) {
+      const dd = String(day).padStart(2, '0');
+      for (let j = 0; j < 12; j += 1) {
+        const cancelled = j >= 10;
+        rows.push({
+          orderId: `N_${dd}_${j}`,
+          orderedAt: `2026-11-${dd}T03:00:00.000Z`, // 10:00 VN
+          shippedAt: cancelled ? null : `2026-11-${dd}T13:00:00.000Z`, // +10h bàn giao
+          deliveredAt: cancelled ? null : `2026-11-${dd + 1}T03:00:00.000Z`,
+          status: cancelled ? 'Đã hủy' : 'Hoàn thành',
+          cancelReason: cancelled ? 'Hủy bởi người mua  lí do là: Đổi ý, không muốn mua nữa' : null,
+          sku: 'SKU_HDB1827',
+          product: 'Máy sấy tóc HDB-1827',
+          amount: 500000,
+          unitPrice: 500000,
+          quantity: 1,
+          buyer: `khach_thuong_${day}_${j}`,
+          region: 'Hà Nội'
+        });
+      }
+    }
+    // 40 đơn hủy ICB-6920 lúc 20:15 VN ngày 11/11 (13:15 UTC)
+    for (let j = 0; j < 40; j += 1) {
+      const isUnpaid = j >= 30;
+      rows.push({
+        orderId: `S_ICB_C_${j}`,
+        orderedAt: '2026-11-11T13:15:00.000Z',
+        status: 'Đã hủy',
+        cancelReason: isUnpaid
+          ? 'Tự động hủy bởi hệ thống Shopee  lí do là: Chưa được Thanh Toán'
+          : 'Hủy bởi người mua  lí do là: Muốn nhập/thay đổi mã Voucher',
+        sku: 'SKU_ICB6920',
+        product: '[KOL A x Hãng] Bếp từ đôi ICB-6920',
+        amount: 2000000,
+        unitPrice: 2000000,
+        quantity: 1,
+        buyer: `khach_icb_${j}`,
+        region: 'TP.HCM',
+        orderType: 'Hàng đặt trước'
+      });
+    }
+    // 10 đơn hoàn thành ICB-6920 lúc 21:00 VN ngày 11/11 (14:00 UTC) do chính khach_icb_0..9 đặt lại sau khi hủy sửa voucher!
+    for (let j = 0; j < 10; j += 1) {
+      rows.push({
+        orderId: `S_ICB_OK_${j}`,
+        orderedAt: '2026-11-11T14:00:00.000Z',
+        shippedAt: '2026-11-12T10:00:00.000Z', // +20h bàn giao ngày sale
+        deliveredAt: '2026-11-14T10:00:00.000Z',
+        status: 'Hoàn thành',
+        sku: 'SKU_ICB6920',
+        product: '[KOL A x Hãng] Bếp từ đôi ICB-6920',
+        amount: 2000000,
+        unitPrice: 2000000,
+        quantity: 1,
+        buyer: `khach_icb_${j}`,
+        region: 'TP.HCM',
+        orderType: 'Hàng đặt trước'
+      });
+    }
+    // 10 đơn [LIVE] HMB-6333S lúc 20:30 VN ngày 11/11 (13:30 UTC): 9 xong (2 trả hàng), 1 đang giao
+    for (let j = 0; j < 10; j += 1) {
+      rows.push({
+        orderId: `S_HMB_${j}`,
+        orderedAt: '2026-11-11T13:30:00.000Z',
+        shippedAt: '2026-11-12T09:30:00.000Z', // +20h
+        status: j === 9 ? 'Đang giao' : 'Người mua xác nhận đã nhận được hàng, tuy nhiên Người mua vẫn có thể gửi yêu cầu Trả hàng/Hoàn tiền',
+        returnStatus: j < 2 ? 'Hoàn tất trả hàng' : null,
+        returnQty: j < 2 ? 1 : 0,
+        sku: 'SKU_HMB6333S',
+        product: '[LIVE] Máy đánh trứng HMB-6333S',
+        amount: 600000,
+        unitPrice: 600000,
+        quantity: 1,
+        buyer: `khach_live_${j}`,
+        region: 'Đà Nẵng'
+      });
+    }
+
+    const imp = await reqJson('POST', '/api/import/orders', { rows, source: 'Shopee', fileName: 'fake_orders.xlsx' });
+    assert.strictEqual(imp.status, 200);
+    assert.strictEqual(imp.body.upserted, 70, '50 đơn thường + 10 ICB xong + 10 HMB = 70 đơn trong transactions');
+    assert.strictEqual(imp.body.cancelled, 50, '10 hủy ngày thường + 40 hủy ICB = 50 đơn trong order_cancellations');
+
+    // Kiểm tra băm buyerKey: tuyệt đối không có chuỗi tài khoản gốc trong database
+    const dbDump = JSON.stringify({ tx: collections.transactions, cx: collections.order_cancellations });
+    assert.ok(!dbDump.includes('khach_icb_0'), 'không được lưu tên tài khoản người mua dạng thô');
+    assert.ok(collections.transactions[0].buyerKey.startsWith('shopee:'), 'buyerKey phải ở dạng băm có muối');
+
+    const res = await reqJson('GET', '/api/orders/insights');
+    assert.strictEqual(res.status, 200);
+    const ins = res.body;
+    assert.strictEqual(ins.hasOrders, true);
+    assert.strictEqual(ins.summary.totalOrders, 120);
+    assert.strictEqual(ins.summary.completedOrders, 69, '50 HDB + 10 ICB + 9 HMB = 69 đơn hoàn tất');
+    assert.strictEqual(ins.summary.shippingOrders, 1, '1 đơn đang giao');
+    assert.strictEqual(ins.summary.cancelledOrders, 50);
+    // Doanh thu đơn xong: 50*500k + 10*2M + 9*600k = 25.000.000 + 20.000.000 + 5.400.000 = 50.400.000 đ
+    assert.strictEqual(ins.summary.completedRevenue, 50400000);
+    // Giá trị đơn hủy: 10*500k + 40*2M = 85.000.000 đ
+    assert.strictEqual(ins.summary.cancelledValue, 85000000);
+    assert.strictEqual(ins.summary.returnOrders, 2);
+
+    // Kiểm nhóm lý do hủy và tỉ lệ mua lại đúng SKU sau hủy
+    const editGrp = ins.cancelGroups.find((g) => g.key === 'edit');
+    const unpaidGrp = ins.cancelGroups.find((g) => g.key === 'unpaid');
+    const lostGrp = ins.cancelGroups.find((g) => g.key === 'lost');
+    assert.strictEqual(editGrp.lines, 30);
+    assert.strictEqual(editGrp.repurchasedLines, 10, 'đúng 10/30 khách sửa voucher đặt lại cùng SKU');
+    near(editGrp.repurchaseRate, 10 / 30, 1e-3, 'tỉ lệ mua lại nhóm sửa đơn = 33,3%');
+    assert.strictEqual(unpaidGrp.lines, 10);
+    assert.strictEqual(unpaidGrp.repurchasedLines, 0);
+    assert.strictEqual(lostGrp.lines, 10);
+
+    // Kiểm byModel: ICB6920 hủy 40/50 (80%) cao vượt trội so với phần còn lại (10/70 = 14,3%) -> bật cờ cancelFlag; có 5 lời chê và ước lượng chéo kênh 5/10*1000 = 500
+    const icb = ins.byModel.find((m) => m.modelCode === 'ICB6920');
+    assert.strictEqual(icb.totalLines, 50);
+    assert.strictEqual(icb.cancelledLines, 40);
+    assert.strictEqual(icb.cancelFlag, true, 'ICB6920 hủy 80% cỡ mẫu 50 phải bật cờ thống kê sau BH');
+    assert.strictEqual(icb.complaintCount, 5);
+    assert.strictEqual(icb.crossChannelPer1000, 500, '5 lời chê trên 10 sản phẩm bán ra (đủ >=50 đơn và >=20 đánh giá) = 500/1.000');
+
+    const hmb = ins.byModel.find((m) => m.modelCode === 'HMB6333S');
+    assert.strictEqual(hmb.crossChannelPer1000, null, 'dưới ngưỡng 50 đơn hoặc 20 đánh giá thì không hiện ước lượng chéo kênh');
+
+    // Kiểm byTag
+    assert.strictEqual(ins.byTag.find((t) => t.key === 'kol').totalLines, 50);
+    assert.strictEqual(ins.byTag.find((t) => t.key === 'live').totalLines, 10);
+    assert.strictEqual(ins.byTag.find((t) => t.key === 'regular').totalLines, 60);
+
+    // Kiểm saleDays & handover
+    assert.strictEqual(ins.saleDays.length, 1);
+    assert.strictEqual(ins.saleDays[0].date, '2026-11-11');
+    assert.strictEqual(ins.saleDays[0].orders, 60);
+    assert.strictEqual(ins.saleDays[0].byHour[20].orders, 50, '40 đơn 20:15 + 10 đơn 20:30 = 50 đơn khung 20 giờ');
+    assert.strictEqual(ins.saleDays[0].byHour[21].orders, 10);
+    assert.strictEqual(ins.handover.normalDays.medianHours, 10);
+    assert.strictEqual(ins.handover.saleDays.medianHours, 20);
+    assert.strictEqual('lateDelivery' in ins.handover, false, 'không được bịa chỉ số giao trễ');
+
+    // Kiểm B6: kế hoạch chuẩn bị ngày sale kế tiếp chỉ báo % theo giờ, top mã máy, ghi chú 1 ngày sale, 3 việc chuẩn bị
+    assert.ok(ins.nextSalePlan, 'có ngày sale 11/11 thì phải sinh nextSalePlan');
+    assert.strictEqual(ins.nextSalePlan.basisNote, 'Dựa trên một ngày sale (11/11)');
+    assert.strictEqual(ins.nextSalePlan.hourlyShare.length, 24);
+    assert.ok(
+      ins.nextSalePlan.hourlyShare.every((h) => Object.keys(h).sort().join(',') === 'hour,pct,unpaidSharePct'),
+      'hourlyShare chỉ được báo phần trăm, không dự báo số đơn cụ thể'
+    );
+    near(ins.nextSalePlan.hourlyShare.reduce((s, h) => s + h.pct, 0), 100, 0.5, 'tổng tỉ trọng 24 giờ xấp xỉ 100%');
+    assert.strictEqual(ins.nextSalePlan.prepTasks.length, 3);
+    const b6Dump = JSON.stringify({ plan: ins.nextSalePlan, lim: ins.limitations });
+    assert.ok(!/tuyệt đối|dự đoán chính xác|AI biết trước|[\u00b7\u2192]/.test(b6Dump), 'B6 không được chứa từ cấm');
+  } finally {
+    server.close();
+    if (prevSalt === undefined) delete process.env.PII_SALT; else process.env.PII_SALT = prevSalt;
+    if (prevWorker === undefined) delete process.env.CONTEXT_WORKER; else process.env.CONTEXT_WORKER = prevWorker;
+  }
+});
+
+testAsync('B4: cảnh báo đơn Orders|<nhóm>|<mã>|<ngày>, giới hạn 2 mục hộp việc, duyệt qua Quản gia và định giá rủi ro theo mã máy', async () => {
+  const { analyzeOrders } = require('../services/order_insights');
+  const { buildOrderAlerts, pendingOrderAlerts } = require('../services/order_alerts');
+  const { buildInboxItems } = require('../services/work_items');
+  const { computeValue, avgOrderValueByModel } = require('../services/value_summary');
+  const incidents = require('../services/butler/incidents');
+  const butlerEngine = require('../services/butler/engine');
+  const { computeContext } = require('../services/context_compute');
+
+  // 1. Sinh 3 cảnh báo đơn cùng lúc:
+  //    - Mã ICB6920 hủy sửa đơn cao (42/50 = 84%) -> Orders|CANCEL_EDIT|ICB6920|2026-11-11
+  //    - Mã AFD4571 hoàn trả cao (12/40 = 30% trong khi nền 0/120) -> Orders|RETURN_HIGH|AFD4571|2026-11-11
+  //    - Ngày sale 11/11 có hủy chưa thanh toán >= 15% (20/80 = 25%) -> Orders|CANCEL_UNPAID|SALE_2026-11-11|2026-11-11
+  const txns = [];
+  const cx = [];
+  // 5 ngày nền (05/11..09/11): mỗi ngày 24 đơn HDB-1827 hoàn thành (120 đơn nền không hủy, không trả)
+  for (let d = 5; d <= 9; d += 1) {
+    const dd = String(d).padStart(2, '0');
+    for (let i = 0; i < 24; i += 1) {
+      txns.push({
+        orderId: `BG_${dd}_${i}`,
+        orderedAt: new Date(`2026-11-${dd}T03:00:00Z`),
+        status: 'Hoàn thành',
+        productName: 'Máy sấy tóc HDB-1827',
+        modelCode: 'HDB1827',
+        sku: 'SKU_HDB1827',
+        amount: 300000,
+        quantity: 1,
+        lines: [{ sku: 'SKU_HDB1827', productName: 'Máy sấy tóc HDB-1827', modelCode: 'HDB1827', quantity: 1, unitPrice: 300000 }]
+      });
+    }
+  }
+  // Ngày sale 11/11 (>= 3 x 24 = 72 đơn): 8 đơn ICB6920 xong + 42 đơn ICB6920 hủy (22 sửa đơn + 20 chưa thanh toán) + 40 đơn AFD4571 xong (12 trả hàng) = 90 đơn ngày 11/11
+  for (let i = 0; i < 8; i += 1) {
+    txns.push({
+      orderId: `SALE_ICB_OK_${i}`,
+      orderedAt: new Date('2026-11-11T13:10:00Z'),
+      status: 'Hoàn thành',
+      productName: 'Bếp từ đôi ICB-6920',
+      modelCode: 'ICB6920',
+      sku: 'SKU_ICB6920',
+      amount: 4000000,
+      quantity: 1,
+      lines: [{ sku: 'SKU_ICB6920', productName: 'Bếp từ đôi ICB-6920', modelCode: 'ICB6920', quantity: 1, unitPrice: 4000000 }]
+    });
+  }
+  for (let i = 0; i < 42; i += 1) {
+    const unpaid = i >= 22;
+    cx.push({
+      orderId: `SALE_ICB_CX_${i}`,
+      orderedAt: new Date('2026-11-11T13:20:00Z'),
+      status: 'Đã hủy',
+      cancelledBy: unpaid ? 'system' : 'buyer',
+      cancelGroup: unpaid ? 'unpaid' : 'edit',
+      cancelReason: unpaid ? 'Chưa được Thanh Toán' : 'Muốn nhập/thay đổi mã Voucher',
+      productName: 'Bếp từ đôi ICB-6920',
+      modelCode: 'ICB6920',
+      sku: 'SKU_ICB6920',
+      amount: 4000000,
+      quantity: 1,
+      lines: [{ sku: 'SKU_ICB6920', productName: 'Bếp từ đôi ICB-6920', modelCode: 'ICB6920', quantity: 1, unitPrice: 4000000 }]
+    });
+  }
+  for (let i = 0; i < 40; i += 1) {
+    txns.push({
+      orderId: `SALE_AFD_${i}`,
+      orderedAt: new Date('2026-11-11T14:00:00Z'),
+      status: 'Hoàn thành',
+      returnStatus: i < 12 ? 'Hoàn tất trả hàng' : null,
+      returnQty: i < 12 ? 1 : 0,
+      productName: 'Nồi chiên không dầu AFD-4571',
+      modelCode: 'AFD4571',
+      sku: 'SKU_AFD4571',
+      amount: 1800000,
+      quantity: 1,
+      lines: [{ sku: 'SKU_AFD4571', productName: 'Nồi chiên không dầu AFD-4571', modelCode: 'AFD4571', quantity: 1, unitPrice: 1800000, returnQty: i < 12 ? 1 : 0 }]
+    });
+  }
+
+  const ins = analyzeOrders({ transactions: txns, cancellations: cx, feedbacks: [] });
+  const alerts = buildOrderAlerts(ins, { asOfDate: '2026-11-11' });
+  const ids = alerts.map((a) => a.id);
+  assert.ok(ids.includes('Orders|CANCEL_EDIT|ICB6920|2026-11-11'), `thiếu cảnh báo hủy sửa đơn: ${ids.join(', ')}`);
+  assert.ok(ids.includes('Orders|RETURN_HIGH|AFD4571|2026-11-11'), `thiếu cảnh báo hoàn trả cao: ${ids.join(', ')}`);
+  assert.ok(ids.includes('Orders|CANCEL_UNPAID|SALE_2026-11-11|2026-11-11'), `thiếu cảnh báo ngày sale chưa thanh toán: ${ids.join(', ')}`);
+
+  // 2. Hộp việc giới hạn tối đa 2 cảnh báo đơn hàng; Quản gia duyệt <số> ghi recommendation_log và ẩn cảnh báo đã duyệt
+  const cols = {
+    feedbacks: [{
+      _id: 'fb_one',
+      source: 'Tiki',
+      productName: 'Bếp từ đôi ICB-6920',
+      originalText: 'Bếp từ đôi nấu rất êm và mặt kính dễ vệ sinh sau bữa tối',
+      author: 'Khách 1',
+      customerId: 'tiki:k1',
+      rating: 5,
+      verifiedPurchase: true,
+      category: 'Other',
+      sentiment: 'Positive',
+      timestamp: new Date('2026-11-10T08:00:00Z'),
+      collectedAt: new Date('2026-11-11T08:00:00Z')
+    }],
+    transactions: txns,
+    order_cancellations: cx,
+    recommendation_log: [],
+    live_sessions: [],
+    cases: [],
+    butler_links: [{
+      _id: 'link_1',
+      userId: 'cccccccccccccccccccccccc',
+      chatId: 'chat_b4',
+      settings: { workspace: 'real', notifyLevel: 'high' }
+    }]
+  };
+  const mkCur = (arr) => ({
+    sort() { return this; },
+    limit(n) { return mkCur(arr.slice(0, n)); },
+    batchSize() { return this; },
+    async next() { return arr[0] || null; },
+    async toArray() { return arr.slice(); }
+  });
+  const matchDoc = (d, q = {}) => {
+    if (q.alertId !== undefined) return d.alertId === q.alertId;
+    if (q.userId !== undefined) return String(d.userId) === String(q.userId);
+    if (q._id !== undefined) return String(d._id) === String(q._id);
+    return true;
+  };
+  const fakeDb = {
+    databaseName: 'cr_test_t_cccccccccccccccccccccccc',
+    collection(name) {
+      cols[name] ||= [];
+      return {
+        async estimatedDocumentCount() { return cols[name].length; },
+        find() { return mkCur(cols[name]); },
+        aggregate() { return mkCur([]); },
+        async findOne(q) { return cols[name].find((d) => matchDoc(d, q)) || null; },
+        async findOneAndUpdate(q, u, opts) {
+          let idx = cols[name].findIndex((d) => matchDoc(d, q));
+          if (idx < 0 && opts?.upsert) {
+            cols[name].push({ ...q, ...(u.$setOnInsert || {}), ...(u.$set || {}) });
+            idx = cols[name].length - 1;
+          } else if (idx >= 0) {
+            cols[name][idx] = { ...cols[name][idx], ...(u.$set || {}) };
+          }
+          return idx >= 0 ? cols[name][idx] : null;
+        },
+        async findOneAndDelete(q) {
+          const idx = cols[name].findIndex((d) => matchDoc(d, q));
+          if (idx < 0) return null;
+          const [removed] = cols[name].splice(idx, 1);
+          return removed;
+        },
+        async deleteOne(q) {
+          const idx = cols[name].findIndex((d) => matchDoc(d, q));
+          if (idx >= 0) cols[name].splice(idx, 1);
+          return {};
+        },
+        async updateOne(q, u, opts) {
+          const idx = cols[name].findIndex((d) => matchDoc(d, q));
+          if (idx >= 0) {
+            cols[name][idx] = { ...cols[name][idx], ...(u.$set || {}) };
+            if (u.$unset) for (const k of Object.keys(u.$unset)) delete cols[name][idx][k];
+          } else if (opts?.upsert) {
+            cols[name].push({ ...q, ...(u.$setOnInsert || {}), ...(u.$set || {}) });
+          }
+          return {};
+        }
+      };
+    }
+  };
+  const ctx = computeContext({
+    rawFeedbacks: cols.feedbacks,
+    transactions: txns,
+    orderCancellations: cx,
+    auditLabels: [],
+    reviewLabels: [],
+    anchorToData: true,
+    syncMeta: { lastImportAt: new Date('2026-11-12T01:00:00Z') },
+    sellingChannels: ['tiki', 'shopee']
+  });
+
+  const inbox = await buildInboxItems(fakeDb, 't_cccccccccccccccccccccccc', ctx);
+  const ordInbox = inbox.filter((x) => x.source === 'orders');
+  assert.strictEqual(ordInbox.length, 2, 'hộp việc chỉ được lấy tối đa 2 cảnh báo đơn hàng');
+
+  // Bản tin sáng Zalo có đúng 1 dòng tóm tắt cảnh báo đơn hàng mới
+  const incList = await incidents.collectIncidents(fakeDb, 't_cccccccccccccccccccccccc', ctx);
+  const digest = incidents.buildDigest({
+    workspaceLabel: 'Dữ liệu thật',
+    ctxSummary: { counted: 1, health: 92 },
+    incidents: incList,
+    now: new Date('2026-11-12T01:00:00Z')
+  });
+  assert.ok(digest.includes('Đơn hàng có 2 cảnh báo mới, nổi bật:'), `bản tin sáng thiếu dòng cảnh báo đơn mới:\n${digest}`);
+  assert.ok(!/[\u00b7\u2192]|undefined|NaN/.test(digest));
+
+  // Duyệt cảnh báo đơn qua lệnh Quản gia ("việc" -> "duyệt 1" -> "có")
+  const prevWorker = process.env.CONTEXT_WORKER;
+  process.env.CONTEXT_WORKER = '0';
+  try {
+    const fakeUser = { _id: 'cccccccccccccccccccccccc', role: 'user', plan: 'shop', name: 'Chủ Shop B4' };
+    const wsMap = { t_cccccccccccccccccccccccc: fakeDb, real: fakeDb, demo: fakeDb };
+
+    const rTasks = await butlerEngine.handle({ authDb: fakeDb, workspaces: wsMap, user: fakeUser, text: 'việc', workspace: 'real' });
+    assert.strictEqual(rTasks.kind, 'tasks');
+    const rAccept = await butlerEngine.handle({ authDb: fakeDb, workspaces: wsMap, user: fakeUser, text: 'duyệt 1', workspace: 'real' });
+    assert.strictEqual(rAccept.kind, 'confirm', `duyệt 1 trên cảnh báo đơn phải vào bước xác nhận, nhận được: ${rAccept.text}`);
+    const rConfirm = await butlerEngine.handle({ authDb: fakeDb, workspaces: wsMap, user: fakeUser, text: 'có', workspace: 'real' });
+    assert.strictEqual(cols.recommendation_log.length, 1, `xác nhận "có" phải ghi recommendation_log: ${rConfirm.text}`);
+    assert.ok(cols.recommendation_log[0].alertId.startsWith('Orders|'));
+
+    const remaining = await pendingOrderAlerts(fakeDb, ctx, { nowMs: Date.now() });
+    assert.strictEqual(remaining.length, 2, 'sau khi duyệt 1 cảnh báo đơn, 3 cảnh báo ban đầu chỉ còn 2');
+  } finally {
+    if (prevWorker === undefined) delete process.env.CONTEXT_WORKER; else process.env.CONTEXT_WORKER = prevWorker;
+  }
+
+  // 3. Định giá rủi ro theo mã máy (avgOrderValueByModel): ICB6920 giá 4.000.000đ, không dùng bình quân cả shop (~794.000đ)
+  const modelAov = avgOrderValueByModel(txns);
+  assert.strictEqual(modelAov.get('HDB1827'), 300000);
+  assert.strictEqual(modelAov.get('ICB6920'), 4000000);
+  assert.strictEqual(modelAov.get('AFD4571'), 1800000);
+
+  const riskItems = Array.from({ length: 5 }, (_, i) => ({
+    _id: `neg_icb_${i}`,
+    productName: 'Bếp từ đôi ICB-6920',
+    modelCode: 'ICB6920'
+  }));
+  const val = computeValue({
+    recs: [{
+      alertId: 'ProductQuality|TechnicalDefect|Bếp từ đôi ICB-6920|2026-11-11',
+      productName: 'Bếp từ đôi ICB-6920',
+      status: 'PROPOSED',
+      evidence: { evidenceIds: riskItems.map((x) => x._id), count: 5 },
+      dataProfile: { revenue: { measurable: true, atRiskVnd: 5 * 794000, isLowerBound: true } }
+    }],
+    decisions: [],
+    items: riskItems,
+    transactions: txns,
+    now: new Date('2026-11-12T00:00:00Z')
+  });
+  assert.strictEqual(val.atRisk.amount, 5 * 4000000, '5 khách chê bếp từ ICB6920 phải nhân đơn giá mã ICB6920 (4 triệu), không lấy bình quân cả shop');
+});
+
+test('B7: cancel_model.js tách thời gian 12/11 00:00, không rò rỉ carrier/cancelReason, và chặn hiển thị khi không qua ngưỡng', () => {
+  const { fitAndEvaluateCancelModel, extractPreOrderSample, FORBIDDEN_POST_ORDER_FIELDS } = require('../services/cancel_model');
+
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function rand() {
+      a |= 0;
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // 1. Kiểm chống rò rỉ: mọi đặc trưng trước đặt đơn là nhiễu ngẫu nhiên, nhưng trường sau đặt đơn
+  //    (`carrier = "Nhanh"`, `cancelReason`, `cancelledAt`, `shippedAt`, `returnStatus`) phân tách hoàn hảo 100%
+  const rngNoise = mulberry32(101);
+  const leakTx = [];
+  const leakCx = [];
+  for (let i = 0; i < 900; i += 1) {
+    const day = i < 500 ? (i % 11) + 1 : 12 + (i % 8);
+    const dd = String(day).padStart(2, '0');
+    const hr = String(Math.floor(rngNoise() * 24)).padStart(2, '0');
+    const cancelled = rngNoise() < 0.45;
+    const doc = {
+      orderId: `LEAK_${i}`,
+      orderedAt: new Date(`2026-11-${dd}T${hr}:15:00+07:00`),
+      productName: rngNoise() < 0.5 ? '[KOL x Hãng] Máy sấy HDB-1827' : 'Bếp từ đôi ICB-6920',
+      amount: 500000 + Math.floor(rngNoise() * 1500000),
+      region: rngNoise() < 0.5 ? 'TP.HCM' : 'Hà Nội',
+      orderType: rngNoise() < 0.2 ? 'Hàng đặt trước' : '',
+      shopVoucher: rngNoise() < 0.4 ? 'SHOP10K' : '',
+      // Rò rỉ hoàn hảo ở các trường hậu kỳ:
+      carrier: cancelled ? 'Nhanh' : 'Nhanh-SPX Express',
+      cancelReason: cancelled ? 'Chưa được Thanh Toán' : null,
+      cancelledAt: cancelled ? new Date(`2026-11-${dd}T23:59:00+07:00`) : null,
+      shippedAt: cancelled ? null : new Date(`2026-11-${dd}T18:00:00+07:00`),
+      returnStatus: cancelled ? null : 'Hoàn tất trả hàng'
+    };
+    const sample = extractPreOrderSample(doc, cancelled);
+    for (const f of FORBIDDEN_POST_ORDER_FIELDS) {
+      assert.strictEqual(f in sample, false, `mẫu đầu vào mô hình không được chứa trường cấm ${f}`);
+    }
+    if (cancelled) leakCx.push(doc);
+    else leakTx.push(doc);
+  }
+  const leakRes = fitAndEvaluateCancelModel({ transactions: leakTx, cancellations: leakCx });
+  assert.strictEqual(leakRes.splitRule, 'nov12_00h_vn');
+  assert.strictEqual(leakRes.splitAt, '2026-11-11T17:00:00.000Z', '12/11 00:00 giờ VN = 11/11 17:00 UTC');
+  assert.ok(leakRes.auc < 0.58, `không rò rỉ hậu kỳ thì dữ liệu nhiễu phải có AUC gần 0,5 (đo được ${leakRes.auc})`);
+  assert.strictEqual(leakRes.passedThreshold, false, 'AUC < 0,65 phải chặn passedThreshold = false');
+  assert.deepStrictEqual(leakRes.topFactors, [], 'không qua ngưỡng thì không trả topFactors ra giao diện');
+
+  // 2. Tập dữ liệu có tín hiệu thật lúc đặt đơn (mã ICB-6920, nhãn KOL, đặt khung 20..23h, đặt trước):
+  const rngSig = mulberry32(2026);
+  const sigTx = [];
+  const sigCx = [];
+  for (let i = 0; i < 1200; i += 1) {
+    const day = i < 750 ? (i === 0 ? 1 : (i % 11) + 1) : 12 + (i % 8);
+    const dd = String(day).padStart(2, '0');
+    const isIcb = rngSig() < 0.35;
+    const isKol = rngSig() < 0.4;
+    const lateEvening = rngSig() < 0.4;
+    const preOrder = rngSig() < 0.25;
+    const hour = lateEvening ? 20 + Math.floor(rngSig() * 4) : 8 + Math.floor(rngSig() * 10);
+    let logit = -1.6;
+    if (isIcb) logit += 1.5;
+    if (isKol) logit += 1.1;
+    if (lateEvening) logit += 0.8;
+    if (preOrder) logit += 0.7;
+    const cancelled = rngSig() < (1 / (1 + Math.exp(-logit)));
+    const doc = {
+      orderId: `SIG_${i}`,
+      orderedAt: new Date(`2026-11-${dd}T${String(hour).padStart(2, '0')}:10:00+07:00`),
+      productName: `${isKol ? '[KOL x Hãng] ' : ''}${isIcb ? 'Bếp từ đôi ICB-6920' : 'Máy sấy tóc HDB-1827'}`,
+      amount: isIcb ? 2699000 : 399000,
+      region: i % 2 === 0 ? 'TP.HCM' : 'Hà Nội',
+      orderType: preOrder ? 'Hàng đặt trước' : ''
+    };
+    if (cancelled) sigCx.push(doc);
+    else sigTx.push(doc);
+  }
+  const sigRes = fitAndEvaluateCancelModel({ transactions: sigTx, cancellations: sigCx });
+  assert.strictEqual(sigRes.testCount, 450);
+  assert.ok(sigRes.auc >= 0.72, `tín hiệu thật phải đạt AUC >= 0,72 (đo được ${sigRes.auc})`);
+  assert.ok(sigRes.brier < sigRes.baselineBrier, `Brier mô hình (${sigRes.brier}) phải tốt hơn mức nền (${sigRes.baselineBrier})`);
+  assert.strictEqual(sigRes.passedThreshold, true);
+  assert.ok(sigRes.topFactors.length >= 3 && sigRes.topFactors.length <= 5);
+  const factorKeys = sigRes.topFactors.map((f) => f.key);
+  assert.ok(factorKeys.includes('model:ICB6920') || factorKeys.includes('tag:kol'), `yếu tố đầu bảng phải bắt đúng đặc trưng thật: ${factorKeys.join(', ')}`);
+  const factorDump = JSON.stringify(sigRes.topFactors);
+  assert.ok(!/dự đoán chính xác|AI biết trước|tuyệt đối|[\u00b7\u2192]/.test(factorDump));
+
+  // 3. Cùng tín hiệu mạnh nhưng đơn kiểm < 300 -> vẫn phải chặn passedThreshold = false
+  const smallTestRes = fitAndEvaluateCancelModel({
+    transactions: sigTx.filter((d) => new Date(d.orderedAt) < new Date('2026-11-15T00:00:00+07:00')),
+    cancellations: sigCx.filter((d) => new Date(d.orderedAt) < new Date('2026-11-15T00:00:00+07:00'))
+  });
+  assert.ok(smallTestRes.testCount < 300);
+  assert.strictEqual(smallTestRes.passedThreshold, false, 'dưới 300 đơn kiểm phải ẩn mô hình dù AUC cao');
+  assert.deepStrictEqual(smallTestRes.topFactors, []);
+});
+
+testAsync('B8: liveUplift và báo cáo phiên live so đúng giờ các ngày cùng thứ không live, báo rõ khi lệch ngày', async () => {
+  const { analyzeOrders } = require('../services/order_insights');
+  const { buildReport } = require('../services/live/report');
+
+  // Tạo đơn từ 01/11 đến 19/11:
+  // Thứ tư 04/11 và thứ tư 11/11 KHÔNG live: mỗi ngày có 4 đơn ở khung 20h và 4 đơn ở khung 21h -> 8 đơn / 2 giờ = 4 đơn/giờ
+  // Thứ tư 18/11 CÓ phiên live từ 20:00 đến 21:55 giờ VN: có 24 đơn trong khung 20h..21h (12 đơn/giờ, gấp 3 lần!), trong đó 10 đơn gắn [LIVE]
+  const txns = [];
+  const cx = [];
+  for (const wed of ['04', '11']) {
+    for (const hr of [20, 21]) {
+      for (let i = 0; i < 4; i += 1) {
+        txns.push({
+          orderId: `WED_${wed}_${hr}_${i}`,
+          orderedAt: new Date(`2026-11-${wed}T${hr}:15:00+07:00`),
+          status: 'Hoàn thành',
+          productName: 'Máy sấy tóc HDB-1827',
+          amount: 450000
+        });
+      }
+    }
+  }
+  // Thêm vài ngày thường khác (01/11 và 19/11) có mức đơn rất cao ở 20h để chứng minh thuật toán ưu tiên cùng thứ trong tuần (same_weekday)
+  for (const otherDay of ['01', '19']) {
+    for (let i = 0; i < 20; i += 1) {
+      txns.push({
+        orderId: `OTH_${otherDay}_${i}`,
+        orderedAt: new Date(`2026-11-${otherDay}T20:10:00+07:00`),
+        status: 'Hoàn thành',
+        productName: 'Máy sấy tóc HDB-1827',
+        amount: 450000
+      });
+    }
+  }
+  // Ngày live thứ tư 18/11 (20 đơn hoàn thành + 4 đơn hủy = 24 đơn đặt trong 2 giờ live; 10 đơn có nhãn [LIVE])
+  for (let i = 0; i < 24; i += 1) {
+    const hr = i < 12 ? 20 : 21;
+    const isLiveTag = i < 10;
+    const doc = {
+      orderId: `LIVE18_${i}`,
+      orderedAt: new Date(`2026-11-18T${hr}:20:00+07:00`),
+      status: i >= 20 ? 'Đã hủy' : 'Hoàn thành',
+      productName: isLiveTag ? '[LIVE] Máy đánh trứng HMB-6333S' : 'Máy sấy tóc HDB-1827',
+      amount: 550000
+    };
+    if (i >= 20) cx.push(doc);
+    else txns.push(doc);
+  }
+
+  // 1. Phiên live lệch ngày (25/11, sau ngày cuối đơn 19/11): available = false
+  const lateSession = {
+    _id: 'sess_nov25',
+    title: 'Live tối 25/11',
+    platform: 'tiktok',
+    simulated: false,
+    startedAt: new Date('2026-11-25T20:00:00+07:00'),
+    endedAt: new Date('2026-11-25T21:30:00+07:00'),
+    createdAt: new Date('2026-11-25T20:00:00+07:00'),
+    products: []
+  };
+  const insMismatch = analyzeOrders({ transactions: txns, cancellations: cx, liveSessions: [lateSession] });
+  assert.strictEqual(insMismatch.liveUplift.available, false);
+  assert.ok(insMismatch.liveUplift.reason.includes('19/11'), `lý do lệch ngày phải nhắc mốc 19/11: ${insMismatch.liveUplift.reason}`);
+
+  // 2. Phiên live trùng ngày thứ tư 18/11: so đúng 2 ngày thứ tư không live (04/11 & 11/11)
+  const matchSession = {
+    _id: 'sess_nov18',
+    title: 'Live tối 18/11',
+    platform: 'tiktok',
+    simulated: false,
+    startedAt: new Date('2026-11-18T20:00:00+07:00'),
+    endedAt: new Date('2026-11-18T21:55:00+07:00'),
+    createdAt: new Date('2026-11-18T20:00:00+07:00'),
+    products: []
+  };
+  const insMatch = analyzeOrders({ transactions: txns, cancellations: cx, liveSessions: [matchSession] });
+  assert.strictEqual(insMatch.liveUplift.available, true);
+  assert.strictEqual(insMatch.liveUplift.baselineBasis, 'same_weekday', 'có >= 2 ngày thứ tư không live thì phải lấy cùng thứ làm nền');
+  assert.strictEqual(insMatch.liveUplift.liveOrders, 24);
+  assert.strictEqual(insMatch.liveUplift.liveActiveOrders, 20);
+  assert.strictEqual(insMatch.liveUplift.liveHoursCount, 2);
+  assert.strictEqual(insMatch.liveUplift.liveOrdersPerHour, 12);
+  assert.strictEqual(insMatch.liveUplift.baselineOrdersPerHour, 4);
+  assert.strictEqual(insMatch.liveUplift.upliftRatio, 3);
+  assert.strictEqual(insMatch.liveUplift.liveTagOrdersInLive, 10);
+
+  // 3. Kiểm tra tích hợp trực tiếp vào live/report.js buildReport
+  const mkEmptyAsyncIter = () => ({
+    sort() { return this; },
+    batchSize() { return this; },
+    limit() { return this; },
+    async next() { return null; },
+    async *[Symbol.asyncIterator]() {}
+  });
+  const mkArrCur = (arr) => ({
+    batchSize() { return this; },
+    async toArray() { return arr.slice(); }
+  });
+  const reportDb = {
+    collection(name) {
+      if (name === 'live_comments' || name === 'live_sessions') return { find: () => mkEmptyAsyncIter() };
+      if (name === 'transactions') return { find: () => mkArrCur(txns) };
+      if (name === 'order_cancellations') return { find: () => mkArrCur(cx) };
+      return { find: () => mkArrCur([]) };
+    }
+  };
+  const repMatch = await buildReport(reportDb, matchSession);
+  assert.ok(repMatch.orderUplift && repMatch.orderUplift.available === true);
+  assert.strictEqual(repMatch.orderUplift.upliftRatio, 3);
+  assert.strictEqual(repMatch.orderUplift.liveTagOrdersInLive, 10);
+
+  const repLate = await buildReport(reportDb, lateSession);
+  assert.ok(repLate.orderUplift && repLate.orderUplift.available === false && repLate.orderUplift.hasOrderBook === true);
+});
+
 (async () => {
   for (const t of asyncTests) {
     try {

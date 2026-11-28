@@ -1153,12 +1153,69 @@ function rootActionsFor(members, { scopeLabel } = {}) {
   return actions;
 }
 
+/**
+ * PLAYBOOK ĐƠN HÀNG (B4): chỉ điền các số có thật từ dữ liệu đơn và đánh giá cùng mã máy.
+ */
+const ORDER_PLAYBOOKS = {
+  CANCEL_EDIT: {
+    id: 'ORD-CANCEL-EDIT',
+    key: 'CANCEL_EDIT',
+    kind: 'INTERNAL_FIX',
+    owner: 'Vận hành sàn TMĐT',
+    effortDays: 1,
+    expectedReduction: 0.25,
+    template:
+      'Sửa trang sản phẩm {model} trước ngày sale kế tiếp: tách rõ phân loại hàng, hiển thị sẵn mã giảm giá của shop trên trang và nhắc kiểm tra địa chỉ mặc định ({cancelledLines}/{totalLines} dòng bị hủy, {cancelRate}); kiểm lại tỉ lệ hủy sau ngày sale kế.'
+  },
+  CANCEL_UNPAID: {
+    id: 'ORD-CANCEL-UNPAID',
+    key: 'CANCEL_UNPAID',
+    kind: 'CUSTOMER_CONTACT',
+    owner: 'CSKH & Vận hành sàn',
+    effortDays: 1,
+    expectedReduction: 0.2,
+    template:
+      'Nhắn nhắc thanh toán trong 1 đến 2 giờ sau khi đặt ở khung giờ sale ({scope}: {unpaidCount}/{orderCount} đơn hủy chưa thanh toán, {unpaidRate}) và giữ hàng hợp lý cho đơn đang chờ thanh toán.'
+  },
+  CANCEL_LOST: {
+    id: 'ORD-CANCEL-LOST',
+    key: 'CANCEL_LOST',
+    kind: 'INVESTIGATE',
+    owner: 'Thương mại / Định giá',
+    effortDays: 2,
+    expectedReduction: 0.18,
+    template:
+      'So giá thực trả sau voucher của {model} với các kênh khác của chính shop và đối thủ cùng mã máy ({cancelledLines}/{totalLines} dòng hủy, {cancelRate}, nhóm đổi ý hoặc thấy giá rẻ hơn).'
+  },
+  CANCEL_SERVICE: {
+    id: 'ORD-CANCEL-SERVICE',
+    key: 'CANCEL_SERVICE',
+    kind: 'INTERNAL_FIX',
+    owner: 'Trưởng nhóm CSKH',
+    effortDays: 1,
+    expectedReduction: 0.3,
+    template:
+      'Phân người trực trả lời tin nhắn cho {model} trong khung giờ sale ({cancelledLines}/{totalLines} dòng hủy, {cancelRate}, nhóm người bán chậm phản hồi).'
+  },
+  RETURN_HIGH: {
+    id: 'ORD-RETURN-HIGH',
+    key: 'RETURN_HIGH',
+    kind: 'INVESTIGATE',
+    owner: 'Sản phẩm / QC',
+    effortDays: 2,
+    expectedReduction: 0.3,
+    template:
+      'Kiểm tra lô hàng xuất kho của {model} ({returnLines}/{activeLines} đơn hoàn trả, {returnRate}) và đối chiếu {complaintNote} để bóc tách nguyên nhân gốc rễ cấp 3.'
+  }
+};
+
 module.exports = {
   LIBRARY,
   CATEGORY_FALLBACK,
   GENERIC_FALLBACK,
   INSTRUMENTATION_ACTIONS,
   ROOT_PLAYBOOKS,
+  ORDER_PLAYBOOKS,
   summarizeRoots,
   rootActionsFor,
   SLOTS,

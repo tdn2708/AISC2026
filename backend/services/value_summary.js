@@ -12,6 +12,7 @@
  *      được báo, số việc gấp đã làm trong phiên.
  */
 const DAY = 86400000;
+const { modelCodeOf } = require('./product_group');
 
 function avgOrderValue(transactions = []) {
   let sum = 0;
@@ -23,9 +24,47 @@ function avgOrderValue(transactions = []) {
   return n ? Math.round(sum / n) : null;
 }
 
+/**
+ * Giá trị đơn trung bình THEO MÃ MÁY từ sổ giao dịch (B4):
+ * khi shop có đơn hàng gắn mã máy, tiền rủi ro của từng cảnh báo dùng đơn giá thật
+ * của đúng mã máy đó thay vì lấy bình quân cả shop (vốn lệch lớn giữa máy sấy và bếp từ đôi).
+ */
+function avgOrderValueByModel(transactions = []) {
+  const agg = new Map();
+  for (const t of transactions || []) {
+    const a = Number(t?.amount);
+    if (!Number.isFinite(a) || a <= 0) continue;
+    const codes = new Set();
+    const topMc = t.modelCode || modelCodeOf(t.productName);
+    if (topMc) codes.add(topMc);
+    if (Array.isArray(t.lines)) {
+      for (const l of t.lines) {
+        const lmc = l?.modelCode || modelCodeOf(l?.productName);
+        if (lmc) codes.add(lmc);
+      }
+    }
+    for (const mc of codes) {
+      const cur = agg.get(mc) || { sum: 0, n: 0 };
+      cur.sum += a;
+      cur.n += 1;
+      agg.set(mc, cur);
+    }
+  }
+  const out = new Map();
+  for (const [mc, { sum, n }] of agg.entries()) {
+    if (n > 0) out.set(mc, Math.round(sum / n));
+  }
+  return out;
+}
+
 function computeValue({ recs = [], decisions = [], items = [], transactions = [], liveSessions = [], now = new Date(), windowDays = 30, cadenceDays = 7 } = {}) {
   const nowMs = new Date(now).getTime();
   const since = nowMs - windowDays * DAY;
+  const aov = avgOrderValue(transactions);
+  const byModelAov = avgOrderValueByModel(transactions);
+  const hasOrders = Boolean(transactions && transactions.length > 0 && aov);
+  const itemById = new Map((items || []).map((f) => [String(f._id), f]));
+  const txnByOrder = new Map((transactions || []).filter((t) => t?.orderId).map((t) => [String(t.orderId), t]));
 
   // 1. Doanh thu đứng sau các cảnh báo chưa xử lý
   // Cảnh báo cấp nhóm (tăng chậm nhưng đều) chứa cả phản hồi của cảnh báo cụ thể:
@@ -34,29 +73,78 @@ function computeValue({ recs = [], decisions = [], items = [], transactions = []
   let atRiskAlerts = 0;
   let lowerBound = false;
   const counted = new Set();
-  const open = recs
-    .filter((r) => (!r.status || r.status === 'PROPOSED') && r.dataProfile?.revenue?.measurable && (r.dataProfile.revenue.extrapolatedVnd || r.dataProfile.revenue.atRiskVnd) > 0)
-    .sort((a, b) => (b.dataProfile.revenue.extrapolatedVnd || 0) - (a.dataProfile.revenue.extrapolatedVnd || 0));
-  for (const r of open) {
-    const rev = r.dataProfile.revenue;
-    const v = rev.extrapolatedVnd || rev.atRiskVnd;
+
+  const estimateAlertRisk = (r) => {
+    const rev = r.dataProfile?.revenue;
     const ids = (r.evidence?.evidenceIds || []).map(String);
-    let share = 1;
-    if (ids.length) {
-      const fresh = ids.filter((id) => !counted.has(id));
-      share = fresh.length / ids.length;
+    // Khi kho có đơn gắn mã máy: ưu tiên đơn thật theo orderId, không có thì lấy AOV theo mã máy của từng phản hồi
+    if (hasOrders && byModelAov.size > 0) {
+      if (ids.length > 0) {
+        let total = 0;
+        let inferred = false;
+        for (const id of ids) {
+          const fb = itemById.get(id);
+          const matchedTxn = fb?.orderId ? txnByOrder.get(String(fb.orderId)) : null;
+          if (matchedTxn && Number(matchedTxn.amount) > 0) {
+            total += Number(matchedTxn.amount);
+          } else {
+            const mc = fb?.modelCode || modelCodeOf(fb?.productName) || modelCodeOf(r.productName || r.scope?.product);
+            total += (mc && byModelAov.get(mc)) || aov;
+            inferred = true;
+          }
+        }
+        return { value: total, ids, isLowerBound: inferred || Boolean(rev?.isLowerBound) };
+      }
+      const alertMc = modelCodeOf(r.productName || r.scope?.product);
+      const countEst = Number(r.evidence?.count || r.affectedCustomers || 0);
+      if (countEst > 0) {
+        return { value: countEst * ((alertMc && byModelAov.get(alertMc)) || aov), ids: [], isLowerBound: true };
+      }
+    }
+    if (rev?.measurable && (rev.extrapolatedVnd || rev.atRiskVnd) > 0) {
+      return { value: rev.extrapolatedVnd || rev.atRiskVnd, ids, isLowerBound: Boolean(rev.isLowerBound) };
+    }
+    return null;
+  };
+
+  const open = recs
+    .filter((r) => !r.status || r.status === 'PROPOSED')
+    .map((r) => ({ r, est: estimateAlertRisk(r) }))
+    .filter((x) => x.est && x.est.value > 0)
+    .sort((a, b) => b.est.value - a.est.value);
+
+  for (const { r, est } of open) {
+    let partValue = est.value;
+    if (est.ids.length > 0) {
+      const fresh = est.ids.filter((id) => !counted.has(id));
+      if (!fresh.length) continue;
+      if (hasOrders && byModelAov.size > 0) {
+        partValue = 0;
+        for (const id of fresh) {
+          const fb = itemById.get(id);
+          const matchedTxn = fb?.orderId ? txnByOrder.get(String(fb.orderId)) : null;
+          if (matchedTxn && Number(matchedTxn.amount) > 0) {
+            partValue += Number(matchedTxn.amount);
+          } else {
+            const mc = fb?.modelCode || modelCodeOf(fb?.productName) || modelCodeOf(r.productName || r.scope?.product);
+            partValue += (mc && byModelAov.get(mc)) || aov;
+          }
+        }
+      } else {
+        partValue = est.value * (fresh.length / est.ids.length);
+      }
       fresh.forEach((id) => counted.add(id));
     }
-    if (share <= 0) continue;
-    atRisk += v * share;
+    if (partValue <= 0) continue;
+    atRisk += partValue;
     atRiskAlerts += 1;
-    if (rev.isLowerBound) lowerBound = true;
+    if (est.isLowerBound) lowerBound = true;
   }
 
   // 2. Kế hoạch đã chấp nhận trong kỳ, đo trước / sau
   const insights = require('./insights');
-  const aov = avgOrderValue(transactions);
   let avoided = 0;
+  let savedMoney = 0;
   let measured = 0;
   let improved = 0;
   let pending = 0;
@@ -72,7 +160,14 @@ function computeValue({ recs = [], decisions = [], items = [], transactions = []
     if (eff.control) controlled += 1;
     if (drop > 0) {
       improved += 1;
-      avoided += drop * eff.after.n;
+      const avoidedHere = drop * eff.after.n;
+      avoided += avoidedHere;
+      if (aov) {
+        const [, , prodScope] = String(d.alertId || '').split('|');
+        const scopeMc = prodScope && prodScope !== '*' ? modelCodeOf(prodScope) : null;
+        const unitVnd = (scopeMc && byModelAov.get(scopeMc)) || aov;
+        savedMoney += avoidedHere * unitVnd;
+      }
     }
   }
   const complaintsAvoided = Math.round(avoided);
@@ -96,7 +191,7 @@ function computeValue({ recs = [], decisions = [], items = [], transactions = []
     atRisk: { amount: Math.round(atRisk), alerts: atRiskAlerts, lowerBound },
     saved: {
       complaintsAvoided,
-      amount: aov && complaintsAvoided ? complaintsAvoided * aov : null,
+      amount: aov && complaintsAvoided ? Math.round(savedMoney) : null,
       avgOrderValue: aov,
       measured,
       improved,
@@ -124,4 +219,4 @@ async function valueForContext(db, ctx, { windowDays = 30, now = new Date() } = 
   return computeValue({ recs, decisions, items: ctx.items, transactions: ctx.transactions, liveSessions, now, windowDays, cadenceDays: cadenceOf(ctx).windowDays });
 }
 
-module.exports = { computeValue, avgOrderValue, valueForContext };
+module.exports = { computeValue, avgOrderValue, avgOrderValueByModel, valueForContext };

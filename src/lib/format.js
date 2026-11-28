@@ -183,6 +183,36 @@ export const sarcasmTag = (f) => {
 export const exclusionLabel = (t = {}) =>
   t.band === 'SPAM' ? 'Rác, quảng cáo' : t.band === 'LIKELY_INAUTHENTIC' ? 'Nghi đánh giá ảo' : 'Quá cũ, không tính';
 
+export const SYNC_SOURCE_LABEL = {
+  collect: 'thu thập Tiki',
+  import: 'nạp file',
+  live: 'phiên live',
+  feedback: 'thu thập đánh giá'
+};
+
+export const CHANNEL_NAME_LABEL = {
+  shopee: 'Shopee',
+  tiki: 'Tiki',
+  tiktok: 'TikTok',
+  lazada: 'Lazada',
+  facebook: 'Facebook',
+  website: 'Website'
+};
+
+/** Dòng dưới thanh Độ tươi: "Lần đồng bộ cuối: thu thập Tiki, 6 giờ trước" */
+export const lastSyncLine = (lastSyncAt, lastSyncSource) => {
+  if (!lastSyncAt || Number.isNaN(new Date(lastSyncAt).getTime())) return null;
+  const src = SYNC_SOURCE_LABEL[lastSyncSource] || 'đồng bộ';
+  return `Lần đồng bộ cuối: ${src}, ${fmtRelative(lastSyncAt)}`;
+};
+
+/** Dòng dưới thanh Số kênh có dữ liệu khi thiếu đánh giá của kênh đã có đơn/live */
+export const missingChannelsLine = (missing) => {
+  if (!Array.isArray(missing) || !missing.length) return null;
+  const names = missing.map((k) => CHANNEL_NAME_LABEL[k] || k).join(', ');
+  return `${names} có đơn nhưng chưa có đánh giá`;
+};
+
 /** Diễn biến của một cảnh báo bằng lời thường — không z, không p — cho người quản lý */
 export const alertInWords = (a) => {
   const st = a.statistics || {};

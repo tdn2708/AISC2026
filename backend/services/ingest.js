@@ -9,6 +9,7 @@
 const crypto = require('crypto');
 const normalizer = require('./normalizer');
 const taxonomy = require('./taxonomy');
+const { modelCodeOf } = require('./product_group');
 const { saltReady } = require('./pii_salt');
 
 const sha1 = (s) => crypto.createHash('sha1').update(s).digest('hex');
@@ -33,6 +34,35 @@ function dedupKey(doc) {
     return sha1([doc.source, doc.productName, doc.customerId || doc.author, day, text, doc.importRef || '', 'import'].join('\u0001'));
   }
   return sha1([doc.source, doc.productName, doc.author, day, text].join('\u0001'));
+}
+
+/**
+ * Tính khóa chống trùng ngay từ bản ghi thô TRƯỚC khi gọi mô hình gán nhãn.
+ * Kết quả trùng khớp tuyệt đối với `dedupKey(doc)` sau `buildFeedbackDocs`.
+ */
+function dedupKeyRaw(review, meta = {}) {
+  const facts = review?.platformFacts || null;
+  if (facts?.reviewId != null) {
+    return dedupKey({ source: review.source, platformFacts: { reviewId: facts.reviewId } });
+  }
+  const productName = normalizer.decodeEntities(review?.productName || meta.fallbackProduct) || 'Sản phẩm chưa xác định';
+  const author = facts ? maskName(review?.author) : review?.author;
+  const customerId = review?.customerId !== undefined
+    ? review.customerId
+    : (facts ? pseudoCustomerId(facts.platform, facts.rawCustomerId) : null);
+  const rawTs = review?.timestamp;
+  const timestamp = rawTs instanceof Date ? rawTs : (rawTs ? new Date(rawTs) : null);
+  const originalText = normalizer.maskPII(review?.rawText || '').text;
+  return dedupKey({
+    source: review?.source,
+    productName,
+    author,
+    customerId,
+    timestamp,
+    originalText,
+    importRef: review?.importRef,
+    collectedVia: meta.collectedVia || review?.collectedVia
+  });
 }
 
 /**
@@ -75,6 +105,7 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
     const subCategory = taxonomy.normalizeCause(category, ai.subCategory);
     const productName = normalizer.decodeEntities(review.productName || meta.fallbackProduct) || 'Sản phẩm chưa xác định';
     const productType = review.productType || taxonomy.productTypeOf(productName) || null;
+    const modelCode = review.modelCode || modelCodeOf(productName) || null;
     const rootCauses = taxonomy.normalizeRootCauses(ai.rootCauses, { nonComplaint: category === 'Other' });
     // Trường 2 của L3: lúc khách phát hiện lỗi (ON_ARRIVAL, EARLY, LATER, UNKNOWN); chỉ có khi có L3
     const failureTiming = rootCauses.length ? taxonomy.normalizeTiming(ai.failureTiming) : null;
@@ -95,6 +126,7 @@ function buildFeedbackDocs(rawReviews, aiResults, meta) {
       productCategory: review.productCategory || meta.productCategory || null,
       // Loại hàng gia dụng suy từ tên sản phẩm (tùy chọn, dùng cho tiền tố v5 và phân tích L3)
       ...(productType ? { productType } : {}),
+      ...(modelCode ? { modelCode } : {}),
       accountAgeDays: review.accountAgeDays ?? null,
       rating: review.rating ?? null,
       orderId: review.orderId ?? null,
@@ -155,4 +187,4 @@ function shownName(name) {
   return maskName(name);
 }
 
-module.exports = { dedupKey, maskName, shownName, pseudoCustomerId, buildFeedbackDocs, saveFeedbacks };
+module.exports = { dedupKey, dedupKeyRaw, maskName, shownName, pseudoCustomerId, buildFeedbackDocs, saveFeedbacks };

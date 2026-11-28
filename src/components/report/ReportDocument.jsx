@@ -395,7 +395,7 @@ function buildBlocks(model) {
       <table className="rpt-table">
         <caption>Bảng A3. Độ tin số liệu, {model.healthScore ?? '—'} trên 100</caption>
         <tbody>
-          {model.components.map((c) => <tr key={c.label}><td>{c.label}</td><td className="num">{c.value}</td></tr>)}
+          {model.components.map((c) => <tr key={c.label}><td>{c.label}{c.sub && <span className="rpt-sub">{c.sub}</span>}</td><td className="num">{c.value}</td></tr>)}
         </tbody>
       </table>
     </div>

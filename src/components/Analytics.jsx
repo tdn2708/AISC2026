@@ -3,11 +3,12 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { readStorage, writeStorage } from '../lib/storage';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, GitCompareArrows, Crosshair, ChevronDown } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, ScanSearch, Users, GitCompareArrows, Crosshair, ShoppingBag, ChevronDown } from 'lucide-react';
 import FilterBar from './FilterBar';
 import Segments from './Segments';
 import Compare from './analytics/Compare';
 import PainPoints from './analytics/PainPoints';
+import OrdersTab from './analytics/OrdersTab';
 import { PageHeader, GlassPanel, PanelHeader, Tabs, EmptyState, Button, Stat, ChartTooltip, Skeleton, Segmented, Badge } from './ui';
 import { buildQuery, fmtInt, fmtPct, fmtGrowth, fmtDate, upFirst, spanWords, cadenceWords } from '../lib/format';
 import { useDataVersion } from '../lib/dataVersion';
@@ -521,7 +522,41 @@ const TabPane = ({ tabKey, children }) => {
 
 const Analytics = () => {
   const [params, setParams] = useSearchParams();
-  const tab = ['segments', 'compare', 'pain'].includes(params.get('tab')) ? params.get('tab') : 'causes';
+  const dataVersion = useDataVersion();
+  const [orderData, setOrderData] = useState(null);
+  const [orderLoaded, setOrderLoaded] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    axios.get('/orders/insights')
+      .then((r) => {
+        if (!alive) return;
+        setOrderData(r.data);
+      })
+      .catch(() => {
+        if (alive) setOrderData(null);
+      })
+      .finally(() => {
+        if (alive) setOrderLoaded(true);
+      });
+    return () => { alive = false; };
+  }, [dataVersion]);
+
+  const hasOrders = Boolean(orderData?.hasOrders);
+  const rawTab = params.get('tab');
+  const tab = (rawTab === 'orders' && (hasOrders || !orderLoaded))
+    ? 'orders'
+    : ['segments', 'compare', 'pain'].includes(rawTab)
+      ? rawTab
+      : 'causes';
+
+  const tabs = [
+    { value: 'causes', label: 'Theo nhóm vấn đề', icon: ScanSearch },
+    { value: 'pain', label: 'Điểm đau cụ thể', icon: Crosshair },
+    ...(hasOrders ? [{ value: 'orders', label: 'Đơn hàng', icon: ShoppingBag }] : []),
+    { value: 'compare', label: 'So sánh sản phẩm', icon: GitCompareArrows },
+    { value: 'segments', label: 'Phân khúc khách hàng', icon: Users }
+  ];
 
   return (
     <PageEnter className="cx">
@@ -530,6 +565,7 @@ const Analytics = () => {
         subtitle={{
           causes: 'Chọn một nhóm vấn đề để xem nguyên nhân, sản phẩm bị chê và phản hồi gốc.',
           pain: 'Khách đang than chuyện gì, theo từng mảng hàng.',
+          orders: 'Phân tích đơn hoàn tất, lý do hủy đơn, hoàn trả theo mã máy và kế hoạch ngày sale.',
           compare: 'So sản phẩm của bạn với sản phẩm đối thủ.',
           segments: 'Nhóm khách hàng theo cảm xúc trong các phản hồi của họ.'
         }[tab]}
@@ -538,15 +574,18 @@ const Analytics = () => {
         className="mb-6"
         value={tab}
         onChange={(v) => setParams(v === 'causes' ? {} : { tab: v }, { replace: true })}
-        tabs={[
-          { value: 'causes', label: 'Theo nhóm vấn đề', icon: ScanSearch },
-          { value: 'pain', label: 'Điểm đau cụ thể', icon: Crosshair },
-          { value: 'compare', label: 'So sánh sản phẩm', icon: GitCompareArrows },
-          { value: 'segments', label: 'Phân khúc khách hàng', icon: Users }
-        ]}
+        tabs={tabs}
       />
       <TabPane tabKey={tab}>
-        {tab === 'segments' ? <Segments /> : tab === 'compare' ? <Compare /> : tab === 'pain' ? <PainPoints /> : <RootCauses />}
+        {tab === 'segments'
+          ? <Segments />
+          : tab === 'compare'
+            ? <Compare />
+            : tab === 'pain'
+              ? <PainPoints />
+              : tab === 'orders'
+                ? (!orderLoaded ? <Skeleton as="div" className="h-[420px] rounded-surf bg-raised" /> : <OrdersTab data={orderData} />)
+                : <RootCauses />}
       </TabPane>
     </PageEnter>
   );

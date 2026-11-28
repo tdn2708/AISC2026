@@ -67,6 +67,9 @@ async function ensureIndexes(db) {
     // ghi CÓ khóa, nên dữ liệu seed cũ không có trường này không bị ảnh hưởng.
     ['feedbacks', { dedupKey: 1 }, { unique: true, partialFilterExpression: { dedupKey: { $type: 'string' } } }],
     ['transactions', { orderId: 1 }, { unique: true }],
+    ['order_cancellations', { orderId: 1 }, { unique: true }],
+    ['order_cancellations', { orderedAt: 1 }],
+    ['order_cancellations', { modelCode: 1 }],
     ['review_labels', { feedbackId: 1 }, { unique: true }],
     // Nhãn người duyệt và nhãn mô hình thầy: ghi theo feedbackId (upsert)
     ['audit_labels', { feedbackId: 1 }, { unique: true }],
@@ -243,7 +246,7 @@ async function startServer() {
       // Kho thật tự thu thập đánh giá mới mỗi 24 giờ, ngay trong máy chủ này.
       // Không cần workflow hay máy nào khác; Render ngủ thì thức dậy là bù.
       if (workspaces.real.databaseName !== workspaces.demo.databaseName) {
-        require('./services/real_collector').startAutoCollect(workspaces.real);
+        require('./services/real_collector').startAutoCollect(workspaces);
       }
       // Phiên live đang chạy dở trước lần khởi động này (Render triển khai, tự khởi
       // động lại): nối lại ngay để không đứt giữa giờ live

@@ -22,10 +22,10 @@
  */
 
 const axios = require('axios');
-const { fetchTikiReviews } = require('./scraper');
-const { labelReviews } = require('./label_cascade');
-const { buildFeedbackDocs, saveFeedbacks } = require('./ingest');
-const { invalidate } = require('./analysis_context');
+const scraper = require('./scraper');
+const labelCascade = require('./label_cascade');
+const { buildFeedbackDocs, saveFeedbacks, dedupKeyRaw } = require('./ingest');
+const { invalidate, patchServing } = require('./analysis_context');
 
 // Nhóm hàng có nhiều đánh giá và nhiều kiểu khiếu nại khác nhau (giao vận,
 // chất lượng, đóng gói, hàng giả, đổi trả), đủ đa dạng cho phân tích
@@ -42,6 +42,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const HOUR = 3600 * 1000;
 const STATE_ID = 'autocollect';
+const CONFIG_ID = 'autocollect_config';
 const EVERY_MS = 24 * HOUR;
 const CHECK_MS = 30 * 60 * 1000;
 // Khóa được làm mới mỗi phút bởi nhịp tim của lượt đang chạy. Tiến trình chết
@@ -103,7 +104,10 @@ async function searchProducts(query, limit, minReviews) {
  * Một lượt thu thập. db = null là chạy thử (không ghi).
  * log(line) nhận từng dòng tiến độ; onProgress(totals) nhận số liệu cộng dồn.
  */
-async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, onStage = null } = {}) {
+async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, onStage = null, searchFn = null, fetchFn = null, labelFn = null } = {}) {
+  const doSearch = searchFn || searchProducts;
+  const doFetch = fetchFn || scraper.fetchTikiReviews;
+  const doLabel = labelFn || labelCascade.labelReviews;
   const o = {
     queries: opts.queries?.length ? opts.queries : DEFAULT_QUERIES,
     productsPerQuery: opts.productsPerQuery ?? 5,
@@ -121,7 +125,7 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, o
     await db.collection('products').createIndex({ productId: 1, snapshotAt: -1 });
   }
 
-  const totals = { queries: o.queries.length, products: 0, fetched: 0, inserted: 0, duplicates: 0, failed: 0, timedOut: 0, byLabeller: {} };
+  const totals = { queries: o.queries.length, products: 0, fetched: 0, skippedKnown: 0, inserted: 0, duplicates: 0, failed: 0, timedOut: 0, byLabeller: {} };
   const stage = (query, product, step) => onStage?.({ query, product: product ? product.name.slice(0, 60) : null, step, at: new Date() });
   const seen = new Set();
   log(`Thu thập ${o.queries.length} nhóm hàng, ${o.productsPerQuery} sản phẩm mỗi nhóm, tối đa ${o.pages * 20} đánh giá mới nhất mỗi sản phẩm${db ? '' : ' (chạy thử, không ghi)'}`);
@@ -130,13 +134,13 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, o
     let products = [];
     stage(query, null, 'tìm sản phẩm');
     try {
-      products = await withTimeout(searchProducts(query, o.productsPerQuery, o.minReviews), 60000, 'Tìm sản phẩm');
+      products = await withTimeout(doSearch(query, o.productsPerQuery, o.minReviews), 60000, 'Tìm sản phẩm');
     } catch (e) {
       totals.failed += 1;
       log(`[${query}] không tìm được sản phẩm: ${e.message}`);
       continue;
     }
-    await sleep(800);
+    if (o.pauseMs > 0) await sleep(Math.min(800, o.pauseMs));
 
     for (const product of products) {
       if (seen.has(product.productId)) continue;
@@ -148,7 +152,7 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, o
         let raw = [];
         try {
           stage(query, product, 'lấy đánh giá');
-          raw = await fetchTikiReviews(new URL(product.url), { sort: 'id|desc', maxPages: o.pages });
+          raw = await doFetch(new URL(product.url), { sort: 'id|desc', maxPages: o.pages });
         } catch (e) {
           totals.failed += 1;
           log(`[${query}] lỗi khi lấy đánh giá ${product.productId}: ${e.message}`);
@@ -158,13 +162,37 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, o
         totals.fetched += raw.length;
         if (!raw.length) return;
 
+        // Lọc trùng TRƯỚC khi gán nhãn: tránh tốn lượt LLM cho các câu đã nằm trong kho
+        const docMeta = { fallbackProduct: product.name, collectedVia: 'bulk', sourceUrl: product.url };
+        let freshRaw = raw;
+        if (db) {
+          const keys = raw.map((r) => dedupKeyRaw(r, docMeta));
+          const existing = await db.collection('feedbacks')
+            .find({ dedupKey: { $in: keys } }, { projection: { dedupKey: 1 } })
+            .toArray();
+          const knownSet = new Set(existing.map((d) => d.dedupKey));
+          freshRaw = [];
+          for (let i = 0; i < raw.length; i += 1) {
+            if (knownSet.has(keys[i])) {
+              totals.skippedKnown += 1;
+            } else {
+              knownSet.add(keys[i]);
+              freshRaw.push(raw[i]);
+            }
+          }
+          if (!freshRaw.length) {
+            log(`[${query}] ${product.name.slice(0, 60)}: ${raw.length} đánh giá, đều đã có trong kho`);
+            return;
+          }
+        }
+
         // Kèm số sao; câu nghi mỉa mai được hỏi thêm mô hình thứ hai rồi bỏ phiếu
-        stage(query, product, `gán nhãn ${raw.length} đánh giá`);
+        stage(query, product, `gán nhãn ${freshRaw.length} đánh giá`);
         // Kèm tên sản phẩm: đồ gia dụng thì mô hình gán thêm nguyên nhân gốc rễ cấp 3 (rootCauses)
-        const ai = await labelReviews(raw.map((r) => ({ text: r.rawText, rating: r.rating, productName: r.productName || product.name })));
+        const ai = await doLabel(freshRaw.map((r) => ({ text: r.rawText, rating: r.rating, productName: r.productName || product.name })));
         if (token.cancelled) return;
         for (const a of ai) totals.byLabeller[a?.labelledBy || 'none'] = (totals.byLabeller[a?.labelledBy || 'none'] || 0) + 1;
-        const docs = buildFeedbackDocs(raw, ai, { fallbackProduct: product.name, collectedVia: 'bulk', sourceUrl: product.url });
+        const docs = buildFeedbackDocs(freshRaw, ai, docMeta);
         for (const d of docs) d.productCategory = query;
 
         if (db) {
@@ -174,10 +202,10 @@ async function collectReal(db, opts = {}, { log = () => {}, onProgress = null, o
           totals.inserted += inserted;
           totals.duplicates += duplicates;
           await db.collection('products').insertOne({ ...product, snapshotAt: new Date() });
-          log(`[${query}] ${product.name.slice(0, 60)}: ${raw.length} đánh giá, +${inserted} mới`);
+          log(`[${query}] ${product.name.slice(0, 60)}: ${raw.length} đánh giá (${totals.skippedKnown ? `bỏ qua đã có, ` : ''}+${inserted} mới)`);
         } else {
           const complaints = docs.filter((d) => d.category !== 'Other').length;
-          log(`[${query}] ${product.name.slice(0, 60)}: ${raw.length} đánh giá, ${complaints} lời chê`);
+          log(`[${query}] ${product.name.slice(0, 60)}: ${freshRaw.length} đánh giá, ${complaints} lời chê`);
         }
       })();
       try {
@@ -233,25 +261,27 @@ async function collectorStatus(db) {
  * Lấy khóa rồi chạy một lượt ở nền. Trả về false khi không lấy được khóa
  * (đang có lượt khác chạy, hoặc chưa tới hạn).
  */
-async function runOnce(db, { trigger = 'schedule', minGapMs = EVERY_MS, opts, onDone } = {}) {
+async function runOnce(db, { trigger = 'schedule', minGapMs = EVERY_MS, opts, collectDeps, onDone } = {}) {
   const now = new Date();
   const meta = db.collection('meta');
   await meta.updateOne({ _id: STATE_ID }, { $setOnInsert: { running: false } }, { upsert: true });
+  const conditions = [
+    { $or: [{ running: { $ne: true } }, { lockedAt: { $lt: new Date(now - LOCK_TTL_MS) } }] }
+  ];
+  if (minGapMs > 0) {
+    conditions.push({
+      $or: [{ finishedAt: { $exists: false } }, { finishedAt: null }, { finishedAt: { $lt: new Date(now - minGapMs) } }]
+    });
+  }
   const lock = await meta.findOneAndUpdate(
-    {
-      _id: STATE_ID,
-      $and: [
-        { $or: [{ running: { $ne: true } }, { lockedAt: { $lt: new Date(now - LOCK_TTL_MS) } }] },
-        { $or: [{ finishedAt: { $exists: false } }, { finishedAt: null }, { finishedAt: { $lt: new Date(now - minGapMs) } }] }
-      ]
-    },
+    { _id: STATE_ID, $and: conditions },
     { $set: { running: true, lockedAt: now, trigger, progress: null, lastError: null } },
     { returnDocument: 'after' }
   );
   if (!lock) return { started: false, reason: 'busy_or_fresh' };
 
   // Chạy nền, không chặn request đã gọi
-  (async () => {
+  const bgPromise = (async () => {
     const t0 = Date.now();
     let lastWrite = 0;
     let current = null;
@@ -262,7 +292,8 @@ async function runOnce(db, { trigger = 'schedule', minGapMs = EVERY_MS, opts, on
     beat.unref?.();
     try {
       const totals = await collectReal(db, opts || { productsPerQuery: 4, pages: 2, pauseMs: 5000 }, {
-        log: (line) => console.log('[tự thu thập]', line),
+        ...(collectDeps || {}),
+        log: collectDeps?.log || ((line) => console.log('[tự thu thập]', line)),
         onStage: (st) => { current = st; },
         onProgress: (t) => {
           // Ghi tiến độ thưa thôi, đủ cho giao diện hiện "đang chạy, đã thêm N"
@@ -271,14 +302,27 @@ async function runOnce(db, { trigger = 'schedule', minGapMs = EVERY_MS, opts, on
           meta.updateOne({ _id: STATE_ID }, { $set: { progress: { products: t.products, inserted: t.inserted }, lockedAt: new Date() } }).catch(() => {});
         }
       });
+      const finishedAt = new Date();
       await meta.updateOne({ _id: STATE_ID }, {
-        $set: { running: false, finishedAt: new Date(), lastResult: { ...totals, ms: Date.now() - t0 }, progress: null, stage: null }
+        $set: { running: false, finishedAt, lastResult: { ...totals, ms: Date.now() - t0 }, progress: null, stage: null, lastError: null }
       });
-      console.log(`[tự thu thập] xong: +${totals.inserted} mới, ${totals.duplicates} đã có, ${Math.round((Date.now() - t0) / 1000)} giây`);
-      // Có dữ liệu mới: bỏ dự báo cũ và tính lại số liệu ở nền (trang vẫn hiện số cũ tới khi xong)
+      console.log(`[tự thu thập] xong: +${totals.inserted} mới, ${totals.skippedKnown || 0} đã có, ${totals.duplicates} trùng, ${Math.round((Date.now() - t0) / 1000)} giây`);
+      // Có dữ liệu mới: bỏ dự báo cũ và tính lại số liệu ở nền; không có câu mới vẫn cập nhật mốc đồng bộ cuối
       if (totals.inserted > 0) {
         await db.collection('predictions').deleteMany({});
         invalidate(db);
+      } else {
+        const iso = finishedAt.toISOString();
+        patchServing(db, (ctx) => {
+          ctx.lastSyncAt = iso;
+          ctx.lastSyncSource = 'collect';
+          ctx.ingestedAt = iso;
+          if (ctx.funnel) {
+            ctx.funnel.lastSyncAt = iso;
+            ctx.funnel.lastSyncSource = 'collect';
+          }
+          ctx.patchedAt = Date.now();
+        });
       }
       await onDone?.(totals);
     } catch (e) {
@@ -289,29 +333,226 @@ async function runOnce(db, { trigger = 'schedule', minGapMs = EVERY_MS, opts, on
       clearInterval(beat);
     }
   })();
-  return { started: true };
+  return { started: true, done: bgPromise };
+}
+
+/**
+ * Kiểm kiểu cấu hình tự thu thập Tiki của từng kho shop (A4):
+ * tối đa 5 từ khóa, mỗi từ 2 đến 40 ký tự, productsPerQuery 1..30, pages 1..10.
+ */
+function validateCollectConfig(raw = {}) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { error: 'Dữ liệu cấu hình không hợp lệ' };
+  }
+  if (raw.enabled !== undefined && typeof raw.enabled !== 'boolean') {
+    return { error: 'Trường enabled phải là kiểu đúng hoặc sai' };
+  }
+  const isEnabled = Boolean(raw.enabled);
+
+  if (raw.queries !== undefined && !Array.isArray(raw.queries)) {
+    return { error: 'Danh sách từ khóa phải là một mảng' };
+  }
+  const rawQueries = Array.isArray(raw.queries) ? raw.queries : [];
+  if (rawQueries.length > 5) {
+    return { error: 'Tối đa 5 từ khóa thu thập' };
+  }
+  const seen = new Set();
+  const queries = [];
+  for (const q of rawQueries) {
+    if (typeof q !== 'string') return { error: 'Mỗi từ khóa phải là chuỗi ký tự' };
+    const clean = q.trim().replace(/\s+/g, ' ');
+    if (!clean) continue;
+    if (clean.length < 2 || clean.length > 40) {
+      return { error: 'Mỗi từ khóa cần dài từ 2 đến 40 ký tự' };
+    }
+    const lower = clean.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      queries.push(clean);
+    }
+  }
+  if (isEnabled && queries.length === 0) {
+    return { error: 'Cần ít nhất 1 từ khóa khi bật tự thu thập' };
+  }
+
+  const checkInt = (val, def, min, max, label) => {
+    if (val === undefined || val === null || val === '') return { ok: true, value: def };
+    const n = Number(val);
+    if (!Number.isInteger(n) || n < min || n > max) {
+      return { ok: false, error: `${label} phải là số nguyên từ ${min} đến ${max}` };
+    }
+    return { ok: true, value: n };
+  };
+
+  const ppq = checkInt(raw.productsPerQuery, 25, 1, 30, 'productsPerQuery');
+  if (!ppq.ok) return { error: ppq.error };
+  const pg = checkInt(raw.pages, 3, 1, 10, 'pages');
+  if (!pg.ok) return { error: pg.error };
+  const mr = checkInt(raw.minReviews, 1, 1, 1000, 'minReviews');
+  if (!mr.ok) return { error: mr.error };
+
+  return {
+    value: {
+      enabled: isEnabled,
+      queries,
+      productsPerQuery: ppq.value,
+      pages: pg.value,
+      minReviews: mr.value
+    }
+  };
+}
+
+async function getCollectConfig(db) {
+  const [cfg, status] = await Promise.all([
+    db.collection('meta').findOne({ _id: CONFIG_ID }),
+    collectorStatus(db)
+  ]);
+  return {
+    configured: Boolean(cfg),
+    config: cfg ? {
+      enabled: Boolean(cfg.enabled),
+      queries: Array.isArray(cfg.queries) ? cfg.queries : [],
+      productsPerQuery: cfg.productsPerQuery ?? 25,
+      pages: cfg.pages ?? 3,
+      minReviews: cfg.minReviews ?? 1,
+      updatedAt: cfg.updatedAt || null,
+      by: cfg.by || null
+    } : {
+      enabled: false,
+      queries: [],
+      productsPerQuery: 25,
+      pages: 3,
+      minReviews: 1,
+      updatedAt: null,
+      by: null
+    },
+    status
+  };
+}
+
+async function saveCollectConfig(db, raw, by = null) {
+  const checked = validateCollectConfig(raw);
+  if (checked.error) {
+    const err = new Error(checked.error);
+    err.status = 400;
+    throw err;
+  }
+  const now = new Date();
+  await db.collection('meta').updateOne(
+    { _id: CONFIG_ID },
+    { $set: { ...checked.value, updatedAt: now, by: by || null } },
+    { upsert: true }
+  );
+  return getCollectConfig(db);
+}
+
+function resolveWorkspaceEntries(workspacesOrDb) {
+  if (!workspacesOrDb) {
+    try { return require('./tenants').listRealWorkspaces(); } catch { return []; }
+  }
+  if (typeof workspacesOrDb.collection === 'function') {
+    try {
+      const registered = require('./tenants').listRealWorkspaces();
+      if (registered.some(([, db]) => db === workspacesOrDb)) return registered;
+    } catch { /* bỏ qua */ }
+    return [['real', workspacesOrDb]];
+  }
+  return Object.entries(workspacesOrDb).filter(([k, db]) => db && (k === 'real' || /^t_[a-f0-9]{24}$/.test(k)));
+}
+
+/**
+ * Một nhịp kiểm tra 30 phút (A4):
+ * - AUTO_COLLECT=0 tắt hết.
+ * - Đang có phiên live thì hoãn tới nhịp sau.
+ * - Đang có kho khác chạy thu thập dở thì đợi, không chạy song song.
+ * - Mỗi nhịp chỉ khởi chạy TỐI ĐA MỘT kho đến hạn (quá 24 giờ từ finishedAt), ưu tiên kho lâu nhất.
+ */
+async function autoCollectTick(workspacesOrDb, { now = new Date(), liveBusyFn = null, runFn = null, collectDeps = null, onDone = null } = {}) {
+  if (!enabled()) return { ran: false, reason: 'disabled' };
+  const isLive = liveBusyFn || (() => {
+    try { return require('./live/hub').activeCount() > 0; } catch { return false; }
+  });
+  if (isLive()) return { ran: false, reason: 'live_active' };
+
+  const entries = resolveWorkspaceEntries(workspacesOrDb);
+  if (!entries.length) return { ran: false, reason: 'no_workspaces' };
+
+  const nowMs = new Date(now).getTime();
+  const due = [];
+
+  for (const [key, db] of entries) {
+    const meta = db.collection('meta');
+    const [stateDoc, cfg] = await Promise.all([
+      meta.findOne({ _id: STATE_ID }),
+      meta.findOne({ _id: CONFIG_ID })
+    ]);
+    if (stateDoc?.running && stateDoc.lockedAt && (nowMs - new Date(stateDoc.lockedAt).getTime()) < LOCK_TTL_MS) {
+      return { ran: false, reason: 'already_running', runningKey: key };
+    }
+
+    let opts = null;
+    if (key === 'real') {
+      // Kho chung giữ lịch mặc định như cũ, trừ khi admin chủ động tắt qua autocollect_config
+      if (cfg && cfg.enabled === false) continue;
+      opts = (cfg && cfg.enabled && Array.isArray(cfg.queries) && cfg.queries.length)
+        ? { queries: cfg.queries, productsPerQuery: cfg.productsPerQuery ?? 25, pages: cfg.pages ?? 3, minReviews: cfg.minReviews ?? 1, pauseMs: 3000 }
+        : { productsPerQuery: 4, pages: 2, pauseMs: 5000 };
+    } else {
+      // Kho riêng của shop: không có cấu hình hoặc đang tắt thì không thu
+      if (!cfg || !cfg.enabled || !Array.isArray(cfg.queries) || !cfg.queries.length) continue;
+      opts = {
+        queries: cfg.queries,
+        productsPerQuery: cfg.productsPerQuery ?? 25,
+        pages: cfg.pages ?? 3,
+        minReviews: cfg.minReviews ?? 1,
+        pauseMs: 2000
+      };
+    }
+
+    const lastMs = stateDoc?.finishedAt ? new Date(stateDoc.finishedAt).getTime() : 0;
+    if (!lastMs || (nowMs - lastMs) >= EVERY_MS) {
+      due.push({ key, db, opts, lastMs });
+    }
+  }
+
+  if (!due.length) return { ran: false, reason: 'none_due' };
+  due.sort((a, b) => a.lastMs - b.lastMs);
+  const target = due[0];
+
+  const execRun = runFn || ((db, runOpts) => runOnce(db, { ...runOpts, collectDeps }));
+  const r = await execRun(target.db, { trigger: 'schedule', minGapMs: EVERY_MS, opts: target.opts, onDone });
+  if (!r?.started) return { ran: false, reason: r?.reason || 'busy_or_fresh', key: target.key };
+  return { ran: true, key: target.key, dbName: target.db.databaseName, done: r.done };
 }
 
 let timer = null;
 
-/** Bật bộ hẹn giờ cho kho thật. onDone nhận số liệu sau mỗi lượt có dữ liệu mới. */
-function startAutoCollect(db, { onDone } = {}) {
+/** Bật bộ hẹn giờ cho kho chung và mọi kho shop có bật tự thu thập. */
+function startAutoCollect(workspacesOrDb, { onDone } = {}) {
   if (timer || !enabled()) return;
   if (!saltReady()) console.warn('[tự thu thập] chưa có PII_SALT bí mật: vẫn thu thập, nhưng không lưu mã khách.');
-  const tick = () => runOnce(db, { trigger: 'schedule', onDone }).catch((e) => console.warn('[tự thu thập]', e.message));
+  const tick = () => autoCollectTick(workspacesOrDb, { onDone }).catch((e) => console.warn('[tự thu thập]', e.message));
   // Đợi 2 phút sau khởi động: để việc nạp sẵn ngữ cảnh chạy xong trước
   setTimeout(tick, 2 * 60 * 1000).unref?.();
   timer = setInterval(tick, CHECK_MS);
   timer.unref?.();
-  console.log('[tự thu thập] bật: mỗi 24 giờ, kiểm tra mỗi 30 phút.');
+  console.log('[tự thu thập] bật: mỗi 24 giờ, kiểm tra mỗi 30 phút (tối đa 1 kho mỗi nhịp).');
 }
 
 module.exports = {
   withTimeout,
   DEFAULT_QUERIES,
+  CONFIG_ID,
+  STATE_ID,
+  EVERY_MS,
+  LOCK_TTL_MS,
   collectReal,
   collectorStatus,
+  validateCollectConfig,
+  getCollectConfig,
+  saveCollectConfig,
   runOnce,
+  autoCollectTick,
   startAutoCollect,
   saltReady,
   MANUAL_GAP_MS

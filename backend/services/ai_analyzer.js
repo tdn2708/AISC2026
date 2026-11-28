@@ -636,8 +636,9 @@ ${JSON.stringify(compact)}`;
 
 /** Trợ lý hội thoại trên dữ liệu đã qua Trust Layer */
 async function chatWithData(userMessage, feedbacks, context = {}) {
-  const funnelNote = context.funnel
-    ? `Bối cảnh chất lượng dữ liệu: ${context.funnel.rawCollected} phản hồi thô, ${context.funnel.validForAnalysis} hợp lệ sau khi lọc, điểm sức khỏe dữ liệu ${context.funnel.dataHealthScore}/100.`
+  const f = context.funnel ? require('./trust_layer').healthAt(context.funnel, new Date()) : null;
+  const funnelNote = f
+    ? `Bối cảnh chất lượng dữ liệu: ${f.rawCollected} phản hồi thô, ${f.validForAnalysis} hợp lệ sau khi lọc, điểm sức khỏe dữ liệu ${f.dataHealthScore}/100.`
     : '';
 
   const compact = feedbacks.slice(0, 400).map((f) => ({

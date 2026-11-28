@@ -120,6 +120,31 @@ const Report = ({ sessionId }) => {
         </div>
       )}
 
+      {r.orderUplift?.available && (
+        <div className="paper flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1.5 px-4 py-3">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <p className="text-sm font-semibold text-ink-hi">Đơn đặt trên sàn trong giờ live</p>
+            <p className="tabular-nums text-heading font-semibold text-accent-hi">
+              {fmtInt(r.orderUplift.liveOrders)} đơn
+            </p>
+            <p className="text-xs text-ink-mid">
+              ({fmtDec(r.orderUplift.liveOrdersPerHour, 1)} đơn/giờ trong {fmtInt(r.orderUplift.liveHoursCount)} giờ live, {fmtInt(r.orderUplift.liveActiveOrders)} đơn không hủy)
+            </p>
+          </div>
+          <p className="text-xs text-ink-mid">
+            {r.orderUplift.baselineOrdersPerHour != null
+              ? `Cùng khung giờ ${r.orderUplift.baselineBasis === 'same_weekday' ? 'các ngày cùng thứ không live' : 'các ngày không live'}: ${fmtDec(r.orderUplift.baselineOrdersPerHour, 1)} đơn/giờ${r.orderUplift.upliftRatio != null ? ` (gấp ${fmtDec(r.orderUplift.upliftRatio, 2)} lần)` : ''}.`
+              : 'Chưa đủ ngày không live cùng khung giờ để so nền.'}
+            {r.orderUplift.liveTagOrdersInLive > 0
+              ? ` Sản phẩm nhãn [LIVE]: ${fmtInt(r.orderUplift.liveTagOrdersInLive)} đơn.`
+              : ''}
+          </p>
+        </div>
+      )}
+      {!r.orderUplift?.available && r.orderUplift?.hasOrderBook && r.orderUplift?.reason && (
+        <p className="px-1 text-xs text-ink-lo">{r.orderUplift.reason}.</p>
+      )}
+
       {/* Việc cần làm */}
       <GlassPanel tone="strong" className="p-4 sm:p-5">
         <PanelHeader title="Việc cần làm cho phiên sau" />

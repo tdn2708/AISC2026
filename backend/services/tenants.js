@@ -180,4 +180,10 @@ function middleware() {
   };
 }
 
-module.exports = { init, keyFor, dbForKey, isTenantKey, isRealKey, isShared, registerExisting, middleware, dbNameFor, isTenantDbName };
+/** Danh sách các kho dữ liệu thật đã đăng ký ([key, db]): gồm 'real' và mọi 't_<userId>' */
+function listRealWorkspaces() {
+  if (!state || !state.workspaces) return [];
+  return Object.entries(state.workspaces).filter(([k, db]) => db && (k === 'real' || isTenantKey(k)));
+}
+
+module.exports = { init, keyFor, dbForKey, listRealWorkspaces, isTenantKey, isRealKey, isShared, registerExisting, middleware, dbNameFor, isTenantDbName };
